@@ -27,12 +27,24 @@ export async function fetchDeals() {
   return res.json();
 }
 
-// Compatibility object for existing code with full CRUD support
+// Compatibility object for existing code with full CRUD and Token support
 export const api = {
   getStats: fetchStats,
   getAgents: fetchAgents,
   getDeals: fetchDeals,
   
+  // Auth state management
+  setToken: (token: string) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("token", token);
+    }
+  },
+  removeToken: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+    }
+  },
+
   get: async <T = any>(path: string): Promise<T> => {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_URL}${path}`, { headers });
