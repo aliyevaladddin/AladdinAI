@@ -19,7 +19,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install CLI dependencies
         working-directory: ./cli
@@ -28,7 +27,5 @@ jobs:
       - name: Publish to NPM
         working-directory: ./cli
         run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > .npmrc
+          npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_API_TOKEN }}
           npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_API_TOKEN }}
