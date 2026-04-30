@@ -33,10 +33,14 @@ export const api = {
   getAgents: fetchAgents,
   getDeals: fetchDeals,
   
-  // Auth state management
-  setToken: (token: string) => {
+  // Auth state management - now supports null for logout
+  setToken: (token: string | null) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("token", token);
+      if (token) {
+        localStorage.setItem("token", token);
+      } else {
+        localStorage.removeItem("token");
+      }
     }
   },
   removeToken: () => {
