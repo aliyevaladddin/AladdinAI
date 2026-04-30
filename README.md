@@ -15,7 +15,7 @@ Built with support for cutting-edge architectures like **MiniCPM3** and secured 
 Install the full platform (Desktop App or Source Code) with a single command:
 
 ```bash
-npx @aladdinaliyev/aladdin-ai
+npx @auroraaccess/aladdin-ai
 ```
 
 ---
