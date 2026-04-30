@@ -2,12 +2,37 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "main": "main.cjs",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "rcf:check": "rcf-cli audit ."
+    "rcf:check": "rcf-cli audit .",
+    "electron:dev": "concurrently \"next dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "next build && electron-builder"
+  },
+  "build": {
+    "appId": "com.aladdin.ai",
+    "productName": "AladdinAI",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "main.cjs",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
