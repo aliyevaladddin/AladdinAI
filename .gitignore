@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+
+# Node
+node_modules/
+.next/
+
+# Database
+*.db
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# IDX
+.idx/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
