@@ -25,5 +25,5 @@ jobs:
         env:
           RCF_LICENSE_KEY: ${{ secrets.RCF_LICENSE_KEY }}
         run: |
-          # Запуск сканирования проекта на соответствие Restricted Correlation Framework
-          rcf-cli scan . --audit --key "$RCF_LICENSE_KEY"
+          # Perform security audit using Restricted Correlation Framework
+          rcf-cli audit . --key "$RCF_LICENSE_KEY"
