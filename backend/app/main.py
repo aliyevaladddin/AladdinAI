@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
-    chat, crm_activities, crm_contacts, crm_deals, mongodb,
+    chat, crm_activities, crm_contacts, crm_deals, dashboard, mongodb,
     providers, router_config, vms, webhooks
 )
 
@@ -30,6 +30,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api")
 app.include_router(agents.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
+app.include_router(dashboard.router, prefix="/api")
 app.include_router(providers.router, prefix="/api")
 app.include_router(router_config.router, prefix="/api")
 app.include_router(channels_messaging.router, prefix="/api")
