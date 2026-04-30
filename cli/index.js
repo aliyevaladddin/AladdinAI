@@ -71,8 +71,14 @@ program
         console.log(chalk.cyan(`\n👉 Opening ${fileName} for installation...`));
         
         // Cross-platform open command
-        const openCmd = platform === 'darwin' ? 'open' : platform === 'win32' ? 'start' : 'xdg-open';
-        await execa(openCmd, [downloadPath]);
+        if (platform === 'darwin') {
+          await execa('open', [downloadPath]);
+        } else if (platform === 'win32') {
+          // Use shell: true or cmd /c to ensure 'start' works on Windows
+          await execa('cmd', ['/c', 'start', '', downloadPath]);
+        } else {
+          await execa('xdg-open', [downloadPath]);
+        }
 
       } catch (err) {
         spinner.fail(chalk.red('Failed to download Desktop App. Check your internet or GitHub release.'));
