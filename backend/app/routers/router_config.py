@@ -37,3 +37,13 @@ async def update_config(config_id: int, body: RouterConfigUpdate, user: User = D
     await db.commit()
     await db.refresh(config)
     return config
+
+
+@router.delete("/{config_id}", status_code=204)
+async def delete_config(config_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(RouterConfig).where(RouterConfig.id == config_id, RouterConfig.user_id == user.id))
+    config = result.scalar_one_or_none()
+    if not config:
+        raise HTTPException(status_code=404, detail="Config not found")
+    await db.delete(config)
+    await db.commit()
