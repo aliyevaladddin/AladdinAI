@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
-import { Sidebar } from "@/components/Sidebar";
+import { SovereignSidebar } from "@/components/SovereignSidebar";
 import { TopNav } from "@/components/TopNav";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex flex-col h-screen w-screen overflow-hidden">
       <TopNav />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        <SovereignSidebar />
         <main className="flex-1 ml-64 mt-16 overflow-y-auto relative z-10 p-gutter">
           {children}
         </main>
