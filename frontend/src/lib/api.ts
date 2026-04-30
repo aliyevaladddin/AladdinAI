@@ -27,16 +27,48 @@ export async function fetchDeals() {
   return res.json();
 }
 
-// Compatibility object for existing code
+// Compatibility object for existing code with full CRUD support
 export const api = {
   getStats: fetchStats,
   getAgents: fetchAgents,
   getDeals: fetchDeals,
-  // Added Generic support <T> to fix TypeScript errors
+  
   get: async <T = any>(path: string): Promise<T> => {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_URL}${path}`, { headers });
     if (!res.ok) throw new Error(`Failed to fetch ${path}`);
+    return res.json();
+  },
+
+  post: async <T = any>(path: string, body: any): Promise<T> => {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Failed to POST to ${path}`);
+    return res.json();
+  },
+
+  put: async <T = any>(path: string, body: any): Promise<T> => {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Failed to PUT to ${path}`);
+    return res.json();
+  },
+
+  delete: async <T = any>(path: string): Promise<T> => {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "DELETE",
+      headers,
+    });
+    if (!res.ok) throw new Error(`Failed to DELETE ${path}`);
     return res.json();
   }
 };
