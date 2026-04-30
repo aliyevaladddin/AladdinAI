@@ -1,39 +1,34 @@
-name: Publish CLI to NPM
+name: Publish NPM Package
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'cli/**'
-      - '.github/workflows/npm-publish.yml'
+  release:
+    types: [created]
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'sdk/typescript/**'
+      - '.github/workflows/publish-npm.yml'
 
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
+steps:
+      - uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
-          cache-dependency-path: './cli/package-lock.json'
 
       - name: Install dependencies
-        working-directory: ./cli
+        working-directory: sdk/typescript
         run: npm ci
 
+      - name: Build package
+        working-directory: sdk/typescript
+        run: npm run build
+
       - name: Publish to NPM
-        working-directory: ./cli
+        working-directory: sdk/typescript
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_API_TOKEN }}
