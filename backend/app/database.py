@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL v1.2.8
+# NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:RESTRICTED]
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 from sqlalchemy.orm import DeclarativeBase

@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL v1.2.8
+# NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:PROTECTED]
 from contextlib import asynccontextmanager
 
@@ -44,4 +44,4 @@ app.include_router(webhooks.router, prefix="/api")
 
 @app.get("/")
 async def root():
-    return {"message": "AladdinAI API is running", "version": "0.1.0", "protocol": "RCF/1.2.8"}
+    return {"message": "AladdinAI API is running", "version": "0.1.0", "protocol": "RCF/2.0.3"}
