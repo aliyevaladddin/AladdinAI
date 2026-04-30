@@ -25,10 +25,12 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: './cli/package-lock.json'
 
-      - name: Install CLI dependencies
+      - name: Install dependencies
         working-directory: ./cli
-        run: npm install
+        run: npm ci
 
       - name: Publish to NPM
         working-directory: ./cli
