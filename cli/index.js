@@ -27,7 +27,7 @@ console.log(chalk.cyan(`
 program
   .name('aladdin-ai')
   .description('Bootstrap your own AladdinAI instance')
-  .version('2.0.3')
+  .version('1.2.0')
   .action(async () => {
     const { mode } = await inquirer.prompt([
       {
@@ -48,10 +48,12 @@ program
         let downloadUrl = '';
         let fileName = '';
 
+        // GitHub Release assets usually follow this pattern
         if (platform === 'darwin') {
           downloadUrl = 'https://github.com/aliyevaladddin/AladdinAI/releases/latest/download/AladdinAI.dmg';
           fileName = 'AladdinAI.dmg';
         } else if (platform === 'win32') {
+          // Changed to match electron-builder default naming or redirect
           downloadUrl = 'https://github.com/aliyevaladddin/AladdinAI/releases/latest/download/AladdinAI.exe';
           fileName = 'AladdinAI.exe';
         } else if (platform === 'linux') {
@@ -64,24 +66,35 @@ program
 
         spinner.text = `Downloading ${fileName} for ${platform}...`;
         const downloadPath = path.join(process.cwd(), fileName);
-        
-        await execa('curl', ['-L', '-o', downloadPath, downloadUrl]);
+
+        // Use -f to fail on 404, -L to follow redirects
+        try {
+          await execa('curl', ['-f', '-L', '-o', downloadPath, downloadUrl]);
+        } catch (downloadErr) {
+          spinner.fail(chalk.red(`\n❌ Failed to download ${fileName}. Possibly the version is not yet available on GitHub Releases.`));
+          console.log(chalk.yellow(`\nTry downloading manually from: https://github.com/aliyevaladddin/AladdinAI/releases`));
+          return;
+        }
+
         spinner.succeed(chalk.green(`\n✅ Download complete: ${fileName}`));
-        
         console.log(chalk.cyan(`\n👉 Opening ${fileName} for installation...`));
-        
-        // Cross-platform open command
-        if (platform === 'darwin') {
-          await execa('open', [downloadPath]);
-        } else if (platform === 'win32') {
-          // Use shell: true or cmd /c to ensure 'start' works on Windows
-          await execa('cmd', ['/c', 'start', '', downloadPath]);
-        } else {
-          await execa('xdg-open', [downloadPath]);
+
+        try {
+          if (platform === 'darwin') {
+            await execa('open', [downloadPath]);
+          } else if (platform === 'win32') {
+            // More robust Windows open command using shell
+            await execa('powershell', ['-Command', `Start-Process "${downloadPath}"`], { shell: true });
+          } else {
+            await execa('xdg-open', [downloadPath]);
+          }
+        } catch (openErr) {
+          console.log(chalk.yellow(`\n⚠️  Could not open automatically. Please run ${fileName} manually from this folder.`));
         }
 
       } catch (err) {
-        spinner.fail(chalk.red('Failed to download Desktop App. Check your internet or GitHub release.'));
+        spinner.fail(chalk.red('An unexpected error occurred during installation.'));
+        console.error(err);
       }
       return;
     }
@@ -111,34 +124,18 @@ program
     const spinner = ora('Cloning AladdinAI repository...').start();
 
     try {
-      // Clone the repo
       await execa('git', ['clone', REPO_URL, targetDir]);
       spinner.succeed(chalk.green('Repository cloned successfully!'));
-
-      // Remove .git from the new project to start fresh
       await fs.remove(path.join(targetDir, '.git'));
 
       if (answers.installDeps) {
-        // Install Frontend
         const feSpinner = ora('Installing Frontend dependencies...').start();
         await execa('npm', ['install'], { cwd: path.join(targetDir, 'frontend') });
         feSpinner.succeed(chalk.green('Frontend dependencies installed!'));
-
-        // Backend setup suggestion
-        console.log(chalk.yellow('\n💡 Note: To set up the Backend, make sure you have Python 3.10+ and run:'));
-        console.log(chalk.cyan(`   cd ${answers.projectName}/backend && pip install -r requirements.txt`));
       }
 
-      // RCF Initialization notice
       console.log(chalk.blue('\n🛡️  RCF Protocol: Your project is pre-marked for RCF compliance.'));
-      console.log(chalk.blue('   Run `npx rcf-cli audit .` to verify your installation.'));
-
       console.log(chalk.green(`\n🚀 Success! Your AladdinAI platform is ready in ${answers.projectName}`));
-      console.log(chalk.white('\nNext steps:'));
-      console.log(chalk.cyan(`  1. cd ${answers.projectName}`));
-      console.log(chalk.cyan(`  2. Configure your .env files in /backend and /frontend`));
-      console.log(chalk.cyan(`  3. Run 'npm run dev' in /frontend`));
-      console.log(chalk.cyan(`  4. Start the backend with 'uvicorn app.main:app --reload'`));
 
     } catch (error) {
       spinner.fail(chalk.red('Failed to bootstrap project.'));
