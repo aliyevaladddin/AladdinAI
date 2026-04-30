@@ -40,23 +40,23 @@ export const api = {
     return res.json();
   },
 
-  post: async <T = any>(path: string, body: any): Promise<T> => {
+  post: async <T = any>(path: string, body?: any): Promise<T> => {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_URL}${path}`, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) throw new Error(`Failed to POST to ${path}`);
     return res.json();
   },
 
-  put: async <T = any>(path: string, body: any): Promise<T> => {
+  put: async <T = any>(path: string, body?: any): Promise<T> => {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_URL}${path}`, {
       method: "PUT",
       headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) throw new Error(`Failed to PUT to ${path}`);
     return res.json();
