@@ -1,6 +1,12 @@
 {
   "name": "frontend",
   "version": "0.1.0",
+  "description": "Sovereign AI Interface for AladdinAI",
+  "author": "Aladdin Aliyev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aliyevaladddin/AladdinAI.git"
+  },
   "private": true,
   "main": "main.cjs",
   "scripts": {
