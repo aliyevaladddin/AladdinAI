@@ -14,6 +14,22 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "ai",
+    "orchestrator",
+    "rcf-protocol",
+    "crm",
+    "aladdin-ai",
+    "automation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aliyevaladddin/AladdinAI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aliyevaladddin/AladdinAI/issues"
+  },
+  "homepage": "https://github.com/aliyevaladddin/AladdinAI#readme",
   "author": "Aladdin Aliyev <aladdin@aliyev.site>",
   "license": "Apache-2.0",
   "dependencies": {
