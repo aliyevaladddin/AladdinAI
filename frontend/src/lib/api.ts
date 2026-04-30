@@ -32,10 +32,11 @@ export const api = {
   getStats: fetchStats,
   getAgents: fetchAgents,
   getDeals: fetchDeals,
-  // Add other methods if needed by existing pages
-  get: async (path: string) => {
+  // Added Generic support <T> to fix TypeScript errors
+  get: async <T = any>(path: string): Promise<T> => {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_URL}${path}`, { headers });
+    if (!res.ok) throw new Error(`Failed to fetch ${path}`);
     return res.json();
   }
 };
