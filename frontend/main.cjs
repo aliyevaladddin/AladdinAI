@@ -1,26 +1,36 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const serve = require('electron-serve');
+
+const loadURL = serve({ directory: 'out' });
 const isDev = process.env.NODE_ENV === 'development';
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    titleBarStyle: 'hiddenInset', // Сделаем красивый "Mac" стиль заголовка
+    width: 1300,
+    height: 850,
+    minWidth: 1000,
+    minHeight: 700,
+    titleBarStyle: 'hiddenInset', 
+    backgroundColor: '#131313', // Соответствует нашему дизайну
+    show: false, // Покажем окно, когда оно будет готово
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      preload: path.join(__dirname, 'preload.cjs'), // Добавим прелоад на будущее
     },
-    backgroundColor: '#000000', // Чтобы не было белой вспышки при загрузке
   });
 
-  // В разработке открываем локальный сервер Next.js
-  // В продакшене будем загружать билд
   if (isDev) {
     win.loadURL('http://localhost:3000');
+    win.webContents.openDevTools();
   } else {
-    win.loadFile(path.join(__dirname, 'out/index.html'));
+    loadURL(win);
   }
+
+  win.once('ready-to-show', () => {
+    win.show();
+  });
 }
 
 app.whenReady().then(() => {
