@@ -83,6 +83,20 @@ async def connect_provider(provider_id: int, user: User = Depends(get_current_us
         return {"status": "error", "message": str(e)}
 
 
+@router.get("/{provider_id}/models")
+async def get_provider_models(provider_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))
+    provider = result.scalar_one_or_none()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    if not provider.models_available:
+        return {"models": [], "hint": "Connect the provider first to fetch available models."}
+
+    models = json.loads(provider.models_available)
+    return {"models": models, "count": len(models)}
+
+
 @router.post("/{provider_id}/disconnect")
 async def disconnect_provider(provider_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))
