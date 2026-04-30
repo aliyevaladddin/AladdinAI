@@ -1,5 +1,5 @@
 {
-  "name": "@aliyevaladddin/aladdin-ai",
+  "name": "@aladdinaliyev/aladdin-ai",
   "version": "1.0.0",
   "description": "The official CLI for AladdinAI Platform. Powered by RCF Protocol.",
   "main": "index.js",
