@@ -6,7 +6,7 @@
 
 **AladdinAI** is a high-performance, production-ready AI orchestration platform designed for seamless CRM integration, multi-channel messaging, and sovereign data protection. 
 
-Built with support for cutting-edge architectures like **MiniCPM3** and secured by the **Restricted Correlation Framework (RCF)**.
+Built with support for cutting-edge architectures like and secured by the **Restricted Correlation Framework (RCF)**.
 
 ---
 
