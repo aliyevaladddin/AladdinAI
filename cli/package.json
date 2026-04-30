@@ -6,6 +6,10 @@
   "bin": {
     "aladdin-ai": "index.js"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
