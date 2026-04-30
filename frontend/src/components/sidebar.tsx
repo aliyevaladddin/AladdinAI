@@ -16,6 +16,7 @@ const nav = [
   { href: "/dashboard/providers", label: "LLM Providers", section: "Infrastructure" },
   { href: "/dashboard/mongodb", label: "MongoDB", section: "Infrastructure" },
   { href: "/dashboard/bentoml", label: "BentoML", section: "Infrastructure" },
+  { href: "/dashboard/webhooks", label: "Webhooks", section: "Infrastructure" },
 ];
 
 export function Sidebar() {
