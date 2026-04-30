@@ -10,7 +10,15 @@ on:
       - 'sdk/typescript/**'
       - '.github/workflows/publish-npm.yml'
 
-steps:
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
