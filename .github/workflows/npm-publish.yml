@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'sdk/typescript/**'
+      - 'cli/**'
       - '.github/workflows/publish-npm.yml'
 
 jobs:
