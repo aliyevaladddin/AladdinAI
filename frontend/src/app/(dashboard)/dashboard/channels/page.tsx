@@ -173,6 +173,16 @@ export default function ChannelsPage() {
               <div className="flex items-center gap-2">
                 <span className={`text-xs px-2 py-1 rounded ${c.status === "connected" ? "bg-green-500/20 text-green-400" : "bg-zinc-500/20 text-zinc-400"}`}>{c.status}</span>
                 <Button variant="outline" size="sm" onClick={() => handleTestChannel(c.id)}>Test</Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    const base = window.location.origin.replace("3000", "8000"); // typical dev setup fallback
+                    alert(`Your Webhook URL for ${c.type}:\n${base}/api/webhooks/${c.type}/${c.id}`);
+                  }}
+                >
+                  URL
+                </Button>
               </div>
             </div>
           ))}

@@ -19,20 +19,21 @@ interface ConnectResult {
   count?: number;
 }
 
-const TYPES = ["nvidia_nim", "openai", "anthropic", "ollama", "custom"];
+const TYPES = ["nvidia_nim", "openai", "anthropic", "ollama", "huggingface", "custom"];
 
 const TYPE_LABELS: Record<string, string> = {
   nvidia_nim: "NVIDIA NIM",
   openai: "OpenAI",
   anthropic: "Anthropic",
   ollama: "Ollama",
+  huggingface: "Hugging Face",
   custom: "Custom",
 };
 
 export default function ProvidersPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", type: "nvidia_nim", api_key: "", base_url: "" });
+  const [form, setForm] = useState({ name: "", type: "huggingface", api_key: "", base_url: "" });
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<Record<number, ConnectResult>>({});
 

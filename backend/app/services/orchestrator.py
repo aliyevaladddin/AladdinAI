@@ -59,6 +59,18 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
         )
 
         await db.commit()
+        await db.refresh(contact)
+
+    # Trigger webhooks for message received
+    from app.services.webhook_service import trigger_webhooks
+    import asyncio
+    
+    asyncio.create_task(trigger_webhooks(channel.user_id, "message_received", {
+        "contact_id": contact.id,
+        "contact_name": contact.name,
+        "channel": channel_type,
+        "text": text
+    }))
 
     if channel_type == "telegram":
         chat_id = payload.get("message", {}).get("chat", {}).get("id", sender_id)
@@ -67,6 +79,13 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
         await send_whatsapp(channel, sender_id, reply)
     elif channel_type == "sms":
         await send_sms(channel, sender_id, reply)
+
+    # Trigger webhooks for message sent (reply)
+    asyncio.create_task(trigger_webhooks(channel.user_id, "message_sent", {
+        "contact_id": contact.id,
+        "channel": channel_type,
+        "reply": reply
+    }))
 
 
 async def _get_agent_reply(db, agent: Agent, message: str) -> str:

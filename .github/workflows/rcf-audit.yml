@@ -1,0 +1,29 @@
+name: RCF Protocol Audit
+
+on:
+  push:
+    branches: [ main, feature/** ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  rcf-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install RCF CLI
+        run: pip install rcf-cli==2.0.3
+
+      - name: Run RCF Compliance Audit
+        env:
+          RCF_LICENSE_KEY: ${{ secrets.RCF_LICENSE_KEY }}
+        run: |
+          # Perform security audit using Restricted Correlation Framework v2.0.3
+          rcf-cli audit . --license-key "$RCF_LICENSE_KEY"

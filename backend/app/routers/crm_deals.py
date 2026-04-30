@@ -32,6 +32,17 @@ async def create_deal(body: DealCreate, user: User = Depends(get_current_user), 
     db.add(deal)
     await db.commit()
     await db.refresh(deal)
+
+    # Trigger webhook
+    from app.services.webhook_service import trigger_webhooks
+    import asyncio
+    asyncio.create_task(trigger_webhooks(user.id, "deal_created", {
+        "deal_id": deal.id,
+        "title": deal.title,
+        "amount": deal.amount,
+        "stage": deal.stage
+    }))
+
     return deal
 
 
@@ -68,6 +79,16 @@ async def move_stage(deal_id: int, stage: str, user: User = Depends(get_current_
     deal.stage = stage
     await db.commit()
     await db.refresh(deal)
+
+    # Trigger webhook
+    from app.services.webhook_service import trigger_webhooks
+    import asyncio
+    asyncio.create_task(trigger_webhooks(user.id, "deal_updated", {
+        "deal_id": deal.id,
+        "title": deal.title,
+        "new_stage": stage
+    }))
+
     return deal
 
 
