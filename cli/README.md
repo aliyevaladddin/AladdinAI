@@ -5,11 +5,11 @@ The official bootstrap tool for the **AladdinAI Platform**.
 This tool allows you to deploy the full AladdinAI ecosystem, including the AI Orchestrator, CRM integration, and the Desktop Application, with a single command.
 
 ## 🚀 Installation
-
+ 
 You don't need to install this package globally. Just run:
 
 ```bash
-npx @auroraaccess/aladdin-ai
+npx aladdin-ai
 ```
 
 ## ✨ What's included?
