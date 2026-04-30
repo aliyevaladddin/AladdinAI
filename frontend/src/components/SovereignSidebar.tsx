@@ -10,7 +10,7 @@ const navItems = [
   { name: "Comms", icon: "forum", href: "/dashboard/comms", activeIcon: true },
 ];
 
-export function Sidebar() {
+export function SovereignSidebar() {
   const pathname = usePathname();
 
   return (

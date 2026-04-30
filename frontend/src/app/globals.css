@@ -6,11 +6,14 @@
   --background: #131313;
   --foreground: #e2e2e2;
   --cyan-primary: #00fbfb;
+  --on-background: #e2e2e2;
 }
 
 @layer base {
   body {
-    @apply bg-background text-on-background h-screen w-screen overflow-hidden flex bg-grid-pattern selection:bg-cyan-500/30;
+    background-color: var(--background);
+    color: var(--on-background);
+    @apply h-screen w-screen overflow-hidden flex bg-grid-pattern selection:bg-cyan-500/30;
     background-size: 32px 32px;
     font-family: 'Inter', sans-serif;
   }
