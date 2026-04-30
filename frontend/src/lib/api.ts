@@ -26,3 +26,16 @@ export async function fetchDeals() {
   if (!res.ok) throw new Error("Failed to fetch deals");
   return res.json();
 }
+
+// Compatibility object for existing code
+export const api = {
+  getStats: fetchStats,
+  getAgents: fetchAgents,
+  getDeals: fetchDeals,
+  // Add other methods if needed by existing pages
+  get: async (path: string) => {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_URL}${path}`, { headers });
+    return res.json();
+  }
+};
