@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-latest, windows-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
 
     steps:
       - name: Checkout code
@@ -32,18 +32,18 @@ jobs:
         working-directory: ./frontend
         run: npm install
 
-      - name: Build Next.js App
+      - name: Build & Release Electron App
         working-directory: ./frontend
-        run: npm run build
-
-      - name: Build Electron App
-        working-directory: ./frontend
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run electron:build
+        env:
+          GITHUB_TOKEN: ${{ secrets.PATH_TOKEN }}
         
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: AladdinAI-${{ matrix.os }}
-          path: frontend/dist/*.${{ matrix.os == 'windows-latest' && 'exe' || 'dmg' }}
+          path: |
+            frontend/dist/*.exe
+            frontend/dist/*.dmg
+            frontend/dist/*.AppImage
+            frontend/dist/*.zip
