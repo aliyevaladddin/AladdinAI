@@ -1,82 +1,192 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --background: #131313;
-  --foreground: #e2e2e2;
-  --cyan-primary: #00fbfb;
-  --on-background: #e2e2e2;
-  --grid-color: rgba(255, 255, 255, 0.03);
-  --cyan-glow: 0 0 15px rgba(0, 255, 255, 0.15);
-}
+@theme inline {
+  --color-bg: #0F1115;
+  --color-surface: #181B22;
+  --color-surface-2: #1F232C;
+  --color-border: #262932;
+  --color-border-strong: #353945;
 
-::selection {
-  background-color: rgba(0, 251, 251, 0.3);
-  color: white;
+  --color-fg: #E8EAED;
+  --color-fg-muted: #8B92A0;
+  --color-fg-subtle: #5A6170;
+
+  --color-accent: #7C8FA8;
+  --color-accent-hover: #8E9FB6;
+  --color-accent-soft: rgba(124, 143, 168, 0.12);
+
+  --color-success: #6B9080;
+  --color-warning: #C8A06B;
+  --color-danger: #B85C5C;
+
+  --color-success-soft: rgba(107, 144, 128, 0.12);
+  --color-warning-soft: rgba(200, 160, 107, 0.12);
+  --color-danger-soft: rgba(184, 92, 92, 0.12);
+
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 @layer base {
-  body {
-    background-color: var(--background);
-    color: var(--on-background);
-    background-image: 
-      linear-gradient(to right, var(--grid-color) 1px, transparent 1px), 
-      linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
-    background-size: 32px 32px;
-    @apply h-screen w-screen overflow-hidden flex;
-    font-family: 'Inter', sans-serif;
+  * {
+    border-color: var(--color-border);
   }
 
-  h1, h2, h3, h4 {
-    font-family: 'Space Grotesk', sans-serif;
+  html, body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-fg);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border-radius: 5px;
+    border: 2px solid var(--color-bg);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-fg-subtle);
   }
 }
 
 @layer components {
-  .glass-panel {
-    background-color: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: var(--cyan-glow);
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
   }
 
-  .tech-border {
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  .input {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-fg);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    width: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .input::placeholder {
+    color: var(--color-fg-subtle);
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
   }
 
-  .cyan-text-glow {
-    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
-  .clip-path-polygon {
-    clip-path: polygon(0 0, 100% 0, 95% 100%, 0% 100%);
+  .btn-primary {
+    background: var(--color-fg);
+    color: var(--color-bg);
+    border: 1px solid var(--color-fg);
   }
-}
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-fg-muted);
+    border-color: var(--color-fg-muted);
+  }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
+  .btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-fg);
+    border: 1px solid var(--color-border);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-surface-2);
+    border-color: var(--color-border-strong);
+  }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-fg-muted);
+    border: 1px solid transparent;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--color-surface);
+    color: var(--color-fg);
+  }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 255, 0.2);
-  border-radius: 2px;
-}
+  .btn-danger {
+    background: transparent;
+    color: var(--color-danger);
+    border: 1px solid var(--color-border);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--color-danger-soft);
+    border-color: var(--color-danger);
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 255, 0.4);
-}
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-fg-muted);
+  }
+  .badge-success {
+    background: var(--color-success-soft);
+    border-color: transparent;
+    color: var(--color-success);
+  }
+  .badge-warning {
+    background: var(--color-warning-soft);
+    border-color: transparent;
+    color: var(--color-warning);
+  }
+  .badge-danger {
+    background: var(--color-danger-soft);
+    border-color: transparent;
+    color: var(--color-danger);
+  }
+  .badge-accent {
+    background: var(--color-accent-soft);
+    border-color: transparent;
+    color: var(--color-accent);
+  }
 
-.font-data-mono {
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.font-space {
-  font-family: 'Space Grotesk', sans-serif;
+  .table-row {
+    border-top: 1px solid var(--color-border);
+  }
+  .table-row:hover {
+    background: var(--color-surface-2);
+  }
 }
