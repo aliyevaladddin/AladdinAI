@@ -1,10 +1,48 @@
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, Request, Depends, HTTPException
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import async_session
+from app.database import async_session, get_db
 from app.models.messaging_channel import MessagingChannel
+from app.models.outgoing_webhook import OutgoingWebhook
+from app.models.user import User
+from app.security import get_current_user
+from app.schemas.webhook import OutgoingWebhookCreate, OutgoingWebhookResponse
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
+
+# ... (incoming handlers kept below)
+
+@router.get("/outgoing", response_model=list[OutgoingWebhookResponse])
+async def list_outgoing_webhooks(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(OutgoingWebhook).where(OutgoingWebhook.user_id == user.id))
+    return result.scalars().all()
+
+@router.post("/outgoing", response_model=OutgoingWebhookResponse)
+async def create_outgoing_webhook(body: OutgoingWebhookCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    webhook = OutgoingWebhook(
+        user_id=user.id,
+        name=body.name,
+        url=body.url,
+        secret=body.secret,
+        events=body.events,
+        is_active=body.is_active
+    )
+    db.add(webhook)
+    await db.commit()
+    await db.refresh(webhook)
+    return webhook
+
+@router.delete("/outgoing/{webhook_id}", status_code=204)
+async def delete_outgoing_webhook(webhook_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(OutgoingWebhook).where(OutgoingWebhook.id == webhook_id, OutgoingWebhook.user_id == user.id))
+    webhook = result.scalar_one_or_none()
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    await db.delete(webhook)
+    await db.commit()
+
+# --- Incoming Handlers ---
 
 
 async def _get_channel(channel_id: int) -> MessagingChannel | None:

@@ -47,6 +47,25 @@ async def connect_provider(provider_id: int, user: User = Depends(get_current_us
         headers["Authorization"] = f"Bearer {provider.api_key_encrypted}"
 
     try:
+        if provider.type == "huggingface":
+            # For Hugging Face, we verify the token and return recommended models
+            headers = {"Authorization": f"Bearer {provider.api_key_encrypted}"}
+            async with httpx.AsyncClient(timeout=15) as client:
+                resp = await client.get("https://huggingface.co/api/whoami-v2", headers=headers)
+                resp.raise_for_status()
+            
+            # Recommended models (including your MiniCPM3!)
+            model_ids = [
+                "openbmb/MiniCPM3-4B", 
+                "google/gemma-2-9b-it",
+                "mistralai/Mistral-7B-v0.3",
+                "meta-llama/Meta-Llama-3-8B-Instruct"
+            ]
+            provider.status = "connected"
+            provider.models_available = json.dumps(model_ids)
+            await db.commit()
+            return {"status": "connected", "models": model_ids, "count": len(model_ids)}
+
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(f"{provider.base_url}/v1/models", headers=headers)
             resp.raise_for_status()
