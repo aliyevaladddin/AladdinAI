@@ -13,17 +13,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.11'
+          node-version: '20'
 
-      - name: Install RCF CLI
-        run: pip install rcf-cli==2.0.3
+      - name: Install RCF Protocol
+        run: npm install -g rcf-protocol@2.0.3
 
       - name: Run RCF Compliance Audit
         env:
           RCF_LICENSE_KEY: ${{ secrets.RCF_LICENSE_KEY }}
         run: |
-          # Perform security audit using Restricted Correlation Framework v2.0.3
-          rcf-cli audit . --license-key "$RCF_LICENSE_KEY"
+          # Perform security audit using Restricted Correlation Framework (NPM version)
+          rcf-protocol audit . --license-key "$RCF_LICENSE_KEY"
