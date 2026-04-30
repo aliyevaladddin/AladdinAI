@@ -26,6 +26,8 @@ jobs:
 
       - name: Publish to NPM
         working-directory: ./cli
-        run: npm publish --access public
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_API_TOKEN }}" > .npmrc
+          npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_API_TOKEN }}
