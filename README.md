@@ -12,13 +12,20 @@ Built with support for cutting-edge architectures like **MiniCPM3** and secured 
 
 ## 🚀 Quick Start
 
-Install the full platform (Desktop App or Source Code) with a single command:
+Get the full AladdinAI experience in seconds. Choose between the native **Desktop App** or the **Source Code** for developers.
 
 ```bash
-npx @auroraaccess/aladdin-ai
+npx aladdin-ai
 ```
 
 ---
+
+### 🖥️ Native Desktop Experience
+After running the command above, you can select **"Install Desktop App"** to get a high-performance, standalone version of AladdinAI for your OS (macOS, Windows, or Linux). 
+
+- **Privacy First**: All data stays on your machine.
+- **System Integration**: Native notifications and background tasks.
+- **Zero Config**: No need to worry about Python or Node.js environments.
 
 ## ✨ Key Features
 
