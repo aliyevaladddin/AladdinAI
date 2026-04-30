@@ -1,3 +1,5 @@
+# NOTICE: This file is protected under RCF-PL v1.2.8
+# [RCF:RESTRICTED]
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException, status

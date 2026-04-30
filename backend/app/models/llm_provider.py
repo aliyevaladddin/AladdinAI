@@ -12,7 +12,7 @@ class LLMProvider(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(255))
-    type: Mapped[str] = mapped_column(String(50))  # nvidia_nim, openai, anthropic, ollama, custom
+    type: Mapped[str] = mapped_column(String(50))  # nvidia_nim, openai, anthropic, ollama, huggingface, custom
     api_key_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     base_url: Mapped[str] = mapped_column(String(500))
     models_available: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
