@@ -11,6 +11,11 @@
   --cyan-glow: 0 0 15px rgba(0, 255, 255, 0.15);
 }
 
+::selection {
+  background-color: rgba(0, 251, 251, 0.3);
+  color: white;
+}
+
 @layer base {
   body {
     background-color: var(--background);
@@ -19,7 +24,7 @@
       linear-gradient(to right, var(--grid-color) 1px, transparent 1px), 
       linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
     background-size: 32px 32px;
-    @apply h-screen w-screen overflow-hidden flex selection:bg-cyan-500/30;
+    @apply h-screen w-screen overflow-hidden flex;
     font-family: 'Inter', sans-serif;
   }
 
