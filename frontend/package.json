@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "rcf:check": "rcf-cli scan ."
+    "rcf:check": "rcf-cli audit ."
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
