@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'cli/**'
-  workflow_dispatch: # Позволяет запустить публикацию вручную
+  workflow_dispatch:
 
 jobs:
   publish:
