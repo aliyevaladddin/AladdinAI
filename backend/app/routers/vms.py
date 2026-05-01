@@ -9,7 +9,7 @@ from app.models.vm import VMConnection
 from app.schemas.connections import VMCreate, VMResponse
 from app.security import get_current_user
 
-router = APIRouter(prefix="/vms", tags=["vms"])
+router = APIRouter(tags=["vms"])
 
 
 @router.get("", response_model=list[VMResponse])
@@ -27,6 +27,7 @@ async def create_vm(body: VMCreate, user: User = Depends(get_current_user), db: 
         port=body.port,
         username=body.username,
         ssh_key_encrypted=body.ssh_key,
+        password_encrypted=body.password,
     )
     db.add(vm)
     await db.commit()
@@ -49,9 +50,11 @@ async def connect_vm(vm_id: int, user: User = Depends(get_current_user), db: Asy
         "connect_timeout": 10,
     }
 
-    # Если есть SSH-ключ — используем его, иначе пробуем без аутентификации по паролю
+    # Если есть SSH-ключ — используем его, иначе пробуем пароль
     if vm.ssh_key_encrypted:
         connect_kwargs["client_keys"] = [asyncssh.import_private_key(vm.ssh_key_encrypted)]
+    elif vm.password_encrypted:
+        connect_kwargs["password"] = vm.password_encrypted
     else:
         connect_kwargs["password"] = ""
 

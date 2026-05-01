@@ -7,6 +7,7 @@ class VMCreate(BaseModel):
     port: int = 22
     username: str = "root"
     ssh_key: str | None = None
+    password: str | None = None
 
 
 class VMResponse(BaseModel):
