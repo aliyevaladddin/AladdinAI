@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +16,7 @@ from app.schemas.router import (
     ChatSessionResponse,
 )
 from app.security import get_current_user
+from app.services.llm_service import LLMError, chat_completion
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -165,37 +165,23 @@ async def chat(
         db.add(session)
         await db.flush()  # получаем session.id без commit
 
-    # Загружаем историю сообщений для контекста (последние 20)
+    # Загружаем последние 20 сообщений сессии для контекста
     result = await db.execute(
         select(ChatMessage)
         .where(ChatMessage.session_id == session.id)
-        .order_by(ChatMessage.created_at.asc())
+        .order_by(ChatMessage.created_at.desc())
         .limit(20)
     )
-    history = result.scalars().all()
+    history = list(reversed(result.scalars().all()))
 
-    # Строим messages payload для LLM
     messages_payload = [{"role": "system", "content": agent.system_prompt}]
     for msg in history:
         messages_payload.append({"role": msg.role, "content": msg.content})
     messages_payload.append({"role": "user", "content": body.message})
 
-    # Запрос к LLM
-    headers = {"Content-Type": "application/json"}
-    if provider.api_key_encrypted:
-        headers["Authorization"] = f"Bearer {provider.api_key_encrypted}"
-
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(
-                f"{provider.base_url}/v1/chat/completions",
-                json={"model": agent.model, "messages": messages_payload},
-                headers=headers,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            reply = data["choices"][0]["message"]["content"]
-    except Exception as e:
+        reply = await chat_completion(provider, agent.model, messages_payload)
+    except LLMError as e:
         raise HTTPException(status_code=502, detail=f"LLM request failed: {e}")
 
     # Сохраняем оба сообщения в БД

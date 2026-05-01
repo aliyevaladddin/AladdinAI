@@ -1,4 +1,3 @@
-import httpx
 from sqlalchemy import select
 
 from app.database import async_session
@@ -6,6 +5,7 @@ from app.models.agent import Agent
 from app.models.llm_provider import LLMProvider
 from app.models.messaging_channel import MessagingChannel
 from app.services.crm_service import find_or_create_contact, log_activity
+from app.services.llm_service import LLMError, chat_completion
 from app.services.messaging_service import (
     parse_sms_message,
     parse_telegram_message,
