@@ -21,7 +21,7 @@ interface ConnectResult {
 export default function VMsPage() {
   const [vms, setVms] = useState<VM[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", host: "", port: "22", username: "root", ssh_key: "" });
+  const [form, setForm] = useState({ name: "", host: "", port: "22", username: "root", ssh_key: "", password: "" });
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<Record<number, ConnectResult>>({});
 
@@ -36,8 +36,9 @@ export default function VMsPage() {
       port: parseInt(form.port),
       username: form.username,
       ssh_key: form.ssh_key || null,
+      password: form.password || null,
     });
-    setForm({ name: "", host: "", port: "22", username: "root", ssh_key: "" });
+    setForm({ name: "", host: "", port: "22", username: "root", ssh_key: "", password: "" });
     setShowForm(false);
     load();
   };
@@ -110,6 +111,13 @@ export default function VMsPage() {
               className="rounded-md border border-input bg-background px-3 py-2 text-sm"
             />
           </div>
+          <input
+            placeholder="Password (optional, for password auth)"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            type="password"
+          />
           <textarea
             placeholder="SSH Private Key (paste full key, optional)"
             value={form.ssh_key}
