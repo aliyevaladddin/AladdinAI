@@ -2,7 +2,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   if (typeof window === "undefined") return {};
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("access_token");
   return token ? { "Authorization": `Bearer ${token}` } : {};
 }
 
@@ -33,26 +33,31 @@ export const api = {
   getAgents: fetchAgents,
   getDeals: fetchDeals,
   
-  // Auth state management - now supports null for logout
+  // Auth state management
   setToken: (token: string | null) => {
     if (typeof window !== "undefined") {
       if (token) {
-        localStorage.setItem("token", token);
+        localStorage.setItem("access_token", token);
       } else {
-        localStorage.removeItem("token");
+        localStorage.removeItem("access_token");
       }
     }
   },
   removeToken: () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
+      localStorage.removeItem("access_token");
     }
   },
 
   get: async <T = any>(path: string): Promise<T> => {
     const headers = await getAuthHeader();
-    const res = await fetch(`${API_URL}${path}`, { headers });
-    if (!res.ok) throw new Error(`Failed to fetch ${path}`);
+    const url = `${API_URL}${path}`;
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "No error body");
+      console.error(`[API ERROR] GET ${path} | Status: ${res.status} | Body: ${errorText}`);
+      throw new Error(`Failed to fetch ${path} (Status: ${res.status})`);
+    }
     return res.json();
   },
 
@@ -64,6 +69,7 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) throw new Error(`Failed to POST to ${path}`);
+    if (res.status === 204) return {} as T;
     return res.json();
   },
 
@@ -75,6 +81,7 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) throw new Error(`Failed to PUT to ${path}`);
+    if (res.status === 204) return {} as T;
     return res.json();
   },
 
@@ -85,6 +92,7 @@ export const api = {
       headers,
     });
     if (!res.ok) throw new Error(`Failed to DELETE ${path}`);
+    if (res.status === 204) return {} as T;
     return res.json();
   }
 };
