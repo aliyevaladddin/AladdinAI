@@ -59,6 +59,54 @@ After running the command above, you can select **"Install Desktop App"** to get
 
 ---
 
+## 🧑‍💻 Development
+
+### Prerequisites
+- Python 3.11+
+- Node.js 20+
+- Docker (optional, for Postgres)
+
+### Setup
+```bash
+# 1. Copy env file
+cp .env.example .env
+
+# 2. Install backend deps (creates .venv)
+make install              # or: ./scripts/install.sh
+
+# 3. Install frontend deps
+cd frontend && npm install && cd ..
+
+# 4. Apply database migrations
+make migrate              # or: ./scripts/migrate.sh
+```
+
+By default the backend uses local SQLite (`backend/aladdinai.db`). To use Postgres,
+set `DATABASE_URL` in `.env` and run `docker compose up postgres -d` first.
+
+### Running
+```bash
+make dev-backend          # FastAPI on :8000  (or: ./scripts/dev-backend.sh)
+make dev-frontend         # Next.js on :3000  (or: ./scripts/dev-frontend.sh)
+
+# Full stack via docker compose
+make up                   # docker compose up --build
+```
+
+### Migrations
+```bash
+make migration m="add foo table"   # autogenerate from model changes
+make migrate                       # apply pending migrations
+make downgrade                     # roll back one step
+```
+
+### All Make targets
+```bash
+make help
+```
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions! AladdinAI is built by the community. 

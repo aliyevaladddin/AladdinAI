@@ -1,23 +1,15 @@
 # NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:PROTECTED]
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import init_db
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
     chat, crm_activities, crm_contacts, crm_deals, dashboard, mongodb,
     providers, router_config, vms, webhooks
 )
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await init_db()
-    yield
-
-app = FastAPI(title="AladdinAI API", lifespan=lifespan)
+app = FastAPI(title="AladdinAI API")
 
 app.add_middleware(
     CORSMiddleware,
