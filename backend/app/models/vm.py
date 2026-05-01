@@ -16,5 +16,6 @@ class VMConnection(Base):
     port: Mapped[int] = mapped_column(default=22)
     username: Mapped[str] = mapped_column(String(255), default="root")
     ssh_key_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    password_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="disconnected")
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))

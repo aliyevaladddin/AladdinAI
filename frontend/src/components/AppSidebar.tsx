@@ -15,6 +15,7 @@ import {
   Cpu,
   Sparkles,
   Settings,
+  Terminal,
 } from "lucide-react";
 
 type NavItem = {
@@ -48,6 +49,7 @@ const sections: NavSection[] = [
       { href: "/dashboard/comms", label: "Inbox", icon: MessageSquare },
       { href: "/dashboard/channels", label: "Channels", icon: Network },
       { href: "/dashboard/webhooks", label: "Webhooks", icon: Webhook },
+      { href: "/terminal", label: "Terminal", icon: Terminal },
     ],
   },
   {
