@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
@@ -78,11 +79,16 @@ export default function CommsPage() {
     return map;
   }, [contacts]);
 
+  const notify = (status: string, message: string) =>
+    status === "ok" || status === "success" || status === "connected"
+      ? toast.success(message)
+      : toast.error(message);
+
   const handleTestChannel = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(
       `/channels/messaging/${id}/test`
     );
-    alert(res.message);
+    notify(res.status, res.message);
     load();
   };
 
@@ -90,7 +96,7 @@ export default function CommsPage() {
     const res = await api.post<{ status: string; message: string }>(
       `/channels/email/${id}/sync`
     );
-    alert(res.message);
+    notify(res.status, res.message);
     load();
   };
 
@@ -98,7 +104,7 @@ export default function CommsPage() {
     const res = await api.post<{ status: string; message: string }>(
       `/channels/email/${id}/test`
     );
-    alert(res.message);
+    notify(res.status, res.message);
     load();
   };
 

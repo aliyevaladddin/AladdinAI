@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
@@ -57,20 +58,25 @@ export default function ChannelsPage() {
     loadChannels();
   };
 
+  const notify = (status: string, message: string) =>
+    status === "ok" || status === "success" || status === "connected"
+      ? toast.success(message)
+      : toast.error(message);
+
   const handleTestEmail = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(`/channels/email/${id}/test`);
-    alert(res.message);
+    notify(res.status, res.message);
     loadEmails();
   };
 
   const handleSyncEmail = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(`/channels/email/${id}/sync`);
-    alert(res.message);
+    notify(res.status, res.message);
   };
 
   const handleTestChannel = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(`/channels/messaging/${id}/test`);
-    alert(res.message);
+    notify(res.status, res.message);
     loadChannels();
   };
 
@@ -177,8 +183,10 @@ export default function ChannelsPage() {
                   variant="outline" 
                   size="sm" 
                   onClick={() => {
-                    const base = window.location.origin.replace("3000", "8000"); // typical dev setup fallback
-                    alert(`Your Webhook URL for ${c.type}:\n${base}/api/webhooks/${c.type}/${c.id}`);
+                    const base = window.location.origin.replace("3000", "8000");
+                    const url = `${base}/api/webhooks/${c.type}/${c.id}`;
+                    navigator.clipboard?.writeText(url).catch(() => {});
+                    toast.success(`Webhook URL copied`, { description: url });
                   }}
                 >
                   URL
