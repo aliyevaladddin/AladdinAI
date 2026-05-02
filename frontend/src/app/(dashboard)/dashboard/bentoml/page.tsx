@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Server, Rocket, Loader2, X } from "lucide-react";
@@ -48,10 +49,13 @@ export default function BentoMLPage() {
   const handleTest = async (id: number) => {
     try {
       const res = await api.post<{ status: string; message?: string }>(`/bentoml/${id}/test`);
-      alert(res.message || `Status: ${res.status}`);
+      const msg = res.message || `Status: ${res.status}`;
+      res.status === "ok" || res.status === "success" || res.status === "connected"
+        ? toast.success(msg)
+        : toast.error(msg);
       load();
-    } catch (err) {
-      alert("Test failed");
+    } catch {
+      toast.error("Test failed");
     }
   };
 
@@ -71,14 +75,14 @@ export default function BentoMLPage() {
       );
       
       if (res.status === "deployed") {
-        alert(`Successfully deployed to ${res.endpoint_url}`);
+        toast.success(`Deployed to ${res.endpoint_url}`);
         setShowDeployModal(null);
       } else {
-        alert(`Deploy failed: ${res.message}`);
+        toast.error(`Deploy failed: ${res.message}`);
       }
       load();
-    } catch (err) {
-      alert("Deploy request failed");
+    } catch {
+      toast.error("Deploy request failed");
     } finally {
       setDeployingId(null);
     }

@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
@@ -40,7 +41,7 @@ export default function WebhooksPage() {
   const handleCreate = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (form.events.length === 0) {
-      alert("Please select at least one event.");
+      toast.error("Please select at least one event.");
       return;
     }
     await api.post("/webhooks/outgoing", form);
