@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -21,26 +21,48 @@ interface MessagingChannel {
   status: string;
 }
 
+interface InboundMessage {
+  id: number;
+  contact_id: number;
+  channel: string | null;
+  content: string | null;
+  created_at: string;
+}
+
+interface ContactRef {
+  id: number;
+  name: string;
+}
+
 const TYPE_LABEL: Record<string, string> = {
   telegram: "Telegram",
   whatsapp: "WhatsApp",
   sms: "SMS",
+  email: "Email",
 };
 
 export default function CommsPage() {
   const [emails, setEmails] = useState<EmailAccount[]>([]);
   const [channels, setChannels] = useState<MessagingChannel[]>([]);
+  const [messages, setMessages] = useState<InboundMessage[]>([]);
+  const [contacts, setContacts] = useState<ContactRef[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [e, c] = await Promise.all([
+      const [e, c, m, k] = await Promise.all([
         api.get<EmailAccount[]>("/channels/email"),
         api.get<MessagingChannel[]>("/channels/messaging"),
+        api.get<InboundMessage[]>(
+          "/crm/activities?type=message_in&limit=50"
+        ),
+        api.get<ContactRef[]>("/crm/contacts"),
       ]);
       setEmails(e);
       setChannels(c);
+      setMessages(m);
+      setContacts(k);
     } finally {
       setLoading(false);
     }
@@ -49,6 +71,12 @@ export default function CommsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  const contactNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const c of contacts) map.set(c.id, c.name);
+    return map;
+  }, [contacts]);
 
   const handleTestChannel = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(
@@ -63,6 +91,7 @@ export default function CommsPage() {
       `/channels/email/${id}/sync`
     );
     alert(res.message);
+    load();
   };
 
   const handleTestEmail = async (id: number) => {
@@ -86,15 +115,62 @@ export default function CommsPage() {
             {totalConnected} connected source{totalConnected === 1 ? "" : "s"}
           </p>
         </div>
-        <Link href="/dashboard/channels">
-          <Button>Manage Channels</Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={load}>
+            Refresh
+          </Button>
+          <Link href="/dashboard/channels">
+            <Button>Manage Channels</Button>
+          </Link>
+        </div>
       </div>
 
       {loading ? (
         <p className="text-muted-foreground text-sm">Loading…</p>
       ) : (
         <>
+          <section className="mb-8">
+            <div className="flex items-end justify-between mb-4">
+              <h3 className="text-lg font-semibold">Inbox</h3>
+              <span className="text-xs text-muted-foreground">
+                Last {messages.length} incoming
+              </span>
+            </div>
+            <div className="space-y-2">
+              {messages.map((m) => {
+                const name =
+                  contactNameById.get(m.contact_id) ?? `Contact #${m.contact_id}`;
+                const ch = m.channel ?? "—";
+                return (
+                  <div
+                    key={m.id}
+                    className="rounded-lg border border-border p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-medium truncate">{name}</p>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground uppercase tracking-wide">
+                          {TYPE_LABEL[ch] ?? ch}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {new Date(m.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {m.content || <span className="italic">(no content)</span>}
+                    </p>
+                  </div>
+                );
+              })}
+              {messages.length === 0 && (
+                <p className="text-muted-foreground text-sm">
+                  No incoming messages yet.
+                </p>
+              )}
+            </div>
+          </section>
+
           <section className="mb-8">
             <h3 className="text-lg font-semibold mb-4">Messaging</h3>
             <div className="space-y-3">
