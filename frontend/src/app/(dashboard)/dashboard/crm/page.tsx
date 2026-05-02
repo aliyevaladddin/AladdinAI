@@ -1,114 +1,236 @@
 "use client";
 
-const columns = [
-  {
-    id: "NEW_LEAD",
-    title: "NEW_LEAD",
-    count: 2,
-    deals: [
-      { id: "DL-8942", title: "Nexus Corp Integration", amount: "$145,000", probability: 32, contact: "A. CHEN" },
-    ]
-  },
-  {
-    id: "DISCOVERY",
-    title: "DISCOVERY",
-    count: 1,
-    deals: [
-      { id: "DL-9011", title: "Aegis Defense Systems", amount: "$850,000", probability: 68, contact: "S. VANCE" },
-    ]
-  },
-  {
-    id: "PROPOSAL",
-    title: "PROPOSAL",
-    count: 0,
-    deals: []
-  }
-];
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
-export default function CRMPage() {
+interface Contact {
+  id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  company: string | null;
+  tags: string[] | null;
+  source: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+const EMPTY_FORM = {
+  name: "",
+  email: "",
+  phone: "",
+  company: "",
+  source: "",
+  tags: "",
+  notes: "",
+};
+
+export default function ContactsPage() {
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [search, setSearch] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const data = await api.get<Contact[]>("/crm/contacts");
+      setContacts(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const tags = form.tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    await api.post("/crm/contacts", {
+      name: form.name,
+      email: form.email || null,
+      phone: form.phone || null,
+      company: form.company || null,
+      source: form.source || null,
+      tags: tags.length ? tags : null,
+      notes: form.notes || null,
+    });
+    setForm(EMPTY_FORM);
+    setShowForm(false);
+    load();
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this contact?")) return;
+    await api.delete(`/crm/contacts/${id}`);
+    load();
+  };
+
+  const filtered = contacts.filter((c) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(q) ||
+      (c.email ?? "").toLowerCase().includes(q) ||
+      (c.company ?? "").toLowerCase().includes(q)
+    );
+  });
+
   return (
-    <div className="space-y-stack-lg animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="flex justify-between items-end border-b border-white/5 pb-4 bg-surface-plate/40 p-4 rounded-t-lg">
+    <div>
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-black font-header tracking-[0.2em] text-on-background uppercase">DEAL_MATRIX</h1>
-          <div className="flex items-center gap-3 mt-2">
-            <span className="text-[10px] font-mono text-cyan-400 flex items-center gap-1">
-              <span className="material-symbols-outlined text-[12px]">security</span> END-TO-END ENCRYPTED
-            </span>
-            <span className="text-[10px] font-mono text-white/30 uppercase">// SOVEREIGN DATA ACTIVE</span>
-          </div>
+          <h2 className="text-2xl font-bold">Contacts</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {contacts.length} total
+          </p>
         </div>
-        <div className="flex gap-4">
-          <button className="flex items-center gap-2 text-[10px] font-header font-bold text-white/60 hover:text-white border border-white/10 px-4 py-2 uppercase tracking-widest transition-all">
-            <span className="material-symbols-outlined text-sm">filter_alt</span> Filter
-          </button>
-          <button className="flex items-center gap-2 bg-cyan-400 text-black font-header font-bold px-4 py-2 uppercase tracking-widest text-[10px] hover:bg-cyan-300 transition-all shadow-cyan-pulse">
-            <span className="material-symbols-outlined text-sm">add</span> New_Deal
-          </button>
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/deals">
+            <Button variant="outline">Deals</Button>
+          </Link>
+          <Button onClick={() => setShowForm(!showForm)}>
+            {showForm ? "Cancel" : "New Contact"}
+          </Button>
         </div>
       </div>
 
-      {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter h-[calc(100vh-250px)]">
-        {columns.map(column => (
-          <div key={column.id} className="flex flex-col gap-4">
-            <div className="flex justify-between items-center bg-surface-plate/60 border border-white/10 p-3">
-              <span className="text-xs font-header font-bold tracking-widest uppercase">{column.title}</span>
-              <span className="text-[10px] font-mono text-white/30 bg-white/5 px-1.5 py-0.5">{column.count.toString().padStart(2, '0')}</span>
-            </div>
-
-            <div className="flex-1 space-y-4 overflow-y-auto pr-2">
-              {column.deals.map(deal => (
-                <div key={deal.id} className="glass-panel p-4 hover:border-cyan-400/50 transition-all cursor-pointer group relative">
-                   <div className="flex justify-between items-start mb-4">
-                      <span className="text-[9px] font-mono text-cyan-400/60 uppercase tracking-widest">ID: {deal.id}</span>
-                      <span className="material-symbols-outlined text-cyan-400 text-sm">shield</span>
-                   </div>
-                   
-                   <h3 className="text-sm font-header font-bold text-on-background mb-1 group-hover:text-cyan-400 transition-colors uppercase tracking-tight">
-                      {deal.title}
-                   </h3>
-                   <p className="text-lg font-black font-header mb-4">{deal.amount}</p>
-
-                   <div className="space-y-1 mb-6">
-                      <div className="flex justify-between text-[9px] font-mono uppercase tracking-widest">
-                        <span className="text-white/30">AI_Probability</span>
-                        <span className="text-cyan-400">{deal.probability}%</span>
-                      </div>
-                      <div className="w-full h-1 bg-white/5 overflow-hidden">
-                        <div 
-                          className="h-full bg-cyan-400 shadow-cyan-pulse transition-all duration-1000" 
-                          style={{ width: `${deal.probability}%` }}
-                        ></div>
-                      </div>
-                   </div>
-
-                   <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-[12px] text-white/40">person</span>
-                        </div>
-                        <span className="text-[10px] font-mono text-white/60 uppercase">{deal.contact}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="text-white/20 hover:text-cyan-400 transition-colors"><span className="material-symbols-outlined text-sm">mail</span></button>
-                        <button className="text-white/20 hover:text-cyan-400 transition-colors"><span className="material-symbols-outlined text-sm">call</span></button>
-                      </div>
-                   </div>
-                </div>
-              ))}
-
-              {column.deals.length === 0 && (
-                <div className="h-full border-2 border-dashed border-white/5 flex flex-col items-center justify-center opacity-20 hover:opacity-40 transition-all group">
-                   <span className="material-symbols-outlined text-4xl mb-2 group-hover:animate-pulse">layers</span>
-                   <span className="text-[10px] font-mono uppercase tracking-[0.2em]">Drop_Zone</span>
-                </div>
-              )}
-            </div>
+      {showForm && (
+        <form
+          onSubmit={handleCreate}
+          className="mb-6 rounded-lg border border-border p-4 space-y-3"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              placeholder="Name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+              required
+            />
+            <input
+              placeholder="Company"
+              value={form.company}
+              onChange={(e) => setForm({ ...form, company: e.target.value })}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
           </div>
-        ))}
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              placeholder="Email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+            <input
+              placeholder="Phone"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              placeholder="Source (e.g. website, referral)"
+              value={form.source}
+              onChange={(e) => setForm({ ...form, source: e.target.value })}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+            <input
+              placeholder="Tags (comma separated)"
+              value={form.tags}
+              onChange={(e) => setForm({ ...form, tags: e.target.value })}
+              className="rounded-md border border-input bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <textarea
+            placeholder="Notes"
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            rows={3}
+          />
+          <Button type="submit">Create Contact</Button>
+        </form>
+      )}
+
+      <div className="mb-4">
+        <input
+          placeholder="Search by name, email, or company…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        />
       </div>
+
+      {loading ? (
+        <p className="text-muted-foreground text-sm">Loading…</p>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center justify-between rounded-lg border border-border p-4"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium truncate">{c.name}</p>
+                  {c.company && (
+                    <span className="text-xs text-muted-foreground">
+                      · {c.company}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground truncate">
+                  {[c.email, c.phone].filter(Boolean).join(" · ") || "—"}
+                </p>
+                {c.tags && c.tags.length > 0 && (
+                  <div className="flex gap-1 mt-2 flex-wrap">
+                    {c.tags.map((t) => (
+                      <span
+                        key={t}
+                        className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {c.source && (
+                  <span className="text-xs px-2 py-1 rounded bg-zinc-500/20 text-zinc-400">
+                    {c.source}
+                  </span>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDelete(c.id)}
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <p className="text-muted-foreground text-sm">
+              {contacts.length === 0
+                ? "No contacts yet."
+                : "No contacts match your search."}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
