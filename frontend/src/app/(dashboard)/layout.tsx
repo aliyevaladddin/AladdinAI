@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
+import { Toaster } from "sonner";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
 
@@ -36,6 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <AppHeader />
         <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
       </div>
+      <Toaster theme="dark" richColors position="top-right" />
     </div>
   );
 }
