@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
@@ -29,7 +30,10 @@ export default function MongoDBPage() {
 
   const handleTest = async (id: number) => {
     const res = await api.post<{ status: string; message?: string }>(`/mongodb/${id}/test`);
-    alert(res.message || res.status);
+    const msg = res.message || res.status;
+    res.status === "ok" || res.status === "success" || res.status === "connected"
+      ? toast.success(msg)
+      : toast.error(msg);
   };
 
   const handleDelete = async (id: number) => {
