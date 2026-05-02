@@ -291,22 +291,28 @@ export default function SovereignTerminal() {
       </header>
 
       <main
-        className="flex-1 overflow-y-auto relative bg-[#09090b] scrollbar-hide"
+        className="flex-1 overflow-hidden relative bg-[#09090b]"
         onClick={() => xtermRef.current?.focus()}
       >
         <style dangerouslySetInnerHTML={{
           __html: `
           .xterm-viewport { padding: 0 !important; margin: 0 !important; }
           .xterm-decoration-container { top: 0 !important; }
-          /* Hide xterm's own scrollbar to use the container's one */
-          .xterm-viewport::-webkit-scrollbar { display: none; }
+          .terminal-glass {
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow:
+              0 0 0 1px rgba(255, 255, 255, 0.03),
+              0 4px 24px rgba(0, 0, 0, 0.4),
+              0 1px 3px rgba(0, 0, 0, 0.3),
+              inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            background: #0c0c0e;
+          }
         ` }} />
-        <div className="flex flex-col w-full">
-          {/* 70% Terminal Area */}
-          <div ref={terminalRef} className="w-full h-[70vh]" />
-          
-          {/* 30% Black Spacer - Aladdin's request */}
-          <div className="h-[30vh] w-full bg-[#09090b]" />
+        <div className="flex flex-col w-full h-full max-w-6xl mx-auto px-6 py-4">
+          {/* Terminal Area - fills all available space */}
+          <div className="terminal-glass rounded-lg overflow-hidden flex-1">
+            <div ref={terminalRef} className="w-full h-full p-2" />
+          </div>
         </div>
       </main>
 

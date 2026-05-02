@@ -124,8 +124,11 @@ async def deploy_bentoml(
     try:
         async with asyncssh.connect(**connect_kwargs) as conn:
             print("DEBUG: SSH Connected. Checking for BentoML...")
-            # Check if bentoml is installed
-            check = await conn.run("bentoml --version", timeout=10)
+            # Activate venv prefix for all commands (Termux installs into .venv)
+            venv = "source ~/.venv/bin/activate 2>/dev/null; "
+            
+            # Check if bentoml is installed (in venv or globally)
+            check = await conn.run(f"{venv}bentoml --version", timeout=10)
             if check.exit_status != 0:
                 print("DEBUG: BentoML not found, preparing environment and installing...")
                 # Prepare environment for compilation on Termux
@@ -133,7 +136,7 @@ async def deploy_bentoml(
                 
                 # Install bentoml (heavy operation, needs 600s timeout)
                 install = await conn.run(
-                    "pip install bentoml --break-system-packages || pip3 install bentoml --break-system-packages", 
+                    f"{venv}pip install bentoml --break-system-packages || pip3 install bentoml --break-system-packages", 
                     timeout=600
                 )
                 if install.exit_status != 0:
@@ -155,8 +158,8 @@ async def deploy_bentoml(
             # Start BentoML in background
             print(f"DEBUG: Starting BentoML serve {body.service_name}")
             start_cmd = (
-                f"nohup bentoml serve {body.service_name} "
-                f"--host 0.0.0.0 --port {body.port} "
+                f"nohup bash -c '{venv}bentoml serve {body.service_name} "
+                f"--host 0.0.0.0 --port {body.port}' "
                 f"> /tmp/bentoml_{body.port}.log 2>&1 &"
             )
             start_result = await conn.run(start_cmd, timeout=10)
