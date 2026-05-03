@@ -62,7 +62,7 @@ async def terminal_websocket(websocket: WebSocket, vm_id: int):
                 "port": vm.port,
                 "username": vm.username,
                 "known_hosts": None,
-                "connect_timeout": 15,
+                "connect_timeout": 30,
             }
             if vm.ssh_key_encrypted:
                 connect_kwargs["client_keys"] = [asyncssh.import_private_key(vm.ssh_key_encrypted)]
@@ -97,14 +97,21 @@ async def terminal_websocket(websocket: WebSocket, vm_id: int):
                     print("DEBUG: WebSocket disconnected by client")
                 finally: 
                     for t in tasks: t.cancel()
-                    print("DEBUG: SSH cleanup done")
+        except asyncio.TimeoutError:
+            print(f"DEBUG: SSH Connection Timeout for VM {vm_id}")
+            await websocket.send_text(json.dumps({"type": "error", "message": "\r\n\x1b[31mError: Connection Timeout. Is the VM/Phone reachable?\x1b[0m\r\n"}))
+        except asyncssh.PermissionDenied:
+            print(f"DEBUG: SSH Permission Denied for VM {vm_id}")
+            await websocket.send_text(json.dumps({"type": "error", "message": "\r\n\x1b[31mError: Permission Denied. Check username/password.\x1b[0m\r\n"}))
         except Exception as e:
-            print(f"DEBUG: Terminal General Error: {e}")
+            print(f"DEBUG: Terminal General Error: {str(e)}")
             import traceback
             traceback.print_exc()
+            await websocket.send_text(json.dumps({"type": "error", "message": f"\r\n\x1b[31mError: {str(e)}\x1b[0m\r\n"}))
+        finally:
+            print("DEBUG: SSH cleanup done")
             try:
-                if websocket.client_state.name != "DISCONNECTED":
-                    await websocket.close()
+                await websocket.close()
             except: pass
 
 app.include_router(auth.router, prefix="/api")
@@ -120,7 +127,7 @@ app.include_router(crm_deals.router, prefix="/api")
 app.include_router(crm_activities.router, prefix="/api")
 app.include_router(vms.router, prefix="/api/vms")
 app.include_router(mongodb.router, prefix="/api")
-app.include_router(bentoml.router, prefix="/api")
+app.include_router(bentoml.router, prefix="/api/bentoml", tags=["BentoML"])
 app.include_router(webhooks.router, prefix="/api")
 app.include_router(ssh_exec.router, prefix="/api")
 

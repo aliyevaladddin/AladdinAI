@@ -1,99 +1,108 @@
-import os
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 import asyncssh
-import socket
-from app.database import get_db
-from app.models import BentoMLConnection, VM
-from app.schemas import BentoMLDeployRequest
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import async_session
+from app.models import BentoMLConnection, VMConnection
+from app.schemas.connections import BentoMLDeployRequest, BentoMLCreate
 from app.security import get_current_user
 
 router = APIRouter()
 
+async def get_db():
+    async with async_session() as session:
+        yield session
+
 @router.get("")
-async def get_bentoml_connections(db: Session = Depends(get_db)):
-    return db.query(BentoMLConnection).all()
+async def get_bentoml_connections(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(BentoMLConnection))
+    return result.scalars().all()
+
+@router.post("")
+async def create_bentoml_connection(
+    body: BentoMLCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    new_conn = BentoMLConnection(
+        name=body.name,
+        endpoint_url=body.endpoint_url,
+        user_id=current_user.id,
+        status="disconnected"
+    )
+    db.add(new_conn)
+    await db.commit()
+    await db.refresh(new_conn)
+    return new_conn
 
 @router.post("/{conn_id}/deploy")
 async def deploy_service(
     conn_id: int, 
     body: BentoMLDeployRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    bentoml_conn = db.query(BentoMLConnection).filter(BentoMLConnection.id == conn_id).first()
+    result = await db.execute(
+        select(BentoMLConnection).where(
+            BentoMLConnection.id == conn_id,
+            BentoMLConnection.user_id == current_user.id
+        )
+    )
+    bentoml_conn = result.scalar_one_or_none()
+    
     if not bentoml_conn:
         raise HTTPException(status_code=404, detail="BentoML Connection not found")
 
-    vm = db.query(VM).filter(VM.id == bentoml_conn.vm_id).first()
+    # Get the first VM of this user
+    vm_result = await db.execute(
+        select(VMConnection).where(VMConnection.user_id == current_user.id)
+    )
+    vm = vm_result.scalar_one_or_none()
+    
     if not vm:
-        raise HTTPException(status_code=404, detail="VM not found")
+        raise HTTPException(status_code=404, detail="No VM found for this user to deploy on")
 
     connect_kwargs = {
         "host": vm.host,
         "port": vm.port,
         "username": vm.username,
-        "password": vm.password,
         "known_hosts": None
     }
-
-    # Debug: Check if port is open before connecting
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.settimeout(3)
-            if s.connect_ex((vm.host, vm.port)) != 0:
-                print(f"DEBUG: Host {vm.host}:{vm.port} is not reachable")
-    except: pass
+    # Note: Use vm.password_encrypted if needed as per main.py
+    if hasattr(vm, 'password_encrypted') and vm.password_encrypted:
+        connect_kwargs["password"] = vm.password_encrypted
 
     try:
         async with asyncssh.connect(**connect_kwargs) as conn:
-            print("DEBUG: SSH Connected. Checking for BentoML...")
+            print(f"DEBUG: SSH Connected. Deploying {body.service_name} inside Ubuntu...")
             
-            # 1. Try your specific absolute path first
-            aladdin_path = "/data/data/com.termux/files/home/ai-gateway/ai-automation/services/aggregator/agents/.venv_ubuntu/bin/bentoml"
-            check = await conn.run(f"{aladdin_path} --version", timeout=10)
+            # Check if bentoml is available inside Ubuntu
+            check = await conn.run("proot-distro login ubuntu -- bentoml --version", timeout=60)
             
-            bentoml_bin = "bentoml"
-            venv_prefix = ""
+            if check.exit_status != 0:
+                print(f"DEBUG: BentoML not found in Ubuntu. Error: {check.stderr}")
+                return {"status": "error", "message": "BentoML not installed inside Ubuntu environment."}
 
-            if check.exit_status == 0:
-                print(f"DEBUG: BentoML found at {aladdin_path}")
-                bentoml_bin = aladdin_path
-            else:
-                print(f"DEBUG: Absolute path check failed with status {check.exit_status}. Error: {check.stderr}")
-                # 2. Try default venv
-                venv_prefix = "source ~/.venv/bin/activate 2>/dev/null || source ~/venv/bin/activate 2>/dev/null; "
-                check = await conn.run(f"{venv_prefix}bentoml --version", timeout=10)
-                
-                if check.exit_status != 0:
-                    print("DEBUG: BentoML not found, installing...")
-                    await conn.run("pkg install -y clang python-dev make libffi-dev openssl-dev || true", timeout=60)
-                    install = await conn.run(
-                        "pip install bentoml --break-system-packages || pip3 install bentoml --break-system-packages", 
-                        timeout=600
-                    )
-                    if install.exit_status != 0:
-                        return {"status": "error", "message": "Failed to install BentoML"}
+            print("DEBUG: BentoML verified. Killing existing processes on port...")
+            await conn.run(f"proot-distro login ubuntu -- bash -c 'fuser -k {body.port}/tcp || true'", timeout=30)
 
-            # 3. Cleanup and Start
-            await conn.run("pkg install -y lsof || apt-get install -y lsof", timeout=30)
-            await conn.run(f"kill $(lsof -t -i :{body.port}) 2>/dev/null || true", timeout=5)
-
-            print(f"DEBUG: Starting BentoML serve {body.service_name}")
+            print(f"DEBUG: Starting BentoML serve on port {body.port}...")
             start_cmd = (
-                f"nohup bash -c '{venv_prefix}{bentoml_bin} serve {body.service_name} "
-                f"--host 0.0.0.0 --port {body.port}' "
-                f"> /tmp/bentoml_{body.port}.log 2>&1 &"
+                f"proot-distro login ubuntu -- bash -c 'nohup bentoml serve {body.service_name} "
+                f"--host 0.0.0.0 --port {body.port} > ~/bentoml_{body.port}.log 2>&1 &'"
             )
-            await conn.run(start_cmd, timeout=10)
+            await conn.run(start_cmd, timeout=30)
 
             # Update DB
             bentoml_conn.endpoint_url = f"http://{vm.host}:{body.port}"
             bentoml_conn.status = "deployed"
             await db.commit()
             
-            return {"status": "success", "message": f"Deployed to {bentoml_conn.endpoint_url}"}
+            return {"status": "success", "message": f"Successfully deployed to {bentoml_conn.endpoint_url}"}
 
     except Exception as e:
-        print(f"DEBUG: Deploy error: {str(e)}")
-        return {"status": "error", "message": str(e)}
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"DEBUG: Deploy error: {repr(e)}")
+        print(f"DEBUG: Traceback: {error_trace}")
+        return {"status": "error", "message": str(e) or repr(e), "traceback": error_trace}

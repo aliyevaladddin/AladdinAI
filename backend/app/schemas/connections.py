@@ -66,3 +66,7 @@ class BentoMLResponse(BaseModel):
     status: str
 
     model_config = {"from_attributes": True}
+
+class BentoMLDeployRequest(BaseModel):
+    service_name: str = "service:latest"
+    port: int = 3000
