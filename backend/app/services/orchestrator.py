@@ -2,10 +2,10 @@ from sqlalchemy import select
 
 from app.database import async_session
 from app.models.agent import Agent
-from app.models.llm_provider import LLMProvider
 from app.models.messaging_channel import MessagingChannel
+from app.services.agent_runner import run_agent
 from app.services.crm_service import find_or_create_contact, log_activity
-from app.services.llm_service import LLMError, chat_completion
+from app.services.llm_service import LLMError
 from app.services.messaging_service import (
     parse_sms_message,
     parse_telegram_message,
@@ -89,29 +89,15 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
 
 
 async def _get_agent_reply(db, agent: Agent, message: str) -> str:
-    """Send message to agent's LLM and get response."""
-    result = await db.execute(select(LLMProvider).where(LLMProvider.id == agent.llm_provider_id))
-    provider = result.scalar_one_or_none()
-    if not provider:
-        return "Agent LLM provider not configured."
-
-    headers = {"Content-Type": "application/json"}
-    if provider.api_key_encrypted:
-        headers["Authorization"] = f"Bearer {provider.api_key_encrypted}"
-
-    payload = {
-        "model": agent.model,
-        "messages": [
-            {"role": "system", "content": agent.system_prompt},
-            {"role": "user", "content": message},
-        ],
-    }
-
+    """Send a single inbound message through the agent's tool-aware runner."""
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(f"{provider.base_url}/v1/chat/completions", json=payload, headers=headers)
-            resp.raise_for_status()
-            data = resp.json()
-            return data["choices"][0]["message"]["content"]
-    except Exception as e:
+        return await run_agent(
+            db,
+            agent,
+            [
+                {"role": "system", "content": agent.system_prompt},
+                {"role": "user", "content": message},
+            ],
+        )
+    except LLMError as e:
         return f"Agent error: {e}"
