@@ -13,9 +13,11 @@ from app.models.email_account import EmailAccount
 from app.models.messaging_channel import MessagingChannel
 from app.models.chat_session import ChatSession, ChatMessage
 from app.models.outgoing_webhook import OutgoingWebhook
+from app.models.agent_message import AgentMessage
 
 __all__ = [
     "User", "VMConnection", "LLMProvider", "MongoConnection", "BentoMLConnection",
     "Agent", "RouterConfig", "Contact", "Deal", "Activity", "Conversation",
-    "EmailAccount", "MessagingChannel", "ChatSession", "ChatMessage", "OutgoingWebhook"
+    "EmailAccount", "MessagingChannel", "ChatSession", "ChatMessage", "OutgoingWebhook",
+    "AgentMessage",
 ]

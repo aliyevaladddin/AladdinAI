@@ -54,44 +54,30 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-[22px] font-semibold tracking-tight">Overview</h1>
-        <p className="text-[13px] mt-1" style={{ color: "var(--color-fg-muted)" }}>
+    <div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold">Overview</h2>
+        <p className="text-sm text-muted-foreground mt-1">
           A summary of your workspace activity.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <div key={c.label} className="card p-5">
+            <div key={c.label} className="rounded-lg border border-border p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p
-                    className="text-[12px] font-medium"
-                    style={{ color: "var(--color-fg-muted)" }}
-                  >
+                  <p className="text-xs font-medium text-muted-foreground">
                     {c.label}
                   </p>
-                  <p className="text-[28px] font-semibold mt-2 tracking-tight tabular-nums">
+                  <p className="text-2xl font-semibold mt-2 tabular-nums">
                     {loading ? "—" : c.value.toLocaleString()}
                   </p>
-                  <p
-                    className="text-[12px] mt-1"
-                    style={{ color: "var(--color-fg-subtle)" }}
-                  >
-                    {c.hint}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">{c.hint}</p>
                 </div>
-                <div
-                  className="w-8 h-8 rounded-md flex items-center justify-center"
-                  style={{
-                    background: "var(--color-accent-soft)",
-                    color: "var(--color-accent)",
-                  }}
-                >
+                <div className="w-8 h-8 rounded-md flex items-center justify-center bg-muted text-muted-foreground">
                   <Icon size={16} />
                 </div>
               </div>
@@ -100,35 +86,27 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="card overflow-hidden">
-        <div
-          className="flex items-center justify-between px-5 py-3 border-b"
-          style={{ borderColor: "var(--color-border)" }}
-        >
+      <div className="rounded-lg border border-border overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <Activity size={14} style={{ color: "var(--color-fg-muted)" }} />
-            <h2 className="text-[13px] font-medium">Recent activity</h2>
+            <Activity size={14} className="text-muted-foreground" />
+            <h3 className="text-sm font-medium">Recent activity</h3>
           </div>
-          <span className="text-[11px]" style={{ color: "var(--color-fg-subtle)" }}>
-            Last 5 events
-          </span>
+          <span className="text-xs text-muted-foreground">Last 5 events</span>
         </div>
 
         {loading ? (
-          <div className="px-5 py-12 text-center text-[13px]" style={{ color: "var(--color-fg-muted)" }}>
+          <p className="px-5 py-12 text-center text-sm text-muted-foreground">
             Loading…
-          </div>
+          </p>
         ) : !stats?.recent_activities?.length ? (
-          <div
-            className="px-5 py-12 text-center text-[13px]"
-            style={{ color: "var(--color-fg-subtle)" }}
-          >
+          <p className="px-5 py-12 text-center text-sm text-muted-foreground">
             No activity yet. Connect a channel or create a contact to get started.
-          </div>
+          </p>
         ) : (
-          <table className="w-full text-[13px]">
+          <table className="w-full text-sm">
             <thead>
-              <tr style={{ color: "var(--color-fg-subtle)" }}>
+              <tr className="text-muted-foreground">
                 <th className="text-left font-medium px-5 py-2 text-[11px] uppercase tracking-wider">
                   Time
                 </th>
@@ -145,20 +123,19 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {stats.recent_activities.map((a) => (
-                <tr key={a.id} className="table-row transition-colors">
-                  <td
-                    className="px-5 py-2.5 tabular-nums"
-                    style={{ color: "var(--color-fg-muted)" }}
-                  >
+                <tr key={a.id} className="border-t border-border">
+                  <td className="px-5 py-2.5 tabular-nums text-muted-foreground">
                     {new Date(a.created_at).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
                   </td>
                   <td className="px-5 py-2.5">
-                    <span className="badge">{a.type.replace("_", " ")}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground uppercase tracking-wide">
+                      {a.type.replace("_", " ")}
+                    </span>
                   </td>
-                  <td className="px-5 py-2.5" style={{ color: "var(--color-fg-muted)" }}>
+                  <td className="px-5 py-2.5 text-muted-foreground">
                     {a.channel || "—"}
                   </td>
                   <td className="px-5 py-2.5 truncate max-w-md">{a.content}</td>

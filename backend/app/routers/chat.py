@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.agent import Agent
 from app.models.chat_session import ChatMessage, ChatSession
-from app.models.llm_provider import LLMProvider
 from app.models.user import User
 from app.schemas.router import (
     ChatMessageResponse,
@@ -16,7 +15,8 @@ from app.schemas.router import (
     ChatSessionResponse,
 )
 from app.security import get_current_user
-from app.services.llm_service import LLMError, chat_completion
+from app.services.agent_runner import run_agent
+from app.services.llm_service import LLMError
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -142,12 +142,6 @@ async def chat(
     if not agent.llm_provider_id:
         raise HTTPException(status_code=400, detail="Agent has no LLM provider configured")
 
-    # Загружаем провайдера
-    result = await db.execute(select(LLMProvider).where(LLMProvider.id == agent.llm_provider_id))
-    provider = result.scalar_one_or_none()
-    if not provider:
-        raise HTTPException(status_code=404, detail="LLM provider not found")
-
     # Получаем или создаём сессию
     if body.session_id:
         result = await db.execute(
@@ -180,7 +174,7 @@ async def chat(
     messages_payload.append({"role": "user", "content": body.message})
 
     try:
-        reply = await chat_completion(provider, agent.model, messages_payload)
+        reply = await run_agent(db, agent, messages_payload, session_id=session.id)
     except LLMError as e:
         raise HTTPException(status_code=502, detail=f"LLM request failed: {e}")
 
