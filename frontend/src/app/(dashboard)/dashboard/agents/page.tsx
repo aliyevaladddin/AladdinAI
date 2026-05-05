@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { AgentGatesPanel } from "@/components/agent-gates-panel";
+import { AgentSafetyPanel } from "@/components/agent-safety-panel";
 
 interface Agent {
   id: number;
@@ -37,6 +38,7 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [openGates, setOpenGates] = useState<number | null>(null);
+  const [openSafety, setOpenSafety] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -184,6 +186,16 @@ export default function AgentsPage() {
                       variant="outline"
                       size="sm"
                       disabled={busy}
+                      onClick={() =>
+                        setOpenSafety(openSafety === a.id ? null : a.id)
+                      }
+                    >
+                      {openSafety === a.id ? "Hide safety" : "Safety"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busy}
                       onClick={() => handleDelete(a.id)}
                     >
                       Delete
@@ -192,6 +204,12 @@ export default function AgentsPage() {
                 </div>
                 {openGates === a.id && (
                   <AgentGatesPanel
+                    agentId={a.id}
+                    providerId={a.llm_provider_id}
+                  />
+                )}
+                {openSafety === a.id && (
+                  <AgentSafetyPanel
                     agentId={a.id}
                     providerId={a.llm_provider_id}
                   />

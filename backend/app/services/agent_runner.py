@@ -21,7 +21,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.agent import Agent
 from app.models.llm_provider import LLMProvider
+from app.services.extraction import schedule_extraction
 from app.services.llm_service import LLMError, chat_completion
+from app.services.memory import build_shared_context_block
 from app.services.safety import block_response, safety_egress, safety_ingress
 from app.tools import REGISTRY, ToolContext, execute, openai_schemas
 from app.tools.capabilities import model_supports_tools
@@ -81,6 +83,27 @@ async def run_agent(
             log.info("Agent %s ingress blocked: %s", agent.id, ingress.get("reason"))
             return block_response(agent)
 
+        try:
+            shared_block = await build_shared_context_block(
+                db, user_id=agent.user_id, query=last_user, limit=5
+            )
+        except Exception as e:  # noqa: BLE001
+            log.warning("shared_context injection failed for agent %s: %s", agent.id, e)
+            shared_block = ""
+        if shared_block:
+            sys_idx = next(
+                (i for i, m in enumerate(messages) if m.get("role") == "system"),
+                None,
+            )
+            if sys_idx is None:
+                messages = [{"role": "system", "content": shared_block}, *messages]
+            else:
+                base = messages[sys_idx].get("content") or ""
+                messages[sys_idx] = {
+                    "role": "system",
+                    "content": f"{base}\n\n{shared_block}" if base else shared_block,
+                }
+
     allowed = [name for name in _allowed_tools(agent) if name in REGISTRY]
     use_tools = bool(allowed) and model_supports_tools(agent.model)
     schemas = openai_schemas(allowed) if use_tools else None
@@ -113,6 +136,12 @@ async def run_agent(
                 if not egress["safe"]:
                     log.info("Agent %s egress blocked: %s", agent.id, egress.get("reason"))
                     return block_response(agent)
+                schedule_extraction(
+                    agent_id=agent.id,
+                    user_text=last_user,
+                    assistant_text=final,
+                    session_id=session_id,
+                )
             return final
 
         messages.append({
@@ -130,6 +159,13 @@ async def run_agent(
         egress = await safety_egress(db, agent=agent, text=final)
         if not egress["safe"]:
             return block_response(agent)
+        if last_content:
+            schedule_extraction(
+                agent_id=agent.id,
+                user_text=last_user,
+                assistant_text=final,
+                session_id=session_id,
+            )
     return final
 
 
