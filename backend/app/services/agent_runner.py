@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.agent import Agent
 from app.models.llm_provider import LLMProvider
 from app.services.llm_service import LLMError, chat_completion
+from app.services.safety import block_response, safety_egress, safety_ingress
 from app.tools import REGISTRY, ToolContext, execute, openai_schemas
 from app.tools.capabilities import model_supports_tools
 
@@ -70,6 +71,16 @@ async def run_agent(
     if not provider:
         raise LLMError("Agent's LLM provider not found")
 
+    last_user = next(
+        (m.get("content", "") for m in reversed(messages) if m.get("role") == "user"),
+        "",
+    )
+    if last_user:
+        ingress = await safety_ingress(db, agent=agent, text=last_user)
+        if not ingress["safe"]:
+            log.info("Agent %s ingress blocked: %s", agent.id, ingress.get("reason"))
+            return block_response(agent)
+
     allowed = [name for name in _allowed_tools(agent) if name in REGISTRY]
     use_tools = bool(allowed) and model_supports_tools(agent.model)
     schemas = openai_schemas(allowed) if use_tools else None
@@ -96,7 +107,13 @@ async def run_agent(
             last_content = content
 
         if not tool_calls:
-            return content or ""
+            final = content or ""
+            if final:
+                egress = await safety_egress(db, agent=agent, text=final)
+                if not egress["safe"]:
+                    log.info("Agent %s egress blocked: %s", agent.id, egress.get("reason"))
+                    return block_response(agent)
+            return final
 
         messages.append({
             "role": "assistant",
@@ -108,7 +125,12 @@ async def run_agent(
             messages.append(await _execute_tool_call(call, ctx))
 
     log.warning("Agent %s hit max_iterations=%d, returning last content", agent.id, max_iter)
-    return last_content or "I was unable to complete the task within the allowed steps."
+    final = last_content or "I was unable to complete the task within the allowed steps."
+    if final:
+        egress = await safety_egress(db, agent=agent, text=final)
+        if not egress["safe"]:
+            return block_response(agent)
+    return final
 
 
 async def _execute_tool_call(call: dict, ctx: ToolContext) -> dict[str, Any]:

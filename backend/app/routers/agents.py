@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
+from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.database import async_session, get_db
 from app.models.agent import Agent
@@ -11,8 +13,23 @@ from app.models.agent_message import AgentMessage
 from app.models.user import User
 from app.schemas.agents import AgentCreate, AgentResponse, AgentUpdate
 from app.security import get_current_user
+from app.services import gate_log
 from app.services.agent_runner import run_agent
 from app.services.llm_service import LLMError
+
+GATE_NAMES = {"handoff", "memory_write", "recall_rerank"}
+SAFETY_NAMES = {"ingress", "egress", "pii"}
+
+
+class GatesUpdate(BaseModel):
+    default_gate_model: str | None = None
+    gates: dict[str, dict[str, Any]] | None = None  # {name: {enabled: bool, model: str|null}}
+
+
+class SafetyUpdate(BaseModel):
+    default_safety_model: str | None = None
+    safety_block_response: str | None = None
+    safety: dict[str, dict[str, Any]] | None = None
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -147,6 +164,204 @@ async def list_agent_messages(
         }
         for m in rows
     ]
+
+
+@router.get("/{agent_id}/gates")
+async def get_agent_gates(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    cfg = agent.tools_config or {}
+    gates = cfg.get("gates") or {}
+    return {
+        "default_gate_model": cfg.get("default_gate_model"),
+        "gates": {
+            name: {
+                "enabled": bool((gates.get(name) or {}).get("enabled", False)),
+                "model": (gates.get(name) or {}).get("model"),
+            }
+            for name in GATE_NAMES
+        },
+    }
+
+
+@router.patch("/{agent_id}/gates")
+async def patch_agent_gates(
+    agent_id: int,
+    body: GatesUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    cfg = dict(agent.tools_config or {})
+    if body.default_gate_model is not None:
+        cfg["default_gate_model"] = body.default_gate_model or None
+
+    if body.gates is not None:
+        existing = dict(cfg.get("gates") or {})
+        for name, settings in body.gates.items():
+            if name not in GATE_NAMES:
+                raise HTTPException(status_code=400, detail=f"Unknown gate: {name}")
+            current = dict(existing.get(name) or {})
+            if "enabled" in settings:
+                current["enabled"] = bool(settings["enabled"])
+            if "model" in settings:
+                current["model"] = settings["model"] or None
+            existing[name] = current
+        cfg["gates"] = existing
+
+    agent.tools_config = cfg
+    flag_modified(agent, "tools_config")
+    await db.commit()
+    await db.refresh(agent)
+
+    gates = cfg.get("gates") or {}
+    return {
+        "default_gate_model": cfg.get("default_gate_model"),
+        "gates": {
+            name: {
+                "enabled": bool((gates.get(name) or {}).get("enabled", False)),
+                "model": (gates.get(name) or {}).get("model"),
+            }
+            for name in GATE_NAMES
+        },
+    }
+
+
+@router.get("/{agent_id}/safety")
+async def get_agent_safety(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    cfg = agent.tools_config or {}
+    safety = cfg.get("safety") or {}
+    return {
+        "default_safety_model": cfg.get("default_safety_model"),
+        "safety_block_response": cfg.get("safety_block_response"),
+        "safety": {
+            name: {
+                "enabled": bool((safety.get(name) or {}).get("enabled", False)),
+                "model": (safety.get(name) or {}).get("model"),
+            }
+            for name in SAFETY_NAMES
+        },
+    }
+
+
+@router.patch("/{agent_id}/safety")
+async def patch_agent_safety(
+    agent_id: int,
+    body: SafetyUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    cfg = dict(agent.tools_config or {})
+    if body.default_safety_model is not None:
+        cfg["default_safety_model"] = body.default_safety_model or None
+    if body.safety_block_response is not None:
+        cfg["safety_block_response"] = body.safety_block_response or None
+
+    if body.safety is not None:
+        existing = dict(cfg.get("safety") or {})
+        for name, settings in body.safety.items():
+            if name not in SAFETY_NAMES:
+                raise HTTPException(status_code=400, detail=f"Unknown safety check: {name}")
+            current = dict(existing.get(name) or {})
+            if "enabled" in settings:
+                current["enabled"] = bool(settings["enabled"])
+            if "model" in settings:
+                current["model"] = settings["model"] or None
+            existing[name] = current
+        cfg["safety"] = existing
+
+    agent.tools_config = cfg
+    flag_modified(agent, "tools_config")
+    await db.commit()
+    await db.refresh(agent)
+
+    safety = cfg.get("safety") or {}
+    return {
+        "default_safety_model": cfg.get("default_safety_model"),
+        "safety_block_response": cfg.get("safety_block_response"),
+        "safety": {
+            name: {
+                "enabled": bool((safety.get(name) or {}).get("enabled", False)),
+                "model": (safety.get(name) or {}).get("model"),
+            }
+            for name in SAFETY_NAMES
+        },
+    }
+
+
+@router.get("/{agent_id}/safety/log")
+async def get_agent_safety_log(
+    agent_id: int,
+    check: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=500),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    if check is not None and check not in SAFETY_NAMES:
+        raise HTTPException(status_code=400, detail=f"Unknown check: {check}")
+
+    gate_filter = f"safety_{check}" if check else None
+    decisions = await gate_log.list_decisions(
+        db, user_id=user.id, agent_id=agent_id, gate=gate_filter, limit=limit
+    )
+    if check is None:
+        decisions = [d for d in decisions if str(d.get("gate", "")).startswith("safety_")]
+    return decisions
+
+
+@router.get("/{agent_id}/gates/log")
+async def get_agent_gates_log(
+    agent_id: int,
+    gate: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=500),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    if gate is not None and gate not in GATE_NAMES:
+        raise HTTPException(status_code=400, detail=f"Unknown gate: {gate}")
+
+    return await gate_log.list_decisions(
+        db, user_id=user.id, agent_id=agent_id, gate=gate, limit=limit
+    )
 
 
 async def _process_agent_message(message_id: int) -> None:
