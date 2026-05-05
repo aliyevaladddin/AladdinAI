@@ -85,6 +85,18 @@ export const api = {
     return res.json();
   },
 
+  patch: async <T = any>(path: string, body?: any): Promise<T> => {
+    const headers = await getAuthHeader();
+    const res = await fetch(`${API_URL}${path}`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) throw new Error(`Failed to PATCH ${path}`);
+    if (res.status === 204) return {} as T;
+    return res.json();
+  },
+
   delete: async <T = any>(path: string): Promise<T> => {
     const headers = await getAuthHeader();
     const res = await fetch(`${API_URL}${path}`, {
