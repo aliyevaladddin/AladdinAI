@@ -1,3 +1,7 @@
+
+
+
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,17 +9,18 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-interface GateState {
+interface CheckState {
   enabled: boolean;
   model: string | null;
 }
 
-interface GatesConfig {
-  default_gate_model: string | null;
-  gates: Record<string, GateState>;
+interface SafetyConfig {
+  default_safety_model: string | null;
+  safety_block_response: string | null;
+  safety: Record<string, CheckState>;
 }
 
-interface GateLogEntry {
+interface SafetyLogEntry {
   _id: string;
   gate: string;
   model: string | null;
@@ -26,42 +31,44 @@ interface GateLogEntry {
   created_at: string;
 }
 
-const GATE_LABELS: Record<string, { title: string; help: string }> = {
-  handoff: {
-    title: "Handoff filter",
-    help: "Cleans context before delegate / ask_agent — strips irrelevant chatter.",
+const CHECK_LABELS: Record<string, { title: string; help: string }> = {
+  ingress: {
+    title: "Input moderation",
+    help: "Classify user input before the agent runs. Blocks jailbreaks and disallowed content.",
   },
-  memory_write: {
-    title: "Memory write classifier",
-    help: "Decides if a fact is worth saving via remember.",
+  egress: {
+    title: "Output moderation",
+    help: "Classify the agent's reply before it is returned. Blocks unsafe outputs.",
   },
-  recall_rerank: {
-    title: "Recall reranker",
-    help: "Reorders vector-search results by semantic relevance.",
+  pii: {
+    title: "PII redaction",
+    help: "Detect and redact personal data (emails, phones, names…) before facts hit memory.",
   },
 };
 
-export function AgentGatesPanel({
+export function AgentSafetyPanel({
   agentId,
   providerId,
 }: {
   agentId: number;
   providerId: number | null;
 }) {
-  const [cfg, setCfg] = useState<GatesConfig | null>(null);
+  const [cfg, setCfg] = useState<SafetyConfig | null>(null);
   const [models, setModels] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [blockDraft, setBlockDraft] = useState("");
   const [showLog, setShowLog] = useState(false);
-  const [logEntries, setLogEntries] = useState<GateLogEntry[]>([]);
+  const [logEntries, setLogEntries] = useState<SafetyLogEntry[]>([]);
   const [logLoading, setLogLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const c = await api.get<GatesConfig>(`/agents/${agentId}/gates`);
+        const c = await api.get<SafetyConfig>(`/agents/${agentId}/safety`);
         if (cancelled) return;
         setCfg(c);
+        setBlockDraft(c.safety_block_response ?? "");
       } catch (e) {
         console.error(e);
       }
@@ -83,45 +90,46 @@ export function AgentGatesPanel({
     };
   }, [agentId, providerId]);
 
-  const save = async (next: GatesConfig) => {
+  const save = async (next: SafetyConfig) => {
     setSaving(true);
     try {
-      const updated = await api.patch<GatesConfig>(
-        `/agents/${agentId}/gates`,
+      const updated = await api.patch<SafetyConfig>(
+        `/agents/${agentId}/safety`,
         {
-          default_gate_model: next.default_gate_model,
-          gates: next.gates,
+          default_safety_model: next.default_safety_model,
+          safety_block_response: next.safety_block_response,
+          safety: next.safety,
         },
       );
       setCfg(updated);
     } catch (e) {
       console.error(e);
-      alert("Failed to save gates config");
+      alert("Failed to save safety config");
     } finally {
       setSaving(false);
     }
   };
 
-  const toggleGate = (name: string, enabled: boolean) => {
+  const toggleCheck = (name: string, enabled: boolean) => {
     if (!cfg) return;
     const next = {
       ...cfg,
-      gates: {
-        ...cfg.gates,
-        [name]: { ...cfg.gates[name], enabled },
+      safety: {
+        ...cfg.safety,
+        [name]: { ...cfg.safety[name], enabled },
       },
     };
     setCfg(next);
     save(next);
   };
 
-  const setGateModel = (name: string, model: string | null) => {
+  const setCheckModel = (name: string, model: string | null) => {
     if (!cfg) return;
     const next = {
       ...cfg,
-      gates: {
-        ...cfg.gates,
-        [name]: { ...cfg.gates[name], model },
+      safety: {
+        ...cfg.safety,
+        [name]: { ...cfg.safety[name], model },
       },
     };
     setCfg(next);
@@ -130,9 +138,15 @@ export function AgentGatesPanel({
 
   const setDefaultModel = (model: string | null) => {
     if (!cfg) return;
-    const next = { ...cfg, default_gate_model: model };
+    const next = { ...cfg, default_safety_model: model };
     setCfg(next);
     save(next);
+  };
+
+  const commitBlockResponse = () => {
+    if (!cfg) return;
+    if ((cfg.safety_block_response ?? "") === blockDraft) return;
+    save({ ...cfg, safety_block_response: blockDraft });
   };
 
   const applyRecommended = async () => {
@@ -142,24 +156,24 @@ export function AgentGatesPanel({
       const r = await api.get<{
         recommendations: Record<string, string | null>;
         catalog_size: number;
-      }>(`/agents/${agentId}/gates/recommendations`);
+      }>(`/agents/${agentId}/safety/recommendations`);
 
       const recs = r.recommendations ?? {};
       const applied: string[] = [];
       const skipped: string[] = [];
-      const nextGates: Record<string, GateState> = { ...cfg.gates };
+      const nextSafety: Record<string, CheckState> = { ...cfg.safety };
 
-      for (const name of Object.keys(GATE_LABELS)) {
+      for (const name of Object.keys(CHECK_LABELS)) {
         const recModel = recs[name];
         if (recModel) {
-          nextGates[name] = { enabled: true, model: recModel };
+          nextSafety[name] = { enabled: true, model: recModel };
           applied.push(`${name} → ${recModel}`);
         } else {
           skipped.push(name);
         }
       }
 
-      const next: GatesConfig = { ...cfg, gates: nextGates };
+      const next: SafetyConfig = { ...cfg, safety: nextSafety };
       await save(next);
 
       if (applied.length === 0) {
@@ -188,8 +202,8 @@ export function AgentGatesPanel({
     setShowLog(true);
     setLogLoading(true);
     try {
-      const r = await api.get<GateLogEntry[]>(
-        `/agents/${agentId}/gates/log?limit=50`,
+      const r = await api.get<SafetyLogEntry[]>(
+        `/agents/${agentId}/safety/log?limit=50`,
       );
       setLogEntries(r);
     } catch (e) {
@@ -201,14 +215,14 @@ export function AgentGatesPanel({
 
   if (!cfg) {
     return (
-      <p className="text-xs text-muted-foreground mt-2">Loading gates…</p>
+      <p className="text-xs text-muted-foreground mt-2">Loading safety…</p>
     );
   }
 
   return (
     <div className="mt-4 border-t border-border pt-4 space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Gates</p>
+        <p className="text-sm font-medium">Safety</p>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -231,11 +245,11 @@ export function AgentGatesPanel({
 
       <div>
         <label className="block text-xs text-muted-foreground mb-1">
-          Default gate model (used when a gate has no model selected)
+          Default safety model (used when a check has no model selected)
         </label>
         <select
           className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
-          value={cfg.default_gate_model ?? ""}
+          value={cfg.default_safety_model ?? ""}
           onChange={(e) => setDefaultModel(e.target.value || null)}
         >
           <option value="">— none —</option>
@@ -247,9 +261,28 @@ export function AgentGatesPanel({
         </select>
       </div>
 
+      <div>
+        <label className="block text-xs text-muted-foreground mb-1">
+          Block response (returned when ingress/egress blocks a turn)
+        </label>
+        <input
+          type="text"
+          className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
+          placeholder="I can't help with that."
+          value={blockDraft}
+          onChange={(e) => setBlockDraft(e.target.value)}
+          onBlur={commitBlockResponse}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      </div>
+
       <div className="space-y-3">
-        {Object.entries(GATE_LABELS).map(([name, meta]) => {
-          const state = cfg.gates[name] ?? { enabled: false, model: null };
+        {Object.entries(CHECK_LABELS).map(([name, meta]) => {
+          const state = cfg.safety[name] ?? { enabled: false, model: null };
           return (
             <div
               key={name}
@@ -265,7 +298,7 @@ export function AgentGatesPanel({
                     type="checkbox"
                     className="sr-only peer"
                     checked={state.enabled}
-                    onChange={(e) => toggleGate(name, e.target.checked)}
+                    onChange={(e) => toggleCheck(name, e.target.checked)}
                   />
                   <div className="w-9 h-5 bg-zinc-700 peer-checked:bg-green-500 rounded-full relative transition">
                     <div
@@ -279,11 +312,11 @@ export function AgentGatesPanel({
               <select
                 className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
                 value={state.model ?? ""}
-                onChange={(e) => setGateModel(name, e.target.value || null)}
+                onChange={(e) => setCheckModel(name, e.target.value || null)}
                 disabled={!state.enabled}
               >
                 <option value="">
-                  — use default ({cfg.default_gate_model ?? "none"}) —
+                  — use default ({cfg.default_safety_model ?? "none"}) —
                 </option>
                 {models.map((m) => (
                   <option key={m} value={m}>

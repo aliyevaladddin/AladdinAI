@@ -286,6 +286,59 @@ async def delete_memory(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Shared-context injection
+# ─────────────────────────────────────────────────────────────────────────────
+
+SHARED_BLOCK_OPEN = "<shared_context>"
+SHARED_BLOCK_CLOSE = "</shared_context>"
+
+
+async def build_shared_context_block(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    query: str,
+    limit: int = 5,
+) -> str:
+    """Vector-search shared facts and format them as a system-prompt block.
+
+    Returns an empty string on any failure (no embeddings provider, no Mongo
+    connection, vector index missing, etc.) — injection is best-effort.
+    """
+    if not query or not query.strip():
+        return ""
+
+    try:
+        vector = await embed(db, user_id, query)
+        mdb = await get_mongo_db(db, user_id)
+        results = await _vector_search(
+            mdb[SHARED_COLLECTION],
+            vector=vector,
+            limit=limit,
+            filter_={"user_id": user_id},
+            visibility="shared",
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+
+    if not results:
+        return ""
+
+    lines = [SHARED_BLOCK_OPEN]
+    for r in results:
+        fact = (r.get("fact") or "").strip()
+        if not fact:
+            continue
+        tags = r.get("tags") or []
+        tag_str = f" [{', '.join(tags)}]" if tags else ""
+        lines.append(f"- {fact}{tag_str}")
+    lines.append(SHARED_BLOCK_CLOSE)
+    if len(lines) <= 2:
+        return ""
+    return "\n".join(lines)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Health
 # ─────────────────────────────────────────────────────────────────────────────
 
