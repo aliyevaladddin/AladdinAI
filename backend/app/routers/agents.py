@@ -13,9 +13,17 @@ from app.models.agent_message import AgentMessage
 from app.models.user import User
 from app.schemas.agents import AgentCreate, AgentResponse, AgentUpdate
 from app.security import get_current_user
+import json as _json
+
+from app.models.llm_provider import LLMProvider
 from app.services import gate_log
 from app.services.agent_runner import run_agent
 from app.services.llm_service import LLMError
+from app.services.recommended_models import (
+    resolve_extraction as resolve_extraction_recs,
+    resolve_gates as resolve_gates_recs,
+    resolve_safety as resolve_safety_recs,
+)
 
 GATE_NAMES = {"handoff", "memory_write", "recall_rerank"}
 SAFETY_NAMES = {"ingress", "egress", "pii"}
@@ -30,6 +38,12 @@ class SafetyUpdate(BaseModel):
     default_safety_model: str | None = None
     safety_block_response: str | None = None
     safety: dict[str, dict[str, Any]] | None = None
+
+
+class ExtractionUpdate(BaseModel):
+    enabled: bool | None = None
+    model: str | None = None
+    max_facts: int | None = None
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -315,6 +329,126 @@ async def patch_agent_safety(
             }
             for name in SAFETY_NAMES
         },
+    }
+
+
+async def _provider_catalog(db: AsyncSession, agent: Agent) -> list[str]:
+    if not agent.llm_provider_id:
+        return []
+    provider = (await db.execute(
+        select(LLMProvider).where(LLMProvider.id == agent.llm_provider_id)
+    )).scalar_one_or_none()
+    if not provider or not provider.models_available:
+        return []
+    try:
+        models = _json.loads(provider.models_available)
+    except (TypeError, ValueError):
+        return []
+    return [m for m in models if isinstance(m, str)]
+
+
+@router.get("/{agent_id}/safety/recommendations")
+async def get_agent_safety_recommendations(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    catalog = await _provider_catalog(db, agent)
+    return {"recommendations": resolve_safety_recs(catalog), "catalog_size": len(catalog)}
+
+
+@router.get("/{agent_id}/gates/recommendations")
+async def get_agent_gates_recommendations(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    catalog = await _provider_catalog(db, agent)
+    return {"recommendations": resolve_gates_recs(catalog), "catalog_size": len(catalog)}
+
+
+@router.get("/{agent_id}/extraction/recommendations")
+async def get_agent_extraction_recommendations(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    catalog = await _provider_catalog(db, agent)
+    return {"recommendation": resolve_extraction_recs(catalog), "catalog_size": len(catalog)}
+
+
+@router.get("/{agent_id}/extraction")
+async def get_agent_extraction(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    cfg = agent.tools_config or {}
+    sub = cfg.get("extraction") or {}
+    return {
+        "enabled": bool(sub.get("enabled", False)),
+        "model": sub.get("model"),
+        "max_facts": sub.get("max_facts"),
+    }
+
+
+@router.patch("/{agent_id}/extraction")
+async def patch_agent_extraction(
+    agent_id: int,
+    body: ExtractionUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    cfg = dict(agent.tools_config or {})
+    sub = dict(cfg.get("extraction") or {})
+
+    if body.enabled is not None:
+        sub["enabled"] = bool(body.enabled)
+    if body.model is not None:
+        sub["model"] = body.model or None
+    if body.max_facts is not None:
+        if not (1 <= body.max_facts <= 20):
+            raise HTTPException(status_code=400, detail="max_facts must be 1..20")
+        sub["max_facts"] = body.max_facts
+
+    cfg["extraction"] = sub
+    agent.tools_config = cfg
+    flag_modified(agent, "tools_config")
+    await db.commit()
+    await db.refresh(agent)
+
+    sub = (agent.tools_config or {}).get("extraction") or {}
+    return {
+        "enabled": bool(sub.get("enabled", False)),
+        "model": sub.get("model"),
+        "max_facts": sub.get("max_facts"),
     }
 
 
