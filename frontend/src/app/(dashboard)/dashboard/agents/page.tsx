@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { AgentGatesPanel } from "@/components/agent-gates-panel";
 
 interface Agent {
   id: number;
@@ -35,6 +36,7 @@ export default function AgentsPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [openGates, setOpenGates] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -172,12 +174,28 @@ export default function AgentsPage() {
                       variant="outline"
                       size="sm"
                       disabled={busy}
+                      onClick={() =>
+                        setOpenGates(openGates === a.id ? null : a.id)
+                      }
+                    >
+                      {openGates === a.id ? "Hide gates" : "Gates"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busy}
                       onClick={() => handleDelete(a.id)}
                     >
                       Delete
                     </Button>
                   </div>
                 </div>
+                {openGates === a.id && (
+                  <AgentGatesPanel
+                    agentId={a.id}
+                    providerId={a.llm_provider_id}
+                  />
+                )}
               </div>
             );
           })}

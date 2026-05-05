@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from motor.motor_asyncio import AsyncIOMotorClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +8,7 @@ from app.models.mongo_connection import MongoConnection
 from app.models.user import User
 from app.schemas.connections import MongoCreate, MongoResponse
 from app.security import get_current_user
+from app.services.memory import invalidate_mongo_client
 
 router = APIRouter(prefix="/mongodb", tags=["mongodb"])
 
@@ -37,8 +39,29 @@ async def test_mongo(conn_id: int, user: User = Depends(get_current_user), db: A
     conn = result.scalar_one_or_none()
     if not conn:
         raise HTTPException(status_code=404, detail="Connection not found")
-    # TODO: actual pymongo connection test
-    return {"status": "ok", "message": f"MongoDB test for {conn.db_name} — placeholder"}
+
+    client = AsyncIOMotorClient(conn.connection_string_encrypted, serverSelectionTimeoutMS=5000)
+    try:
+        pong = await client[conn.db_name].command("ping")
+        if not pong.get("ok"):
+            raise RuntimeError("Server returned ok=0")
+        collections = await client[conn.db_name].list_collection_names()
+    except Exception as e:
+        conn.status = "disconnected"
+        await db.commit()
+        raise HTTPException(status_code=400, detail=f"Connection failed: {e}") from e
+    finally:
+        client.close()
+
+    conn.status = "connected"
+    await db.commit()
+    invalidate_mongo_client(user.id)
+    return {
+        "status": "ok",
+        "db": conn.db_name,
+        "collections": collections,
+        "message": f"Pinged {conn.db_name} successfully",
+    }
 
 
 @router.delete("/{conn_id}", status_code=204)
@@ -49,3 +72,4 @@ async def delete_mongo(conn_id: int, user: User = Depends(get_current_user), db:
         raise HTTPException(status_code=404, detail="Connection not found")
     await db.delete(conn)
     await db.commit()
+    invalidate_mongo_client(user.id)
