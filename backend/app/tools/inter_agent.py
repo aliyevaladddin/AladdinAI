@@ -17,6 +17,7 @@ from sqlalchemy import select
 from app.models.agent import Agent
 from app.models.agent_message import AgentMessage
 from app.models.llm_provider import LLMProvider
+from app.services.gates import gate_handoff
 from app.services.llm_service import LLMError, chat_completion
 from app.tools.base import ToolContext, tool
 
@@ -30,6 +31,14 @@ async def _resolve_target(ctx: ToolContext, target: str | int) -> Agent | None:
         )
     result = await ctx.db.execute(q)
     return result.scalars().first()
+
+
+async def _load_source_agent(ctx: ToolContext) -> Agent | None:
+    if ctx.agent_id is None:
+        return None
+    return (await ctx.db.execute(
+        select(Agent).where(Agent.id == ctx.agent_id)
+    )).scalar_one_or_none()
 
 
 @tool(
@@ -64,6 +73,18 @@ async def delegate(ctx: ToolContext, target: str, task: str, context: dict | Non
     target_agent = await _resolve_target(ctx, target)
     if not target_agent:
         return {"error": f"No agent found for target={target!r}"}
+
+    source_agent = await _load_source_agent(ctx)
+    if source_agent is not None:
+        filtered = await gate_handoff(
+            ctx.db,
+            source_agent=source_agent,
+            target_agent=target_agent,
+            task=task,
+            context=context,
+        )
+        task = filtered["task"]
+        context = filtered["context"]
 
     msg = AgentMessage(
         user_id=ctx.user_id,
@@ -117,6 +138,17 @@ async def ask_agent(ctx: ToolContext, target: str, question: str) -> dict:
     provider = (await ctx.db.execute(provider_q)).scalar_one_or_none()
     if not provider:
         return {"error": "Target agent's provider not found"}
+
+    source_agent = await _load_source_agent(ctx)
+    if source_agent is not None:
+        filtered = await gate_handoff(
+            ctx.db,
+            source_agent=source_agent,
+            target_agent=target_agent,
+            task=question,
+            context=None,
+        )
+        question = filtered["task"]
 
     messages = [
         {"role": "system", "content": target_agent.system_prompt},

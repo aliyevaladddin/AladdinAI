@@ -1,0 +1,296 @@
+"""Memory service — MongoDB Atlas Vector Search backend.
+
+Layout:
+  Postgres (canonical state):
+    - mongo_connections: per-user Atlas cluster URIs.
+    - llm_providers (type='nvidia_nim'): used to source embeddings.
+  MongoDB Atlas (per user, in their `db_name`):
+    - agent_memories     — private per-agent facts (1 vector index)
+    - shared_context     — facts visible to all agents of this user
+    - conversation_summaries — rolled-up chat history (no vector for now)
+
+Embeddings: `nvidia/llama-3.2-nv-embedqa-1b-v2` (2048 dim).
+
+Atlas Vector Search indexes (must be created manually in the Atlas UI):
+  Collection: agent_memories       Index: vector_index   field: embedding   dim: 2048   similarity: cosine
+  Collection: shared_context       Index: vector_index   field: embedding   dim: 2048   similarity: cosine
+
+Both indexes additionally need filter fields so we can scope queries:
+  agent_memories: filter on `agent_id`, `user_id`
+  shared_context: filter on `user_id`
+"""
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any
+
+import httpx
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.llm_provider import LLMProvider
+from app.models.mongo_connection import MongoConnection
+
+EMBED_MODEL = "nvidia/llama-3.2-nv-embedqa-1b-v2"
+EMBED_DIM = 2048
+VECTOR_INDEX_NAME = "vector_index"
+
+PRIVATE_COLLECTION = "agent_memories"
+SHARED_COLLECTION = "shared_context"
+SUMMARY_COLLECTION = "conversation_summaries"
+
+# Module-level client cache keyed by user_id, so we don't reopen sockets every call.
+_client_cache: dict[int, tuple[AsyncIOMotorClient, str]] = {}
+
+
+class MemoryError(Exception):
+    """Raised when the memory backend is unreachable or misconfigured."""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Connection resolution
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def _resolve_mongo(db: AsyncSession, user_id: int) -> MongoConnection:
+    result = await db.execute(
+        select(MongoConnection).where(MongoConnection.user_id == user_id)
+    )
+    conn = result.scalars().first()
+    if not conn:
+        raise MemoryError("No MongoDB connection configured for this user")
+    return conn
+
+
+async def get_mongo_db(db: AsyncSession, user_id: int) -> AsyncIOMotorDatabase:
+    """Return an `AsyncIOMotorDatabase` bound to the user's configured cluster."""
+    cached = _client_cache.get(user_id)
+    if cached is None:
+        conn = await _resolve_mongo(db, user_id)
+        client = AsyncIOMotorClient(conn.connection_string_encrypted, serverSelectionTimeoutMS=5000)
+        _client_cache[user_id] = (client, conn.db_name)
+        return client[conn.db_name]
+    client, db_name = cached
+    return client[db_name]
+
+
+def invalidate_mongo_client(user_id: int) -> None:
+    """Drop the cached client (call after a connection-string change)."""
+    cached = _client_cache.pop(user_id, None)
+    if cached:
+        cached[0].close()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Embeddings (NIM)
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def _resolve_nim_provider(db: AsyncSession, user_id: int) -> LLMProvider:
+    result = await db.execute(
+        select(LLMProvider).where(
+            LLMProvider.user_id == user_id,
+            LLMProvider.type == "nvidia_nim",
+        )
+    )
+    provider = result.scalars().first()
+    if not provider:
+        raise MemoryError("No NVIDIA NIM provider configured — needed for embeddings")
+    return provider
+
+
+async def embed(db: AsyncSession, user_id: int, text: str) -> list[float]:
+    """Embed text via NIM and return a 2048-dim vector."""
+    provider = await _resolve_nim_provider(db, user_id)
+    headers = {"Content-Type": "application/json"}
+    if provider.api_key_encrypted:
+        headers["Authorization"] = f"Bearer {provider.api_key_encrypted}"
+
+    url = f"{provider.base_url.rstrip('/')}/v1/embeddings"
+    payload = {
+        "model": EMBED_MODEL,
+        "input": [text],
+        "input_type": "query",
+        "encoding_format": "float",
+        "truncate": "END",
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            resp = await client.post(url, json=payload, headers=headers)
+            resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise MemoryError(f"Embedding HTTP {e.response.status_code}: {e.response.text[:300]}") from e
+        except httpx.HTTPError as e:
+            raise MemoryError(f"Embedding request failed: {e}") from e
+
+    data = resp.json()
+    try:
+        vec = data["data"][0]["embedding"]
+    except (KeyError, IndexError, TypeError) as e:
+        raise MemoryError(f"Unexpected embedding response: {str(data)[:200]}") from e
+    if not isinstance(vec, list) or len(vec) != EMBED_DIM:
+        raise MemoryError(f"Embedding dim mismatch: expected {EMBED_DIM}, got {len(vec) if isinstance(vec, list) else 'n/a'}")
+    return vec
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Memory CRUD
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def store_memory(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    agent_id: int | None,
+    fact: str,
+    visibility: str = "private",
+    tags: list[str] | None = None,
+    session_id: int | None = None,
+) -> dict[str, Any]:
+    """Insert a fact into private (agent-scoped) or shared collection."""
+    if visibility not in ("private", "shared"):
+        raise MemoryError(f"Invalid visibility: {visibility}")
+    if visibility == "private" and agent_id is None:
+        raise MemoryError("Private memories require an agent_id")
+
+    vector = await embed(db, user_id, fact)
+    mdb = await get_mongo_db(db, user_id)
+
+    doc: dict[str, Any] = {
+        "user_id": user_id,
+        "fact": fact,
+        "embedding": vector,
+        "tags": tags or [],
+        "session_id": session_id,
+        "created_at": datetime.now(timezone.utc),
+    }
+    if visibility == "private":
+        doc["agent_id"] = agent_id
+        coll = mdb[PRIVATE_COLLECTION]
+    else:
+        coll = mdb[SHARED_COLLECTION]
+
+    result = await coll.insert_one(doc)
+    return {"id": str(result.inserted_id), "visibility": visibility}
+
+
+async def search_memory(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    agent_id: int | None,
+    query: str,
+    scope: str = "both",
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """Vector-search relevant facts in private (agent-scoped) and/or shared pools."""
+    if scope not in ("private", "shared", "both"):
+        raise MemoryError(f"Invalid scope: {scope}")
+
+    vector = await embed(db, user_id, query)
+    mdb = await get_mongo_db(db, user_id)
+
+    results: list[dict[str, Any]] = []
+
+    if scope in ("private", "both") and agent_id is not None:
+        results.extend(await _vector_search(
+            mdb[PRIVATE_COLLECTION],
+            vector=vector,
+            limit=limit,
+            filter_={"user_id": user_id, "agent_id": agent_id},
+            visibility="private",
+        ))
+
+    if scope in ("shared", "both"):
+        results.extend(await _vector_search(
+            mdb[SHARED_COLLECTION],
+            vector=vector,
+            limit=limit,
+            filter_={"user_id": user_id},
+            visibility="shared",
+        ))
+
+    results.sort(key=lambda r: r["score"], reverse=True)
+    return results[:limit]
+
+
+async def _vector_search(
+    coll,
+    *,
+    vector: list[float],
+    limit: int,
+    filter_: dict[str, Any],
+    visibility: str,
+) -> list[dict[str, Any]]:
+    pipeline = [
+        {
+            "$vectorSearch": {
+                "index": VECTOR_INDEX_NAME,
+                "path": "embedding",
+                "queryVector": vector,
+                "numCandidates": max(limit * 10, 50),
+                "limit": limit,
+                "filter": filter_,
+            }
+        },
+        {
+            "$project": {
+                "_id": 1,
+                "fact": 1,
+                "tags": 1,
+                "agent_id": 1,
+                "created_at": 1,
+                "score": {"$meta": "vectorSearchScore"},
+            }
+        },
+    ]
+    out: list[dict[str, Any]] = []
+    async for doc in coll.aggregate(pipeline):
+        out.append({
+            "id": str(doc["_id"]),
+            "fact": doc.get("fact", ""),
+            "tags": doc.get("tags", []),
+            "agent_id": doc.get("agent_id"),
+            "visibility": visibility,
+            "score": doc.get("score", 0.0),
+            "created_at": doc.get("created_at"),
+        })
+    return out
+
+
+async def delete_memory(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    agent_id: int | None,
+    memory_id: str,
+) -> bool:
+    """Delete a memory by id. Scoped to user_id (and agent_id for private)."""
+    from bson import ObjectId
+    try:
+        oid = ObjectId(memory_id)
+    except Exception as e:
+        raise MemoryError(f"Invalid memory_id: {memory_id}") from e
+
+    mdb = await get_mongo_db(db, user_id)
+
+    if agent_id is not None:
+        res = await mdb[PRIVATE_COLLECTION].delete_one(
+            {"_id": oid, "user_id": user_id, "agent_id": agent_id}
+        )
+        if res.deleted_count:
+            return True
+
+    res = await mdb[SHARED_COLLECTION].delete_one({"_id": oid, "user_id": user_id})
+    return bool(res.deleted_count)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Health
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def ping(db: AsyncSession, user_id: int) -> dict[str, Any]:
+    """Verify the configured Atlas cluster is reachable."""
+    mdb = await get_mongo_db(db, user_id)
+    pong = await mdb.command("ping")
+    return {"ok": bool(pong.get("ok")), "db": mdb.name}
