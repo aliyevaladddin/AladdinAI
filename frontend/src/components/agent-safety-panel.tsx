@@ -78,7 +78,9 @@ export function AgentSafetyPanel({
             `/providers/${providerId}/models`,
           );
           if (cancelled) return;
-          setModels(r.models || []);
+          // De-duplicate models to avoid React 'same key' warning
+          const uniqueModels = Array.from(new Set(r.models || []));
+          setModels(uniqueModels);
         } catch (e) {
           console.error(e);
         }

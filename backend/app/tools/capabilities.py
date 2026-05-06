@@ -7,11 +7,12 @@ catalog grows. New families can be added here when verified.
 from __future__ import annotations
 
 TOOL_CAPABLE_PREFIXES: tuple[str, ...] = (
-    # Meta Llama (3.1+ instruct variants support tools)
+    # Meta Llama (3.1+ instruct variants support tools).
+    # Llama 4 (maverick/scout) on NIM does NOT return native tool_calls —
+    # it hallucinates JSON in the content. Excluded until NIM fixes it.
     "meta/llama-3.1-",
     "meta/llama-3.2-",
     "meta/llama-3.3-",
-    "meta/llama-4-",
     # NVIDIA Nemotron family — built on Llama, tools-capable
     "nvidia/llama-3.1-nemotron-",
     "nvidia/llama-3.3-nemotron-",
