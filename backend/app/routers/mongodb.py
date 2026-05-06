@@ -1,3 +1,4 @@
+import certifi
 from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient
 from sqlalchemy import select
@@ -40,7 +41,11 @@ async def test_mongo(conn_id: int, user: User = Depends(get_current_user), db: A
     if not conn:
         raise HTTPException(status_code=404, detail="Connection not found")
 
-    client = AsyncIOMotorClient(conn.connection_string_encrypted, serverSelectionTimeoutMS=5000)
+    client = AsyncIOMotorClient(
+        conn.connection_string_encrypted,
+        serverSelectionTimeoutMS=5000,
+        tlsCAFile=certifi.where(),
+    )
     try:
         pong = await client[conn.db_name].command("ping")
         if not pong.get("ok"):

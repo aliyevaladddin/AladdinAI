@@ -44,6 +44,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isGeneralChat, setIsGeneralChat] = useState(false);
+  const [composingNew, setComposingNew] = useState(false);
   const messagesEnd = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -78,6 +79,7 @@ export default function ChatPage() {
 
   const openSession = async (session: Session): Promise<void> => {
     setIsGeneralChat(false);
+    setComposingNew(false);
     setActiveSession(session);
     setSelectedAgentId(String(session.agent_id));
     setLoadingMessages(true);
@@ -95,10 +97,21 @@ export default function ChatPage() {
     setMessages([]);
     setInput("");
     setSelectedAgentId("");
+    setComposingNew(false);
+  };
+
+  const startNewChatWithAgent = (agentId: number) => {
+    setIsGeneralChat(false);
+    setActiveSession(null);
+    setMessages([]);
+    setInput("");
+    setSelectedAgentId(String(agentId));
+    setComposingNew(true);
   };
 
   const openGeneralChat = () => {
     setIsGeneralChat(true);
+    setComposingNew(false);
     setActiveSession(null);
     setMessages([]);
     setInput("");
@@ -141,7 +154,10 @@ export default function ChatPage() {
         const next = await api.get<Session[]>("/chat/sessions");
         setSessions(next);
         const newSession = next.find((s) => s.id === res.session_id);
-        if (newSession) setActiveSession(newSession);
+        if (newSession) {
+          setActiveSession(newSession);
+          setComposingNew(false);
+        }
       } else {
         loadSessions();
       }
@@ -215,10 +231,10 @@ export default function ChatPage() {
             Recent
           </p>
           {sessions.map((s) => (
-            <button
+            <div
               key={s.id}
               onClick={() => openSession(s)}
-              className={`w-full text-left p-3 rounded-md border transition-colors group ${
+              className={`w-full text-left p-3 rounded-md border transition-colors group cursor-pointer ${
                 activeSession?.id === s.id
                   ? "bg-muted border-border"
                   : "border-transparent hover:bg-muted/50"
@@ -244,7 +260,7 @@ export default function ChatPage() {
                   <Trash2 size={14} />
                 </button>
               </div>
-            </button>
+            </div>
           ))}
           {sessions.length === 0 && (
             <p className="text-xs text-muted-foreground py-6 text-center">
@@ -283,7 +299,7 @@ export default function ChatPage() {
           </div>
         </header>
 
-        {!activeSession && !isGeneralChat ? (
+        {!activeSession && !isGeneralChat && !composingNew ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
             <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center mb-4">
               <Bot size={28} className="text-muted-foreground" />
@@ -292,24 +308,25 @@ export default function ChatPage() {
             <p className="text-sm text-muted-foreground max-w-md mb-6">
               Pick an agent to start a new chat, or open General Chat from the sidebar.
             </p>
-            <div className="grid grid-cols-2 gap-2 w-full max-w-md">
-              {agents.slice(0, 4).map((agent) => (
-                <button
-                  key={agent.id}
-                  onClick={() => {
-                    setSelectedAgentId(String(agent.id));
-                    setActiveSession(null);
-                    setMessages([]);
-                  }}
-                  className="p-3 rounded-md border border-border hover:bg-muted/50 transition-colors text-left"
-                >
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                    {agent.role}
-                  </p>
-                  <p className="text-sm font-medium truncate">{agent.name}</p>
-                </button>
-              ))}
-            </div>
+            {agents.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No agents yet — create one in /dashboard/agents.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 w-full max-w-md">
+                {agents.map((agent) => (
+                  <button
+                    key={agent.id}
+                    type="button"
+                    onClick={() => startNewChatWithAgent(agent.id)}
+                    className="p-3 rounded-md border border-border hover:bg-muted/50 transition-colors text-left cursor-pointer"
+                  >
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
+                      {agent.role}
+                    </p>
+                    <p className="text-sm font-medium truncate">{agent.name}</p>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <>

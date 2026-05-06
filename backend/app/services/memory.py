@@ -24,6 +24,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import certifi
 import httpx
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from sqlalchemy import select
@@ -67,7 +68,11 @@ async def get_mongo_db(db: AsyncSession, user_id: int) -> AsyncIOMotorDatabase:
     cached = _client_cache.get(user_id)
     if cached is None:
         conn = await _resolve_mongo(db, user_id)
-        client = AsyncIOMotorClient(conn.connection_string_encrypted, serverSelectionTimeoutMS=5000)
+        client = AsyncIOMotorClient(
+            conn.connection_string_encrypted,
+            serverSelectionTimeoutMS=5000,
+            tlsCAFile=certifi.where(),
+        )
         _client_cache[user_id] = (client, conn.db_name)
         return client[conn.db_name]
     client, db_name = cached
