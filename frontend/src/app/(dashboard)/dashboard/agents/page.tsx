@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { AgentGatesPanel } from "@/components/agent-gates-panel";
 import { AgentSafetyPanel } from "@/components/agent-safety-panel";
+import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
 
 interface Agent {
   id: number;
@@ -39,6 +40,7 @@ export default function AgentsPage() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [openGates, setOpenGates] = useState<number | null>(null);
   const [openSafety, setOpenSafety] = useState<number | null>(null);
+  const [openExtraction, setOpenExtraction] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -196,6 +198,16 @@ export default function AgentsPage() {
                       variant="outline"
                       size="sm"
                       disabled={busy}
+                      onClick={() =>
+                        setOpenExtraction(openExtraction === a.id ? null : a.id)
+                      }
+                    >
+                      {openExtraction === a.id ? "Hide extraction" : "Extraction"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busy}
                       onClick={() => handleDelete(a.id)}
                     >
                       Delete
@@ -210,6 +222,12 @@ export default function AgentsPage() {
                 )}
                 {openSafety === a.id && (
                   <AgentSafetyPanel
+                    agentId={a.id}
+                    providerId={a.llm_provider_id}
+                  />
+                )}
+                {openExtraction === a.id && (
+                  <AgentExtractionPanel
                     agentId={a.id}
                     providerId={a.llm_provider_id}
                   />

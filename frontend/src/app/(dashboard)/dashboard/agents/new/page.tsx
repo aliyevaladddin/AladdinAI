@@ -45,7 +45,9 @@ export default function NewAgentPage() {
     setModelsLoading(true);
     try {
       const res = await api.get<{ models: string[]; hint?: string }>(`/providers/${providerId}/models`);
-      setModels(res.models);
+      // De-duplicate models to avoid React 'same key' warning
+      const uniqueModels = Array.from(new Set(res.models));
+      setModels(uniqueModels);
       if (res.hint) setModelsHint(res.hint);
     } catch {
       setModelsHint("Failed to load models. Try connecting the provider first.");
