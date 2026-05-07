@@ -13,12 +13,26 @@ Config lives in `agent.tools_config.safety`:
       "safety": {
         "ingress": { "enabled": true, "model": null },
         "egress":  { "enabled": true, "model": null },
-        "pii":     { "enabled": true, "model": null }
+        "pii": {
+          "enabled": true,
+          "model": null,
+          "phases": {
+            "ingress": true,
+            "egress": true,
+            "memory_write": false,
+            "memory_read": false
+          }
+        }
       }
     }
 
 Resolution order for the model: per-check `model` -> `default_safety_model`.
 If neither is set, the check is pass-through regardless of `enabled`.
+
+PII phases let you keep redaction on user-facing I/O (ingress/egress) but
+skip it on internal memory writes/reads — useful when the user explicitly
+asks the agent to remember their own PII. Defaults when phases is missing:
+ingress=true, egress=true, memory_write=false, memory_read=false.
 
 Provider: reuses the agent's `llm_provider_id` (typically NIM, where
 nemoguard / topic-control / gliner-pii / llama-guard models live).
@@ -65,6 +79,28 @@ def _resolve_model(agent: Agent, check: str) -> str | None:
     if not isinstance(per, dict) or not per.get("enabled"):
         return None
     return per.get("model") or cfg.get("default_safety_model") or None
+
+
+PII_PHASES = ("ingress", "egress", "memory_write", "memory_read")
+_PII_PHASE_DEFAULTS = {
+    "ingress": True,
+    "egress": True,
+    "memory_write": False,
+    "memory_read": False,
+}
+
+
+def _pii_phase_enabled(agent: Agent, phase: str) -> bool:
+    """Whether PII redaction should run for the given phase."""
+    cfg = _safety_cfg(agent)
+    pii = (cfg.get("safety") or {}).get("pii") or {}
+    phases = pii.get("phases") if isinstance(pii, dict) else None
+    if not isinstance(phases, dict):
+        return _PII_PHASE_DEFAULTS.get(phase, False)
+    val = phases.get(phase)
+    if isinstance(val, bool):
+        return val
+    return _PII_PHASE_DEFAULTS.get(phase, False)
 
 
 def block_response(agent: Agent) -> str:
@@ -210,13 +246,18 @@ async def safety_pii(
     *,
     agent: Agent,
     text: str,
+    phase: str = "ingress",
 ) -> dict[str, Any]:
     """Redact PII in `text`. Returns {text, redacted: bool, labels: [...]}.
 
-    Always runs the regex pre-pass. If the SLM check is enabled and configured,
-    additionally asks the model for spans and replaces them. Pass-through (no
-    redaction) only if both regex and SLM produce nothing.
+    Skipped entirely when PII redaction is disabled for this phase
+    (see `_pii_phase_enabled`). Otherwise always runs the regex pre-pass;
+    if the SLM check is enabled and configured, additionally asks the model
+    for spans and replaces them.
     """
+    if not _pii_phase_enabled(agent, phase):
+        return {"text": text, "redacted": False, "labels": []}
+
     redacted_text, labels = _regex_redact(text)
 
     model = _resolve_model(agent, "pii")
