@@ -22,7 +22,7 @@ import httpx
 
 from app.models.llm_provider import LLMProvider
 
-DEFAULT_TIMEOUT = 60.0
+DEFAULT_TIMEOUT = 180.0
 DEFAULT_MAX_TOKENS = 1024
 
 OPENAI_COMPATIBLE = {"openai", "nvidia_nim", "ollama", "custom"}

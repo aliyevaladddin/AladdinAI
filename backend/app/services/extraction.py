@@ -54,9 +54,13 @@ _SYSTEM_PROMPT = (
     "implied by the system prompt. "
     'Reply with strict JSON: {"facts": [{"text": "<one sentence>", '
     '"visibility": "private"|"shared", "tags": ["<tag>", ...]}]}. '
-    "Use 'shared' only when the fact is useful to other agents serving the "
-    "same user (e.g. customer-level facts). Return an empty list if nothing "
-    "is worth saving."
+    "Visibility rules: use 'shared' for any fact about the user themselves "
+    "(their name, email, phone, address, role, company, languages, personal "
+    "preferences, recurring deadlines) AND for customer/contact-level facts "
+    "useful to other agents serving the same user. Use 'private' only for "
+    "agent-internal notes that have no value to siblings (e.g. this agent's "
+    "draft state, intermediate reasoning, agent-specific scratchpad). When "
+    "in doubt, prefer 'shared'. Return an empty list if nothing is worth saving."
 )
 
 
@@ -177,7 +181,7 @@ async def _persist_fact(
     if not verdict["save"]:
         return
 
-    pii = await safety_pii(db, agent=agent, text=fact)
+    pii = await safety_pii(db, agent=agent, text=fact, phase="memory_write")
     text = pii["text"] if pii["redacted"] else fact
 
     try:
