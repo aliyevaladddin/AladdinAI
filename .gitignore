@@ -22,6 +22,11 @@ node_modules/
 .vscode/
 .idea/
 *.swp
+.aider*
+.aider.chat.history.md
+.aider.input.history
+.aider.messages.jsonl
+.aider.prompts/
 
 # IDX
 .idx/
