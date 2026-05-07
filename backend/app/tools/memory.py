@@ -126,7 +126,7 @@ async def remember(
         if not verdict["save"]:
             return {"status": "skipped", "reason": verdict.get("reason", "filtered_by_gate")}
 
-        pii = await safety_pii(ctx.db, agent=agent, text=fact)
+        pii = await safety_pii(ctx.db, agent=agent, text=fact, phase="memory_write")
         if pii["redacted"]:
             fact = pii["text"]
             redacted_labels = pii["labels"]

@@ -176,6 +176,8 @@ async def chat(
     try:
         reply = await run_agent(db, agent, messages_payload, session_id=session.id)
     except LLMError as e:
+        import logging
+        logging.getLogger(__name__).exception("run_agent failed for agent %s: %s", agent.id, e)
         raise HTTPException(status_code=502, detail=f"LLM request failed: {e}")
 
     # Сохраняем оба сообщения в БД
