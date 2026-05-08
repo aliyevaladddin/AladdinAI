@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-// NOTICE: This file is protected under RCF-PL v1.2.8
-// [RCF:PROTECTED]
-
 import { Command } from 'commander';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -11,136 +8,105 @@ import { execa } from 'execa';
 import fs from 'fs-extra';
 import path from 'path';
 
-const program = new Command();
-
 const REPO_URL = 'https://github.com/aliyevaladddin/AladdinAI.git';
 
-console.log(chalk.cyan(`
-   ╔══════════════════════════════════════════════════════════╗
-   ║                                                          ║
-   ║   ✨  WELCOME TO ALADDIN AI PLATFORM INITIALIZER  ✨   ║
-   ║        Powered by RCF Protocol v2.0.3                    ║
-   ║                                                          ║
-   ╚══════════════════════════════════════════════════════════╝
-`));
+const program = new Command();
 
 program
   .name('aladdin-ai')
-  .description('Bootstrap your own AladdinAI instance')
-  .version('1.2.0')
-  .action(async () => {
-    const { mode } = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'mode',
-        message: 'What would you like to do?',
-        choices: [
-          { name: '🚀 Install Desktop App (Recommended)', value: 'desktop' },
-          { name: '💻 Clone Source Code (For Developers)', value: 'source' }
-        ]
-      }
-    ]);
+  .description('Bootstrap a local AladdinAI instance (FastAPI + Next.js)')
+  .version('1.3.0')
+  .option('-n, --name <name>', 'project directory name')
+  .option('-y, --yes', 'accept defaults, skip prompts')
+  .option('--skip-install', 'clone only, do not install deps or migrate')
+  .action(async (opts) => {
+    console.log(chalk.cyan('\nAladdinAI bootstrap'));
+    console.log(chalk.dim('Self-hosted AI workspace — agents, memory, CRM, channels.\n'));
 
-    if (mode === 'desktop') {
-      const spinner = ora('Preparing Desktop App download...').start();
-      try {
-        const platform = process.platform;
-        let downloadUrl = '';
-        let fileName = '';
+    const answers = opts.yes
+      ? { projectName: opts.name || 'aladdin-ai', installDeps: !opts.skipInstall }
+      : await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'projectName',
+            message: 'Project directory:',
+            default: opts.name || 'aladdin-ai',
+          },
+          {
+            type: 'confirm',
+            name: 'installDeps',
+            message: 'Install dependencies and run migrations?',
+            default: !opts.skipInstall,
+          },
+        ]);
 
-        // GitHub Release assets usually follow this pattern
-        if (platform === 'darwin') {
-          downloadUrl = 'https://github.com/aliyevaladddin/AladdinAI/releases/latest/download/AladdinAI.dmg';
-          fileName = 'AladdinAI.dmg';
-        } else if (platform === 'win32') {
-          // Changed to match electron-builder default naming or redirect
-          downloadUrl = 'https://github.com/aliyevaladddin/AladdinAI/releases/latest/download/AladdinAI.exe';
-          fileName = 'AladdinAI.exe';
-        } else if (platform === 'linux') {
-          downloadUrl = 'https://github.com/aliyevaladddin/AladdinAI/releases/latest/download/AladdinAI.AppImage';
-          fileName = 'AladdinAI.AppImage';
-        } else {
-          spinner.fail(chalk.red('Platform not supported for desktop direct install.'));
-          return;
-        }
-
-        spinner.text = `Downloading ${fileName} for ${platform}...`;
-        const downloadPath = path.join(process.cwd(), fileName);
-
-        // Use -f to fail on 404, -L to follow redirects
-        try {
-          await execa('curl', ['-f', '-L', '-o', downloadPath, downloadUrl]);
-        } catch (downloadErr) {
-          spinner.fail(chalk.red(`\n❌ Failed to download ${fileName}. Possibly the version is not yet available on GitHub Releases.`));
-          console.log(chalk.yellow(`\nTry downloading manually from: https://github.com/aliyevaladddin/AladdinAI/releases`));
-          return;
-        }
-
-        spinner.succeed(chalk.green(`\n✅ Download complete: ${fileName}`));
-        console.log(chalk.cyan(`\n👉 Opening ${fileName} for installation...`));
-
-        try {
-          if (platform === 'darwin') {
-            await execa('open', [downloadPath]);
-          } else if (platform === 'win32') {
-            // More robust Windows open command using shell
-            await execa('powershell', ['-Command', `Start-Process "${downloadPath}"`], { shell: true });
-          } else {
-            await execa('xdg-open', [downloadPath]);
-          }
-        } catch (openErr) {
-          console.log(chalk.yellow(`\n⚠️  Could not open automatically. Please run ${fileName} manually from this folder.`));
-        }
-
-      } catch (err) {
-        spinner.fail(chalk.red('An unexpected error occurred during installation.'));
-        console.error(err);
-      }
-      return;
-    }
-
-    const answers = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'projectName',
-        message: 'What is your project name?',
-        default: 'my-aladdin-ai'
-      },
-      {
-        type: 'confirm',
-        name: 'installDeps',
-        message: 'Would you like to install dependencies automatically?',
-        default: true
-      }
-    ]);
-
-    const targetDir = path.join(process.cwd(), answers.projectName);
-
+    const targetDir = path.resolve(process.cwd(), answers.projectName);
     if (fs.existsSync(targetDir)) {
-      console.log(chalk.red(`\n❌ Error: Directory ${answers.projectName} already exists.`));
+      console.log(chalk.red(`\nDirectory "${answers.projectName}" already exists. Pick another name or remove it.`));
       process.exit(1);
     }
 
-    const spinner = ora('Cloning AladdinAI repository...').start();
-
+    // 1. Clone
+    const cloneSpin = ora('Cloning repository').start();
     try {
-      await execa('git', ['clone', REPO_URL, targetDir]);
-      spinner.succeed(chalk.green('Repository cloned successfully!'));
+      await execa('git', ['clone', '--depth', '1', REPO_URL, targetDir]);
       await fs.remove(path.join(targetDir, '.git'));
+      cloneSpin.succeed('Repository cloned');
+    } catch (err) {
+      cloneSpin.fail('git clone failed');
+      console.error(err.shortMessage || err.message);
+      process.exit(1);
+    }
 
-      if (answers.installDeps) {
-        const feSpinner = ora('Installing Frontend dependencies...').start();
-        await execa('npm', ['install'], { cwd: path.join(targetDir, 'frontend') });
-        feSpinner.succeed(chalk.green('Frontend dependencies installed!'));
+    // 2. Copy .env
+    const envSpin = ora('Creating .env from template').start();
+    try {
+      await fs.copy(
+        path.join(targetDir, '.env.example'),
+        path.join(targetDir, '.env'),
+      );
+      envSpin.succeed('.env created (edit JWT_SECRET before going to production)');
+    } catch (err) {
+      envSpin.warn('Could not copy .env.example — do it manually');
+    }
+
+    if (answers.installDeps) {
+      // 3. Backend deps via make install
+      const beSpin = ora('Installing backend dependencies (creates .venv)').start();
+      try {
+        await execa('make', ['install'], { cwd: targetDir });
+        beSpin.succeed('Backend dependencies installed');
+      } catch (err) {
+        beSpin.fail('make install failed — run it manually after fixing the issue');
+        console.error(chalk.dim(err.shortMessage || err.message));
       }
 
-      console.log(chalk.blue('\n🛡️  RCF Protocol: Your project is pre-marked for RCF compliance.'));
-      console.log(chalk.green(`\n🚀 Success! Your AladdinAI platform is ready in ${answers.projectName}`));
+      // 4. Frontend deps
+      const feSpin = ora('Installing frontend dependencies').start();
+      try {
+        await execa('npm', ['install'], { cwd: path.join(targetDir, 'frontend') });
+        feSpin.succeed('Frontend dependencies installed');
+      } catch (err) {
+        feSpin.fail('npm install failed in frontend/');
+        console.error(chalk.dim(err.shortMessage || err.message));
+      }
 
-    } catch (error) {
-      spinner.fail(chalk.red('Failed to bootstrap project.'));
-      console.error(error);
+      // 5. Migrations
+      const mSpin = ora('Applying database migrations').start();
+      try {
+        await execa('make', ['migrate'], { cwd: targetDir });
+        mSpin.succeed('Migrations applied');
+      } catch (err) {
+        mSpin.fail('make migrate failed — run it manually after fixing the issue');
+        console.error(chalk.dim(err.shortMessage || err.message));
+      }
     }
+
+    console.log(chalk.green('\nDone.'));
+    console.log(`\n  cd ${answers.projectName}`);
+    console.log('  make dev-backend    # FastAPI on :8000');
+    console.log('  make dev-frontend   # Next.js on :3000');
+    console.log(chalk.dim('\nDocs: README.md, docs/ARCHITECTURE.md\n'));
   });
 
 program.parse(process.argv);
