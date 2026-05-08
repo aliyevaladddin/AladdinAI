@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AgentGatesPanel } from "@/components/agent-gates-panel";
 import { AgentSafetyPanel } from "@/components/agent-safety-panel";
 import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
+import { AgentMemoryPanel } from "@/components/agent-memory-panel";
 
 interface Agent {
   id: number;
@@ -41,6 +42,7 @@ export default function AgentsPage() {
   const [openGates, setOpenGates] = useState<number | null>(null);
   const [openSafety, setOpenSafety] = useState<number | null>(null);
   const [openExtraction, setOpenExtraction] = useState<number | null>(null);
+  const [openMemory, setOpenMemory] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -208,6 +210,16 @@ export default function AgentsPage() {
                       variant="outline"
                       size="sm"
                       disabled={busy}
+                      onClick={() =>
+                        setOpenMemory(openMemory === a.id ? null : a.id)
+                      }
+                    >
+                      {openMemory === a.id ? "Hide memory" : "Memory"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={busy}
                       onClick={() => handleDelete(a.id)}
                     >
                       Delete
@@ -231,6 +243,9 @@ export default function AgentsPage() {
                     agentId={a.id}
                     providerId={a.llm_provider_id}
                   />
+                )}
+                {openMemory === a.id && (
+                  <AgentMemoryPanel agentId={a.id} />
                 )}
               </div>
             );
