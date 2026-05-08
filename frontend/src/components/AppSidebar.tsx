@@ -16,6 +16,7 @@ import {
   Sparkles,
   Settings,
   Terminal,
+  Clock,
 } from "lucide-react";
 
 type NavItem = {
@@ -56,6 +57,7 @@ const sections: NavSection[] = [
     label: "AI",
     items: [
       { href: "/dashboard/agents", label: "Agents", icon: Bot },
+      { href: "/dashboard/triggers", label: "Triggers", icon: Clock },
       { href: "/dashboard/chat", label: "Playground", icon: Sparkles },
       { href: "/dashboard/router", label: "Routing", icon: Settings },
     ],
