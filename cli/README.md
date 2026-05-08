@@ -41,6 +41,32 @@ multi-channel messaging (Telegram / WhatsApp / SMS / email), cron triggers,
 and provider-agnostic LLM routing. See the
 [main repo](https://github.com/aliyevaladddin/AladdinAI) for the full story.
 
+## Releasing
+
+Publishing is fully automated via GitHub Actions
+(`.github/workflows/cli-publish.yml`). The token lives in the repo's
+`NPM_API_TOKEN` secret — never run `npm publish` locally.
+
+```bash
+# 1. Bump the version inside cli/package.json
+cd cli
+npm version patch          # or minor / major — updates package.json
+cd ..
+
+# 2. Commit and tag (tag prefix MUST be cli-v<version>)
+git commit -am "cli: bump to $(node -p "require('./cli/package.json').version")"
+git tag "cli-v$(node -p "require('./cli/package.json').version")"
+git push origin main --tags
+```
+
+The workflow triggers on the `cli-v*` tag, verifies the tag matches
+`package.json`, smoke-tests `--help`, and runs `npm publish`. Failures (tag
+mismatch, version already on npm) fail the workflow safely without
+publishing anything broken.
+
+To rehearse without publishing, run the workflow manually from the Actions
+tab with **Dry run** enabled.
+
 ## License
 
 Apache-2.0
