@@ -263,6 +263,73 @@ async def _vector_search(
     return out
 
 
+async def list_memories(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    agent_id: int | None,
+    scope: str = "both",
+    q: str | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    """Return facts ordered by created_at desc. No vector search.
+
+    `q` does a case-insensitive substring match on `fact` (and `tags`).
+    `scope=private` requires `agent_id`; `shared` ignores it; `both` merges.
+    """
+    if scope not in ("private", "shared", "both"):
+        raise MemoryError(f"Invalid scope: {scope}")
+
+    mdb = await get_mongo_db(db, user_id)
+    out: list[dict[str, Any]] = []
+
+    text_filter: dict[str, Any] = {}
+    if q and q.strip():
+        rx = {"$regex": q.strip(), "$options": "i"}
+        text_filter = {"$or": [{"fact": rx}, {"tags": rx}]}
+
+    if scope in ("private", "both") and agent_id is not None:
+        flt: dict[str, Any] = {"user_id": user_id, "agent_id": agent_id}
+        if text_filter:
+            flt = {"$and": [flt, text_filter]}
+        cursor = mdb[PRIVATE_COLLECTION].find(
+            flt,
+            projection={"embedding": 0},
+        ).sort("created_at", -1).limit(limit)
+        async for doc in cursor:
+            out.append({
+                "id": str(doc["_id"]),
+                "fact": doc.get("fact", ""),
+                "tags": doc.get("tags", []),
+                "agent_id": doc.get("agent_id"),
+                "visibility": "private",
+                "created_at": doc.get("created_at"),
+                "session_id": doc.get("session_id"),
+            })
+
+    if scope in ("shared", "both"):
+        flt = {"user_id": user_id}
+        if text_filter:
+            flt = {"$and": [flt, text_filter]}
+        cursor = mdb[SHARED_COLLECTION].find(
+            flt,
+            projection={"embedding": 0},
+        ).sort("created_at", -1).limit(limit)
+        async for doc in cursor:
+            out.append({
+                "id": str(doc["_id"]),
+                "fact": doc.get("fact", ""),
+                "tags": doc.get("tags", []),
+                "agent_id": doc.get("agent_id"),
+                "visibility": "shared",
+                "created_at": doc.get("created_at"),
+                "session_id": doc.get("session_id"),
+            })
+
+    out.sort(key=lambda r: r.get("created_at") or datetime.min, reverse=True)
+    return out[:limit]
+
+
 async def delete_memory(
     db: AsyncSession,
     *,
