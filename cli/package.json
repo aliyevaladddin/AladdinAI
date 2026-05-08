@@ -1,7 +1,7 @@
 {
   "name": "aladdin-ai",
-  "version": "1.2.0",
-  "description": "The official CLI for AladdinAI Platform. Powered by RCF Protocol.",
+  "version": "1.3.0",
+  "description": "Bootstrap a local AladdinAI instance — FastAPI + Next.js, agents with memory and CRM.",
   "main": "index.js",
   "bin": {
     "aladdin-ai": "index.js"
@@ -11,16 +11,22 @@
     "registry": "https://registry.npmjs.org/"
   },
   "type": "module",
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node -e \"import('./index.js')\""
   },
   "keywords": [
     "ai",
-    "orchestrator",
-    "rcf-protocol",
+    "agents",
     "crm",
-    "aladdin-ai",
-    "automation"
+    "fastapi",
+    "nextjs",
+    "self-hosted",
+    "aladdin-ai"
   ],
   "repository": {
     "type": "git",

@@ -1,36 +1,142 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend
 
-## Getting Started
+Next.js 15 (App Router) dashboard for AladdinAI. TypeScript + Tailwind +
+shadcn/ui primitives + sonner for toasts. Talks to the FastAPI backend over
+REST and a single SSE endpoint for chat streaming.
 
-First, run the development server:
+> ⚠ Read [`AGENTS.md`](AGENTS.md) before writing code. This Next.js version
+> has breaking changes from older releases — check
+> `node_modules/next/dist/docs/` for the relevant guide.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── (auth)/             login/register routes
+│   │   ├── (dashboard)/        authenticated app shell + pages
+│   │   ├── terminal/           full-screen SSH terminal
+│   │   ├── layout.tsx          root html + providers
+│   │   └── page.tsx            landing → redirect to /dashboard
+│   ├── components/
+│   │   ├── AppHeader.tsx
+│   │   ├── AppSidebar.tsx      nav, grouped by section
+│   │   ├── agent-*-panel.tsx   per-agent feature panels
+│   │   └── ui/                 shadcn primitives (button, toast, …)
+│   └── lib/
+│       ├── api.ts              fetch wrapper with auth + error handling
+│       └── utils.ts            cn(), small helpers
+└── package.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Pages
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All authenticated pages live under `(dashboard)/dashboard/`:
 
-## Learn More
+| Route                       | Purpose                                       |
+|-----------------------------|-----------------------------------------------|
+| `/dashboard`                | Overview / activity                           |
+| `/dashboard/crm`            | Contacts                                      |
+| `/dashboard/deals`          | Deals                                         |
+| `/dashboard/comms`          | Inbox + connected channels and email accounts |
+| `/dashboard/channels`       | Telegram / WhatsApp / SMS providers           |
+| `/dashboard/webhooks`       | Outgoing webhook subscriptions                |
+| `/dashboard/agents`         | Create/configure agents (the main surface)    |
+| `/dashboard/triggers`       | Cron-scheduled fan-out tasks                  |
+| `/dashboard/chat`           | Playground for arbitrary chat                 |
+| `/dashboard/router`         | Default model + routing rules                 |
+| `/dashboard/providers`      | LLM provider connections                      |
+| `/dashboard/vms`            | Cloud VMs (SSH credentials)                   |
+| `/dashboard/mongodb`        | MongoDB cluster connections                   |
+| `/dashboard/bentoml`        | BentoML deploy targets                        |
+| `/terminal`                 | Full-screen WebSocket terminal                |
 
-To learn more about Next.js, take a look at the following resources:
+When adding a page, also add an entry to `components/AppSidebar.tsx`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## The "agent panel" pattern
 
-## Deploy on Vercel
+Agent configuration is split into focused panels:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `agent-memory-panel.tsx`     — list/search/add/delete memory facts
+- `agent-extraction-panel.tsx` — extraction prompt + behavior toggles
+- `agent-gates-panel.tsx`      — handoff / memory-write / recall gates
+- `agent-safety-panel.tsx`     — moderation + PII per phase
+- `agent-triggers-panel.tsx`   — (lives on `/dashboard/triggers`, not per-agent)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Each panel is a self-contained client component that:
+
+1. Loads its own data on mount via `api.get(...)`.
+2. Owns its draft/edit state.
+3. Calls back into the API on save and re-fetches.
+4. Reports success/failure with `toast.success` / `toast.error` from sonner.
+
+When a new feature needs configuration on the agent screen, follow this
+pattern — don't bolt it onto an existing panel.
+
+---
+
+## API client
+
+`src/lib/api.ts` is the only place that talks to the backend. It:
+
+- Reads `NEXT_PUBLIC_API_URL` (set in root `.env`) to build URLs.
+- Attaches the JWT from `localStorage` as `Authorization: Bearer …`.
+- Refreshes the access token on 401 using the refresh token, then retries.
+- Throws on non-2xx responses with a parsed error message.
+
+Use the typed helpers — don't call `fetch` directly:
+
+```ts
+import { api } from "@/lib/api";
+
+const triggers = await api.get<Trigger[]>("/triggers");
+await api.post("/triggers", body);
+await api.patch(`/triggers/${id}`, { enabled: false });
+await api.delete(`/triggers/${id}`);
+```
+
+---
+
+## Styling
+
+- Tailwind utility classes everywhere; `cn()` from `lib/utils.ts` for
+  conditional class merging.
+- Theme tokens (`--color-bg`, `--color-fg`, `--color-border`, …) defined in
+  `globals.css`. Prefer them over raw Tailwind colors so dark/light stays
+  consistent.
+- shadcn primitives (`Button`, `Toast`) live in `components/ui/`. Add more
+  with `npx shadcn@latest add <component>` and they land there.
+
+---
+
+## Dev workflow
+
+```bash
+npm install
+npm run dev     # http://localhost:3000
+npm run build
+npm run lint
+```
+
+Backend must be running on the URL pointed to by `NEXT_PUBLIC_API_URL`
+(default `http://localhost:8000/api`). Auth state is stored in
+`localStorage`; clear it if you see persistent 401s after rotating
+`JWT_SECRET`.
+
+---
+
+## Adding a new feature
+
+1. Add an endpoint in `backend/app/routers/<resource>.py` (and a service if
+   non-trivial).
+2. If it's per-agent configuration, create
+   `components/agent-<name>-panel.tsx` and mount it from
+   `app/(dashboard)/dashboard/agents/page.tsx`.
+3. If it's a top-level surface, add a page under
+   `app/(dashboard)/dashboard/<name>/page.tsx` and a sidebar entry in
+   `AppSidebar.tsx`.
+4. Use `api.*` helpers; don't reinvent auth or error handling.
+5. Toast feedback with sonner: success on writes, error in `catch` blocks.

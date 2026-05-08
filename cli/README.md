@@ -1,25 +1,46 @@
-# 🪄 AladdinAI CLI Installer
+# aladdin-ai
 
-The official bootstrap tool for the **AladdinAI Platform**. 
-
-This tool allows you to deploy the full AladdinAI ecosystem, including the AI Orchestrator, CRM integration, and the Desktop Application, with a single command.
-
-## 🚀 Installation
- 
-You don't need to install this package globally. Just run:
+Bootstrap a local AladdinAI instance with one command.
 
 ```bash
 npx aladdin-ai
 ```
 
-## ✨ What's included?
-- **AI Orchestrator**: Support for MiniCPM3 and other LLMs.
-- **RCF Protocol**: Built-in security and correlation framework.
-- **Desktop App**: Native installers for Mac, Windows, and Linux.
-- **Full CRM**: Complete deals and contacts management system.
+Clones the repo, copies `.env`, installs backend (creates `.venv`) and
+frontend dependencies, and applies database migrations. After it finishes:
 
-## 🛡️ Security
-Protected by the **Restricted Correlation Framework (RCF v2.0.3)**.
+```bash
+cd aladdin-ai
+make dev-backend    # FastAPI on :8000
+make dev-frontend   # Next.js on :3000
+```
 
----
-Developed by [Aladdin Aliyev](https://github.com/aliyevaladddin)
+## Options
+
+```
+npx aladdin-ai [options]
+
+  -n, --name <name>     project directory (default: aladdin-ai)
+  -y, --yes             accept defaults, skip prompts
+      --skip-install    clone only, don't install deps or migrate
+  -V, --version
+  -h, --help
+```
+
+## Requirements
+
+- Node.js 20+
+- Python 3.11+
+- `make`, `git`
+- (optional) Docker — only if you want to use Postgres instead of the default SQLite
+
+## What is AladdinAI?
+
+A self-hosted AI workspace: agents with private + shared memory, CRM,
+multi-channel messaging (Telegram / WhatsApp / SMS / email), cron triggers,
+and provider-agnostic LLM routing. See the
+[main repo](https://github.com/aliyevaladddin/AladdinAI) for the full story.
+
+## License
+
+Apache-2.0
