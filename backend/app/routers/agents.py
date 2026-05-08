@@ -16,9 +16,10 @@ from app.security import get_current_user
 import json as _json
 
 from app.models.llm_provider import LLMProvider
-from app.services import gate_log
+from app.services import gate_log, memory as memory_service
 from app.services.agent_runner import run_agent
 from app.services.llm_service import LLMError
+from app.services.memory import MemoryError as MemoryServiceError
 from app.services.recommended_models import (
     resolve_extraction as resolve_extraction_recs,
     resolve_gates as resolve_gates_recs,
@@ -44,6 +45,12 @@ class ExtractionUpdate(BaseModel):
     enabled: bool | None = None
     model: str | None = None
     max_facts: int | None = None
+
+
+class MemoryCreate(BaseModel):
+    fact: str
+    visibility: str = "private"
+    tags: list[str] | None = None
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -496,6 +503,80 @@ async def get_agent_gates_log(
     return await gate_log.list_decisions(
         db, user_id=user.id, agent_id=agent_id, gate=gate, limit=limit
     )
+
+
+@router.get("/{agent_id}/memories")
+async def list_agent_memories(
+    agent_id: int,
+    scope: str = Query(default="both", pattern="^(private|shared|both)$"),
+    q: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    try:
+        return await memory_service.list_memories(
+            db, user_id=user.id, agent_id=agent_id, scope=scope, q=q, limit=limit
+        )
+    except MemoryServiceError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{agent_id}/memories", status_code=201)
+async def create_agent_memory(
+    agent_id: int,
+    body: MemoryCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    if body.visibility not in ("private", "shared"):
+        raise HTTPException(status_code=400, detail="visibility must be private|shared")
+    fact = (body.fact or "").strip()
+    if not fact:
+        raise HTTPException(status_code=400, detail="fact is required")
+    try:
+        return await memory_service.store_memory(
+            db,
+            user_id=user.id,
+            agent_id=agent_id if body.visibility == "private" else None,
+            fact=fact,
+            visibility=body.visibility,
+            tags=body.tags or [],
+        )
+    except MemoryServiceError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{agent_id}/memories/{memory_id}", status_code=204)
+async def delete_agent_memory(
+    agent_id: int,
+    memory_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    try:
+        ok = await memory_service.delete_memory(
+            db, user_id=user.id, agent_id=agent_id, memory_id=memory_id
+        )
+    except MemoryServiceError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not ok:
+        raise HTTPException(status_code=404, detail="Memory not found")
 
 
 async def _process_agent_message(message_id: int) -> None:
