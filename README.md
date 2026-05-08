@@ -1,124 +1,135 @@
-# 🪄 AladdinAI — The Sovereign AI Platform
+# AladdinAI
 
-[![RCF Protocol](https://img.shields.io/badge/Security-RCF%20v2.0.3-blueviolet)](https://rcf.aliyev.site)
-[![NPM Version](https://img.shields.io/npm/v/aladdin-ai.svg)](https://www.npmjs.com/package/aladdin-ai)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+A self-hosted AI workspace that brings agents, CRM, multi-channel messaging,
+and infrastructure controls under one roof. Configure agents with tools and
+private/shared memory, route LLM traffic across providers, schedule recurring
+tasks, and ingest conversations from Telegram / WhatsApp / SMS / email — all
+from a single Next.js dashboard backed by a FastAPI service.
 
-**AladdinAI** is a high-performance, production-ready AI orchestration platform designed for seamless CRM integration, multi-channel messaging, and sovereign data protection. 
-
-Built with support for cutting-edge architectures like and secured by the **Restricted Correlation Framework (RCF)**.
+> Status: actively developed. Most features below are wired end-to-end and
+> usable locally; some surfaces (webhook triggers, BentoML deploy targets,
+> design polish) are still evolving. See `docs/ARCHITECTURE.md` for the full
+> picture.
 
 ---
 
-## 🚀 Quick Start
+## What's inside
 
-Get the full AladdinAI experience in seconds. Choose between the native **Desktop App** or the **Source Code** for developers.
+- **Agents** — create per-user agents with their own model, system prompt,
+  tool set (CRM, inter-agent delegation, memory), and safety stack.
+- **Memory** — per-agent private store + cross-agent shared store, vector
+  search via MongoDB Atlas + NIM embeddings, automatic per-message extraction.
+- **Gates** — pluggable decision points around handoffs, memory writes, and
+  recall reranking. Every decision is logged.
+- **Safety** — ingress/egress moderation (NemoGuard / Llama-Guard) and PII
+  redaction (GLiNER) configurable per agent and per phase.
+- **CRM** — contacts, deals, activities. Inbound messages from any channel
+  are auto-attributed to a contact and written to the activity timeline.
+- **Channels** — Telegram, WhatsApp (Cloud API), SMS providers, IMAP/SMTP
+  email accounts. Outgoing webhooks for fan-out.
+- **Triggers** — cron-scheduled fan-out tasks delivered to one or more agents
+  (powered by APScheduler).
+- **Routing** — choose default models, per-agent overrides, fallback chains.
+- **Infrastructure** — manage LLM provider connections, MongoDB clusters,
+  cloud VMs (SSH), and BentoML deployments from the UI.
+
+---
+
+## Quick start
 
 ```bash
-npx aladdin-ai
-```
+# 1. Clone & enter the repo
+git clone https://github.com/<you>/AladdinAI.git
+cd AladdinAI
 
----
-
-### 🖥️ Native Desktop Experience
-After running the command above, you can select **"Install Desktop App"** to get a high-performance, standalone version of AladdinAI for your OS (macOS, Windows, or Linux). 
-
-- **Privacy First**: All data stays on your machine.
-- **System Integration**: Native notifications and background tasks.
-- **Zero Config**: No need to worry about Python or Node.js environments.
-
-## ✨ Key Features
-
-### 🧠 Advanced AI Orchestration
-- **Native MiniCPM3 Support**: Optimized for the latest MLA (Multi-head Latent Attention) architectures.
-- **Provider Agnostic**: Connect to Hugging Face, OpenAI, Anthropic, or your own local models via BentoML.
-- **Smart Routing**: Dynamically route requests based on model availability and cost.
-
-### 🛡️ RCF Protocol (Ghost Shield)
-- **Cryptographic Chaining**: Every event is part of a mathematically verifiable chain of correlation.
-- **Ghost Security Headers**: Protection against replay attacks and data tampering.
-- **Compliance Audit**: Built-in automated audit system via `rcf-cli`.
-
-### 📱 Multi-Channel Communication
-- **Unified Messaging**: Support for Telegram, WhatsApp, and SMS via Webhooks.
-- **Incoming & Outgoing Webhooks**: Subscribe to any platform event (messages, deals, activities) with secure HMAC/RCF signing.
-- **Full CRM Integration**: Contacts, Deals, and Activity logging out of the box.
-
-### 🖥️ Cross-Platform Desktop App
-- **Native Experience**: Beautiful desktop application for **macOS**, **Windows**, and **Linux**.
-- **Privacy First**: Run your dashboard locally with full control over your data.
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend**: Next.js 15, TailwindCSS, Electron
-- **Backend**: FastAPI (Python), SQLAlchemy, PostgreSQL
-- **Security**: RCF Protocol v2.0.3, JWT, HMAC-SHA256
-- **Deployment**: Docker, GitHub Actions, NPM CLI
-
----
-
-## 🧑‍💻 Development
-
-### Prerequisites
-- Python 3.11+
-- Node.js 20+
-- Docker (optional, for Postgres)
-
-### Setup
-```bash
-# 1. Copy env file
+# 2. Copy env template
 cp .env.example .env
+# Edit .env — at minimum, set JWT_SECRET in production.
 
-# 2. Install backend deps (creates .venv)
-make install              # or: ./scripts/install.sh
-
-# 3. Install frontend deps
+# 3. Install backend (creates .venv) and frontend deps
+make install
 cd frontend && npm install && cd ..
 
 # 4. Apply database migrations
-make migrate              # or: ./scripts/migrate.sh
+make migrate
+
+# 5. Run both services (in two terminals)
+make dev-backend    # FastAPI on http://localhost:8000
+make dev-frontend   # Next.js on http://localhost:3000
 ```
 
-By default the backend uses local SQLite (`backend/aladdinai.db`). To use Postgres,
-set `DATABASE_URL` in `.env` and run `docker compose up postgres -d` first.
+Open `http://localhost:3000`, register a user, and you'll land on the
+dashboard. Add at least one **LLM Provider** (Settings → LLM Providers) before
+creating agents — NVIDIA NIM works out of the box with a free API key.
 
-### Running
-```bash
-make dev-backend          # FastAPI on :8000  (or: ./scripts/dev-backend.sh)
-make dev-frontend         # Next.js on :3000  (or: ./scripts/dev-frontend.sh)
+By default the backend uses SQLite (`backend/aladdinai.db`). To switch to
+Postgres, uncomment `DATABASE_URL` in `.env` and run
+`docker compose up postgres -d`.
 
-# Full stack via docker compose
-make up                   # docker compose up --build
+---
+
+## Tech stack
+
+| Layer       | Tools                                                       |
+|-------------|-------------------------------------------------------------|
+| Frontend    | Next.js 15, React 19, TailwindCSS, shadcn/ui, sonner        |
+| Backend     | FastAPI, SQLAlchemy 2 (async), Alembic, APScheduler         |
+| Storage     | SQLite or Postgres (relational), MongoDB Atlas (vectors)    |
+| LLM access  | Provider-agnostic (NIM, OpenAI, Anthropic, local via BentoML) |
+| Auth        | JWT (HS256) with access + refresh tokens                    |
+| Realtime    | Server-sent events for chat streaming                       |
+
+---
+
+## Repository layout
+
+```
+AladdinAI/
+├── backend/         FastAPI service, models, services, tools, migrations
+├── frontend/        Next.js 15 dashboard
+├── scripts/         dev / install / migration helpers
+├── docs/            Architecture & design notes
+├── docker-compose.yml
+├── Makefile
+└── .env.example
 ```
 
-### Migrations
+Each subtree has its own README:
+- [`backend/README.md`](backend/README.md) — request lifecycle, services, how to add a tool/gate/channel
+- [`frontend/README.md`](frontend/README.md) — page structure, panel pattern, API client
+- [`scripts/README.md`](scripts/README.md) — what each shell script does
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — concept doc tying everything together
+
+---
+
+## Common tasks
+
 ```bash
-make migration m="add foo table"   # autogenerate from model changes
+make help                          # list all Make targets
+make dev-backend                   # FastAPI on :8000 with auto-reload
+make dev-frontend                  # Next.js on :3000
+make up                            # full stack via docker compose
+make down                          # stop docker compose stack
+make migration m="add foo table"   # autogenerate alembic revision
 make migrate                       # apply pending migrations
-make downgrade                     # roll back one step
-```
-
-### All Make targets
-```bash
-make help
+make downgrade                     # roll back one alembic step
+make clean                         # remove .venv, caches, build artefacts
 ```
 
 ---
 
-## 🤝 Contributing
+## Production notes
 
-We welcome contributions! AladdinAI is built by the community. 
-Special thanks to the **Transformers** community for the collaboration on **MiniCPM3**.
-
-## 📄 License
-
-This project is licensed under the Apache 2.0 License. 
-Selected modules are protected under the **Restricted Correlation Framework (RCF-PL v1.2.8)**.
+- Replace `JWT_SECRET` with `openssl rand -hex 32`. Anyone who knows it can
+  mint tokens for any user.
+- Switch `DATABASE_URL` to Postgres. SQLite is fine locally but not for
+  multi-worker deployments.
+- Set `NEXT_PUBLIC_API_URL` to the public backend URL the browser will reach.
+- Provider API keys live in the database (encrypted at rest, set via the UI),
+  not in `.env`.
 
 ---
 
-<p align="center">
-  Developed with ❤️ by <a href="https://github.com/aliyevaladddin">Aladdin Aliyev</a>
-</p>
+## License
+
+Apache 2.0 — see [LICENSE](LICENSE).
