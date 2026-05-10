@@ -127,6 +127,29 @@ async def disconnect_provider(provider_id: int, user: User = Depends(get_current
     return {"status": "disconnected"}
 
 
+@router.put("/{provider_id}", response_model=LLMProviderResponse)
+async def update_provider(
+    provider_id: int,
+    body: LLMProviderCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))
+    provider = result.scalar_one_or_none()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+    
+    provider.name = body.name
+    provider.type = body.type
+    provider.base_url = body.base_url
+    if body.api_key:
+        provider.api_key_encrypted = body.api_key
+        
+    await db.commit()
+    await db.refresh(provider)
+    return provider
+
+
 @router.delete("/{provider_id}", status_code=204)
 async def delete_provider(provider_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))

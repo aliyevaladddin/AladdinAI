@@ -83,6 +83,8 @@
     line-height: 1.25rem;
     width: 100%;
     transition: border-color 0.15s, box-shadow 0.15s;
+    /* Make selects look native-consistent */
+    appearance: auto;
   }
   .input::placeholder {
     color: var(--color-fg-subtle);
@@ -91,6 +93,10 @@
     outline: none;
     border-color: var(--color-accent);
     box-shadow: 0 0 0 3px var(--color-accent-soft);
+  }
+  .input option {
+    background: var(--color-surface-2);
+    color: var(--color-fg);
   }
 
   .btn {

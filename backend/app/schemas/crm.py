@@ -74,22 +74,24 @@ class DealResponse(BaseModel):
 
 
 class ActivityCreate(BaseModel):
-    contact_id: int
+    contact_id: int | None = None
     deal_id: int | None = None
     type: str  # email_in, email_out, message_in, message_out, note, call
     channel: str | None = None
     subject: str | None = None
     content: str | None = None
+    metadata_json: dict | None = None
 
 
 class ActivityResponse(BaseModel):
     id: int
-    contact_id: int
+    contact_id: int | None
     deal_id: int | None
     type: str
     channel: str | None
     subject: str | None
     content: str | None
+    metadata_json: dict | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

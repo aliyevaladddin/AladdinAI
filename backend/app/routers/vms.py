@@ -91,6 +91,32 @@ async def disconnect_vm(vm_id: int, user: User = Depends(get_current_user), db: 
     return {"status": "disconnected"}
 
 
+@router.put("/{vm_id}", response_model=VMResponse)
+async def update_vm(
+    vm_id: int,
+    body: VMCreate, # Reuse VMCreate but all fields can be optional in a real Update schema, here we use it for simplicity
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(VMConnection).where(VMConnection.id == vm_id, VMConnection.user_id == user.id))
+    vm = result.scalar_one_or_none()
+    if not vm:
+        raise HTTPException(status_code=404, detail="VM not found")
+    
+    vm.name = body.name
+    vm.host = body.host
+    vm.port = body.port
+    vm.username = body.username
+    if body.ssh_key:
+        vm.ssh_key_encrypted = body.ssh_key
+    if body.password:
+        vm.password_encrypted = body.password
+        
+    await db.commit()
+    await db.refresh(vm)
+    return vm
+
+
 @router.delete("/{vm_id}", status_code=204)
 async def delete_vm(vm_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(VMConnection).where(VMConnection.id == vm_id, VMConnection.user_id == user.id))

@@ -330,6 +330,20 @@ async def list_memories(
     return out[:limit]
 
 
+async def count_memories(db: AsyncSession, user_id: int) -> int:
+    """Return total number of memory documents (private + shared) for a user.
+    
+    Returns 0 if MongoDB is not configured or unreachable.
+    """
+    try:
+        mdb = await get_mongo_db(db, user_id)
+        private_count = await mdb[PRIVATE_COLLECTION].count_documents({"user_id": user_id})
+        shared_count = await mdb[SHARED_COLLECTION].count_documents({"user_id": user_id})
+        return private_count + shared_count
+    except Exception:
+        return 0
+
+
 async def delete_memory(
     db: AsyncSession,
     *,

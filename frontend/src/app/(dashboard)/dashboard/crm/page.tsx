@@ -179,44 +179,43 @@ export default function ContactsPage() {
           {filtered.map((c) => (
             <div
               key={c.id}
-              className="flex items-center justify-between rounded-lg border border-border p-4"
+              className="flex items-center justify-between rounded-xl border border-[var(--color-border)] p-4 hover:border-[var(--color-accent)]/30 hover:bg-[var(--color-surface-2)] transition-all group"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium truncate">{c.name}</p>
+                  <Link href={`/dashboard/crm/${c.id}`} className="font-medium hover:text-[var(--color-accent)] transition-colors">
+                    {c.name}
+                  </Link>
                   {c.company && (
-                    <span className="text-xs text-muted-foreground">
-                      · {c.company}
-                    </span>
+                    <span className="text-xs text-[var(--color-fg-muted)]">· {c.company}</span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-sm text-[var(--color-fg-muted)] truncate mt-0.5">
                   {[c.email, c.phone].filter(Boolean).join(" · ") || "—"}
                 </p>
                 {c.tags && c.tags.length > 0 && (
                   <div className="flex gap-1 mt-2 flex-wrap">
                     {c.tags.map((t) => (
-                      <span
-                        key={t}
-                        className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground"
-                      >
+                      <span key={t} className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-fg-muted)]">
                         {t}
                       </span>
                     ))}
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 ml-4">
                 {c.source && (
-                  <span className="text-xs px-2 py-1 rounded bg-zinc-500/20 text-zinc-400">
+                  <span className="text-xs px-2 py-1 rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] text-[var(--color-fg-muted)]">
                     {c.source}
                   </span>
                 )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(c.id)}
-                >
+                <Link href={`/dashboard/crm/${c.id}`}>
+                  <Button variant="outline" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    View →
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(c.id)}
+                  className="text-[var(--color-fg-subtle)] hover:text-[var(--color-danger)] hover:bg-[var(--color-danger-soft)] opacity-0 group-hover:opacity-100 transition-opacity">
                   Delete
                 </Button>
               </div>

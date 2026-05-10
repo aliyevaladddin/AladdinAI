@@ -16,6 +16,16 @@ class EmailAccountCreate(BaseModel):
     refresh_token: str | None = None
 
 
+class EmailAccountUpdate(BaseModel):
+    email: str | None = None
+    imap_host: str | None = None
+    imap_port: int | None = None
+    smtp_host: str | None = None
+    smtp_port: int | None = None
+    password: str | None = None
+
+
+
 class EmailAccountResponse(BaseModel):
     id: int
     provider: str

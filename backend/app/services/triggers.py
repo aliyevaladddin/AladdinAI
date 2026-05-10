@@ -104,6 +104,18 @@ async def _fire_trigger(trigger_id: int) -> list[int]:
             trig.next_fire_at = next_fire(trig.cron)
         except ValueError:
             trig.next_fire_at = None
+
+        # Create notification for the user
+        from app.models.notification import Notification
+        notif = Notification(
+            user_id=trig.user_id,
+            title=f"Trigger \"{trig.name}\" fired",
+            body=f"Dispatched task to {len(agent_ids)} agent(s): {trig.task_template[:120]}",
+            category="trigger",
+            link=f"/dashboard/automations",
+        )
+        db.add(notif)
+
         await db.commit()
 
     # Kick the existing worker per message — fire-and-forget so the scheduler

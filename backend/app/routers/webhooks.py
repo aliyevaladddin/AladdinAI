@@ -65,6 +65,28 @@ async def telegram_webhook(channel_id: int, request: Request, background_tasks: 
     return {"ok": True}
 
 
+@router.get("/whatsapp/{channel_id}")
+async def verify_whatsapp_webhook(channel_id: int, request: Request):
+    channel = await _get_channel(channel_id)
+    if not channel or channel.type != "whatsapp":
+        raise HTTPException(status_code=404, detail="Channel not found")
+
+    mode = request.query_params.get("hub.mode")
+    token = request.query_params.get("hub.verify_token")
+    challenge = request.query_params.get("hub.challenge")
+
+    expected_token = channel.config.get("verify_token", "aladdin_webhook_secret")
+
+    if mode and token:
+        if mode == "subscribe" and token == expected_token:
+            from fastapi.responses import PlainTextResponse
+            return PlainTextResponse(challenge)
+        else:
+            raise HTTPException(status_code=403, detail="Verification failed")
+    
+    raise HTTPException(status_code=400, detail="Missing parameters")
+
+
 @router.post("/whatsapp/{channel_id}")
 async def whatsapp_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
     channel = await _get_channel(channel_id)
@@ -75,6 +97,20 @@ async def whatsapp_webhook(channel_id: int, request: Request, background_tasks: 
 
     from app.services.orchestrator import handle_incoming_message
     background_tasks.add_task(handle_incoming_message, channel, "whatsapp", payload)
+
+    return {"status": "ok"}
+
+
+@router.post("/whatsapp_waha/{channel_id}")
+async def waha_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
+    channel = await _get_channel(channel_id)
+    if not channel or channel.type != "whatsapp_waha":
+        return {"status": "ignored"}
+
+    payload = await request.json()
+
+    from app.services.orchestrator import handle_incoming_message
+    background_tasks.add_task(handle_incoming_message, channel, "whatsapp_waha", payload)
 
     return {"status": "ok"}
 
