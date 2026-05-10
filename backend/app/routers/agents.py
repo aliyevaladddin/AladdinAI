@@ -10,6 +10,8 @@ from sqlalchemy.orm.attributes import flag_modified
 from app.database import async_session, get_db
 from app.models.agent import Agent
 from app.models.agent_message import AgentMessage
+from app.models.activity import Activity
+from app.models.agent_trigger import AgentTrigger
 from app.models.user import User
 from app.schemas.agents import AgentCreate, AgentResponse, AgentUpdate
 from app.security import get_current_user
@@ -66,10 +68,103 @@ class InboxResponse(BaseModel):
     status: str
 
 
+@router.get("/{agent_id}/stats")
+async def get_agent_stats(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return real-time agentic stats for an agent."""
+    from sqlalchemy import func as sa_func
+
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    now = datetime.now(timezone.utc)
+
+    # Uptime: time since agent was created if running, otherwise 0
+    uptime_seconds = 0
+    if agent.status in ("running", "active"):
+        delta = now - agent.created_at.replace(tzinfo=timezone.utc) if agent.created_at.tzinfo is None else now - agent.created_at
+        uptime_seconds = int(delta.total_seconds())
+
+    # Total tasks (completed agent_messages)
+    total_tasks_res = await db.execute(
+        select(sa_func.count(AgentMessage.id)).where(
+            AgentMessage.to_agent_id == agent_id,
+            AgentMessage.user_id == user.id,
+            AgentMessage.status == "done",
+        )
+    )
+    total_tasks = total_tasks_res.scalar() or 0
+
+    # Token usage estimate: sum of lengths of task + result in completed messages
+    # Rough estimate: 1 token ≈ 4 characters
+    msgs_res = await db.execute(
+        select(AgentMessage).where(
+            AgentMessage.to_agent_id == agent_id,
+            AgentMessage.user_id == user.id,
+            AgentMessage.status == "done",
+        )
+    )
+    total_chars = 0
+    for m in msgs_res.scalars().all():
+        total_chars += len(m.task or "")
+        total_chars += len(m.result or "")
+    estimated_tokens = total_chars // 4
+
+    # Gate decisions count
+    gate_decisions_count = 0
+    try:
+        decisions = await gate_log.list_decisions(db, user_id=user.id, agent_id=agent_id, limit=1000)
+        gate_decisions_count = len(decisions)
+    except Exception:
+        pass
+
+    # Format uptime for display
+    if uptime_seconds < 3600:
+        uptime_display = f"{uptime_seconds // 60}m"
+    elif uptime_seconds < 86400:
+        hours = uptime_seconds / 3600
+        uptime_display = f"{hours:.1f}h"
+    else:
+        days = uptime_seconds / 86400
+        uptime_display = f"{days:.1f}d"
+
+    # Format tokens for display
+    if estimated_tokens >= 1_000_000:
+        tokens_display = f"{estimated_tokens / 1_000_000:.1f}M"
+    elif estimated_tokens >= 1000:
+        tokens_display = f"{estimated_tokens / 1000:.1f}k"
+    else:
+        tokens_display = str(estimated_tokens)
+
+    return {
+        "uptime_seconds": uptime_seconds,
+        "uptime_display": uptime_display,
+        "estimated_tokens": estimated_tokens,
+        "tokens_display": tokens_display,
+        "total_tasks": total_tasks,
+        "gate_decisions": gate_decisions_count,
+    }
+
+
 @router.get("", response_model=list[AgentResponse])
 async def list_agents(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Agent).where(Agent.user_id == user.id))
     return result.scalars().all()
+
+
+@router.get("/{agent_id}", response_model=AgentResponse)
+async def get_agent(agent_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id))
+    agent = result.scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return agent
 
 
 @router.post("", response_model=AgentResponse, status_code=201)
@@ -505,6 +600,108 @@ async def get_agent_gates_log(
     )
 
 
+@router.get("/{agent_id}/activity")
+async def get_agent_activity(
+    agent_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    agent = (
+        await db.execute(select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id))
+    ).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    # 1. Incoming tasks (agent_messages)
+    tasks_res = await db.execute(
+        select(AgentMessage)
+        .where(AgentMessage.to_agent_id == agent_id, AgentMessage.user_id == user.id)
+        .order_by(AgentMessage.created_at.desc())
+        .limit(50)
+    )
+    tasks = tasks_res.scalars().all()
+
+    # 2. Actions taken by agent (activities)
+    actions_res = await db.execute(
+        select(Activity)
+        .where(Activity.agent_id == agent_id, Activity.user_id == user.id)
+        .order_by(Activity.created_at.desc())
+        .limit(50)
+    )
+    actions = actions_res.scalars().all()
+
+    # 3. Gate decisions (from MongoDB)
+    gate_decisions = await gate_log.list_decisions(db, user_id=user.id, agent_id=agent_id, limit=50)
+
+    # 4. Agent triggers (where agent_id is in agent_ids JSON)
+    # Using a simple check: if agent_id is in the list. PostgreSQL JSONB supports this with @> or just fetching and filtering
+    # For now, let's fetch recent triggers for the user and filter in Python to be safe with different DB backends
+    triggers_res = await db.execute(
+        select(AgentTrigger)
+        .where(AgentTrigger.user_id == user.id)
+        .where(AgentTrigger.last_fired_at.is_not(None))
+        .order_by(AgentTrigger.last_fired_at.desc())
+        .limit(50)
+    )
+    all_triggers = triggers_res.scalars().all()
+    agent_triggers = [t for t in all_triggers if agent_id in (t.agent_ids or [])]
+
+    events = []
+
+    # Format Tasks
+    for t in tasks:
+        events.append({
+            "id": f"task_{t.id}",
+            "type": "task",
+            "title": "Incoming Task",
+            "status": t.status,
+            "timestamp": t.created_at,
+            "content": t.task,
+            "meta": {"from_agent_id": t.from_agent_id, "result": t.result}
+        })
+
+    # Format Actions
+    for a in actions:
+        events.append({
+            "id": f"action_{a.id}",
+            "type": "action",
+            "title": a.type.replace("_", " ").title(),
+            "status": "done",
+            "timestamp": a.created_at,
+            "content": a.content or a.subject or "",
+            "meta": {"channel": a.channel}
+        })
+
+    # Format Gate Decisions
+    for d in gate_decisions:
+        events.append({
+            "id": f"gate_{d['_id']}",
+            "type": "gate",
+            "title": f"Gate: {d['gate']}",
+            "status": d["decision"],
+            "timestamp": d["created_at"],
+            "content": d["reason"],
+            "meta": {"model": d["model"], "latency": d["latency_ms"]}
+        })
+
+    # Format Triggers
+    for tr in agent_triggers:
+        events.append({
+            "id": f"trigger_{tr.id}_{tr.last_fired_at.isoformat()}",
+            "type": "trigger",
+            "title": f"Trigger: {tr.name}",
+            "status": "fired",
+            "timestamp": tr.last_fired_at,
+            "content": tr.task_template,
+            "meta": {"schedule": tr.cron}
+        })
+
+    # Sort all by timestamp DESC
+    events.sort(key=lambda x: x["timestamp"], reverse=True)
+
+    return events[:100]
+
+
 @router.get("/{agent_id}/memories")
 async def list_agent_memories(
     agent_id: int,
@@ -618,4 +815,25 @@ async def _process_agent_message(message_id: int) -> None:
             msg.status = "failed"
 
         msg.completed_at = datetime.now(timezone.utc)
+
+        # Create notification with the result
+        from app.models.notification import Notification
+        if msg.status == "done":
+            notif = Notification(
+                user_id=msg.user_id,
+                title=f"Agent \"{agent.name}\" completed task",
+                body=(msg.result or "")[:200],
+                category="trigger",
+                link=f"/dashboard/agents/{agent.id}",
+            )
+        else:
+            notif = Notification(
+                user_id=msg.user_id,
+                title=f"Agent \"{agent.name}\" failed",
+                body=(msg.error or "Unknown error")[:200],
+                category="system",
+                link=f"/dashboard/agents/{agent.id}",
+            )
+        db.add(notif)
+
         await db.commit()

@@ -106,3 +106,77 @@ async def deploy_service(
         print(f"DEBUG: Deploy error: {repr(e)}")
         print(f"DEBUG: Traceback: {error_trace}")
         return {"status": "error", "message": str(e) or repr(e), "traceback": error_trace}
+
+
+@router.put("/{conn_id}")
+async def update_bentoml_connection(
+    conn_id: int,
+    body: BentoMLCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(BentoMLConnection).where(
+            BentoMLConnection.id == conn_id,
+            BentoMLConnection.user_id == current_user.id
+        )
+    )
+    conn = result.scalar_one_or_none()
+    if not conn:
+        raise HTTPException(status_code=404, detail="BentoML Connection not found")
+    
+    conn.name = body.name
+    conn.endpoint_url = body.endpoint_url
+    # API Key is not in the model but the frontend sends it, we can ignore or add to config if needed
+    
+    await db.commit()
+    await db.refresh(conn)
+    return conn
+
+
+@router.post("/{conn_id}/test")
+async def test_bentoml(conn_id: int, db: AsyncSession = Depends(get_db), user = Depends(get_current_user)):
+    result = await db.execute(
+        select(BentoMLConnection).where(BentoMLConnection.id == conn_id, BentoMLConnection.user_id == user.id)
+    )
+    conn = result.scalar_one_or_none()
+    if not conn:
+        raise HTTPException(status_code=404, detail="Connection not found")
+    
+    # Simple health check simulation or real check if endpoint is public
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            res = await client.get(f"{conn.endpoint_url}/healthz")
+            if res.status_code == 200:
+                conn.status = "connected"
+                await db.commit()
+                return {"status": "connected", "message": "Health check passed"}
+            else:
+                conn.status = "error"
+                await db.commit()
+                return {"status": "error", "message": f"Health check returned {res.status_code}"}
+    except Exception as e:
+        conn.status = "disconnected"
+        await db.commit()
+        return {"status": "error", "message": str(e)}
+
+
+@router.delete("/{conn_id}", status_code=204)
+async def delete_bentoml_connection(
+    conn_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(BentoMLConnection).where(
+            BentoMLConnection.id == conn_id,
+            BentoMLConnection.user_id == current_user.id
+        )
+    )
+    conn = result.scalar_one_or_none()
+    if not conn:
+        raise HTTPException(status_code=404, detail="BentoML Connection not found")
+    
+    await db.delete(conn)
+    await db.commit()

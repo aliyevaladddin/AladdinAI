@@ -1,11 +1,13 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crypto import encrypt
 from app.database import get_db
 from app.models.email_account import EmailAccount
 from app.models.user import User
-from app.schemas.channels import EmailAccountCreate, EmailAccountResponse
+from app.schemas.channels import EmailAccountCreate, EmailAccountResponse, EmailAccountUpdate
 from app.security import get_current_user
 
 router = APIRouter(prefix="/channels/email", tags=["channels"])
@@ -27,9 +29,9 @@ async def create_email(body: EmailAccountCreate, user: User = Depends(get_curren
         imap_port=body.imap_port,
         smtp_host=body.smtp_host,
         smtp_port=body.smtp_port,
-        password_encrypted=body.password,
-        access_token_encrypted=body.access_token,
-        refresh_token_encrypted=body.refresh_token,
+        password_encrypted=encrypt(body.password) if body.password else None,
+        access_token_encrypted=encrypt(body.access_token) if body.access_token else None,
+        refresh_token_encrypted=encrypt(body.refresh_token) if body.refresh_token else None,
     )
     db.add(account)
     await db.commit()
@@ -72,6 +74,51 @@ async def sync_email(
     return {"status": "syncing", "message": "Email sync started in background"}
 
 
+@router.put("/{account_id}", response_model=EmailAccountResponse)
+async def update_email(account_id: int, body: EmailAccountUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(EmailAccount).where(EmailAccount.id == account_id, EmailAccount.user_id == user.id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404, detail="Email account not found")
+    if body.email is not None:
+        account.email = body.email
+    if body.imap_host is not None:
+        account.imap_host = body.imap_host
+    if body.imap_port is not None:
+        account.imap_port = body.imap_port
+    if body.smtp_host is not None:
+        account.smtp_host = body.smtp_host
+    if body.smtp_port is not None:
+        account.smtp_port = body.smtp_port
+    if body.password is not None:
+        account.password_encrypted = encrypt(body.password)
+    account.status = "disconnected"  # reset status after edit — require re-test
+    await db.commit()
+    await db.refresh(account)
+    return account
+
+
+class SendEmailBody(BaseModel):
+    to_email: str
+    subject: str
+    body: str
+    contact_id: int | None = None
+
+
+@router.post("/{account_id}/send")
+async def send_email_endpoint(account_id: int, payload: SendEmailBody, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(EmailAccount).where(EmailAccount.id == account_id, EmailAccount.user_id == user.id))
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404, detail="Email account not found")
+    from app.services.email_service import send_email
+    try:
+        await send_email(db, account, payload.to_email, payload.subject, payload.body, payload.contact_id)
+        return {"status": "sent", "message": f"Email sent to {payload.to_email}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
+
 @router.delete("/{account_id}", status_code=204)
 async def delete_email(account_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(EmailAccount).where(EmailAccount.id == account_id, EmailAccount.user_id == user.id))
@@ -80,3 +127,4 @@ async def delete_email(account_id: int, user: User = Depends(get_current_user), 
         raise HTTPException(status_code=404, detail="Email account not found")
     await db.delete(account)
     await db.commit()
+

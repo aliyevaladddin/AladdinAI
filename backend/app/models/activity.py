@@ -11,8 +11,9 @@ class Activity(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    contact_id: Mapped[int] = mapped_column(ForeignKey("contacts.id", ondelete="CASCADE"))
+    contact_id: Mapped[int | None] = mapped_column(ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True)
     deal_id: Mapped[int | None] = mapped_column(ForeignKey("deals.id"), nullable=True)
+    agent_id: Mapped[int | None] = mapped_column(ForeignKey("agents.id", ondelete="SET NULL"), nullable=True)
     type: Mapped[str] = mapped_column(String(50))  # email_in, email_out, message_in, message_out, note, call
     channel: Mapped[str | None] = mapped_column(String(50), nullable=True)  # gmail, telegram, whatsapp, sms
     subject: Mapped[str | None] = mapped_column(String(500), nullable=True)

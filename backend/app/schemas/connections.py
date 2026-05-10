@@ -40,7 +40,7 @@ class LLMProviderResponse(BaseModel):
 
 class MongoCreate(BaseModel):
     name: str
-    connection_string: str
+    connection_string: str | None = None
     db_name: str
 
 

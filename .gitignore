@@ -13,6 +13,8 @@ node_modules/
 
 # Database
 *.db
+*.sqlite
+media/
 
 # Environment
 .env

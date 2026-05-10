@@ -13,9 +13,10 @@ from app.security import get_current_user_ws
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
     chat, crm_activities, crm_contacts, crm_deals, dashboard, mongodb,
-    providers, router_config, ssh_exec, triggers as triggers_router, vms, webhooks
+    notifications, providers, router_config, ssh_exec, triggers as triggers_router, vms, webhooks
 )
 from app.services import triggers as triggers_service
+from app.services import telegram_poller
 
 app = FastAPI(title="AladdinAI API")
 
@@ -23,18 +24,25 @@ app = FastAPI(title="AladdinAI API")
 @app.on_event("startup")
 async def _start_scheduler():
     await triggers_service.hydrate_from_db()
+    await telegram_poller.start()
 
 
 @app.on_event("shutdown")
 async def _stop_scheduler():
     await triggers_service.shutdown()
+    await telegram_poller.stop()
+
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 @app.websocket("/ws/terminal/{vm_id}")
@@ -142,6 +150,7 @@ app.include_router(bentoml.router, prefix="/api/bentoml", tags=["BentoML"])
 app.include_router(webhooks.router, prefix="/api")
 app.include_router(ssh_exec.router, prefix="/api")
 app.include_router(triggers_router.router, prefix="/api")
+app.include_router(notifications.router, prefix="/api")
 
 @app.get("/")
 async def root():

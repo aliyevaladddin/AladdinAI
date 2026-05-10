@@ -69,6 +69,29 @@ async def test_mongo(conn_id: int, user: User = Depends(get_current_user), db: A
     }
 
 
+@router.put("/{conn_id}", response_model=MongoResponse)
+async def update_mongo(
+    conn_id: int,
+    body: MongoCreate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(MongoConnection).where(MongoConnection.id == conn_id, MongoConnection.user_id == user.id))
+    conn = result.scalar_one_or_none()
+    if not conn:
+        raise HTTPException(status_code=404, detail="Connection not found")
+    
+    conn.name = body.name
+    conn.db_name = body.db_name
+    if body.connection_string:
+        conn.connection_string_encrypted = body.connection_string
+        
+    await db.commit()
+    await db.refresh(conn)
+    invalidate_mongo_client(user.id)
+    return conn
+
+
 @router.delete("/{conn_id}", status_code=204)
 async def delete_mongo(conn_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MongoConnection).where(MongoConnection.id == conn_id, MongoConnection.user_id == user.id))

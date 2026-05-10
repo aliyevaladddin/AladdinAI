@@ -1,0 +1,71 @@
+"use client";
+
+import { useState } from "react";
+import { ProvidersSettings } from "@/components/settings/ProvidersSettings";
+import { VmsSettings } from "@/components/settings/VmsSettings";
+import { MongoSettings } from "@/components/settings/MongoSettings";
+import { BentoSettings } from "@/components/settings/BentoSettings";
+import { RouterSettings } from "@/components/settings/RouterSettings";
+import { TerminalSettings } from "@/components/settings/TerminalSettings";
+import { Cpu, Cloud, Database, Server, Network, Terminal as TerminalIcon } from "lucide-react";
+
+type TabId = "providers" | "vms" | "mongo" | "bento" | "router" | "terminal";
+
+const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
+  { id: "providers", label: "LLM Providers", icon: Cpu },
+  { id: "vms", label: "Cloud VMs", icon: Cloud },
+  { id: "mongo", label: "MongoDB", icon: Database },
+  { id: "bento", label: "BentoML", icon: Server },
+  { id: "router", label: "Routing", icon: Network },
+  { id: "terminal", label: "Terminal", icon: TerminalIcon },
+];
+
+export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<TabId>("providers");
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Page title */}
+      <div className="mb-5">
+        <h1 className="text-lg font-semibold text-[var(--color-fg)]">Settings</h1>
+        <p className="text-xs text-[var(--color-fg-muted)] mt-0.5">
+          Infrastructure and orchestration configuration
+        </p>
+      </div>
+
+      <div className="flex gap-5 flex-1 min-h-0">
+        {/* Sidebar nav */}
+        <nav className="w-52 shrink-0 space-y-0.5">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${
+                  isActive
+                    ? "bg-[var(--color-surface-2)] text-[var(--color-fg)] border border-[var(--color-border-strong)]"
+                    : "text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-fg)] border border-transparent"
+                }`}
+              >
+                <Icon size={15} className={isActive ? "text-[var(--color-accent)]" : "opacity-50"} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Content panel — fills remaining space */}
+        <div className="flex-1 min-w-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 overflow-y-auto">
+          {activeTab === "providers" && <ProvidersSettings />}
+          {activeTab === "vms" && <VmsSettings />}
+          {activeTab === "mongo" && <MongoSettings />}
+          {activeTab === "bento" && <BentoSettings />}
+          {activeTab === "router" && <RouterSettings />}
+          {activeTab === "terminal" && <TerminalSettings />}
+        </div>
+      </div>
+    </div>
+  );
+}

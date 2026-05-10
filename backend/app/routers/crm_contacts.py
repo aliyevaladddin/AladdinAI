@@ -5,8 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.activity import Activity
 from app.models.contact import Contact
+from app.models.deal import Deal
 from app.models.user import User
-from app.schemas.crm import ActivityResponse, ContactCreate, ContactResponse, ContactUpdate
+from app.schemas.crm import ActivityResponse, ContactCreate, ContactResponse, ContactUpdate, DealResponse
 from app.security import get_current_user
 
 router = APIRouter(prefix="/crm/contacts", tags=["crm"])
@@ -76,5 +77,15 @@ async def contact_activities(contact_id: int, user: User = Depends(get_current_u
         select(Activity)
         .where(Activity.contact_id == contact_id, Activity.user_id == user.id)
         .order_by(Activity.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+@router.get("/{contact_id}/deals", response_model=list[DealResponse])
+async def contact_deals(contact_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Deal)
+        .where(Deal.contact_id == contact_id, Deal.user_id == user.id)
+        .order_by(Deal.updated_at.desc())
     )
     return result.scalars().all()
