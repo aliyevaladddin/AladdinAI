@@ -50,6 +50,7 @@ class MessagingChannelResponse(BaseModel):
     name: str
     agent_id: int | None
     status: str
+    webhook_secret: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
