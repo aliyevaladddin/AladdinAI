@@ -69,28 +69,33 @@ async def get_waha_qr(channel_id: int, user: User = Depends(get_current_user), d
     if not channel or channel.type != "whatsapp_waha":
         raise HTTPException(status_code=404, detail="WAHA channel not found")
 
+    import base64
     import httpx
+
+    from app.services.url_safety import validate_external_url
+
     config = channel.config or {}
-    import os
-    waha_url = config.get("waha_url", os.getenv("WAHA_URL", "http://localhost:3001")).rstrip("/")
+    waha_url = (config.get("waha_url") or "").rstrip("/")
+    if not waha_url:
+        raise HTTPException(status_code=400, detail="waha_url not configured for this channel")
+    validate_external_url(waha_url)
+
     api_key = config.get("waha_api_key", "")
     session_name = config.get("waha_session", "default")
 
-    headers = {}
+    headers = {"Accept": "image/png"}
     if api_key:
         headers["X-Api-Key"] = api_key
 
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            # Tell WAHA to generate the QR image
-            headers["Accept"] = "image/png"
             qr_resp = await client.get(f"{waha_url}/api/{session_name}/auth/qr", headers=headers)
-            
+
             if qr_resp.status_code == 200:
-                import base64
                 encoded = base64.b64encode(qr_resp.content).decode("utf-8")
                 return {"status": "qr", "image": f"data:image/png;base64,{encoded}"}
-            else:
-                return {"status": "error", "message": f"QR not available (status {qr_resp.status_code}). Maybe session is already connected?"}
+            return {"status": "error", "message": f"QR not available (status {qr_resp.status_code}). Maybe session is already connected?"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
