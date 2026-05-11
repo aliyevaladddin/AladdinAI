@@ -1,3 +1,6 @@
+import asyncio
+import logging
+
 from sqlalchemy import select
 
 from app.database import async_session
@@ -14,6 +17,27 @@ from app.services.messaging_service import (
     send_telegram,
     send_whatsapp,
 )
+
+log = logging.getLogger(__name__)
+
+
+def _fire_and_forget(coro, label: str) -> None:
+    """Run a coroutine in the background, log any exception it raises.
+
+    Plain `asyncio.create_task(...)` discards exceptions silently — webhook
+    delivery failures would just disappear. This wrapper attaches a callback
+    so failures land in the log instead.
+    """
+    task = asyncio.create_task(coro)
+
+    def _on_done(t: asyncio.Task) -> None:
+        if t.cancelled():
+            return
+        exc = t.exception()
+        if exc:
+            log.exception("background task %s failed: %s", label, exc, exc_info=exc)
+
+    task.add_done_callback(_on_done)
 
 
 async def handle_incoming_message(channel: MessagingChannel, channel_type: str, payload: dict):
@@ -35,17 +59,16 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
     else:
         return
 
-    print(f"[orchestrator] incoming {channel_type}: sender={sender_id} name={sender_name} text={text[:50] if text else ''}")
+    log.info("orchestrator: incoming %s sender=%s name=%s", channel_type, sender_id, sender_name)
 
     if not text or not sender_id:
-        print(f"[orchestrator] skipped: text={bool(text)} sender_id={bool(sender_id)}")
+        log.debug("orchestrator: skipped: text=%s sender_id=%s", bool(text), bool(sender_id))
         return
 
     async with async_session() as db:
         contact = await find_or_create_contact(
             db, channel.user_id, sender_id, sender_name, source=channel_type, is_phone=is_phone
         )
-        print(f"[orchestrator] contact: id={contact.id} name={contact.name}")
 
         await log_activity(
             db, channel.user_id, contact.id,
@@ -59,12 +82,10 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
 
         reply = "I received your message. An agent will respond shortly."
         if agent and agent.llm_provider_id:
-            print(f"[orchestrator] running agent {agent.name}...")
+            log.info("orchestrator: running agent %s", agent.name)
             reply = await _get_agent_reply(db, agent, text)
         else:
-            print(f"[orchestrator] no agent assigned, using default reply")
-
-        print(f"[orchestrator] reply: {reply[:80]}")
+            log.debug("orchestrator: no agent assigned, using default reply")
 
         await log_activity(
             db, channel.user_id, contact.id,
@@ -74,25 +95,24 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
         await db.commit()
         await db.refresh(contact)
 
-    # Trigger webhooks for message received
     from app.services.webhook_service import trigger_webhooks
-    import asyncio
-    
-    asyncio.create_task(trigger_webhooks(channel.user_id, "message_received", {
-        "contact_id": contact.id,
-        "contact_name": contact.name,
-        "channel": channel_type,
-        "text": text
-    }))
+
+    _fire_and_forget(
+        trigger_webhooks(channel.user_id, "message_received", {
+            "contact_id": contact.id,
+            "contact_name": contact.name,
+            "channel": channel_type,
+            "text": text,
+        }),
+        "webhook:message_received",
+    )
 
     if channel_type == "telegram":
         chat_id = payload.get("message", {}).get("chat", {}).get("id", sender_id)
-        print(f"[orchestrator] sending telegram reply to chat_id={chat_id}")
         try:
             await send_telegram(channel, str(chat_id), reply)
-            print(f"[orchestrator] telegram reply sent OK")
-        except Exception as exc:
-            print(f"[orchestrator] telegram send FAILED: {exc}")
+        except Exception:
+            log.exception("orchestrator: telegram send failed for chat_id=%s", chat_id)
     elif channel_type == "whatsapp":
         await send_whatsapp(channel, sender_id, reply)
     elif channel_type == "whatsapp_waha":
@@ -101,12 +121,14 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
     elif channel_type == "sms":
         await send_sms(channel, sender_id, reply)
 
-    # Trigger webhooks for message sent (reply)
-    asyncio.create_task(trigger_webhooks(channel.user_id, "message_sent", {
-        "contact_id": contact.id,
-        "channel": channel_type,
-        "reply": reply
-    }))
+    _fire_and_forget(
+        trigger_webhooks(channel.user_id, "message_sent", {
+            "contact_id": contact.id,
+            "channel": channel_type,
+            "reply": reply,
+        }),
+        "webhook:message_sent",
+    )
 
 
 async def _get_agent_reply(db, agent: Agent, message: str) -> str:
