@@ -44,7 +44,7 @@ export default function ChannelsPage() {
   const [channelForm, setChannelForm] = useState({
     type: "telegram", name: "", bot_token: "", access_token: "",
     phone_number_id: "", twilio_sid: "", twilio_token: "", twilio_phone: "",
-    waha_url: "http://192.168.101.75:3000", waha_session: "default", waha_api_key: "",
+    waha_url: "http://localhost:3001", waha_session: "default", waha_api_key: "",
   });
 
   const [qrModal, setQrModal] = useState<{ open: boolean; image: string | null; loading: boolean, error: string | null }>({ open: false, image: null, loading: false, error: null });
@@ -398,7 +398,7 @@ export default function ChannelsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium" style={{ color: "var(--color-fg-muted)" }}>WAHA URL</label>
-                  <input className="input" placeholder="http://192.168.101.75:3000" value={channelForm.waha_url}
+                  <input className="input" placeholder="http://localhost:3001" value={channelForm.waha_url}
                     onChange={(e) => setChannelForm({ ...channelForm, waha_url: e.target.value })} required />
                 </div>
                 <div className="space-y-1.5">
