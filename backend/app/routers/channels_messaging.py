@@ -71,7 +71,8 @@ async def get_waha_qr(channel_id: int, user: User = Depends(get_current_user), d
 
     import httpx
     config = channel.config or {}
-    waha_url = config.get("waha_url", "http://192.168.101.75:3000").rstrip("/")
+    import os
+    waha_url = config.get("waha_url", os.getenv("WAHA_URL", "http://localhost:3001")).rstrip("/")
     api_key = config.get("waha_api_key", "")
     session_name = config.get("waha_session", "default")
 

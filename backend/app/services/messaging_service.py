@@ -16,7 +16,8 @@ async def test_channel_connection(channel: MessagingChannel) -> tuple[bool, str]
 
 async def _test_waha(channel: MessagingChannel) -> tuple[bool, str]:
     config = channel.config or {}
-    waha_url = config.get("waha_url", "http://192.168.101.75:3000").rstrip("/")
+    import os
+    waha_url = config.get("waha_url", os.getenv("WAHA_URL", "http://localhost:3001")).rstrip("/")
     api_key = config.get("waha_api_key", "")
     headers = {"Accept": "application/json"}
     if api_key:
@@ -148,7 +149,8 @@ async def send_waha(channel: MessagingChannel, to: str, text: str):
     """Send message back to WhatsApp via WAHA API."""
     import httpx
     config = channel.config or {}
-    waha_url = config.get("waha_url", "http://192.168.101.75:3000").rstrip("/")
+    import os
+    waha_url = config.get("waha_url", os.getenv("WAHA_URL", "http://localhost:3001")).rstrip("/")
     api_key = config.get("waha_api_key", "")
     session_name = config.get("waha_session", "default")
     
