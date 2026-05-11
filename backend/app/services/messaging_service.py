@@ -15,9 +15,18 @@ async def test_channel_connection(channel: MessagingChannel) -> tuple[bool, str]
     return False, f"Unknown channel type: {channel.type}"
 
 async def _test_waha(channel: MessagingChannel) -> tuple[bool, str]:
+    from app.services.url_safety import validate_external_url
+    from fastapi import HTTPException
+
     config = channel.config or {}
-    import os
-    waha_url = config.get("waha_url", os.getenv("WAHA_URL", "http://localhost:3001")).rstrip("/")
+    waha_url = (config.get("waha_url") or "").rstrip("/")
+    if not waha_url:
+        return False, "waha_url not configured for this channel"
+    try:
+        validate_external_url(waha_url)
+    except HTTPException as exc:
+        return False, f"waha_url rejected: {exc.detail}"
+
     api_key = config.get("waha_api_key", "")
     headers = {"Accept": "application/json"}
     if api_key:
@@ -148,9 +157,14 @@ def parse_waha_message(payload: dict):
 async def send_waha(channel: MessagingChannel, to: str, text: str):
     """Send message back to WhatsApp via WAHA API."""
     import httpx
+
+    from app.services.url_safety import validate_external_url
+
     config = channel.config or {}
-    import os
-    waha_url = config.get("waha_url", os.getenv("WAHA_URL", "http://localhost:3001")).rstrip("/")
+    waha_url = (config.get("waha_url") or "").rstrip("/")
+    if not waha_url:
+        raise RuntimeError("waha_url not configured for this channel")
+    validate_external_url(waha_url)
     api_key = config.get("waha_api_key", "")
     session_name = config.get("waha_session", "default")
     
