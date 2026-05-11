@@ -26,11 +26,18 @@ _running = False
 
 
 async def _poll_channel(channel_id: int, bot_token: str) -> None:
-    """Long-poll a single Telegram bot via getUpdates."""
+    """Long-poll a single Telegram bot via getUpdates.
+
+    Robustness rules:
+      * advance `offset` for every update we see — even ones we can't process,
+        so a single bad message can never wedge the poller in a loop.
+      * one bad update never aborts the batch; log and continue.
+      * non-200 / unparseable responses get a backoff, not a crash.
+    """
     offset = 0
     url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
 
-    print(f"[telegram-poll] started polling for channel {channel_id}")
+    log.info("telegram-poll: started polling for channel %s", channel_id)
 
     while _running:
         try:
@@ -40,25 +47,40 @@ async def _poll_channel(channel_id: int, bot_token: str) -> None:
                     params["offset"] = offset
 
                 resp = await client.get(url, params=params)
-                data = resp.json()
-
-                if not data.get("ok"):
-                    print(f"[telegram-poll] API error for channel {channel_id}: {data}")
+                try:
+                    data = resp.json()
+                except Exception as exc:
+                    log.warning("telegram-poll: non-JSON response for channel %s: %s", channel_id, exc)
                     await asyncio.sleep(5)
                     continue
 
-                updates = data.get("result", [])
-                for update in updates:
-                    offset = update["update_id"] + 1
+                if not isinstance(data, dict) or not data.get("ok"):
+                    log.warning("telegram-poll: API error for channel %s: %s", channel_id, data)
+                    await asyncio.sleep(5)
+                    continue
 
-                    # Only process messages (not edited, not callbacks)
+                updates = data.get("result") or []
+                if not isinstance(updates, list):
+                    log.warning("telegram-poll: unexpected result shape for channel %s", channel_id)
+                    await asyncio.sleep(5)
+                    continue
+
+                for update in updates:
+                    if not isinstance(update, dict):
+                        log.warning("telegram-poll: skipping non-dict update on channel %s", channel_id)
+                        continue
+
+                    update_id = update.get("update_id")
+                    if not isinstance(update_id, int):
+                        log.warning("telegram-poll: update without update_id on channel %s: %r", channel_id, update)
+                        continue
+                    # Advance offset BEFORE processing so a poison message can't loop forever.
+                    offset = update_id + 1
+
                     if "message" not in update:
                         continue
 
-                    payload = update
-
                     try:
-                        # Re-load channel from DB each time to get fresh config/agent_id
                         async with async_session() as db:
                             res = await db.execute(
                                 select(MessagingChannel).where(MessagingChannel.id == channel_id)
@@ -66,24 +88,23 @@ async def _poll_channel(channel_id: int, bot_token: str) -> None:
                             channel = res.scalar_one_or_none()
 
                         if not channel:
-                            print(f"[telegram-poll] channel {channel_id} deleted, stopping")
+                            log.info("telegram-poll: channel %s deleted, stopping", channel_id)
                             return
 
                         from app.services.orchestrator import handle_incoming_message
-                        await handle_incoming_message(channel, "telegram", payload)
-                        print(f"[telegram-poll] processed update {update['update_id']} for channel {channel_id}")
+                        await handle_incoming_message(channel, "telegram", update)
+                        log.debug("telegram-poll: processed update %s for channel %s", update_id, channel_id)
 
-                    except Exception as exc:
-                        print(f"[telegram-poll] error processing update {update['update_id']}: {exc}")
+                    except Exception:
+                        log.exception("telegram-poll: error processing update %s on channel %s", update_id, channel_id)
 
         except httpx.TimeoutException:
-            # Long-poll timeout is normal — just retry
             continue
         except asyncio.CancelledError:
-            print(f"[telegram-poll] cancelled for channel {channel_id}")
+            log.info("telegram-poll: cancelled for channel %s", channel_id)
             return
-        except Exception as exc:
-            print(f"[telegram-poll] connection error for channel {channel_id}: {exc}")
+        except Exception:
+            log.exception("telegram-poll: connection error for channel %s", channel_id)
             await asyncio.sleep(5)
 
 
@@ -102,20 +123,20 @@ async def start() -> None:
         channels = res.scalars().all()
 
     if not channels:
-        print("[telegram-poll] no telegram channels found, skipping")
+        log.info("telegram-poll: no telegram channels found, skipping")
         return
 
     for ch in channels:
         token = (ch.config or {}).get("bot_token")
         if not token:
-            print(f"[telegram-poll] channel {ch.id} has no bot_token, skipping")
+            log.warning("telegram-poll: channel %s has no bot_token, skipping", ch.id)
             continue
 
         task = asyncio.create_task(_poll_channel(ch.id, token))
         _tasks[ch.id] = task
-        print(f"[telegram-poll] registered channel {ch.id} ({ch.name})")
+        log.info("telegram-poll: registered channel %s (%s)", ch.id, ch.name)
 
-    print(f"[telegram-poll] started {len(_tasks)} poller(s)")
+    log.info("telegram-poll: started %d poller(s)", len(_tasks))
 
 
 async def stop() -> None:

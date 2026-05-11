@@ -2,6 +2,7 @@ import asyncio
 import email
 import email.header
 import imaplib
+import logging
 import os
 import smtplib
 from datetime import datetime, timezone
@@ -15,6 +16,8 @@ from app.database import async_session
 from app.models.activity import Activity
 from app.models.contact import Contact
 from app.models.email_account import EmailAccount
+
+log = logging.getLogger(__name__)
 
 
 def _decode_mime(value: str) -> str:
@@ -106,38 +109,40 @@ async def sync_emails(account_id: int):
         if not account:
             return
 
-        # ── Fetch INBOX (incoming) ──────────────────────────────────────
+        inbox_ok = True
+        sent_ok = True
+
         try:
             inbox_msgs = await _fetch_folder_emails(account, folder="INBOX", limit=30)
-        except Exception:
+        except Exception as exc:
+            log.exception("sync_emails: INBOX fetch failed for account %s: %s", account.id, exc)
             inbox_msgs = []
+            inbox_ok = False
 
-        # ── Fetch Sent (outgoing) ───────────────────────────────────────
         try:
             sent_msgs = await _fetch_sent_emails(account, limit=30)
-        except Exception:
+        except Exception as exc:
+            log.exception("sync_emails: Sent fetch failed for account %s: %s", account.id, exc)
             sent_msgs = []
+            sent_ok = False
 
-        # ── Process incoming ────────────────────────────────────────────
         for msg in inbox_msgs:
             sender_email = msg.get("from_email", "").strip().lower()
             if not sender_email:
                 continue
-
             contact = await _find_contact(db, account.user_id, sender_email)
             await _upsert_activity(db, account, contact.id if contact else None, "email_in", msg)
 
-        # ── Process outgoing ────────────────────────────────────────────
         for msg in sent_msgs:
             to_email = msg.get("to_email", "").strip().lower()
             if not to_email:
                 continue
-
             contact = await _find_contact(db, account.user_id, to_email)
             await _upsert_activity(db, account, contact.id if contact else None, "email_out", msg)
 
         account.last_synced_at = datetime.now(timezone.utc)
-        account.status = "connected"
+        # If both folders failed the account is broken, not "connected" — let the UI surface it.
+        account.status = "connected" if (inbox_ok or sent_ok) else "error"
         await db.commit()
 
 
@@ -263,6 +268,31 @@ def _save_attachments(msg: email.message.Message, activity_id: int) -> list[dict
     return saved
 
 
+def _parse_msg_data(msg_data) -> dict | None:
+    """Build a normalized dict from imaplib FETCH response. Returns None on parse failure."""
+    try:
+        if not msg_data or not msg_data[0]:
+            return None
+        raw = msg_data[0][1]
+        msg = email.message_from_bytes(raw)
+        from_name, from_email = _parse_email_address(msg.get("From", ""))
+        to_name, to_email = _parse_email_address(msg.get("To", ""))
+        body = _extract_body(msg)
+        return {
+            "from_name": from_name,
+            "from_email": from_email,
+            "to_name": to_name,
+            "to_email": to_email,
+            "subject": _decode_mime(msg.get("Subject", "")),
+            "body": body,
+            "message_id": msg.get("Message-ID", "").strip(),
+            "_raw": msg,
+        }
+    except Exception as exc:
+        log.warning("failed to parse email message: %s", exc)
+        return None
+
+
 async def _fetch_folder_emails(account: EmailAccount, folder: str, limit: int = 50) -> list[dict]:
     """Fetch emails from a given IMAP folder. Extracts From/Subject/Body."""
     password = decrypt(account.password_encrypted or "")
@@ -272,31 +302,29 @@ async def _fetch_folder_emails(account: EmailAccount, folder: str, limit: int = 
         port = account.imap_port or 993
         m = imaplib.IMAP4_SSL(host, port)
         m.login(account.email, password)
-        m.select(folder)
+        status, _ = m.select(folder)
+        if status != "OK":
+            m.logout()
+            raise RuntimeError(f"IMAP select failed for folder {folder!r}: {status}")
 
-        _, data = m.search(None, "ALL")
+        status, data = m.search(None, "ALL")
+        if status != "OK" or not data or not data[0]:
+            m.logout()
+            return []
         ids = data[0].split()[-limit:]
         messages = []
 
         for eid in ids:
-            _, msg_data = m.fetch(eid, "(RFC822)")
-            raw = msg_data[0][1]
-            msg = email.message_from_bytes(raw)
-
-            from_name, from_email = _parse_email_address(msg.get("From", ""))
-            to_name, to_email = _parse_email_address(msg.get("To", ""))
-            body = _extract_body(msg)
-
-            messages.append({
-                "from_name": from_name,
-                "from_email": from_email,
-                "to_name": to_name,
-                "to_email": to_email,
-                "subject": _decode_mime(msg.get("Subject", "")),
-                "body": body,
-                "message_id": msg.get("Message-ID", "").strip(),
-                "_raw": msg,  # passed to _save_attachments
-            })
+            try:
+                status, msg_data = m.fetch(eid, "(RFC822)")
+                if status != "OK":
+                    log.warning("fetch %s in %s failed: %s", eid, folder, status)
+                    continue
+                parsed = _parse_msg_data(msg_data)
+                if parsed:
+                    messages.append(parsed)
+            except Exception as exc:
+                log.warning("skipping message %s in %s: %s", eid, folder, exc)
 
         m.logout()
         return messages
@@ -324,29 +352,24 @@ async def _fetch_sent_emails(account: EmailAccount, limit: int = 50) -> list[dic
             m.logout()
             return []
 
-        _, data = m.search(None, "ALL")
+        status, data = m.search(None, "ALL")
+        if status != "OK" or not data or not data[0]:
+            m.logout()
+            return []
         ids = data[0].split()[-limit:]
         messages = []
 
         for eid in ids:
-            _, msg_data = m.fetch(eid, "(RFC822)")
-            raw = msg_data[0][1]
-            msg = email.message_from_bytes(raw)
-
-            from_name, from_email = _parse_email_address(msg.get("From", ""))
-            to_name, to_email = _parse_email_address(msg.get("To", ""))
-            body = _extract_body(msg)
-
-            messages.append({
-                "from_name": from_name,
-                "from_email": from_email,
-                "to_name": to_name,
-                "to_email": to_email,
-                "subject": _decode_mime(msg.get("Subject", "")),
-                "body": body,
-                "message_id": msg.get("Message-ID", "").strip(),
-                "_raw": msg,
-            })
+            try:
+                status, msg_data = m.fetch(eid, "(RFC822)")
+                if status != "OK":
+                    log.warning("fetch %s in Sent failed: %s", eid, status)
+                    continue
+                parsed = _parse_msg_data(msg_data)
+                if parsed:
+                    messages.append(parsed)
+            except Exception as exc:
+                log.warning("skipping sent message %s: %s", eid, exc)
 
         m.logout()
         return messages
@@ -377,12 +400,37 @@ def _extract_body(msg: email.message.Message) -> str:
 
 
 async def send_email(db: AsyncSession, account: EmailAccount, to_email: str, subject: str, body: str, contact_id: int | None = None):
-    """Send email via SMTP and save to database immediately."""
+    """Send email via SMTP and record it in the activity log.
+
+    Ordering matters: we write the activity row first with status="pending",
+    then attempt the SMTP send, then update the row to "sent" or "failed".
+    That way an SMTP failure leaves a visible record, and a DB failure after
+    a successful send is logged loudly so the operator can recover by hand.
+    """
     password = decrypt(account.password_encrypted or "")
-    
-    # Create local Message-ID for tracking/deduplication
+
     import uuid
     local_msg_id = f"<local-{uuid.uuid4()}@{account.email.split('@')[-1]}>"
+
+    activity = Activity(
+        user_id=account.user_id,
+        contact_id=contact_id,
+        type="email_out",
+        channel=account.provider,
+        subject=subject,
+        content=body,
+        metadata_json={
+            "from_name": "",
+            "from_email": account.email,
+            "to_name": "",
+            "to_email": to_email,
+            "message_id": local_msg_id,
+            "delivery_status": "pending",
+        },
+    )
+    db.add(activity)
+    await db.commit()
+    await db.refresh(activity)
 
     def _send():
         msg = MIMEText(body)
@@ -398,23 +446,29 @@ async def send_email(db: AsyncSession, account: EmailAccount, to_email: str, sub
             s.login(account.email, password)
             s.send_message(msg)
 
-    await asyncio.to_thread(_send)
+    try:
+        await asyncio.to_thread(_send)
+    except Exception as exc:
+        log.exception("send_email: SMTP failed for activity %s: %s", activity.id, exc)
+        meta = dict(activity.metadata_json or {})
+        meta["delivery_status"] = "failed"
+        meta["delivery_error"] = str(exc)[:500]
+        activity.metadata_json = meta
+        try:
+            await db.commit()
+        except Exception:
+            log.exception("send_email: also failed to record SMTP error for activity %s", activity.id)
+        raise
 
-    # Save to database immediately so it appears in Sent folder
-    activity = Activity(
-        user_id=account.user_id,
-        contact_id=contact_id,
-        type="email_out",
-        channel=account.provider,
-        subject=subject,
-        content=body,
-        metadata_json={
-            "from_name": "",
-            "from_email": account.email,
-            "to_name": "",
-            "to_email": to_email,
-            "message_id": local_msg_id,
-        }
-    )
-    db.add(activity)
-    await db.commit()
+    meta = dict(activity.metadata_json or {})
+    meta["delivery_status"] = "sent"
+    activity.metadata_json = meta
+    try:
+        await db.commit()
+    except Exception:
+        # SMTP already delivered; surface this so the operator can reconcile.
+        log.exception(
+            "send_email: SMTP succeeded but DB commit failed; message_id=%s to=%s",
+            local_msg_id, to_email,
+        )
+        raise

@@ -1,6 +1,10 @@
+import logging
+
 import httpx
 
 from app.models.messaging_channel import MessagingChannel
+
+log = logging.getLogger(__name__)
 
 
 async def test_channel_connection(channel: MessagingChannel) -> tuple[bool, str]:
@@ -178,7 +182,7 @@ async def send_waha(channel: MessagingChannel, to: str, text: str):
         "session": session_name
     }
     
-    print(f"[waha] Sending reply to {to} via {waha_url}/api/sendText")
+    log.info("waha: sending reply to %s via %s/api/sendText", to, waha_url)
     
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.post(f"{waha_url}/api/sendText", json=payload, headers=headers)
