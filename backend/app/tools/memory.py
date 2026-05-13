@@ -52,6 +52,11 @@ async def _load_agent(ctx: ToolContext) -> Agent | None:
 )
 async def recall(ctx: ToolContext, query: str, scope: str = "both", limit: int = 5) -> dict:
     try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 5
+    limit = max(1, min(20, limit))
+    try:
         results = await mem_service.search_memory(
             ctx.db,
             user_id=ctx.user_id,

@@ -120,6 +120,12 @@ async def _anthropic(
     for m in messages:
         role = m.get("role")
         content = m.get("content", "")
+        if isinstance(content, list):
+            content = "\n".join(
+                b.get("text", "")
+                for b in content
+                if isinstance(b, dict) and b.get("type") == "text"
+            )
         if role == "system":
             system_parts.append(content)
         elif role in ("user", "assistant"):
@@ -191,6 +197,12 @@ def _messages_to_prompt(messages: list[dict]) -> str:
     for m in messages:
         role = m.get("role", "user")
         content = m.get("content", "")
+        if isinstance(content, list):
+            content = "\n".join(
+                b.get("text", "")
+                for b in content
+                if isinstance(b, dict) and b.get("type") == "text"
+            )
         if role == "system":
             parts.append(f"System: {content}")
         elif role == "user":

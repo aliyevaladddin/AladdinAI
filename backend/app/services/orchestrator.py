@@ -43,8 +43,9 @@ def _fire_and_forget(coro, label: str) -> None:
 async def handle_incoming_message(channel: MessagingChannel, channel_type: str, payload: dict):
     """Main orchestrator: incoming message → find/create contact → agent → reply."""
 
+    attachments: list[dict] = []
     if channel_type == "telegram":
-        sender_id, sender_name, text = parse_telegram_message(payload)
+        sender_id, sender_name, text, attachments = parse_telegram_message(payload)
         is_phone = False
     elif channel_type == "whatsapp":
         sender_id, sender_name, text = parse_whatsapp_message(payload)
@@ -59,11 +60,27 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
     else:
         return
 
-    log.info("orchestrator: incoming %s sender=%s name=%s", channel_type, sender_id, sender_name)
+    log.info(
+        "orchestrator: incoming %s sender=%s name=%s attachments=%d",
+        channel_type, sender_id, sender_name, len(attachments),
+    )
 
-    if not text or not sender_id:
+    if (not text and not attachments) or not sender_id:
         log.debug("orchestrator: skipped: text=%s sender_id=%s", bool(text), bool(sender_id))
         return
+
+    if attachments and channel_type == "telegram":
+        from app.services.media import download_telegram_file
+        token = (channel.config or {}).get("bot_token", "")
+        downloaded: list[dict] = []
+        for att in attachments:
+            file_id = att.get("file_id")
+            if not file_id or att.get("kind") != "image":
+                continue
+            saved = await download_telegram_file(token, file_id)
+            if saved:
+                downloaded.append({**att, **saved})
+        attachments = downloaded
 
     async with async_session() as db:
         contact = await find_or_create_contact(
@@ -83,7 +100,7 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
         reply = "I received your message. An agent will respond shortly."
         if agent and agent.llm_provider_id:
             log.info("orchestrator: running agent %s", agent.name)
-            reply = await _get_agent_reply(db, agent, text)
+            reply = await _get_agent_reply(db, agent, text, attachments=attachments)
         else:
             log.debug("orchestrator: no agent assigned, using default reply")
 
@@ -131,15 +148,45 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
     )
 
 
-async def _get_agent_reply(db, agent: Agent, message: str) -> str:
-    """Send a single inbound message through the agent's tool-aware runner."""
+async def _get_agent_reply(
+    db,
+    agent: Agent,
+    message: str,
+    *,
+    attachments: list[dict] | None = None,
+) -> str:
+    """Send a single inbound message through the agent's tool-aware runner.
+
+    When `attachments` contains images, build OpenAI-style multimodal content
+    so vision-capable models can see them.
+    """
+    user_content: str | list[dict]
+    if attachments:
+        from app.services.media import to_data_url
+        blocks: list[dict] = []
+        if message:
+            blocks.append({"type": "text", "text": message})
+        for att in attachments:
+            path = att.get("path")
+            mime = att.get("mime")
+            if not path:
+                continue
+            try:
+                url = to_data_url(path, mime)
+                blocks.append({"type": "image_url", "image_url": {"url": url}})
+            except Exception as e:  # noqa: BLE001
+                log.warning("orchestrator: failed to inline image %s: %s", path, e)
+        user_content = blocks if blocks else (message or "")
+    else:
+        user_content = message
+
     try:
         return await run_agent(
             db,
             agent,
             [
                 {"role": "system", "content": agent.system_prompt},
-                {"role": "user", "content": message},
+                {"role": "user", "content": user_content},
             ],
         )
     except LLMError as e:
