@@ -1,41 +1,55 @@
 # Python
-
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .venv/
+venv/
 env/
+.python-version
 
 # Node
 node_modules/
 .next/
+dist/
+build/
 
 # Database
 *.db
 *.sqlite
 media/
 
-# Environment
+# Environment files
 .env
 .env.local
+.env.*
+!.env.example
 
-# IDE
+# IDE / Editors
 .vscode/
 .idea/
 *.swp
+*.swo
 .aider*
 .aider.chat.history.md
 .aider.input.history
 .aider.messages.jsonl
 .aider.prompts/
 
-# IDX
+# Project specific
 .idx/
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # OS
 .DS_Store
-.aider*
+Thumbs.db
+
+# Temporary / Backups
+*.tmp
+*.bak
+*.swp
