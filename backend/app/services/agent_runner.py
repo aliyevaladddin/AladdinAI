@@ -37,6 +37,26 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
 }
 
 
+def _text_of(content: Any) -> str:
+    """Extract text from a message's content — handles both string and OpenAI
+    multimodal list form `[{type:"text",text:...}, {type:"image_url",...}]`.
+    Returns an empty string for None / empty input.
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if isinstance(block, dict) and block.get("type") == "text":
+                t = block.get("text") or ""
+                if t:
+                    parts.append(t)
+        return "\n".join(parts)
+    return str(content)
+
+
 def _allowed_tools(agent: Agent) -> list[str]:
     cfg = agent.tools_config or {}
     if isinstance(cfg, dict) and "allowed" in cfg:
@@ -73,10 +93,10 @@ async def run_agent(
     if not provider:
         raise LLMError("Agent's LLM provider not found")
 
-    last_user = next(
-        (m.get("content", "") for m in reversed(messages) if m.get("role") == "user"),
+    last_user = _text_of(next(
+        (m.get("content") for m in reversed(messages) if m.get("role") == "user"),
         "",
-    )
+    ))
     if last_user:
         ingress = await safety_ingress(db, agent=agent, text=last_user)
         if not ingress["safe"]:
@@ -98,7 +118,7 @@ async def run_agent(
             if sys_idx is None:
                 messages = [{"role": "system", "content": shared_block}, *messages]
             else:
-                base = messages[sys_idx].get("content") or ""
+                base = _text_of(messages[sys_idx].get("content"))
                 messages[sys_idx] = {
                     "role": "system",
                     "content": f"{base}\n\n{shared_block}" if base else shared_block,
@@ -124,7 +144,7 @@ async def run_agent(
                 continue
             raise
 
-        content = res.get("content")
+        content = _text_of(res.get("content"))
         tool_calls = res.get("tool_calls")
         if content:
             last_content = content

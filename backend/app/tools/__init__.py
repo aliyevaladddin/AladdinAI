@@ -12,5 +12,6 @@ from app.tools.base import REGISTRY, Tool, ToolContext, execute, openai_schemas,
 # Side-effect imports: each module registers its tools at import time.
 from app.tools import inter_agent  # noqa: F401
 from app.tools import memory  # noqa: F401
+from app.tools import messaging  # noqa: F401
 
 __all__ = ["REGISTRY", "Tool", "ToolContext", "execute", "openai_schemas", "tool"]
