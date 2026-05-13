@@ -49,6 +49,12 @@ async def test_channel(channel_id: int, user: User = Depends(get_current_user), 
         channel.status = "connected"
         await db.commit()
 
+        if channel.type == "telegram":
+            from app.services import telegram_poller
+            token = (channel.config or {}).get("bot_token")
+            if token:
+                await telegram_poller.add_channel(channel.id, token)
+
     return {"status": "connected" if success else "error", "message": message}
 
 
@@ -58,6 +64,11 @@ async def delete_channel(channel_id: int, user: User = Depends(get_current_user)
     channel = result.scalar_one_or_none()
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
+
+    if channel.type == "telegram":
+        from app.services import telegram_poller
+        await telegram_poller.remove_channel(channel.id)
+
     await db.delete(channel)
     await db.commit()
 

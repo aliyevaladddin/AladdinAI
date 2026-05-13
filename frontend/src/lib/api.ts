@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 /* ── Token helpers ───────────────────────────────────────────────── */
 function getToken(): string | null {
@@ -162,6 +162,17 @@ export const api = {
       throw new Error(`Failed to PATCH ${path} (Status: ${res.status}): ${errorText}`);
     }
     if (res.status === 204) return {} as T;
+    return res.json();
+  },
+
+  upload: async <T = any>(path: string, file: File): Promise<T> => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await apiFetch(`${API_URL}${path}`, { method: "POST", body: fd });
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "No error body");
+      throw new Error(`Failed to upload to ${path} (Status: ${res.status}): ${errorText}`);
+    }
     return res.json();
   },
 

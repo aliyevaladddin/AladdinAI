@@ -29,6 +29,7 @@ class ChatRequest(BaseModel):
     message: str
     agent_id: int | None = None
     session_id: int | None = None  # если None — создаётся новая сессия
+    attachments: list[dict] | None = None
 
 
 class ChatResponse(BaseModel):
@@ -43,6 +44,7 @@ class ChatMessageResponse(BaseModel):
     role: str
     content: str
     model: str | None
+    attachments: list[dict] | None = None
     created_at: str
 
     model_config = {"from_attributes": True}

@@ -78,14 +78,37 @@ async def _test_whatsapp(channel: MessagingChannel) -> tuple[bool, str]:
         return False, str(e)
 
 
-def parse_telegram_message(payload: dict) -> tuple[str, str, str]:
-    """Returns (sender_id, sender_name, text)"""
+def parse_telegram_message(payload: dict) -> tuple[str, str, str, list[dict]]:
+    """Returns (sender_id, sender_name, text, attachments).
+
+    `attachments` is a list of `{"kind": "image", "file_id": "...", "mime": "..."}`
+    extracted from `message.photo[]` (largest only) and `message.document` when
+    its mime starts with `image/`. Caption is returned via `text` when only a
+    photo is sent.
+    """
     msg = payload.get("message", {})
     user = msg.get("from", {})
+    text = msg.get("text") or msg.get("caption") or ""
+
+    attachments: list[dict] = []
+    photos = msg.get("photo")
+    if isinstance(photos, list) and photos:
+        largest = photos[-1]
+        if isinstance(largest, dict) and largest.get("file_id"):
+            attachments.append(
+                {"kind": "image", "file_id": largest["file_id"], "mime": "image/jpeg"}
+            )
+    doc = msg.get("document")
+    if isinstance(doc, dict):
+        mime = doc.get("mime_type") or ""
+        if mime.startswith("image/") and doc.get("file_id"):
+            attachments.append({"kind": "image", "file_id": doc["file_id"], "mime": mime})
+
     return (
         str(user.get("id", "")),
         f"{user.get('first_name', '')} {user.get('last_name', '')}".strip(),
-        msg.get("text", ""),
+        text,
+        attachments,
     )
 
 
@@ -115,6 +138,33 @@ async def send_telegram(channel: MessagingChannel, chat_id: str, text: str):
             f"https://api.telegram.org/bot{token}/sendMessage",
             json={"chat_id": chat_id, "text": text},
         )
+
+
+async def send_telegram_photo(
+    channel: MessagingChannel,
+    chat_id: str,
+    image_path: str,
+    caption: str | None = None,
+):
+    """Upload a local image file to a Telegram chat via sendPhoto (multipart)."""
+    from pathlib import Path
+
+    token = channel.config.get("bot_token")
+    p = Path(image_path)
+    if not p.exists():
+        log.warning("send_telegram_photo: file not found %s", image_path)
+        return
+    with p.open("rb") as fh:
+        files = {"photo": (p.name, fh, "application/octet-stream")}
+        data: dict[str, str] = {"chat_id": str(chat_id)}
+        if caption:
+            data["caption"] = caption
+        async with httpx.AsyncClient(timeout=60) as client:
+            await client.post(
+                f"https://api.telegram.org/bot{token}/sendPhoto",
+                data=data,
+                files=files,
+            )
 
 
 async def send_whatsapp(channel: MessagingChannel, to_phone: str, text: str):

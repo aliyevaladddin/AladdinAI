@@ -161,6 +161,21 @@ _MODERATION_SYSTEM = (
 )
 
 
+def _flatten_multimodal(text: Any) -> str:
+    """Accept str or OpenAI multimodal list; return plain text for moderation."""
+    if isinstance(text, str) or text is None:
+        return text or ""
+    if isinstance(text, list):
+        parts: list[str] = []
+        for block in text:
+            if isinstance(block, dict) and block.get("type") == "text":
+                t = block.get("text") or ""
+                if t:
+                    parts.append(t)
+        return "\n".join(parts)
+    return str(text)
+
+
 async def _moderate(
     db: AsyncSession,
     *,
@@ -169,6 +184,7 @@ async def _moderate(
     text: str,
 ) -> dict[str, Any]:
     """Return {safe: bool, reason: str}. Pass-through if disabled."""
+    text = _flatten_multimodal(text)
     model = _resolve_model(agent, check)
     if not model:
         return {"safe": True, "reason": "check_disabled"}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, FormEvent, MouseEvent, KeyboardEvent } from "react";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   MessageSquare,
@@ -11,7 +11,45 @@ import {
   User,
   Bot,
   Globe,
+  Paperclip,
+  X,
 } from "lucide-react";
+
+interface Attachment {
+  filename: string;
+  path: string;
+  mime: string;
+  kind: string;
+}
+
+function AuthImage({ filename }: { filename: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let revoke: string | null = null;
+    let cancelled = false;
+    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+    fetch(`${API_URL}/chat/media/${filename}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((r) => (r.ok ? r.blob() : null))
+      .then((blob) => {
+        if (!blob || cancelled) return;
+        const url = URL.createObjectURL(blob);
+        revoke = url;
+        setSrc(url);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      if (revoke) URL.revokeObjectURL(revoke);
+    };
+  }, [filename]);
+  if (!src) {
+    return <div className="w-40 h-40 rounded-md bg-muted animate-pulse" />;
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt={filename} className="max-w-xs max-h-80 rounded-md border border-border" />;
+}
 
 interface Agent {
   id: number;
@@ -31,6 +69,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   model?: string | null;
+  attachments?: Attachment[] | null;
   created_at?: string;
 }
 
@@ -45,8 +84,11 @@ export default function ChatPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [isGeneralChat, setIsGeneralChat] = useState(false);
   const [composingNew, setComposingNew] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
   const messagesEnd = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const ta = textareaRef.current;
@@ -98,6 +140,7 @@ export default function ChatPage() {
     setInput("");
     setSelectedAgentId("");
     setComposingNew(false);
+    setPendingAttachments([]);
   };
 
   const startNewChatWithAgent = (agentId: number) => {
@@ -126,14 +169,50 @@ export default function ChatPage() {
     loadSessions();
   };
 
+  const handleAttachClick = () => {
+    if (uploading) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        try {
+          const saved = await api.upload<Attachment>("/chat/upload", file);
+          setPendingAttachments((prev) => [...prev, saved]);
+        } catch (err) {
+          console.error("upload failed", err);
+        }
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePending = (filename: string) => {
+    setPendingAttachments((prev) => prev.filter((a) => a.filename !== filename));
+  };
+
   const handleSend = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
-    if (!input.trim() || !selectedAgentId) return;
+    const hasText = input.trim().length > 0;
+    const hasAttachments = pendingAttachments.length > 0;
+    if ((!hasText && !hasAttachments) || !selectedAgentId) return;
 
-    const userMsg: Message = { role: "user", content: input };
+    const sentAttachments = pendingAttachments;
+    const userMsg: Message = {
+      role: "user",
+      content: input,
+      attachments: sentAttachments.length ? sentAttachments : null,
+    };
     setMessages((prev: Message[]) => [...prev, userMsg]);
     const sentInput = input;
     setInput("");
+    setPendingAttachments([]);
     setLoading(true);
 
     try {
@@ -148,6 +227,7 @@ export default function ChatPage() {
         message: sentInput,
         agent_id: agentId,
         session_id: activeSession?.id ?? null,
+        attachments: sentAttachments.length ? sentAttachments : undefined,
       });
 
       if (!activeSession && selectedAgentId !== "unified") {
@@ -368,9 +448,18 @@ export default function ChatPage() {
                               {msg.model}
                             </p>
                           )}
-                          <p className="leading-relaxed whitespace-pre-wrap break-words">
-                            {msg.content}
-                          </p>
+                          {msg.attachments && msg.attachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {msg.attachments.map((att) => (
+                                <AuthImage key={att.filename} filename={att.filename} />
+                              ))}
+                            </div>
+                          )}
+                          {msg.content && (
+                            <p className="leading-relaxed whitespace-pre-wrap break-words">
+                              {msg.content}
+                            </p>
+                          )}
                         </div>
                         {msg.created_at && (
                           <p className="text-[10px] text-muted-foreground">
@@ -400,27 +489,68 @@ export default function ChatPage() {
             </div>
 
             <div className="px-6 py-4 border-t border-border">
-              <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-end gap-2">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  rows={1}
-                  placeholder={
-                    !selectedAgentId ? "Select an agent to start…" : "Type a message…"
-                  }
-                  disabled={!selectedAgentId || loading}
-                  className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed disabled:opacity-50 max-h-60 overflow-y-auto"
-                />
-                <Button
-                  type="submit"
-                  disabled={loading || !selectedAgentId || !input.trim()}
-                >
-                  <Send size={14} className="mr-1" />
-                  Send
-                </Button>
-              </form>
+              <div className="max-w-4xl mx-auto space-y-2">
+                {pendingAttachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {pendingAttachments.map((att) => (
+                      <div key={att.filename} className="relative">
+                        <AuthImage filename={att.filename} />
+                        <button
+                          type="button"
+                          onClick={() => removePending(att.filename)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-foreground"
+                          aria-label="Remove attachment"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <form onSubmit={handleSend} className="flex items-end gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleAttachClick}
+                    disabled={!selectedAgentId || uploading || loading}
+                    aria-label="Attach image"
+                  >
+                    <Paperclip size={14} />
+                  </Button>
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    rows={1}
+                    placeholder={
+                      !selectedAgentId ? "Select an agent to start…" : "Type a message…"
+                    }
+                    disabled={!selectedAgentId || loading}
+                    className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed disabled:opacity-50 max-h-60 overflow-y-auto"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={
+                      loading ||
+                      !selectedAgentId ||
+                      (!input.trim() && pendingAttachments.length === 0)
+                    }
+                  >
+                    <Send size={14} className="mr-1" />
+                    Send
+                  </Button>
+                </form>
+              </div>
             </div>
           </>
         )}
