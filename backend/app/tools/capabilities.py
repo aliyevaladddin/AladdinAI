@@ -50,8 +50,16 @@ TOOL_CAPABLE_PREFIXES: tuple[str, ...] = (
 )
 
 
+TOOL_INCAPABLE_SUBSTRINGS: tuple[str, ...] = (
+    # Llama vision variants emit fake JSON in content instead of native tool_calls.
+    "-vision",
+)
+
+
 def model_supports_tools(model: str | None) -> bool:
     """Return True if the model id is in the tool-capable whitelist."""
     if not model:
+        return False
+    if any(s in model for s in TOOL_INCAPABLE_SUBSTRINGS):
         return False
     return model.startswith(TOOL_CAPABLE_PREFIXES)

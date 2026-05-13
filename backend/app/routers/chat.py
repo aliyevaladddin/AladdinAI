@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +18,7 @@ from app.schemas.router import (
 from app.security import get_current_user
 from app.services.agent_runner import run_agent
 from app.services.llm_service import LLMError
+from app.services import media as media_service
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -116,10 +118,50 @@ async def get_messages(
             role=m.role,
             content=m.content,
             model=m.model,
+            attachments=m.attachments,
             created_at=m.created_at.isoformat(),
         )
         for m in messages
     ]
+
+
+# ── Media upload / serving ────────────────────────────────────────────────────
+
+ALLOWED_UPLOAD_MIMES = {
+    "image/jpeg", "image/png", "image/webp", "image/gif",
+}
+MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20MB, same as Telegram
+
+
+@router.post("/upload")
+async def upload_attachment(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+):
+    """Save an uploaded image and return its handle. Client then passes the
+    returned `filename` back via ChatRequest.attachments."""
+    mime = (file.content_type or "").lower()
+    if mime not in ALLOWED_UPLOAD_MIMES:
+        raise HTTPException(status_code=415, detail=f"Unsupported file type: {mime}")
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File too large (max 20MB)")
+    saved = media_service.save_bytes(data, mime)
+    return {
+        "filename": saved["filename"],
+        "path": saved["path"],
+        "mime": saved["mime"],
+        "kind": "image",
+    }
+
+
+@router.get("/media/{filename}")
+async def get_media(filename: str, user: User = Depends(get_current_user)):
+    """Serve a previously uploaded attachment. Path-traversal-safe via media.resolve."""
+    p = media_service.resolve(filename)
+    if not p:
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(str(p))
 
 
 # ── Send message ──────────────────────────────────────────────────────────────
@@ -171,7 +213,26 @@ async def chat(
     messages_payload = [{"role": "system", "content": agent.system_prompt}]
     for msg in history:
         messages_payload.append({"role": msg.role, "content": msg.content})
-    messages_payload.append({"role": "user", "content": body.message})
+
+    user_content: str | list[dict] = body.message
+    if body.attachments:
+        blocks: list[dict] = []
+        if body.message:
+            blocks.append({"type": "text", "text": body.message})
+        for att in body.attachments:
+            path = att.get("path")
+            mime = att.get("mime")
+            if not path:
+                continue
+            try:
+                url = media_service.to_data_url(path, mime)
+                blocks.append({"type": "image_url", "image_url": {"url": url}})
+            except Exception:  # noqa: BLE001
+                import logging
+                logging.getLogger(__name__).warning("chat: failed to inline %s", path)
+        if blocks:
+            user_content = blocks
+    messages_payload.append({"role": "user", "content": user_content})
 
     try:
         reply = await run_agent(db, agent, messages_payload, session_id=session.id)
@@ -182,7 +243,10 @@ async def chat(
 
     # Сохраняем оба сообщения в БД
     now = datetime.now(timezone.utc)
-    db.add(ChatMessage(session_id=session.id, role="user", content=body.message, created_at=now))
+    db.add(ChatMessage(
+        session_id=session.id, role="user", content=body.message,
+        attachments=body.attachments, created_at=now,
+    ))
     db.add(ChatMessage(session_id=session.id, role="assistant", content=reply, model=agent.model))
 
     # Обновляем время сессии
