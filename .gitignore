@@ -18,6 +18,7 @@ build/
 *.db
 *.sqlite
 media/
+pgdata/
 
 # Environment files
 .env
