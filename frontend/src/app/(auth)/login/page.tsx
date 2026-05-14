@@ -57,13 +57,17 @@ export default function LoginPage() {
           )}
           <div>
             <label
+              htmlFor="email"
               className="block text-[12px] font-medium mb-1.5"
               style={{ color: "var(--color-fg-muted)" }}
             >
               Email
             </label>
             <input
+              id="email"
+              name="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input"
@@ -73,13 +77,17 @@ export default function LoginPage() {
           </div>
           <div>
             <label
+              htmlFor="password"
               className="block text-[12px] font-medium mb-1.5"
               style={{ color: "var(--color-fg-muted)" }}
             >
               Password
             </label>
             <input
+              id="password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input"

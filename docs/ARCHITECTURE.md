@@ -1,27 +1,60 @@
 # Architecture
 
-This document explains the *idea* behind AladdinAI — what the parts are,
-why they exist, and how they fit together. For the file-by-file map, read
-[`backend/README.md`](../backend/README.md) and
-[`frontend/README.md`](../frontend/README.md).
+This document explains what AladdinAI is made of, why each part exists, and how they fit together. For the file-by-file map, see [`backend/README.md`](../backend/README.md) and [`frontend/README.md`](../frontend/README.md).
 
 ---
 
-## The premise
+## The problem we're solving
 
-Off-the-shelf chat UIs treat an agent as "a system prompt + a model." That
-falls apart the moment you want it to:
+Off-the-shelf chat UIs treat an agent as "a system prompt plus a model." That breaks the moment you need it to:
 
-- remember things across sessions,
-- not leak the things it remembered,
-- delegate to other agents,
-- pick up messages from Telegram or email,
-- run on a schedule,
-- be governable (who decided to write that fact? why was that handoff allowed?).
+- remember things across sessions without leaking them to the wrong agent,
+- pick up messages from Telegram, WhatsApp, SMS, or email,
+- delegate to other agents with a logged, auditable decision,
+- run tasks on a schedule,
+- stay governable — who decided to write that fact? why was that handoff allowed?
 
-AladdinAI is the smallest set of moving parts that gives you all of the above
-in one workspace, self-hosted, with the user (you) in control of every
-provider key, every memory write, and every channel binding.
+AladdinAI is the smallest set of moving parts that gives you all of the above in one self-hosted workspace, with the operator in control of every provider key, every memory write, and every channel binding.
+
+---
+
+## System overview
+
+The diagram below shows the five layers of the platform and how data flows between them.
+
+```
+┌─────────────────────────────────────────────────────┐
+│                     Channels                        │
+│   Telegram · WhatsApp · SMS · Email · Webhooks      │
+└────────────────────────┬────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────┐
+│                   Orchestrator                      │
+│        Contact resolve · Activity log · Routing     │
+└────────────────────────┬────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────┐
+│                   Agent core                        │
+│  Safety │ Agent runner │ Gates │ Tools │ Triggers   │
+└────────────────────────┬────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────┐
+│                  Memory layer                       │
+│         Private store (per agent)                   │
+│         Shared store  (per user)                    │
+└──────────┬─────────────────────────┬────────────────┘
+           │                         │
+┌──────────▼──────────┐   ┌──────────▼──────────────┐
+│   MongoDB Atlas     │   │   Postgres / SQLite      │
+│ Vector search · NIM │   │ CRM · Users · Gates      │
+│ embeddings 2048-dim │   │ Triggers · Providers     │
+└─────────────────────┘   └─────────────────────────┘
+                                     │
+                          ┌──────────▼──────────────┐
+                          │        BentoML           │
+                          │ Local LLMs · Custom tools│
+                          └─────────────────────────┘
+```
 
 ---
 
@@ -29,229 +62,241 @@ provider key, every memory write, and every channel binding.
 
 ### Agent
 
-An agent is a row in `agents` plus a configuration bundle:
+An agent is a configuration bundle that controls everything about how one "persona" behaves:
 
-- **Identity**: name, description, system prompt.
-- **Brain**: which provider/model to use; routing fallbacks.
-- **Tools**: which capabilities it can invoke (CRM access, memory write,
-  delegation to specific other agents, etc.).
-- **Safety profile**: which moderation/PII checks run on which phases.
-- **Gates**: rules that decide whether tool calls go through (handoff,
-  memory write, recall rerank).
-- **Extraction policy**: what to mine from each conversation for memory.
+- **Identity** — name, description, system prompt.
+- **Brain** — which provider and model to use; routing fallbacks.
+- **Tools** — which capabilities it can invoke: CRM access, memory write, delegation to other agents.
+- **Safety profile** — which moderation and PII checks run on which phases (ingress, egress, memory).
+- **Gates** — rules that decide whether tool calls go through, with every decision logged.
+- **Extraction policy** — what to mine from each conversation turn for long-term memory.
 
-Agents are per-user. Multiple users on the same instance get isolated
-agents and isolated memory.
-
-### Memory
-
-Memory is **MongoDB-backed** (not Postgres). Each fact is a document with
-an embedding (NIM-generated, 2048-dim) so we can vector-search it later.
-
-Two scopes:
-
-- **Private** — visible only to the agent that wrote it. Agent-specific
-  knowledge: "the user prefers terse answers when they ask about deploys."
-- **Shared** — visible to every agent of that user. User-level knowledge:
-  "the user's daughter is named Anna."
-
-A turn injects both scopes into context: relevant private facts (top-k
-vector search) and relevant shared facts. After the turn, an extraction
-LLM call produces new facts and writes them — private by default, shared
-when the fact is about the user as a person rather than the agent
-relationship.
-
-This split is why we run extraction *per message* (each user/assistant
-exchange) rather than per session: it gives the extractor enough recent
-context without letting old turns drown out new ones, and it lets shared
-facts surface to other agents within minutes instead of session boundaries.
-
-### Gates
-
-A **gate** is a checkpoint with a yes/no/mutate decision and a reason.
-Three live today:
-
-- `handoff` — should agent A be allowed to delegate to agent B for this
-  prompt?
-- `memory_write` — is this fact worth saving? Is it sensitive?
-- `recall_rerank` — among the top-k vector hits, which actually belong in
-  the prompt?
-
-Each call goes through `services/gate_log.py` and lands in `gate_decisions`
-so you can audit later: "why did agent X share that with agent Y?"
-
-### Safety
-
-Two things, run as separate phases:
-
-- **Moderation** — NemoGuard or Llama-Guard checks for jailbreaks /
-  policy violations. Configurable on `ingress` (user → agent) and `egress`
-  (agent → user).
-- **PII redaction** — GLiNER pulls names, emails, phone numbers, etc.
-  Phases: `ingress`, `egress`, `memory_write`, `memory_read`. Off by
-  default for the memory phases because over-redacting kills recall (this
-  was a real bug — see git history).
-
-Each agent picks which phases run. There's no global "safety on/off"
-because the tradeoff is different for an internal CRM agent than a
-customer-facing support agent.
-
-### Tools
-
-Tools are functions the LLM can call. They're declared with a JSON schema
-and registered per agent. Built-ins:
-
-- `crm.*` — read/write contacts, deals, log activities.
-- `memory.write` — explicit "remember this" call (in addition to
-  background extraction).
-- `inter_agent.delegate` — hand the task to another agent. Goes through
-  the `handoff` gate.
-
-Adding a tool means adding a class under `backend/app/tools/` and
-registering it. Anything stateful goes through a service so the same
-logic is reachable from background tasks too.
-
-### Channels
-
-A **channel** is a pipe that brings external messages in or sends agent
-replies out. Telegram, WhatsApp Cloud API, SMS providers, IMAP/SMTP for
-email. They share a normalization step — by the time `orchestrator.py`
-sees the inbound, it looks like `{contact, text, channel}` regardless of
-where it came from.
-
-The orchestrator:
-
-1. Resolves or creates a contact from the channel-specific external ID.
-2. Logs an `activity` row of type `message_in`.
-3. Picks the responding agent (per-channel routing or a default).
-4. Feeds the message into the same path a chat UI message would take.
-
-Outbound is simpler — `messaging_service.py` knows how to talk to each
-provider and is called from the agent's reply step.
-
-### Triggers
-
-A **trigger** is a cron expression + a list of agents + a task template.
-On fire, it inserts an `agent_message` row for each agent and processes
-them in the background. Powered by APScheduler running inside the FastAPI
-process; state is hydrated from the `agent_triggers` table on boot, so
-restarts don't lose schedules.
-
-Two flavors:
-
-- **Preset** — friendly names (`every_morning_9`, `weekdays_9`, …) that
-  map to canonical cron expressions. UI offers these by default.
-- **Cron** — raw 5-field cron for power users; the UI has a "preview next
-  fire" button backed by `croniter`.
-
-We didn't add Celery + Redis because the workload (a few cron jobs per
-user) doesn't justify the operational cost. If durable retries across
-process crashes become important, this is the layer that grows.
-
-### Routing
-
-Each agent picks a default model. The router config lets you set
-fallbacks: if the primary provider fails or returns garbage, try the next
-one. There's also a global default (`/dashboard/router`) for new agents.
-Provider keys live in the database, encrypted at rest, set via the
-LLM Providers UI — never in `.env`.
+Agents are per-user. Multiple users on the same instance get fully isolated agents, isolated memory, and isolated channel bindings.
 
 ---
 
-## Data model in one breath
+### Memory
+
+Memory is MongoDB-backed, not Postgres. Each fact is a document with a 2048-dimension embedding generated by NVIDIA NIM (`llama-3.2-nv-embedqa-1b-v2`), enabling fast and accurate vector search at recall time.
+
+**Two scopes:**
+
+| Scope | Visibility | Example |
+|-------|-----------|---------|
+| Private | Only the agent that wrote it | "This user prefers terse answers on deploy questions" |
+| Shared | Every agent of that user | "The user's company is Acme Corp, timezone UTC+4" |
+
+Both scopes are injected into the prompt at every turn via top-k vector search. After the turn, an extraction LLM call mines new facts and writes them — private by default, shared when the fact describes the user as a person rather than their relationship with one agent.
+
+Extraction runs **per message** (each user/assistant exchange), not per session. This keeps shared facts surfacing to other agents within minutes rather than session boundaries, and prevents old turns from drowning out new context.
+
+---
+
+### Gates
+
+A gate is a checkpoint that makes a **yes / no / mutate** decision and records a reason. Every decision lands in `gate_decisions` for audit.
+
+Three gates ship today:
+
+| Gate | Question it answers |
+|------|-------------------|
+| `handoff` | Should agent A be allowed to delegate to agent B for this prompt? |
+| `memory_write` | Is this fact worth saving? Is it sensitive enough to block? |
+| `recall_rerank` | Among the top-k vector hits, which ones actually belong in the prompt? |
+
+Gates are the governance layer. They make it possible to answer: *"why did agent X share that with agent Y?"*
+
+---
+
+### Safety
+
+Two independent systems, both configurable per agent and per phase:
+
+**Moderation** — NemoGuard or Llama-Guard screens for jailbreaks and policy violations. Configurable on `ingress` (user → agent) and `egress` (agent → user).
+
+**PII redaction** — GLiNER extracts names, emails, phone numbers, and similar identifiers. Configurable on `ingress`, `egress`, `memory_write`, and `memory_read`. Memory phases are off by default — over-redacting at write time destroys recall quality (validated in production, see git history).
+
+There is no global "safety on/off" toggle. The right tradeoff for an internal CRM agent is different from a customer-facing support agent.
+
+---
+
+### Tools
+
+Tools are functions the LLM can invoke, declared with a JSON schema and registered per agent.
+
+**Built-in tools:**
+
+- `crm.*` — read and write contacts, deals, and activity log entries.
+- `memory.write` — explicit "remember this" call, in addition to background extraction.
+- `inter_agent.delegate` — hand a task to another agent. Always routed through the `handoff` gate.
+
+Adding a tool means adding a class under `backend/app/tools/` and registering it. All stateful logic goes through a service layer so the same code is reachable from background tasks and the orchestrator.
+
+---
+
+### Channels
+
+A channel is a normalized pipe that brings external messages in or sends agent replies out. Supported today: Telegram, WhatsApp Cloud API, SMS providers, IMAP/SMTP email, and outgoing webhooks.
+
+Every inbound message is normalized to `{contact, text, channel}` before the orchestrator sees it. From that point, the path is identical regardless of where the message came from.
+
+The orchestrator:
+1. Resolves or creates a contact from the channel-specific external ID.
+2. Logs an `activity` row of type `message_in`.
+3. Picks the responding agent (per-channel routing or user default).
+4. Feeds the message into the agent runner.
+
+Outbound replies go through `messaging_service.py`, which knows the delivery details for each provider.
+
+---
+
+### Triggers
+
+A trigger is a cron expression bound to one or more agents. On fire, it inserts an `agent_message` row for each agent and processes them in the background. Powered by APScheduler running inside the FastAPI process — state is hydrated from `agent_triggers` on boot, so restarts don't lose schedules.
+
+**Two modes:**
+
+- **Preset** — friendly names like `every_morning_9`, `weekdays_9`. The UI offers these by default.
+- **Cron** — raw 5-field cron for power users. The UI includes a "preview next fire" button backed by `croniter`.
+
+---
+
+### Routing
+
+Each agent picks a default model. The router config supports fallback chains: if the primary provider fails or returns garbage, the next one is tried automatically. Global defaults are set at `/dashboard/router`. Provider keys are stored encrypted in the database and set through the UI — never in `.env`.
+
+---
+
+## A message from Telegram to reply — step by step
+
+```
+User → Telegram
+  │
+  ▼
+1. POST /api/webhooks/telegram/{channel_id}
+   Signed request verified
+  │
+  ▼
+2. Orchestrator
+   Resolve contact · Write activity{message_in} · Pick agent
+  │
+  ▼
+3. Safety ingress
+   Moderation check · PII redaction
+  │
+  ▼
+4. Memory recall
+   Private top-k vector search
+   Shared top-k vector search
+   Recall rerank gate filters results
+  │
+  ▼
+5. Prompt build
+   System prompt + recent turns + recalled facts
+  │
+  ▼
+6. LLM call
+   Primary provider → fallback chain if needed
+  │
+  ├── Tool call: crm.*
+  │   └── Service call · Logged as activity
+  │
+  ├── Tool call: memory.write
+  │   └── Memory write gate → Mongo insert
+  │
+  └── Tool call: inter_agent.delegate
+      └── Handoff gate → Recursive agent run
+  │
+  ▼
+7. Safety egress
+   Moderation check · PII redaction
+  │
+  ▼
+8. Reply sent
+   messaging_service.send_telegram(...)
+  │
+  ▼
+9. Memory extraction
+   LLM mines (user, assistant) pair for facts
+   Each fact → memory write gate → Mongo
+```
+
+Every gate decision and every activity row is recorded. Re-running the same input should produce a near-identical trace.
+
+---
+
+## Data model
 
 ```
 users ──┬── agents ──┬── agent_messages         (per-turn ledger)
-        │            ├── tool calls (logged via gates)
+        │            ├── gate_decisions          (audit log, append-only)
         │            └── extraction → mongo memory
-        ├── contacts ── activities (message_in/out, notes, deal events)
+        │
+        ├── contacts ── activities              (message_in/out, notes, deal events)
         ├── deals
-        ├── messaging_channels (telegram/whatsapp/sms)
-        ├── email_accounts (imap+smtp)
+        ├── messaging_channels                  (telegram / whatsapp / sms)
+        ├── email_accounts                      (imap + smtp)
         ├── outgoing_webhooks
-        ├── agent_triggers (cron schedules)
-        ├── llm_providers (encrypted keys)
+        ├── agent_triggers                      (cron schedules)
+        ├── llm_providers                       (encrypted keys)
         ├── mongo_connections
-        ├── vms (ssh credentials)
+        ├── vms                                 (ssh credentials)
         ├── bentoml_connections
         └── router_config
 ```
 
-Relational state lives in SQLite or Postgres. Vector memory lives in
-MongoDB Atlas. Gate decisions and activities are append-only.
-
----
-
-## A full inbound message lifecycle
-
-User sends a message to your Telegram bot:
-
-1. Telegram → `POST /api/webhooks/telegram/{channel_id}` (signed request).
-2. `routers/webhooks.py` normalizes payload, calls
-   `orchestrator.handle_inbound(...)`.
-3. Orchestrator resolves contact (creating one if first contact), writes
-   `activity{type=message_in}`, picks responding agent.
-4. `safety.ingress` runs (moderation + PII per agent config).
-5. `agent_runner` builds the prompt: system prompt + recent turns +
-   relevant memory (private vector search + shared vector search, both
-   filtered by the `recall_rerank` gate).
-6. LLM call. If the response contains tool calls:
-   - `inter_agent.delegate` → `handoff` gate → recursive run.
-   - `crm.*` → service call, logged as activity.
-   - `memory.write` → `memory_write` gate → mongo insert.
-7. Final assistant text → `safety.egress`.
-8. Reply sent back via `messaging_service.send_telegram(...)`.
-9. `extraction` runs on the (user, assistant) pair, produces fact
-   candidates, each goes through the `memory_write` gate, surviving ones
-   land in mongo.
-
-Every gate decision and every activity is recorded. Re-running the same
-input later should give you a near-identical trace.
+Relational state lives in SQLite or Postgres. Vector memory lives in MongoDB Atlas. Gate decisions and activities are append-only.
 
 ---
 
 ## Why these choices
 
-- **FastAPI + async SQLAlchemy** because most of the work is I/O-bound
-  (LLM calls, vector search, webhook deliveries). Async keeps a single
-  worker handling many in-flight conversations.
-- **MongoDB for memory, SQL for everything else.** Vector search there is
-  first-class and managed; we don't want to run a Postgres + pgvector
-  stack alongside a relational one.
-- **APScheduler in-process** beats Celery for our scale. State is in the
-  DB, hydration on boot is cheap, restarts don't lose schedules.
-- **JWT with refresh tokens** because the frontend is a SPA and the
-  backend has no session store. Short-lived access, longer-lived refresh.
-- **Provider-agnostic LLM service** so the platform doesn't bet on one
-  vendor. NIM is the current default because it's free at the rate we
-  need; OpenAI / Anthropic / local-via-BentoML drop in by adding rows in
-  `llm_providers`.
-- **Self-hosted, single binary-ish** — one Postgres, one Mongo cluster,
-  two processes (FastAPI + Next.js). No message broker, no separate
-  worker fleet, no managed queue. You can run the whole thing on one box.
+**FastAPI + async SQLAlchemy** — most of the work is I/O-bound: LLM calls, vector search, webhook deliveries. Async keeps a single worker handling many in-flight conversations without a thread-per-request overhead.
+
+**MongoDB Atlas for memory, SQL for everything else** — Atlas Vector Search is first-class and managed. We don't want to operate a Postgres + pgvector stack alongside a relational database. Keeping the vector store separate also means the memory layer can scale independently.
+
+**NVIDIA NIM for embeddings** — `llama-3.2-nv-embedqa-1b-v2` at 2048 dimensions gives high-quality semantic recall with latency that works in a per-message extraction loop. NIM runs on-prem or in any cloud, keeping the entire inference layer sovereign.
+
+**APScheduler in-process over Celery** — the workload (a few cron jobs per user) doesn't justify a message broker and a separate worker fleet. State is in the database, hydration on boot is cheap, and restarts don't lose schedules. If durable retries across crashes become critical, this is the layer that grows first.
+
+**JWT with refresh tokens** — the frontend is a SPA with no server-side session store. Short-lived access tokens, longer-lived refresh tokens, both signed with HS256.
+
+**Provider-agnostic LLM service** — NIM is the current default because it's free at the rate we need and runs locally. OpenAI, Anthropic, and local models via BentoML drop in by adding rows to `llm_providers`. The platform doesn't bet on one vendor.
+
+**Self-hosted, minimal ops footprint** — one Postgres (or SQLite locally), one Mongo cluster, two processes (FastAPI + Next.js). No message broker, no separate worker fleet, no managed queue. The full stack runs on a single box.
 
 ---
 
-## What's not here
+## Roadmap — what's next
 
-Things people sometimes expect that we explicitly don't have:
+The current release covers the full core platform. Planned for upcoming versions:
 
-- **No multi-tenant SaaS layer.** Users exist; "organizations" don't.
-  Add a tenancy column if you need it.
-- **No agent marketplace.** Agents are configured per-user in the UI.
-- **No vector store inside Postgres.** Memory is Mongo. If you want one
-  database, port the memory service.
-- **No durable job queue.** Triggers are best-effort within a running
-  process. If a fire happens during a restart, it's missed (next fire is
-  scheduled normally).
-- **No fine-tuning pipeline.** Bring your own fine-tuned model and
-  register it as a provider/model.
+| Feature | Description |
+|---------|-------------|
+| **Agent marketplace** | Shareable agent templates, tool packs, and gate configurations. Publish, fork, extend. |
+| **Multi-tenant mode** | Run AladdinAI as a hosted service for your own customers — per-tenant isolation, billing hooks. |
+| **Advanced observability** | Full trace view per agent turn: memory reads, gate decisions, tool calls, model latency. |
+| **Voice channel** | WebRTC + NIM ASR/TTS pipeline. Agents that pick up calls. |
+| **One-click cloud deploy** | Terraform modules for AWS, GCP, Azure. Full stack up in under 10 minutes. |
+| **Durable job queue** | Replace APScheduler with a persistent queue for guaranteed trigger delivery across restarts. |
 
 ---
 
-## Pointers
+## Intentional constraints in v1
+
+These are deliberate scope decisions, not missing features:
+
+- **No multi-tenant SaaS layer** — users exist; organizations don't. Add a tenancy column if you need it. Multi-tenant mode is on the roadmap.
+- **No agent marketplace** — agents are configured per-user in the UI. Marketplace is on the roadmap.
+- **No vector store inside Postgres** — memory is Mongo. If you want one database, port the memory service.
+- **No durable job queue** — triggers are best-effort within a running process. A fire during a restart is missed; the next scheduled fire runs normally.
+- **No fine-tuning pipeline** — bring your own fine-tuned model and register it as a provider.
+
+---
+
+## Further reading
 
 - Backend internals: [`backend/README.md`](../backend/README.md)
 - Frontend internals: [`frontend/README.md`](../frontend/README.md)
 - Scripts: [`scripts/README.md`](../scripts/README.md)
-- Env vars: [`.env.example`](../.env.example)
+- Environment variables: [`.env.example`](../.env.example)
