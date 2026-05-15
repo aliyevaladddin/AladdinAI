@@ -258,7 +258,7 @@ export default function DashboardPage() {
                   <div key={i} className="p-3 rounded-xl bg-[var(--color-surface-2)] border border-[var(--color-border)] text-xs flex gap-3 hover:border-[var(--color-accent)]/30 transition-colors">
                     <span className="font-mono opacity-25 mt-0.5 shrink-0">#{i + 1}</span>
                     <p className="flex-1 line-clamp-2 opacity-80">{m.fact}</p>
-                    {m.tags?.length > 0 && (
+                    {Array.isArray(m.tags) && m.tags.length > 0 && (
                       <span className="shrink-0 text-[9px] opacity-40">{m.tags.join(", ")}</span>
                     )}
                   </div>

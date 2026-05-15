@@ -37,6 +37,7 @@ class ChatResponse(BaseModel):
     agent_name: str
     model: str
     session_id: int
+    attachments: list[dict] | None = None
 
 
 class ChatMessageResponse(BaseModel):

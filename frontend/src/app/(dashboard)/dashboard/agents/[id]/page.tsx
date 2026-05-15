@@ -9,8 +9,14 @@ import { AgentSafetyPanel } from "@/components/agent-safety-panel";
 import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
 import { AgentMemoryPanel } from "@/components/agent-memory-panel";
 import { AgentActivityTab } from "@/components/agent-activity-tab";
-import { ArrowLeft, Bot, Shield, Database, Activity, Lock, Zap } from "lucide-react";
+import { ArrowLeft, Bot, Shield, Database, Activity, Lock, Zap, Check, X, Pencil } from "lucide-react";
 import Link from "next/link";
+
+const VISION_HINT_SUBSTRINGS = ["-vision", "vision-instruct"];
+function isVisionModel(m: string): boolean {
+  const lower = m.toLowerCase();
+  return VISION_HINT_SUBSTRINGS.some((s) => lower.includes(s));
+}
 
 interface Agent {
   id: number;
@@ -140,10 +146,7 @@ export default function AgentDetailsPage() {
                 <div className="p-6 rounded-2xl bg-surface-1 border border-border/50">
                     <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Configuration</h3>
                     <div className="space-y-4">
-                        <div>
-                            <p className="text-[11px] text-muted-foreground uppercase">Base Model</p>
-                            <p className="text-sm font-mono mt-1">{agent.model}</p>
-                        </div>
+                        <BaseModelField agent={agent} onSaved={loadAgent} />
                         {agent.port && (
                             <div>
                                 <p className="text-[11px] text-muted-foreground uppercase">External Port</p>
@@ -184,6 +187,135 @@ export default function AgentDetailsPage() {
         )}
 
         {activeTab === "activity" && <AgentActivityTab agentId={agent.id} />}
+      </div>
+    </div>
+  );
+}
+
+/* ── Base Model editor ─────────────────────────────────────────────── */
+function BaseModelField({
+  agent,
+  onSaved,
+}: {
+  agent: Agent;
+  onSaved: () => void | Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [selected, setSelected] = useState(agent.model);
+  const [models, setModels] = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelected(agent.model);
+  }, [agent.model]);
+
+  useEffect(() => {
+    if (!editing || !agent.llm_provider_id) return;
+    let cancelled = false;
+    setLoadingModels(true);
+    api
+      .get<{ models: string[] }>(`/providers/${agent.llm_provider_id}/models`)
+      .then((r) => {
+        if (cancelled) return;
+        setModels(Array.from(new Set(r.models || [])));
+      })
+      .catch((e) => !cancelled && console.error(e))
+      .finally(() => !cancelled && setLoadingModels(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [editing, agent.llm_provider_id]);
+
+  const cancel = () => {
+    setSelected(agent.model);
+    setEditing(false);
+    setError(null);
+  };
+
+  const save = async () => {
+    if (selected === agent.model) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await api.put(`/agents/${agent.id}`, {
+        name: agent.name,
+        role: agent.role,
+        model: selected,
+        system_prompt: agent.system_prompt,
+      });
+      await onSaved();
+      setEditing(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11px] text-muted-foreground uppercase">Base Model</p>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            <Pencil size={11} />
+            Edit
+          </button>
+        </div>
+        <p className="text-sm font-mono mt-1">{agent.model}</p>
+        {isVisionModel(agent.model) && (
+          <p className="text-[11px] text-amber-500 mt-1">
+            Vision model — tool calls disabled. Switch to a text model for full
+            agent capabilities (the agent will use the `analyze_image` tool to
+            inspect photos).
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-[11px] text-muted-foreground uppercase mb-2">Base Model</p>
+      <select
+        value={selected}
+        onChange={(e) => setSelected(e.target.value)}
+        disabled={loadingModels || saving}
+        className="w-full text-sm font-mono rounded-md border border-input bg-background px-2 py-1.5"
+      >
+        {!models.includes(selected) && (
+          <option value={selected}>{selected} (current)</option>
+        )}
+        {models.map((m) => (
+          <option key={m} value={m}>
+            {m}
+            {isVisionModel(m) ? " — vision (no tools)" : ""}
+          </option>
+        ))}
+      </select>
+      {isVisionModel(selected) && (
+        <p className="text-[11px] text-amber-500 mt-1">
+          Vision models cannot call tools (analyze_image / send_image / delegate).
+          The agent will only describe images directly.
+        </p>
+      )}
+      {error && <p className="text-[11px] text-red-500 mt-1">{error}</p>}
+      <div className="flex items-center gap-2 mt-2">
+        <Button size="sm" onClick={save} disabled={saving}>
+          <Check size={12} className="mr-1" /> Save
+        </Button>
+        <Button size="sm" variant="outline" onClick={cancel} disabled={saving}>
+          <X size={12} className="mr-1" /> Cancel
+        </Button>
       </div>
     </div>
   );
