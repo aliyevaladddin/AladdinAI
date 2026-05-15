@@ -214,28 +214,32 @@ async def chat(
     for msg in history:
         messages_payload.append({"role": msg.role, "content": msg.content})
 
-    user_content: str | list[dict] = body.message
+    user_text = body.message or ""
     if body.attachments:
-        blocks: list[dict] = []
-        if body.message:
-            blocks.append({"type": "text", "text": body.message})
-        for att in body.attachments:
-            path = att.get("path")
-            mime = att.get("mime")
-            if not path:
-                continue
-            try:
-                url = media_service.to_data_url(path, mime)
-                blocks.append({"type": "image_url", "image_url": {"url": url}})
-            except Exception:  # noqa: BLE001
-                import logging
-                logging.getLogger(__name__).warning("chat: failed to inline %s", path)
-        if blocks:
-            user_content = blocks
-    messages_payload.append({"role": "user", "content": user_content})
+        names = [a.get("filename") for a in body.attachments if a.get("filename")]
+        if names:
+            listing = ", ".join(names)
+            note = (
+                f"\n\n[Attached images from the user: {listing}]\n"
+                "Use the `analyze_image` tool with one of these filenames to "
+                "inspect the photo. Use `send_image` with a filename to reply "
+                "with a picture."
+            )
+            user_text = f"{user_text}{note}" if user_text else note.lstrip()
+    messages_payload.append({"role": "user", "content": user_text})
+
+    outgoing_attachments: list[dict] = []
+    extras = {
+        "channel_type": "web",
+        "inbound_attachments": body.attachments or [],
+        "outgoing_attachments": outgoing_attachments,
+    }
 
     try:
-        reply = await run_agent(db, agent, messages_payload, session_id=session.id)
+        reply = await run_agent(
+            db, agent, messages_payload,
+            session_id=session.id, extras=extras,
+        )
     except LLMError as e:
         import logging
         logging.getLogger(__name__).exception("run_agent failed for agent %s: %s", agent.id, e)
@@ -247,7 +251,10 @@ async def chat(
         session_id=session.id, role="user", content=body.message,
         attachments=body.attachments, created_at=now,
     ))
-    db.add(ChatMessage(session_id=session.id, role="assistant", content=reply, model=agent.model))
+    db.add(ChatMessage(
+        session_id=session.id, role="assistant", content=reply, model=agent.model,
+        attachments=outgoing_attachments or None,
+    ))
 
     # Обновляем время сессии
     session.updated_at = datetime.now(timezone.utc)
@@ -259,4 +266,5 @@ async def chat(
         agent_name=agent.name,
         model=agent.model,
         session_id=session.id,
+        attachments=outgoing_attachments or None,
     )

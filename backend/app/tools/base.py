@@ -19,6 +19,8 @@ class ToolContext:
     user_id: int
     agent_id: int | None = None
     session_id: int | None = None
+    # extra is a channel of transmission between runner and tools.
+    # Expected keys: channel_type, channel_id, recipient, inbound_attachments, outgoing_attachments.
     extra: dict[str, Any] = field(default_factory=dict)
 
 

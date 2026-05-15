@@ -42,12 +42,23 @@ const TYPE_LABEL: Record<string, string> = {
   email: "Email",
 };
 
+type ChannelFilter = "all" | "telegram" | "whatsapp" | "sms" | "email";
+
+const CHANNEL_FILTERS: { id: ChannelFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "telegram", label: "Telegram" },
+  { id: "whatsapp", label: "WhatsApp" },
+  { id: "sms", label: "SMS" },
+  { id: "email", label: "Email" },
+];
+
 export default function CommsPage() {
   const [emails, setEmails] = useState<EmailAccount[]>([]);
   const [channels, setChannels] = useState<MessagingChannel[]>([]);
   const [messages, setMessages] = useState<InboundMessage[]>([]);
   const [contacts, setContacts] = useState<ContactRef[]>([]);
   const [loading, setLoading] = useState(true);
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
 
   const load = async () => {
     setLoading(true);
@@ -78,6 +89,20 @@ export default function CommsPage() {
     for (const c of contacts) map.set(c.id, c.name);
     return map;
   }, [contacts]);
+
+  const filteredMessages = useMemo(() => {
+    if (channelFilter === "all") return messages;
+    return messages.filter((m) => (m.channel ?? "") === channelFilter);
+  }, [messages, channelFilter]);
+
+  const channelCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const m of messages) {
+      const k = m.channel ?? "—";
+      counts[k] = (counts[k] ?? 0) + 1;
+    }
+    return counts;
+  }, [messages]);
 
   const notify = (status: string, message: string) =>
     status === "ok" || status === "success" || status === "connected"
@@ -139,11 +164,39 @@ export default function CommsPage() {
             <div className="flex items-end justify-between mb-4">
               <h3 className="text-lg font-semibold">Inbox</h3>
               <span className="text-xs text-muted-foreground">
-                Last {messages.length} incoming
+                {filteredMessages.length} of {messages.length} incoming
               </span>
             </div>
+            <div className="flex items-center gap-1 mb-3 flex-wrap">
+              {CHANNEL_FILTERS.map((f) => {
+                const count =
+                  f.id === "all" ? messages.length : channelCounts[f.id] ?? 0;
+                const active = channelFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setChannelFilter(f.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      active
+                        ? "bg-foreground text-background border-foreground"
+                        : "bg-transparent text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    {f.label}
+                    <span
+                      className={`ml-1.5 text-[10px] ${
+                        active ? "opacity-80" : "opacity-60"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
             <div className="space-y-2">
-              {messages.map((m) => {
+              {filteredMessages.map((m) => {
                 const name =
                   contactNameById.get(m.contact_id) ?? `Contact #${m.contact_id}`;
                 const ch = m.channel ?? "—";
@@ -169,9 +222,11 @@ export default function CommsPage() {
                   </div>
                 );
               })}
-              {messages.length === 0 && (
+              {filteredMessages.length === 0 && (
                 <p className="text-muted-foreground text-sm">
-                  No incoming messages yet.
+                  {messages.length === 0
+                    ? "No incoming messages yet."
+                    : `No ${channelFilter} messages.`}
                 </p>
               )}
             </div>

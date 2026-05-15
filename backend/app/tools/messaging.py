@@ -1,11 +1,14 @@
 """Outbound messaging tools.
 
-`send_image` lets an agent push an image file (already stored under
-`media/attachments/`) back to a user via a messaging channel. The agent
-references the image by `filename` — the same name that was returned by
-the upload endpoint or saved during inbound media download. Path-traversal
-is blocked by `media.resolve`; the channel is scoped to `ctx.user_id` so
-an agent cannot reach across tenants.
+`send_image` lets an agent reply with a picture. The agent supplies only
+the `filename` (and an optional caption) — the *channel* and *recipient*
+come from `ToolContext.extra`, populated by whichever surface invoked the
+runner (orchestrator for Telegram/WhatsApp, chat router for the web).
+
+This keeps the tool surface identical across channels: every agent has
+one tool to send images, regardless of how the user reached them. Adding
+a new channel means handling one more branch here, not changing agent
+configs.
 """
 from __future__ import annotations
 
@@ -23,68 +26,73 @@ log = logging.getLogger(__name__)
 @tool(
     name="send_image",
     description=(
-        "Send an image file back to the user via a messaging channel. "
-        "Use this when you want to reply with a picture (e.g. a reference "
-        "photo of a healthy plant leaf). The image must already exist in "
-        "the media store — pass its `filename` (UUID.ext), not a full path."
+        "Reply to the user with an image file. Pass the `filename` (UUID.ext) "
+        "of an image already in the media store — typically one the user just "
+        "sent (its name appears in the system note about attachments). "
+        "Add an optional `caption` for accompanying text."
     ),
     parameters={
         "type": "object",
         "properties": {
-            "channel_id": {
-                "type": "integer",
-                "description": "ID of the MessagingChannel to send through.",
-            },
-            "to": {
-                "type": "string",
-                "description": "Recipient identifier — Telegram chat_id, WhatsApp phone, etc.",
-            },
             "filename": {
                 "type": "string",
-                "description": "Filename inside media/attachments (UUID.ext). No paths.",
+                "description": "Filename inside the media store (UUID.ext). No paths.",
             },
             "caption": {
                 "type": "string",
-                "description": "Optional text caption sent alongside the image.",
+                "description": "Optional text caption to accompany the image.",
             },
         },
-        "required": ["channel_id", "to", "filename"],
+        "required": ["filename"],
     },
 )
 async def send_image(
     ctx: ToolContext,
-    channel_id: int,
-    to: str,
     filename: str,
     caption: str | None = None,
 ) -> dict:
-    try:
-        channel_id_int = int(channel_id)
-    except (TypeError, ValueError):
-        return {"error": f"Invalid channel_id: {channel_id!r}"}
-
-    result = await ctx.db.execute(
-        select(MessagingChannel).where(
-            MessagingChannel.id == channel_id_int,
-            MessagingChannel.user_id == ctx.user_id,
-        )
-    )
-    channel = result.scalar_one_or_none()
-    if not channel:
-        return {"error": f"Channel {channel_id_int} not found"}
-
     path = media_service.resolve(filename)
     if not path:
         return {"error": f"File {filename!r} not found in media store"}
 
-    ctype = (channel.type or "").lower()
+    channel_type = ctx.extra.get("channel_type")
+    if not channel_type:
+        return {"error": "No channel in context — agent cannot send images here"}
+
+    # Web chat: queue the attachment for the response payload.
+    if channel_type == "web":
+        outgoing = ctx.extra.setdefault("outgoing_attachments", [])
+        outgoing.append({
+            "filename": filename,
+            "path": str(path),
+            "mime": "image/jpeg",
+            "kind": "image",
+            "caption": caption,
+        })
+        return {"status": "queued", "channel": "web", "filename": filename}
+
+    # Messaging channels: load the channel row and dispatch.
+    channel_id = ctx.extra.get("channel_id")
+    recipient = ctx.extra.get("recipient")
+    if channel_id is None or not recipient:
+        return {"error": "Channel context incomplete (channel_id/recipient missing)"}
+
+    channel = (await ctx.db.execute(
+        select(MessagingChannel).where(
+            MessagingChannel.id == int(channel_id),
+            MessagingChannel.user_id == ctx.user_id,
+        )
+    )).scalar_one_or_none()
+    if not channel:
+        return {"error": f"Channel {channel_id} not found"}
+
     try:
-        if ctype == "telegram":
+        if channel_type == "telegram":
             from app.services.messaging_service import send_telegram_photo
 
-            await send_telegram_photo(channel, str(to), str(path), caption=caption)
+            await send_telegram_photo(channel, str(recipient), str(path), caption=caption)
             return {"status": "sent", "channel": "telegram", "filename": filename}
-        return {"error": f"send_image not yet implemented for channel type {ctype!r}"}
+        return {"error": f"send_image not implemented for channel {channel_type!r}"}
     except Exception as e:  # noqa: BLE001
-        log.exception("send_image failed for channel=%s file=%s", channel_id_int, filename)
+        log.exception("send_image failed for channel=%s file=%s", channel_id, filename)
         return {"error": str(e)}
