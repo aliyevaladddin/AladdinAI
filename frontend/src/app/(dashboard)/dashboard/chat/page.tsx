@@ -223,6 +223,7 @@ export default function ChatPage() {
         agent_name: string;
         model: string;
         session_id: number;
+        attachments?: Attachment[] | null;
       }>("/chat", {
         message: sentInput,
         agent_id: agentId,
@@ -244,7 +245,12 @@ export default function ChatPage() {
 
       setMessages((prev: Message[]) => [
         ...prev,
-        { role: "assistant", content: res.response, model: res.model },
+        {
+          role: "assistant",
+          content: res.response,
+          model: res.model,
+          attachments: res.attachments ?? null,
+        },
       ]);
     } catch (err) {
       setMessages((prev: Message[]) => [

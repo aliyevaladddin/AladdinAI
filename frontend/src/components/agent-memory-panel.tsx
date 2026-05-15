@@ -219,7 +219,7 @@ export function AgentMemoryPanel({ agentId }: { agentId: number }) {
                 </Button>
               </div>
               <p className="whitespace-pre-wrap">{m.fact}</p>
-              {m.tags?.length > 0 && (
+              {Array.isArray(m.tags) && m.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {m.tags.map((t) => (
                     <span

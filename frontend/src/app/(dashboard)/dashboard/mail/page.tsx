@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Inbox, Send, Archive, Search, Mail, Loader2, Star, Clock, UserPlus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Inbox, Send, Archive, Search, Mail, Loader2, Star, UserPlus, ChevronRight, ChevronDown, Paperclip } from "lucide-react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import MessageModal from "@/components/crm/MessageModal";
@@ -23,6 +23,43 @@ interface Activity {
   } | null;
 }
 
+interface Thread {
+  key: string;
+  subject: string;
+  emails: Activity[];
+  last: Activity;
+  unreadCount: number;
+}
+
+function normalizeSubject(s: string | null | undefined): string {
+  if (!s) return "(no subject)";
+  return s
+    .replace(/^(\s*(re|fwd|fw|aw)\s*:\s*)+/i, "")
+    .trim() || "(no subject)";
+}
+
+function formatRelative(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hrs = Math.floor(min / 60);
+  if (hrs < 24 && d.toDateString() === now.toDateString()) {
+    return `${hrs}h ago`;
+  }
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  });
+}
+
 export default function MailPage() {
   const [emails, setEmails] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +67,16 @@ export default function MailPage() {
   const [folder, setFolder] = useState<"inbox" | "sent" | "all">("inbox");
   const [search, setSearch] = useState("");
   const [addingToCrm, setAddingToCrm] = useState(false);
+  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
+
+  const toggleThread = (key: string) => {
+    setExpandedThreads((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   useEffect(() => {
     fetchEmails();
@@ -110,6 +157,37 @@ export default function MailPage() {
     return true; // all
   });
 
+  const threads: Thread[] = useMemo(() => {
+    const map = new Map<string, Activity[]>();
+    for (const e of filteredEmails) {
+      const key = normalizeSubject(e.subject).toLowerCase();
+      const arr = map.get(key) ?? [];
+      arr.push(e);
+      map.set(key, arr);
+    }
+    const out: Thread[] = [];
+    for (const [key, arr] of map.entries()) {
+      arr.sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      const last = arr[arr.length - 1];
+      out.push({
+        key,
+        subject: normalizeSubject(last.subject),
+        emails: arr,
+        last,
+        unreadCount: arr.length,
+      });
+    }
+    out.sort(
+      (a, b) =>
+        new Date(b.last.created_at).getTime() -
+        new Date(a.last.created_at).getTime()
+    );
+    return out;
+  }, [filteredEmails]);
+
   const getSenderName = (email: Activity) => {
     const meta = getMetaData(email);
     if (email.type === "email_out") return "To: " + (meta.to_name || meta.to_email || "Unknown");
@@ -179,49 +257,123 @@ export default function MailPage() {
             <div className="flex items-center justify-center p-8">
               <Loader2 size={16} className="animate-spin text-muted" />
             </div>
-          ) : filteredEmails.length === 0 ? (
+          ) : threads.length === 0 ? (
             <div className="text-center p-8 text-xs italic" style={{ color: "var(--color-fg-subtle)" }}>
               No emails found.
             </div>
           ) : (
             <div className="flex flex-col">
-              {filteredEmails.map((email) => {
-                const isSelected = selectedEmail?.id === email.id;
-                const sender = getSenderName(email);
-                const isCrm = email.contact_id !== null;
-                
+              {threads.map((thread) => {
+                const isOpen = expandedThreads.has(thread.key) || thread.emails.length === 1;
+                const last = thread.last;
+                const sender = getSenderName(last);
+                const isCrm = thread.emails.some((e) => e.contact_id !== null);
+                const isMulti = thread.emails.length > 1;
+                const totalAttachments = thread.emails.reduce(
+                  (n, e) => n + (getMetaData(e).attachments?.length ?? 0),
+                  0
+                );
+
                 return (
-                  <button
-                    key={email.id}
-                    onClick={() => setSelectedEmail(email)}
-                    className="flex flex-col text-left p-3 border-b transition-colors"
-                    style={{ 
-                      borderColor: "var(--color-border)",
-                      background: isSelected ? "var(--color-surface-2)" : "transparent",
-                    }}
+                  <div
+                    key={thread.key}
+                    className="border-b"
+                    style={{ borderColor: "var(--color-border)" }}
                   >
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <span className="font-semibold text-xs truncate pr-2" style={{ color: "var(--color-fg)" }}>
-                        {sender}
-                      </span>
-                      <span className="text-[10px] whitespace-nowrap shrink-0" style={{ color: "var(--color-fg-muted)" }}>
-                        {new Date(email.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <span className="font-medium text-xs truncate w-full mb-1" style={{ color: "var(--color-fg)" }}>
-                      {email.subject || "(no subject)"}
-                    </span>
-                    <span className="text-[10px] truncate w-full" style={{ color: "var(--color-fg-muted)" }}>
-                      {email.content ? email.content.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").trim().substring(0, 60) : "..."}
-                    </span>
-                    {isCrm && (
-                      <div className="mt-1 flex items-center">
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border" style={{ borderColor: "var(--color-border)", background: "var(--color-surface)", color: "var(--color-accent)" }}>
-                          In CRM
+                    <button
+                      onClick={() => {
+                        if (isMulti) toggleThread(thread.key);
+                        else setSelectedEmail(last);
+                      }}
+                      className="w-full flex flex-col text-left p-3 transition-colors hover:bg-[var(--color-surface-2)]"
+                    >
+                      <div className="flex items-center justify-between w-full mb-1 gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {isMulti && (
+                            isOpen
+                              ? <ChevronDown size={12} style={{ color: "var(--color-fg-muted)" }} />
+                              : <ChevronRight size={12} style={{ color: "var(--color-fg-muted)" }} />
+                          )}
+                          <span className="font-semibold text-xs truncate" style={{ color: "var(--color-fg)" }}>
+                            {sender}
+                          </span>
+                          {isMulti && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded shrink-0" style={{ background: "var(--color-surface-2)", color: "var(--color-fg-muted)" }}>
+                              {thread.emails.length}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] whitespace-nowrap shrink-0" style={{ color: "var(--color-fg-muted)" }}>
+                          {formatRelative(last.created_at)}
                         </span>
                       </div>
+                      <div className="flex items-center gap-1.5 w-full mb-1 min-w-0">
+                        <span className="font-medium text-xs truncate flex-1" style={{ color: "var(--color-fg)" }}>
+                          {thread.subject}
+                        </span>
+                        {totalAttachments > 0 && (
+                          <span className="flex items-center gap-0.5 text-[10px] shrink-0" style={{ color: "var(--color-fg-muted)" }}>
+                            <Paperclip size={10} />
+                            {totalAttachments}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] truncate w-full" style={{ color: "var(--color-fg-muted)" }}>
+                        {last.content
+                          ? last.content.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").trim().substring(0, 60)
+                          : "..."}
+                      </span>
+                      {isCrm && (
+                        <div className="mt-1 flex items-center">
+                          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border" style={{ borderColor: "var(--color-border)", background: "var(--color-surface)", color: "var(--color-accent)" }}>
+                            In CRM
+                          </span>
+                        </div>
+                      )}
+                    </button>
+
+                    {isMulti && isOpen && (
+                      <div className="flex flex-col" style={{ background: "var(--color-surface-2)" }}>
+                        {thread.emails.map((e) => {
+                          const isSelected = selectedEmail?.id === e.id;
+                          const isOut = e.type === "email_out";
+                          return (
+                            <button
+                              key={e.id}
+                              onClick={() => setSelectedEmail(e)}
+                              className="flex items-start gap-2 text-left pl-7 pr-3 py-2 border-t transition-colors"
+                              style={{
+                                borderColor: "var(--color-border)",
+                                background: isSelected ? "var(--color-surface)" : "transparent",
+                              }}
+                            >
+                              <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded shrink-0 mt-0.5" style={{
+                                background: isOut ? "var(--color-accent)" : "var(--color-surface)",
+                                color: isOut ? "#fff" : "var(--color-fg-muted)",
+                                border: isOut ? "none" : "1px solid var(--color-border)",
+                              }}>
+                                {isOut ? "You" : (getMetaData(e).from_name?.split(" ")[0] || "In")}
+                              </span>
+                              <span className="text-[11px] flex-1 truncate" style={{ color: "var(--color-fg)" }}>
+                                {e.content
+                                  ? e.content.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").trim().substring(0, 70)
+                                  : "(no content)"}
+                              </span>
+                              {(getMetaData(e).attachments?.length ?? 0) > 0 && (
+                                <span className="flex items-center gap-0.5 text-[10px] shrink-0" style={{ color: "var(--color-fg-muted)" }}>
+                                  <Paperclip size={10} />
+                                  {getMetaData(e).attachments?.length}
+                                </span>
+                              )}
+                              <span className="text-[10px] whitespace-nowrap shrink-0" style={{ color: "var(--color-fg-muted)" }}>
+                                {formatRelative(e.created_at)}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -242,7 +394,7 @@ export default function MailPage() {
                 <div>
                   <h3 className="text-sm font-semibold leading-tight">{selectedEmail.subject || "(no subject)"}</h3>
                   <p className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
-                    {getSenderName(selectedEmail)} • {new Date(selectedEmail.created_at).toLocaleString()}
+                    {getSenderName(selectedEmail)} • {formatRelative(selectedEmail.created_at)} ({new Date(selectedEmail.created_at).toLocaleString()})
                   </p>
                 </div>
               </div>

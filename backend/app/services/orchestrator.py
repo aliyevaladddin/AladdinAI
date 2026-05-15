@@ -98,9 +98,22 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
             agent = result.scalar_one_or_none()
 
         reply = "I received your message. An agent will respond shortly."
+        outgoing_attachments: list[dict] = []
         if agent and agent.llm_provider_id:
             log.info("orchestrator: running agent %s", agent.name)
-            reply = await _get_agent_reply(db, agent, text, attachments=attachments)
+            recipient = sender_id
+            if channel_type == "telegram":
+                recipient = str(payload.get("message", {}).get("chat", {}).get("id", sender_id))
+            extras: dict = {
+                "channel_type": channel_type,
+                "channel_id": channel.id,
+                "recipient": recipient,
+                "inbound_attachments": attachments,
+                "outgoing_attachments": outgoing_attachments,
+            }
+            reply = await _get_agent_reply(
+                db, agent, text, attachments=attachments, extras=extras,
+            )
         else:
             log.debug("orchestrator: no agent assigned, using default reply")
 
@@ -127,9 +140,13 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
     if channel_type == "telegram":
         chat_id = payload.get("message", {}).get("chat", {}).get("id", sender_id)
         try:
-            await send_telegram(channel, str(chat_id), reply)
+            if reply:
+                await send_telegram(channel, str(chat_id), reply)
         except Exception:
             log.exception("orchestrator: telegram send failed for chat_id=%s", chat_id)
+        # send_image (via the tool) only queues the file when the channel is
+        # web — for messaging channels the tool dispatches inline. Nothing to
+        # flush here unless a future channel adopts the queue pattern.
     elif channel_type == "whatsapp":
         await send_whatsapp(channel, sender_id, reply)
     elif channel_type == "whatsapp_waha":
@@ -148,37 +165,43 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
     )
 
 
+def _attachments_note(attachments: list[dict] | None) -> str:
+    """Build a short system-side note listing image filenames the user attached.
+    Agents see only the filename — they use `analyze_image` to inspect content
+    and `send_image` to reply with one.
+    """
+    if not attachments:
+        return ""
+    names = [a.get("filename") for a in attachments if a.get("filename")]
+    if not names:
+        return ""
+    listing = ", ".join(names)
+    return (
+        f"\n\n[Attached images from the user: {listing}]\n"
+        "Use the `analyze_image` tool with one of these filenames to inspect "
+        "the photo. Use `send_image` with a filename to reply with a picture."
+    )
+
+
 async def _get_agent_reply(
     db,
     agent: Agent,
     message: str,
     *,
     attachments: list[dict] | None = None,
+    extras: dict | None = None,
 ) -> str:
-    """Send a single inbound message through the agent's tool-aware runner.
+    """Run the agent's tool-aware loop on a plain-text user message.
 
-    When `attachments` contains images, build OpenAI-style multimodal content
-    so vision-capable models can see them.
+    Inbound images are not inlined as multimodal blocks — the agent gets a
+    plain text note listing their filenames and decides whether to call the
+    `analyze_image` tool. Outbound images are produced by `send_image`,
+    which uses `extras` to route to the right channel.
     """
-    user_content: str | list[dict]
-    if attachments:
-        from app.services.media import to_data_url
-        blocks: list[dict] = []
-        if message:
-            blocks.append({"type": "text", "text": message})
-        for att in attachments:
-            path = att.get("path")
-            mime = att.get("mime")
-            if not path:
-                continue
-            try:
-                url = to_data_url(path, mime)
-                blocks.append({"type": "image_url", "image_url": {"url": url}})
-            except Exception as e:  # noqa: BLE001
-                log.warning("orchestrator: failed to inline image %s: %s", path, e)
-        user_content = blocks if blocks else (message or "")
-    else:
-        user_content = message
+    note = _attachments_note(attachments)
+    user_text = (message or "")
+    if note:
+        user_text = f"{user_text}{note}" if user_text else note.lstrip()
 
     try:
         return await run_agent(
@@ -186,8 +209,9 @@ async def _get_agent_reply(
             agent,
             [
                 {"role": "system", "content": agent.system_prompt},
-                {"role": "user", "content": user_content},
+                {"role": "user", "content": user_text},
             ],
+            extras=extras,
         )
     except LLMError as e:
         return f"Agent error: {e}"

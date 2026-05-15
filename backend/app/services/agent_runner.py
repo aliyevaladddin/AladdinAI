@@ -33,7 +33,10 @@ log = logging.getLogger(__name__)
 DEFAULT_MAX_ITERATIONS = 5
 
 DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
-    "_default": ["ask_agent", "delegate", "recall", "remember"],
+    "_default": [
+        "ask_agent", "delegate", "recall", "remember",
+        "analyze_image", "send_image",
+    ],
 }
 
 
@@ -78,6 +81,7 @@ async def run_agent(
     messages: list[dict],
     *,
     session_id: int | None = None,
+    extras: dict | None = None,
 ) -> str:
     """Execute one agent turn with tool support.
 
@@ -128,7 +132,10 @@ async def run_agent(
     use_tools = bool(allowed) and model_supports_tools(agent.model)
     schemas = openai_schemas(allowed) if use_tools else None
 
-    ctx = ToolContext(db=db, user_id=agent.user_id, agent_id=agent.id, session_id=session_id)
+    ctx = ToolContext(
+        db=db, user_id=agent.user_id, agent_id=agent.id,
+        session_id=session_id, extra=dict(extras or {}),
+    )
     max_iter = _max_iterations(agent)
 
     last_content: str | None = None
