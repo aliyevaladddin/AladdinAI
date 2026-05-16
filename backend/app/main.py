@@ -13,7 +13,7 @@ from app.security import get_current_user_ws
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
     chat, crm_activities, crm_contacts, crm_deals, dashboard, mongodb,
-    notifications, providers, router_config, ssh_exec, triggers as triggers_router, vms, webhooks
+    notifications, providers, router_config, search, ssh_exec, triggers as triggers_router, vms, webhooks
 )
 from app.services import triggers as triggers_service
 from app.services import telegram_poller
@@ -151,6 +151,7 @@ app.include_router(webhooks.router, prefix="/api")
 app.include_router(ssh_exec.router, prefix="/api")
 app.include_router(triggers_router.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
+app.include_router(search.router, prefix="/api")
 
 @app.get("/")
 async def root():

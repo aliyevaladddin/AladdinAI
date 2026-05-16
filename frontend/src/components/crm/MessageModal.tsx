@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { X, Mail, Reply, Send, Loader2, Paperclip, FileText, FileImage, FileArchive, Download } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { X, Mail, Reply, Send, Loader2, Paperclip, FileText, FileImage, FileArchive, Download, Sparkles, RotateCw } from "lucide-react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -57,9 +57,38 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
   const [replyBody, setReplyBody] = useState("");
   const [sending, setSending] = useState(false);
 
+  // AI-suggested draft state
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [suggestedBy, setSuggestedBy] = useState<string | null>(null);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const userEditedRef = useRef(false);
+  const lastSuggestedForRef = useRef<number | null>(null);
+
   const isEmail = activity.type.startsWith("email");
+  const isInbound = activity.type.endsWith("_in");
   const plainText = stripHtml(activity.content ?? "");
   const attachments: Attachment[] = activity.metadata_json?.attachments ?? [];
+
+  const fetchSuggestion = async (regenerate = false) => {
+    setSuggestLoading(true);
+    setSuggestError(null);
+    try {
+      const res = await api.post<{ draft: string; agent_id: number; agent_name: string }>(
+        `/crm/activities/${activity.id}/suggest-reply`
+      );
+      // Only overwrite if user hasn't edited (or they explicitly regenerated)
+      if (regenerate || !userEditedRef.current) {
+        setReplyBody(res.draft);
+        userEditedRef.current = false;
+      }
+      setSuggestedBy(res.agent_name);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to generate";
+      setSuggestError(msg);
+    } finally {
+      setSuggestLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isEmail) {
@@ -71,13 +100,26 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
         })
         .catch(() => {});
     }
-    
+
     if (!inline) {
       // Prevent scroll on body only if it's a modal
       document.body.style.overflow = "hidden";
       return () => { document.body.style.overflow = ""; };
     }
   }, [isEmail, inline]);
+
+  // Auto-suggest reply when an inbound message is opened (once per activity)
+  useEffect(() => {
+    if (!isInbound) return;
+    if (lastSuggestedForRef.current === activity.id) return;
+    lastSuggestedForRef.current = activity.id;
+    userEditedRef.current = false;
+    setReplyBody("");
+    setSuggestedBy(null);
+    setSuggestError(null);
+    fetchSuggestion(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activity.id, isInbound]);
 
   const handleSend = async () => {
     if (!selectedAccount || !contactEmail) {
@@ -271,7 +313,7 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
             className="shrink-0 border-t px-6 py-4"
             style={{ borderColor: "var(--color-border)", background: "var(--color-surface-1)" }}
           >
-            {!showReply ? (
+            {!showReply && !isInbound ? (
               <div className="flex items-center justify-between gap-3">
                 {contactEmail ? (
                   <p className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
@@ -290,6 +332,55 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
               </div>
             ) : (
               <div className="space-y-3">
+                {/* AI-suggested draft banner */}
+                {isInbound && (
+                  <div
+                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border"
+                    style={{
+                      borderColor: "var(--color-border)",
+                      background: "var(--color-accent-soft)",
+                    }}
+                  >
+                    <div className="flex items-center gap-2 text-[11px] min-w-0" style={{ color: "var(--color-fg)" }}>
+                      <Sparkles size={12} style={{ color: "var(--color-accent)" }} />
+                      {suggestLoading ? (
+                        <span style={{ color: "var(--color-fg-muted)" }}>
+                          Drafting reply…
+                        </span>
+                      ) : suggestError ? (
+                        <span className="truncate" style={{ color: "var(--color-danger)" }}>
+                          {suggestError}
+                        </span>
+                      ) : suggestedBy ? (
+                        <span className="truncate">
+                          Suggested by <span className="font-semibold">{suggestedBy}</span>
+                          {userEditedRef.current && (
+                            <span className="ml-1 italic" style={{ color: "var(--color-fg-muted)" }}>
+                              (edited)
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--color-fg-muted)" }}>AI draft</span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fetchSuggestion(true)}
+                      disabled={suggestLoading}
+                      className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide hover:opacity-80 disabled:opacity-40 shrink-0"
+                      style={{ color: "var(--color-accent)" }}
+                    >
+                      {suggestLoading ? (
+                        <Loader2 size={10} className="animate-spin" />
+                      ) : (
+                        <RotateCw size={10} />
+                      )}
+                      Regenerate
+                    </button>
+                  </div>
+                )}
+
                 {/* Account selector */}
                 {emailAccounts.length > 1 && (
                   <div className="space-y-1">
@@ -320,17 +411,28 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
                   <textarea
                     className="input resize-none"
                     rows={5}
-                    placeholder="Write your reply…"
+                    placeholder={suggestLoading ? "Drafting…" : "Write your reply…"}
                     value={replyBody}
-                    onChange={(e) => setReplyBody(e.target.value)}
-                    autoFocus
+                    onChange={(e) => {
+                      setReplyBody(e.target.value);
+                      userEditedRef.current = true;
+                    }}
+                    autoFocus={!isInbound}
                   />
                 </div>
                 <div className="flex items-center justify-end gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => { setShowReply(false); setReplyBody(""); }}>
-                    Cancel
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowReply(false);
+                      setReplyBody("");
+                      userEditedRef.current = false;
+                    }}
+                  >
+                    {isInbound ? "Clear" : "Cancel"}
                   </Button>
-                  <Button size="sm" onClick={handleSend} disabled={sending || emailAccounts.length === 0} className="gap-1.5">
+                  <Button size="sm" onClick={handleSend} disabled={sending || emailAccounts.length === 0 || !contactEmail} className="gap-1.5">
                     {sending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
                     {sending ? "Sending…" : "Send reply"}
                   </Button>
