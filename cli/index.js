@@ -1,112 +1,73 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import chalk from 'chalk';
-import inquirer from 'inquirer';
-import ora from 'ora';
-import { execa } from 'execa';
-import fs from 'fs-extra';
-import path from 'path';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import updateNotifier from 'update-notifier';
+import { initCommand } from './commands/init.js';
+import {
+  upCommand,
+  downCommand,
+  restartCommand,
+  logsCommand,
+} from './commands/lifecycle.js';
+import { doctorCommand } from './commands/doctor.js';
 
-const REPO_URL = 'https://github.com/aliyevaladddin/AladdinAI.git';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+
+// Check for updates once per day, show a banner on next run
+updateNotifier({ pkg, updateCheckInterval: 1000 * 60 * 60 * 24 }).notify({ defer: false });
 
 const program = new Command();
 
 program
   .name('aladdin-ai')
-  .description('Bootstrap a local AladdinAI instance (FastAPI + Next.js)')
-  .version('1.3.0')
+  .description('Self-hosted AI workspace — agents, memory, CRM, channels.')
+  .version(pkg.version);
+
+// ── init (default) ────────────────────────────────────────────────────
+program
+  .command('init', { isDefault: true })
+  .description('Clone repo, generate .env with secure secrets, start with Docker')
   .option('-n, --name <name>', 'project directory name')
   .option('-y, --yes', 'accept defaults, skip prompts')
-  .option('--skip-install', 'clone only, do not install deps or migrate')
-  .action(async (opts) => {
-    console.log(chalk.cyan('\nAladdinAI bootstrap'));
-    console.log(chalk.dim('Self-hosted AI workspace — agents, memory, CRM, channels.\n'));
+  .option('--skip-start', 'do not run docker compose up after setup')
+  .action(initCommand);
 
-    const answers = opts.yes
-      ? { projectName: opts.name || 'aladdin-ai', installDeps: !opts.skipInstall }
-      : await inquirer.prompt([
-          {
-            type: 'input',
-            name: 'projectName',
-            message: 'Project directory:',
-            default: opts.name || 'aladdin-ai',
-          },
-          {
-            type: 'confirm',
-            name: 'installDeps',
-            message: 'Install dependencies and run migrations?',
-            default: !opts.skipInstall,
-          },
-        ]);
+// ── lifecycle ─────────────────────────────────────────────────────────
+program
+  .command('up')
+  .description('Start services (docker compose up -d)')
+  .option('--build', 'rebuild images before starting')
+  .action(upCommand);
 
-    const targetDir = path.resolve(process.cwd(), answers.projectName);
-    if (fs.existsSync(targetDir)) {
-      console.log(chalk.red(`\nDirectory "${answers.projectName}" already exists. Pick another name or remove it.`));
-      process.exit(1);
-    }
+program
+  .command('down')
+  .description('Stop services')
+  .option('-v, --volumes', 'also remove volumes (DESTROYS data)')
+  .action(downCommand);
 
-    // 1. Clone
-    const cloneSpin = ora('Cloning repository').start();
-    try {
-      await execa('git', ['clone', '--depth', '1', REPO_URL, targetDir]);
-      await fs.remove(path.join(targetDir, '.git'));
-      cloneSpin.succeed('Repository cloned');
-    } catch (err) {
-      cloneSpin.fail('git clone failed');
-      console.error(err.shortMessage || err.message);
-      process.exit(1);
-    }
+program
+  .command('restart [service]')
+  .description('Restart all services or a specific one (backend, frontend, postgres)')
+  .action(restartCommand);
 
-    // 2. Copy .env
-    const envSpin = ora('Creating .env from template').start();
-    try {
-      await fs.copy(
-        path.join(targetDir, '.env.example'),
-        path.join(targetDir, '.env'),
-      );
-      envSpin.succeed('.env created (edit JWT_SECRET before going to production)');
-    } catch (err) {
-      envSpin.warn('Could not copy .env.example — do it manually');
-    }
+program
+  .command('logs [service]')
+  .description('Tail service logs (defaults to all)')
+  .option('-f, --follow', 'follow log output')
+  .option('-t, --tail <lines>', 'number of lines to show from the end', '100')
+  .action(logsCommand);
 
-    if (answers.installDeps) {
-      // 3. Backend deps via make install
-      const beSpin = ora('Installing backend dependencies (creates .venv)').start();
-      try {
-        await execa('make', ['install'], { cwd: targetDir });
-        beSpin.succeed('Backend dependencies installed');
-      } catch (err) {
-        beSpin.fail('make install failed — run it manually after fixing the issue');
-        console.error(chalk.dim(err.shortMessage || err.message));
-      }
+// ── diagnostics ───────────────────────────────────────────────────────
+program
+  .command('doctor')
+  .description('Diagnose setup issues: docker, .env, ports, services')
+  .action(doctorCommand);
 
-      // 4. Frontend deps
-      const feSpin = ora('Installing frontend dependencies').start();
-      try {
-        await execa('npm', ['install'], { cwd: path.join(targetDir, 'frontend') });
-        feSpin.succeed('Frontend dependencies installed');
-      } catch (err) {
-        feSpin.fail('npm install failed in frontend/');
-        console.error(chalk.dim(err.shortMessage || err.message));
-      }
-
-      // 5. Migrations
-      const mSpin = ora('Applying database migrations').start();
-      try {
-        await execa('make', ['migrate'], { cwd: targetDir });
-        mSpin.succeed('Migrations applied');
-      } catch (err) {
-        mSpin.fail('make migrate failed — run it manually after fixing the issue');
-        console.error(chalk.dim(err.shortMessage || err.message));
-      }
-    }
-
-    console.log(chalk.green('\nDone.'));
-    console.log(`\n  cd ${answers.projectName}`);
-    console.log('  make dev-backend    # FastAPI on :8000');
-    console.log('  make dev-frontend   # Next.js on :3000');
-    console.log(chalk.dim('\nDocs: README.md, docs/ARCHITECTURE.md\n'));
-  });
-
-program.parse(process.argv);
+program.parseAsync(process.argv).catch((err) => {
+  console.error(err.shortMessage || err.message);
+  process.exit(1);
+});
