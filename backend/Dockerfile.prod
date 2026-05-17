@@ -1,0 +1,37 @@
+# Production image for the AladdinAI FastAPI backend.
+#
+# - Single-stage (Python apps don't benefit from multi-stage as much as Node).
+# - Runs alembic migrations on container start before launching uvicorn, so
+#   the user doesn't have to remember to run them after `docker compose up`.
+# - No --reload, no volume mounts — the image is the source of truth.
+
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# System deps that some Python packages need at runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+# Migrations + launch
+RUN printf '#!/bin/sh\nset -e\necho "Running database migrations..."\nalembic upgrade head\nexec uvicorn app.main:app --host 0.0.0.0 --port 8000 "$@"\n' \
+      > /usr/local/bin/entrypoint.sh \
+    && chmod +x /usr/local/bin/entrypoint.sh
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -fsS http://localhost:8000/ || exit 1
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -11,6 +11,7 @@ import {
   downCommand,
   restartCommand,
   logsCommand,
+  updateCommand,
 } from './commands/lifecycle.js';
 import { doctorCommand } from './commands/doctor.js';
 
@@ -30,10 +31,11 @@ program
 // ── init (default) ────────────────────────────────────────────────────
 program
   .command('init', { isDefault: true })
-  .description('Clone repo, generate .env with secure secrets, start with Docker')
+  .description('Set up a new AladdinAI deployment using prebuilt Docker images')
   .option('-n, --name <name>', 'project directory name')
   .option('-y, --yes', 'accept defaults, skip prompts')
   .option('--skip-start', 'do not run docker compose up after setup')
+  .option('--source', 'install from source (git clone + local build, for contributors)')
   .action(initCommand);
 
 // ── lifecycle ─────────────────────────────────────────────────────────
@@ -60,6 +62,11 @@ program
   .option('-f, --follow', 'follow log output')
   .option('-t, --tail <lines>', 'number of lines to show from the end', '100')
   .action(logsCommand);
+
+program
+  .command('update')
+  .description('Pull the latest images and recreate services')
+  .action(updateCommand);
 
 // ── diagnostics ───────────────────────────────────────────────────────
 program

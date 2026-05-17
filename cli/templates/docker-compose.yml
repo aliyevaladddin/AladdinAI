@@ -1,0 +1,53 @@
+# AladdinAI — production compose using prebuilt images from GHCR.
+#
+# Pull updates: docker compose pull
+# Pin a version: set ALADDINAI_VERSION in your .env (defaults to "latest").
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/aliyevaladddin/aladdinai-backend:${ALADDINAI_VERSION:-latest}
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Override to point at the docker-compose Postgres service, not localhost.
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    volumes:
+      - media:/app/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/aliyevaladddin/aladdinai-frontend:${ALADDINAI_VERSION:-latest}
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Server-side Next.js rewrites need to reach backend via the compose network
+      BACKEND_INTERNAL_URL: http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  media:
