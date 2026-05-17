@@ -38,3 +38,13 @@ export async function logsCommand(service, opts) {
   const r = await compose(args);
   process.exit(r.exitCode || 0);
 }
+
+export async function updateCommand() {
+  console.log(chalk.cyan('Pulling latest images…\n'));
+  let r = await compose(['pull']);
+  if (r.exitCode !== 0) process.exit(r.exitCode || 1);
+  console.log(chalk.cyan('\nRecreating services with new images…\n'));
+  r = await compose(['up', '-d']);
+  if (r.exitCode !== 0) process.exit(r.exitCode || 1);
+  console.log(chalk.green('\n✓ Updated and running'));
+}
