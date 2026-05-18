@@ -38,30 +38,66 @@ BentoML is our framework for deploying and scaling custom tools and local LLMs w
 
 ## Quick start
 
+One command, no `git clone`, no Python, no Node toolchain — just Docker.
+
 ```bash
-# 1. Clone & enter the repo
-git clone https://github.com/<you>/AladdinAI.git
-cd AladdinAI
+npx aladdin-ai
+```
 
-# 2. Copy env template
-cp .env.example .env
-# Edit .env — at minimum, set JWT_SECRET before going anywhere near production.
+That pulls prebuilt images from GHCR (multi-arch: amd64 + arm64), generates a `.env` with cryptographically-secure secrets, and brings up the stack:
 
-# 3. Install backend (creates .venv) and frontend deps
-make install
-cd frontend && npm install && cd ..
-
-# 4. Apply database migrations
-make migrate
-
-# 5. Run both services (in two terminals)
-make dev-backend    # FastAPI on http://localhost:8000
-make dev-frontend   # Next.js on http://localhost:3000
+```
+✓ Services running
+  Frontend: http://localhost:3000
+  Backend:  http://localhost:8000
 ```
 
 Open `http://localhost:3000`, register a user, and you'll land on the dashboard. Add at least one **LLM Provider** (Settings → LLM Providers) before creating agents — NVIDIA NIM works out of the box with a free API key.
 
-By default the backend uses SQLite (`backend/aladdinai.db`). To switch to Postgres, uncomment `DATABASE_URL` in `.env` and run `docker compose up postgres -d`.
+### Requirements
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (macOS / Windows) or `docker` + `docker compose` plugin (Linux)
+- Node.js 18+ (just to run `npx`)
+
+### Day-to-day commands
+
+```bash
+npx aladdin-ai up               # start services
+npx aladdin-ai down             # stop services
+npx aladdin-ai restart backend  # restart one service
+npx aladdin-ai logs -f          # tail logs
+npx aladdin-ai update           # pull the latest images and recreate
+npx aladdin-ai doctor           # diagnose setup issues
+```
+
+See [`cli/README.md`](cli/README.md) for the full command reference.
+
+---
+
+## Development setup (for contributors)
+
+If you want to modify the code rather than just use AladdinAI, install from source — this gives you a writable repo and local Docker builds:
+
+```bash
+npx aladdin-ai init --source
+# or, manually:
+git clone https://github.com/aliyevaladddin/AladdinAI.git
+cd AladdinAI
+cp .env.example .env       # generate secrets manually before exposing publicly
+docker compose up --build  # builds backend/frontend from your local source
+```
+
+For a non-Docker workflow with hot-reload (running FastAPI / Next.js directly on the host):
+
+```bash
+make install           # creates .venv, installs Python deps
+cd frontend && npm install && cd ..
+make migrate           # apply Alembic migrations to your local DB
+make dev-backend       # FastAPI on :8000 with --reload
+make dev-frontend      # Next.js on :3000 with --reload
+```
+
+This is the fastest loop when iterating on backend code — no image rebuilds.
 
 ---
 
