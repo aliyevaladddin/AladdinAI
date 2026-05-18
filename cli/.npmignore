@@ -1,0 +1,6 @@
+# Exclude everything not needed for runtime.
+# Note: even with a `files` whitelist in package.json, npm drops dotfiles by
+# default unless an explicit .npmignore overrides it.
+node_modules
+*.log
+.DS_Store
