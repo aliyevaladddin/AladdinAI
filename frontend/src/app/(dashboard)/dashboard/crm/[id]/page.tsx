@@ -20,6 +20,7 @@ interface Contact {
 }
 interface Activity {
   id: number; type: string; channel: string | null;
+  contact_id: number | null;
   subject: string | null; content: string | null; created_at: string;
 }
 interface Deal {
