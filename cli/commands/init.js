@@ -42,7 +42,9 @@ function fillEnv(text, vars) {
 }
 
 async function writeEnv(targetDir) {
-  const tmplPath = path.join(TEMPLATES_DIR, '.env.template');
+  // Note: file is named `env.template` (no leading dot) because npm's default
+  // packaging silently drops dotfiles from `files` globs.
+  const tmplPath = path.join(TEMPLATES_DIR, 'env.template');
   const tmpl = await fs.readFile(tmplPath, 'utf8');
   const filled = fillEnv(tmpl, {
     POSTGRES_PASSWORD: genSecret(16),
