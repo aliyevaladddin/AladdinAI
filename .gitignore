@@ -36,7 +36,7 @@ pgdata/
 .aider.input.history
 .aider.messages.jsonl
 .aider.prompts/
-
+.claude/
 # Project specific
 .idx/
 

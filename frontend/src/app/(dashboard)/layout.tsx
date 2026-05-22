@@ -4,8 +4,12 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { Toaster } from "sonner";
-import { AppSidebar } from "@/components/AppSidebar";
-import { AppHeader } from "@/components/AppHeader";
+
+import { AppShell } from "@/components/shell/AppShell";
+import { ActivityBar } from "@/components/shell/ActivityBar";
+import { StatusBar } from "@/components/shell/StatusBar";
+import { DASHBOARD_PRIMARY, DASHBOARD_FOOTER } from "@/components/shell/dashboard-nav";
+import { DashboardTitlebarRight } from "@/components/shell/DashboardTitlebarRight";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -19,25 +23,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading || !user) {
     return (
-      <div
-        className="flex items-center justify-center h-screen w-screen"
-        style={{ background: "var(--color-bg)" }}
-      >
-        <div className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
+      <AppShell>
+        <div
+          className="h-full w-full flex items-center justify-center"
+          style={{ color: "var(--fg-3)", fontSize: 13 }}
+        >
           Loading…
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AppHeader />
-        <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
-      </div>
+    <>
+      <AppShell
+        titlebarRight={<DashboardTitlebarRight />}
+        activity={
+          <ActivityBar
+            items={DASHBOARD_PRIMARY}
+            footer={DASHBOARD_FOOTER}
+            dividerAfter={5}
+          />
+        }
+        status={<StatusBar />}
+      >
+        <main className="h-full overflow-y-auto px-8 py-6">{children}</main>
+      </AppShell>
       <Toaster theme="dark" richColors position="top-right" />
-    </div>
+    </>
   );
 }
