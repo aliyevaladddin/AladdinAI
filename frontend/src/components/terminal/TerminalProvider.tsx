@@ -31,6 +31,7 @@ import {
 } from "react";
 import { api, API_URL } from "@/lib/api";
 
+/** Kept for VmsSettings compatibility — fields no longer used at the iframe layer. */
 export interface VM {
   id: number;
   name: string;
@@ -47,8 +48,9 @@ export type SessionStatus = "loading" | "ready" | "error";
 /** Render-state view of a session. No imperative resources. */
 export interface TerminalSession {
   id: string;
-  title: string;
-  vm: VM | null;
+  url: string | null;
+  providerType: string | null;
+  expiresAt: number | null;       // unix seconds
   status: SessionStatus;
   /** URL pointed at the terminal provider, or "about:blank" while loading / when no provider installed. */
   url: string;
@@ -72,8 +74,7 @@ export interface TerminalSessionResponse {
 interface TerminalCtx {
   open: boolean;
   height: number;
-  sessions: TerminalSession[];
-  activeId: string | null;
+  slot: TerminalSlot;
   setHeight: (h: number) => void;
   toggle: () => void;
   show: () => void;
@@ -106,8 +107,17 @@ const MAX_HEIGHT_RATIO = 0.8;
 const DEFAULT_HEIGHT = 320;
 const HEIGHT_KEY = "aladdin-terminal-height";
 
-let sidCounter = 0;
-const nextId = () => `term-${++sidCounter}-${Date.now()}`;
+let slotCounter = 0;
+const nextSlotId = () => `slot-${++slotCounter}-${Date.now()}`;
+
+const EMPTY_SLOT: TerminalSlot = {
+  id: "empty",
+  url: null,
+  providerType: null,
+  expiresAt: null,
+  status: "idle",
+  error: null,
+};
 
 function readInitialHeight(): number {
   if (typeof window === "undefined") return DEFAULT_HEIGHT;
@@ -312,8 +322,7 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
     () => ({
       open,
       height,
-      sessions,
-      activeId,
+      slot,
       setHeight,
       toggle,
       show,

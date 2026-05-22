@@ -23,15 +23,12 @@ import {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
+import Link from "next/link";
 import {
-  Plus,
   X,
   ChevronDown,
   ChevronUp,
   Terminal as TerminalIcon,
-  Shield,
-  Circle,
   GripHorizontal,
   RefreshCw,
   Settings,
@@ -159,7 +156,7 @@ function DrawerInner() {
     window.addEventListener("mouseup", onUp);
   }, [t]);
 
-  const active = t.sessions.find((s) => s.id === t.activeId) ?? t.sessions[0];
+  const title = t.slot.providerType ?? "Terminal";
 
   return (
     <div
@@ -214,17 +211,15 @@ function DrawerInner() {
             </button>
           ))}
 
-          <div className="term-newmenu">
+        <div className="term-drawer__actions">
+          {t.slot.status === "ready" && (
             <button
-              ref={plusBtnRef}
               type="button"
               className="term-iconbtn"
-              title="New session"
-              aria-haspopup="menu"
-              aria-expanded={pickerOpen}
-              onClick={togglePicker}
+              title="Reload session"
+              onClick={() => void t.refresh()}
             >
-              <Plus size={13} />
+              <RotateCcw size={13} />
             </button>
           </div>
         </div>
@@ -392,7 +387,6 @@ function IframePane({ session, visible }: { session: TerminalSession; visible: b
 
 export function TerminalLauncherButton() {
   const t = useTerminal();
-  const count = t.sessions.length;
   return (
     <button
       type="button"
@@ -402,8 +396,16 @@ export function TerminalLauncherButton() {
     >
       <TerminalIcon size={11} />
       <span>Terminal</span>
-      {count > 0 && <code>{count}</code>}
       {t.open ? <ChevronDown size={10} /> : <ChevronUp size={10} />}
     </button>
   );
 }
+
+// Re-exports — VmsSettings still imports VM from this barrel.
+// (It used to import from TerminalProvider; the type lives there now, but
+// we keep this re-export for code that points at TerminalDrawer.)
+export type { VM } from "./TerminalProvider";
+
+// Defensive: a couple of consumers (like a future tab strip) used to import
+// `useTerminal` from this module. Re-export to avoid breaking them.
+export { useTerminal } from "./TerminalProvider";
