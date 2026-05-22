@@ -1,3 +1,5 @@
+# NOTICE: This file is protected under RCF-PL v2.0.3
+# [RCF:PROTECTED]
 from pydantic_settings import BaseSettings
 
 
@@ -8,6 +10,44 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
     fernet_key: str = ""  # Set in .env — generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+    # ── Terminal provider runtime ────────────────────────────────────
+    # Remote Docker daemon over TLS (per user's deployment choice).
+    # Leave docker_remote_url empty in dev to fall back to the local
+    # daemon at unix:///var/run/docker.sock — provider features will be
+    # disabled unless docker_remote_url is set in production.
+    docker_remote_url: str = ""          # e.g. "tcp://docker.example.com:2376"
+    docker_tls_cert_path: str = ""        # client cert.pem
+    docker_tls_key_path: str = ""         # client key.pem
+    docker_tls_ca_path: str = ""          # CA ca.pem
+    docker_tls_verify: bool = True
+
+    # The user-facing host name in front of Traefik. All per-user
+    # provider containers share this host and are disambiguated by a
+    # path prefix that Traefik routes to the matching container.
+    # Example:  terminal_public_host = "terminal.aladdin.local"
+    #           url -> https://terminal.aladdin.local/p/<provider_id>/?token=…
+    terminal_public_host: str = "terminal.localhost"
+    terminal_public_scheme: str = "https"
+    terminal_traefik_entrypoint: str = "websecure"   # web | websecure
+    terminal_traefik_network: str = "aladdin_terminal"
+    terminal_traefik_router_priority: int = 100
+    # When the docker network already exists on the remote host, we just
+    # attach to it. We never auto-create networks — that's an infra task.
+
+    # HMAC secret for one-time terminal session tokens. MUST be set in
+    # production; defaults are unusable for cross-process verification
+    # but won't crash a dev session.
+    terminal_token_secret: str = "change-me-terminal-token-secret"
+    terminal_token_ttl_seconds: int = 300   # 5 min — one-time entry token
+    # Longer-lived cookie issued by forward-auth after the entry token is
+    # consumed; covers all sub-resource fetches the iframe makes (CSS, JS,
+    # WS upgrade). Keep this comfortably above a typical idle session length
+    # but short enough that a leaked cookie has a bounded blast radius.
+    terminal_session_ttl_seconds: int = 60 * 60   # 1 hour
+    # Cookie name set on `terminal_public_host`. Picked to avoid colliding
+    # with anything the provider container itself might set.
+    terminal_session_cookie_name: str = "aladdin_term_sess"
 
     model_config = {"env_file": "../.env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

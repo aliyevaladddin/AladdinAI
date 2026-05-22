@@ -1,0 +1,58 @@
+# Builtin terminal provider — ttyd
+#
+# A single-binary HTTP+WebSocket terminal that runs a login shell inside the
+# container. We use the upstream image and just drop a token-gate in front via
+# Traefik. Local-shell mode only in MVP — SSH passthrough is `wetty`/`guacamole`.
+#
+# Container model:
+#   - one container per (user, provider row);
+#   - attached to the `aladdin_terminal` Docker network on the remote host;
+#   - never publishes a host port — Traefik discovers it by labels.
+#
+# Traefik routing labels are added by docker_runner at start time using values
+# from this manifest + settings.terminal_public_host + provider.id.
+
+type: ttyd
+name: ttyd (local shell)
+description: |
+  Lightweight web terminal that opens a shell inside a per-user container.
+  Good default for browsing the dashboard host without configuring SSH.
+
+# Image we pull/start. The user can override this in a future "advanced"
+# pane, but builtin installs lock to the version we tested.
+image: tsl0922/ttyd:1.7.4
+
+# What ttyd listens on inside the container. We never expose this on the
+# host directly; Traefik routes from terminal_public_host to this port over
+# the shared docker network.
+internal_port: 7681
+
+# Argv for the ttyd binary. `--writable` is required for input; `-W` enables
+# the WebSocket-side write path. `bash` is the in-container login shell —
+# the image already has it.
+command:
+  - ttyd
+  - --writable
+  - --port
+  - "7681"
+  - bash
+
+# No env required at the provider level. Per-session env (token, user) is
+# injected by the adapter at start time.
+env: {}
+
+# Healthcheck — ttyd serves a static landing page on GET /, 200 means alive.
+healthcheck:
+  test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:7681/"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 5s
+
+# ttyd in this MVP runs a shell inside the container — no remote SSH.
+# Setting this true would tell the router to broker the user's VM creds
+# through `POST /terminal/exchange-token` and the adapter to wire them.
+requires_ssh_proxy: false
+
+# Pinned to the Traefik path layout — substituted at session-issue time.
+url_template: "{scheme}://{host}/p/{provider_id}/?token={token}"
