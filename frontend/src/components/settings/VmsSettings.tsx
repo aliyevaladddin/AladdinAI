@@ -5,8 +5,9 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Cloud, Plus, X, CheckCircle2, XCircle, Loader2,
-  Trash2, Unplug, PlugZap, Pencil, Check
+  Trash2, Unplug, PlugZap, Pencil, Check, Terminal as TerminalIcon
 } from "lucide-react";
+import { useTerminal } from "@/components/terminal/TerminalProvider";
 
 interface VM {
   id: number;
@@ -23,6 +24,7 @@ interface ConnectResult {
 }
 
 export function VmsSettings() {
+  const terminal = useTerminal();
   const [vms, setVms] = useState<VM[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", host: "", port: "22", username: "root", ssh_key: "", password: "" });
@@ -217,6 +219,15 @@ export function VmsSettings() {
                           <PlugZap size={13} /> Connect
                         </Button>
                       )}
+                      <Button
+                        variant="ghost" size="sm"
+                        onClick={() => terminal.newSSH({
+                          id: vm.id, name: vm.name, host: vm.host, port: vm.port, username: vm.username,
+                        })}
+                        title="Open in terminal"
+                      >
+                        <TerminalIcon size={13} /> Terminal
+                      </Button>
                       <Button
                         variant="ghost" size="icon-sm"
                         onClick={() => isEditing ? setEditId(null) : startEdit(vm)}

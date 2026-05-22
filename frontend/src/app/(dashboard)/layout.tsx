@@ -10,6 +10,11 @@ import { ActivityBar } from "@/components/shell/ActivityBar";
 import { StatusBar } from "@/components/shell/StatusBar";
 import { DASHBOARD_PRIMARY, DASHBOARD_FOOTER } from "@/components/shell/dashboard-nav";
 import { DashboardTitlebarRight } from "@/components/shell/DashboardTitlebarRight";
+import { TerminalProvider } from "@/components/terminal/TerminalProvider";
+import {
+  TerminalDrawer,
+  TerminalLauncherButton,
+} from "@/components/terminal/TerminalDrawer";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -35,7 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <>
+    <TerminalProvider>
       <AppShell
         titlebarRight={<DashboardTitlebarRight />}
         activity={
@@ -45,11 +50,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             dividerAfter={5}
           />
         }
-        status={<StatusBar />}
+        status={<StatusBar rightExtra={<TerminalLauncherButton />} />}
+        bodyOverlay={<TerminalDrawer />}
       >
         <main className="h-full overflow-y-auto px-8 py-6">{children}</main>
       </AppShell>
       <Toaster theme="dark" richColors position="top-right" />
-    </>
+    </TerminalProvider>
   );
 }

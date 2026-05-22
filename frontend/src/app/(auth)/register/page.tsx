@@ -29,20 +29,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div
-            className="w-10 h-10 rounded-md mx-auto mb-4 flex items-center justify-center text-base font-semibold"
-            style={{ background: "var(--color-fg)", color: "var(--color-bg)" }}
-          >
-            A
-          </div>
-          <h1 className="text-[20px] font-semibold tracking-tight">Create your account</h1>
-          <p className="text-[13px] mt-1" style={{ color: "var(--color-fg-muted)" }}>
-            Get started with AladdinAI.
-          </p>
-        </div>
+    <div className="w-full">
+      <div className="mb-7">
+        <h1 className="text-[22px] font-semibold tracking-tight">Create your account</h1>
+        <p className="text-[13px] mt-1.5" style={{ color: "var(--color-fg-muted)" }}>
+          A few details and you&apos;re in. No credit card needed.
+        </p>
+      </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {error && (
@@ -121,7 +114,6 @@ export default function RegisterPage() {
             Sign in
           </Link>
         </p>
-      </div>
     </div>
   );
 }
