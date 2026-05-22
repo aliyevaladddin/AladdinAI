@@ -1570,20 +1570,613 @@
 .term-pane {
   position: absolute;
   inset: 0;
-  padding: 8px 10px 4px;
+  display: flex;
 }
 .term-pane.is-hidden { visibility: hidden; pointer-events: none; }
 .term-pane.is-visible { visibility: visible; }
+.term-pane--center {
+  align-items: center;
+  justify-content: center;
+}
 
-/* Make sure xterm fills the pane and uses our background. */
-.term-pane .xterm,
-.term-pane .xterm-viewport,
-.term-pane .xterm-screen { background: transparent !important; }
-.term-pane .xterm-viewport { padding: 0 !important; }
-.term-pane .xterm-screen { width: 100% !important; }
+/* Embedded provider iframe. The provider container renders its own UI
+   (ttyd, code-server, …) — we just give it a clean rectangle. */
+.term-iframe {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--bg-0);
+  display: block;
+}
+
+/* Overlay covers the iframe until its first onLoad fires. */
+.term-pane__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-0);
+  pointer-events: none;
+}
+
+.term-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-3, rgba(255,255,255,0.08));
+  border-top-color: var(--violet);
+  animation: term-spin 0.8s linear infinite;
+}
+@keyframes term-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty / error state — centered card with icon, title, optional sub, CTA. */
+.term-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 360px;
+  text-align: center;
+  color: var(--fg-3);
+  padding: 24px;
+}
+.term-empty > svg:first-child {
+  color: var(--fg-4);
+  margin-bottom: 4px;
+}
+.term-empty__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.term-empty__sub {
+  font-size: 11.5px;
+  color: var(--fg-4);
+  line-height: 1.5;
+}
+.term-empty__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--bg-2);
+  color: var(--fg);
+  font-size: 12px;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+.term-empty__cta:hover {
+  background: var(--bg-3);
+  border-color: var(--line-strong, var(--violet));
+}
 
 /* The shell body needs position:relative so the drawer can absolute-bottom into it. */
 .shell__body { position: relative; }
+
+/* ===========================================================
+   Terminal Marketplace — Settings tab
+   AppStore-feel for the Terminal Providers picker. Tokens here
+   stay generic so future marketplaces (channels, agents …) can
+   share them.
+   =========================================================== */
+
+/* Hero header — amber→violet ambient strip, sits flush above the
+   Installed/Catalogue sections. */
+.mkt-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg,
+      color-mix(in oklab, var(--bg-2) 96%, transparent) 0%,
+      color-mix(in oklab, var(--bg-3) 94%, transparent) 100%);
+  padding: 18px 20px;
+  isolation: isolate;
+}
+.mkt-hero::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  z-index: -1;
+  background:
+    radial-gradient(40% 60% at 12% 30%,
+      color-mix(in oklab, var(--amber) 22%, transparent) 0%,
+      transparent 70%),
+    radial-gradient(45% 55% at 88% 70%,
+      color-mix(in oklab, var(--violet) 26%, transparent) 0%,
+      transparent 72%);
+  filter: blur(4px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.mkt-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(to right,
+    color-mix(in oklab, var(--fg) 4%, transparent) 1px,
+    transparent 1px);
+  background-size: 32px 100%;
+  mask-image: radial-gradient(60% 80% at 50% 50%, #000 20%, transparent 90%);
+  -webkit-mask-image: radial-gradient(60% 80% at 50% 50%, #000 20%, transparent 90%);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Section heading — uppercase eyebrow + count chip + right slot for filters. */
+.mkt-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 2px;
+  margin-bottom: 10px;
+}
+.mkt-eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: var(--fg-3);
+}
+.mkt-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  color: var(--fg-2);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* Catalogue card. Hover lifts -2px with a tinted shadow keyed to the
+   provider accent (set inline via --mkt-accent). */
+.mkt-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  min-height: 196px;
+  transition:
+    transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 200ms ease,
+    box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 200ms ease;
+  --mkt-accent: var(--violet);
+  --mkt-accent-soft: var(--violet-soft);
+  --mkt-accent-line: var(--violet-line);
+  animation: mktCardIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--mkt-delay, 0ms);
+}
+@keyframes mktCardIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mkt-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--mkt-accent-line);
+  box-shadow:
+    0 12px 28px -16px color-mix(in oklab, var(--mkt-accent) 60%, transparent),
+    0 2px 0 color-mix(in oklab, var(--mkt-accent) 12%, transparent);
+}
+.mkt-card.is-installed {
+  background: color-mix(in oklab, var(--bg-2) 88%, transparent);
+}
+.mkt-card__ribbon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--amber) 14%, transparent);
+  color: var(--amber);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid color-mix(in oklab, var(--amber) 30%, transparent);
+}
+.mkt-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--mkt-accent) 14%, transparent);
+  color: var(--mkt-accent);
+  border: 1px solid color-mix(in oklab, var(--mkt-accent) 24%, transparent);
+  flex-shrink: 0;
+  position: relative;
+}
+.mkt-card__icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 30% 25%,
+    color-mix(in oklab, var(--mkt-accent) 22%, transparent),
+    transparent 70%);
+  pointer-events: none;
+}
+.mkt-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.mkt-card__image {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--fg-3);
+  margin-top: 2px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mkt-card__desc {
+  font-size: 12.5px;
+  color: var(--fg-2);
+  line-height: 1.5;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mkt-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.mkt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--fg-2);
+  font-size: 10.5px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.mkt-chip svg {
+  color: var(--fg-3);
+}
+.mkt-chip--accent {
+  background: color-mix(in oklab, var(--mkt-accent) 12%, transparent);
+  color: var(--mkt-accent);
+  border-color: color-mix(in oklab, var(--mkt-accent) 28%, transparent);
+}
+.mkt-chip--accent svg { color: var(--mkt-accent); }
+
+.mkt-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+}
+.mkt-card__installed-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--ok);
+  font-weight: 500;
+}
+
+/* Installed row — VS Code "running task" feel. Active row gets a
+   2px violet rail on the left and a violet-soft background. */
+.mkt-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px 12px 18px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  transition: background 200ms ease, border-color 200ms ease;
+  animation: mktCardIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.mkt-row:hover {
+  border-color: var(--line-strong);
+}
+.mkt-row.is-active {
+  background: color-mix(in oklab, var(--violet) 6%, var(--bg-2));
+  border-color: var(--violet-line);
+}
+.mkt-row.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--violet);
+  box-shadow: 0 0 12px color-mix(in oklab, var(--violet) 50%, transparent);
+}
+.mkt-row__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--mkt-accent, var(--violet)) 14%, transparent);
+  color: var(--mkt-accent, var(--violet));
+  border: 1px solid color-mix(in oklab, var(--mkt-accent, var(--violet)) 22%, transparent);
+  flex-shrink: 0;
+}
+.mkt-row__meta {
+  min-width: 0;
+}
+.mkt-row__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mkt-row__name-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mkt-row__sub {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--fg-3);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mkt-row__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--err);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mkt-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Status pill — coloured background + tiny dot, pulses on running. */
+.mkt-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px 0 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  transition: background 200ms ease, color 200ms ease, border-color 200ms ease;
+}
+.mkt-status__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  position: relative;
+  flex-shrink: 0;
+}
+.mkt-status--running {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: color-mix(in oklab, var(--ok) 22%, transparent);
+}
+.mkt-status--running .mkt-status__dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.4;
+  animation: mktPulseDot 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.mkt-status--starting {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: color-mix(in oklab, var(--warn) 22%, transparent);
+}
+.mkt-status--starting .mkt-status__dot {
+  animation: mktBlink 1s ease-in-out infinite;
+}
+.mkt-status--error,
+.mkt-status--unhealthy {
+  background: var(--err-soft);
+  color: var(--err);
+  border-color: color-mix(in oklab, var(--err) 22%, transparent);
+}
+.mkt-status--stopped {
+  background: var(--bg-3);
+  color: var(--fg-3);
+  border-color: var(--line);
+}
+@keyframes mktPulseDot {
+  0%, 100% { transform: scale(0.6); opacity: 0; }
+  50%      { transform: scale(1.4); opacity: 0.35; }
+}
+@keyframes mktBlink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+.mkt-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px 0 6px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--violet) 14%, transparent);
+  color: var(--violet);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--violet-line);
+}
+
+/* Skeleton blocks for first-paint of cards/rows. */
+.mkt-skeleton {
+  position: relative;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.mkt-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--fg) 4%, transparent) 50%,
+    transparent 100%);
+  animation: mktShimmer 1.6s ease-in-out infinite;
+  transform: translateX(-100%);
+}
+@keyframes mktShimmer {
+  to { transform: translateX(100%); }
+}
+.mkt-skeleton--card { min-height: 196px; padding: 16px; }
+.mkt-skeleton--row  { height: 72px; }
+
+.mkt-skel-line {
+  height: 10px;
+  border-radius: 4px;
+  background: var(--bg-3);
+}
+.mkt-skel-block {
+  height: 40px;
+  width: 40px;
+  border-radius: 12px;
+  background: var(--bg-3);
+}
+
+/* Empty + error states */
+.mkt-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 24px;
+  border-radius: var(--r-lg);
+  border: 1px dashed var(--line-strong);
+  background:
+    radial-gradient(60% 80% at 50% 0%,
+      color-mix(in oklab, var(--violet) 8%, transparent) 0%,
+      transparent 60%),
+    var(--bg-2);
+  text-align: center;
+}
+.mkt-empty__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--violet) 12%, transparent);
+  color: var(--violet);
+  border: 1px solid var(--violet-line);
+}
+.mkt-empty__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.mkt-empty__sub {
+  font-size: 12.5px;
+  color: var(--fg-3);
+  max-width: 380px;
+  line-height: 1.5;
+}
+
+.mkt-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--err-soft);
+  border: 1px solid color-mix(in oklab, var(--err) 30%, transparent);
+  color: var(--fg);
+}
+.mkt-error__icon {
+  color: var(--err);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.mkt-error__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.mkt-error__msg {
+  font-size: 11.5px;
+  color: var(--fg-2);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkt-card,
+  .mkt-row {
+    animation: none;
+    transition: none;
+  }
+  .mkt-card:hover { transform: none; }
+  .mkt-skeleton::after { animation: none; }
+  .mkt-status--running .mkt-status__dot::after,
+  .mkt-status--starting .mkt-status__dot { animation: none; }
+}
 
 /* ----- Status bar launcher button ----- */
 .sb-launcher {

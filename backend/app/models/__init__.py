@@ -15,10 +15,11 @@ from app.models.chat_session import ChatSession, ChatMessage
 from app.models.outgoing_webhook import OutgoingWebhook
 from app.models.agent_message import AgentMessage
 from app.models.agent_trigger import AgentTrigger
+from app.models.terminal_provider import TerminalProvider
 
 __all__ = [
     "User", "VMConnection", "LLMProvider", "MongoConnection", "BentoMLConnection",
     "Agent", "RouterConfig", "Contact", "Deal", "Activity", "Conversation",
     "EmailAccount", "MessagingChannel", "ChatSession", "ChatMessage", "OutgoingWebhook",
-    "AgentMessage", "AgentTrigger",
+    "AgentMessage", "AgentTrigger", "TerminalProvider",
 ]
