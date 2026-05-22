@@ -1391,6 +1391,27 @@
   .auth-hero__ambient { animation: none; }
 }
 
+/* ============================================================
+   Terminal-providers marketplace — keyframes for modals, card
+   mount-in and skeleton shimmer. Honour prefers-reduced-motion.
+   ============================================================ */
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes mpIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+
 /* ===========================================================
    Terminal drawer
    Floats above .shell__body, snapped to its bottom edge.
@@ -1413,6 +1434,11 @@
   color: var(--fg-2);
   min-height: 160px;
   /* width is full; height set inline */
+  /* Browser-level barrier: wheel events that bubble past the JS handler must
+     not chain-scroll the dashboard underneath. `contain` keeps the scroll
+     inside this subtree even when its inner scroller has nothing left to
+     consume. */
+  overscroll-behavior: contain;
 }
 
 .term-drawer__grip {
@@ -1567,6 +1593,32 @@
   min-height: 0;
   background: var(--bg-0);
 }
+
+/* Premium top-fade indicator: a thin gradient that hints at hidden scrollback
+   above the viewport. Driven by the data-scrolled attribute toggled in JS
+   when xterm-viewport's scrollTop > 0. Pointer-events:none keeps it out of
+   the wheel/click path. */
+.term-drawer__body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(180deg,
+    var(--bg-0) 0%,
+    color-mix(in oklab, var(--bg-0) 75%, transparent) 55%,
+    transparent 100%);
+  opacity: 0;
+  transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.term-drawer__body[data-scrolled="true"]::before { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .term-drawer__body::before { transition: none; }
+}
+
 .term-pane {
   position: absolute;
   inset: 0;
@@ -1575,11 +1627,101 @@
 .term-pane.is-hidden { visibility: hidden; pointer-events: none; }
 .term-pane.is-visible { visibility: visible; }
 
-/* Make sure xterm fills the pane and uses our background. */
+/* ── Plugin-slot iframe pane ─────────────────────────────────────── */
+.term-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--bg-0, #0c0c12);
+  display: block;
+}
+.term-pane__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: color-mix(in oklab, var(--bg-0, #0c0c12) 85%, transparent);
+  color: var(--fg-3, #9aa0ad);
+  font-size: 12px;
+  z-index: 1;
+  pointer-events: none;
+}
+.term-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in oklab, var(--fg-4) 30%, transparent);
+  border-top-color: var(--violet, #b88cff);
+  animation: term-spin 720ms linear infinite;
+}
+@keyframes term-spin { to { transform: rotate(360deg); } }
+
+.term-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 100%;
+  color: var(--fg-3, #9aa0ad);
+  text-align: center;
+  padding: 16px;
+}
+.term-empty__title { color: var(--fg, #f2f3f7); font-weight: 600; font-size: 13px; }
+.term-empty__hint { font-size: 12px; max-width: 480px; line-height: 1.5; }
+
+.term-tab__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  color: var(--amber, #d8a25c);
+  cursor: pointer;
+}
+.term-tab__action:hover { color: var(--err, #c25e63); }
+
+/* xterm inside the drawer pane.
+   The pane is position:absolute inset:0 so it has a real height. xterm
+   creates a wrapper .xterm, then .xterm-viewport (the scroll container)
+   and .xterm-screen (the actual canvas grid). We force the wrapper to
+   fill the pane and the viewport to inherit that height so scrollback
+   actually scrolls — without these rules the viewport stays at whatever
+   row-count was current at first fit(), and new lines push old ones
+   off-screen instead of into the scrollback buffer. */
 .term-pane .xterm,
 .term-pane .xterm-viewport,
 .term-pane .xterm-screen { background: transparent !important; }
-.term-pane .xterm-viewport { padding: 0 !important; }
+.term-pane .xterm {
+  position: relative;
+}
+.term-pane .xterm-viewport {
+  padding: 0 !important;
+  overflow-y: auto !important;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--fg-4) 60%, transparent) transparent;
+}
+.term-pane .xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+}
+.term-pane .xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+.term-pane .xterm-viewport::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--fg-4) 35%, transparent);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.term-pane .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--violet, #b88cff) 70%, transparent);
+  background-clip: padding-box;
+}
 .term-pane .xterm-screen { width: 100% !important; }
 
 /* The shell body needs position:relative so the drawer can absolute-bottom into it. */

@@ -4,6 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models.mongo_connection import MongoConnection
 from app.models.user import User
@@ -25,7 +26,7 @@ async def create_mongo(body: MongoCreate, user: User = Depends(get_current_user)
     conn = MongoConnection(
         user_id=user.id,
         name=body.name,
-        connection_string_encrypted=body.connection_string,
+        connection_string_encrypted=encrypt(body.connection_string),
         db_name=body.db_name,
     )
     db.add(conn)
@@ -42,7 +43,7 @@ async def test_mongo(conn_id: int, user: User = Depends(get_current_user), db: A
         raise HTTPException(status_code=404, detail="Connection not found")
 
     client = AsyncIOMotorClient(
-        conn.connection_string_encrypted,
+        decrypt(conn.connection_string_encrypted),
         serverSelectionTimeoutMS=5000,
         tlsCAFile=certifi.where(),
     )
@@ -84,7 +85,7 @@ async def update_mongo(
     conn.name = body.name
     conn.db_name = body.db_name
     if body.connection_string:
-        conn.connection_string_encrypted = body.connection_string
+        conn.connection_string_encrypted = encrypt(body.connection_string)
         
     await db.commit()
     await db.refresh(conn)
