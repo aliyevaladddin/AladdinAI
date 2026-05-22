@@ -73,6 +73,55 @@ async def delete_channel(channel_id: int, user: User = Depends(get_current_user)
     await db.commit()
 
 
+@router.get("/{channel_id}/webhook-config")
+async def get_webhook_config(channel_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Return the webhook URL, secret, and setup instructions for this channel.
+
+    For self-hosted providers like WAHA, the secret must be configured
+    on the provider side too — otherwise the channel runs unsigned and
+    incoming requests are accepted with a warning. Knowing this is
+    essential for production deployments.
+    """
+    result = await db.execute(
+        select(MessagingChannel).where(
+            MessagingChannel.id == channel_id, MessagingChannel.user_id == user.id
+        )
+    )
+    channel = result.scalar_one_or_none()
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+
+    instructions: dict[str, str] = {}
+    if channel.type == "whatsapp_waha":
+        instructions["signing"] = (
+            "WAHA accepts unsigned webhooks by default. To enable HMAC-SHA512 "
+            "verification, set `webhooks[].hmac.key` to the secret above in "
+            "your WAHA server config (or pass WHATSAPP_HOOK_HMAC=<secret>)."
+        )
+        instructions["hmac_algorithm"] = "HMAC-SHA512"
+        instructions["header"] = "X-Webhook-Hmac"
+    elif channel.type == "telegram":
+        instructions["signing"] = (
+            "Pass `secret_token` (the secret above) when calling Telegram's "
+            "setWebhook. Telegram will echo it back in the X-Telegram-Bot-Api-Secret-Token header."
+        )
+        instructions["header"] = "X-Telegram-Bot-Api-Secret-Token"
+    elif channel.type == "whatsapp":
+        instructions["signing"] = (
+            "WhatsApp Cloud verifies the webhook URL with the secret as `hub.verify_token`. "
+            "For signed requests, also set `app_secret` in this channel's config — Meta will "
+            "sign payloads with HMAC-SHA256 in X-Hub-Signature-256."
+        )
+        instructions["verify_token"] = "use the secret as hub.verify_token"
+
+    return {
+        "webhook_url": f"/api/webhooks/{channel.type}/{channel.id}",
+        "webhook_secret": channel.webhook_secret,
+        "is_configured": bool(channel.webhook_secret),
+        "instructions": instructions,
+    }
+
+
 @router.get("/{channel_id}/waha/qr")
 async def get_waha_qr(channel_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MessagingChannel).where(MessagingChannel.id == channel_id, MessagingChannel.user_id == user.id))

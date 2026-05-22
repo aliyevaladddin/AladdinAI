@@ -1,11 +1,16 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 import asyncssh
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.crypto import decrypt
 from app.database import async_session
 from app.models import BentoMLConnection, VMConnection
 from app.schemas.connections import BentoMLDeployRequest, BentoMLCreate
 from app.security import get_current_user
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -14,8 +19,13 @@ async def get_db():
         yield session
 
 @router.get("")
-async def get_bentoml_connections(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(BentoMLConnection))
+async def get_bentoml_connections(
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(BentoMLConnection).where(BentoMLConnection.user_id == current_user.id)
+    )
     return result.scalars().all()
 
 @router.post("")
@@ -70,23 +80,23 @@ async def deploy_service(
     }
     # Note: Use vm.password_encrypted if needed as per main.py
     if hasattr(vm, 'password_encrypted') and vm.password_encrypted:
-        connect_kwargs["password"] = vm.password_encrypted
+        connect_kwargs["password"] = decrypt(vm.password_encrypted)
 
     try:
         async with asyncssh.connect(**connect_kwargs) as conn:
-            print(f"DEBUG: SSH Connected. Deploying {body.service_name} inside Ubuntu...")
-            
+            log.info("bentoml: SSH connected, deploying %s inside Ubuntu", body.service_name)
+
             # Check if bentoml is available inside Ubuntu
             check = await conn.run("proot-distro login ubuntu -- bentoml --version", timeout=60)
-            
+
             if check.exit_status != 0:
-                print(f"DEBUG: BentoML not found in Ubuntu. Error: {check.stderr}")
+                log.warning("bentoml: not found in Ubuntu env: %s", check.stderr)
                 return {"status": "error", "message": "BentoML not installed inside Ubuntu environment."}
 
-            print("DEBUG: BentoML verified. Killing existing processes on port...")
+            log.debug("bentoml: verified, killing existing processes on port %s", body.port)
             await conn.run(f"proot-distro login ubuntu -- bash -c 'fuser -k {body.port}/tcp || true'", timeout=30)
 
-            print(f"DEBUG: Starting BentoML serve on port {body.port}...")
+            log.info("bentoml: starting serve %s on port %s", body.service_name, body.port)
             start_cmd = (
                 f"proot-distro login ubuntu -- bash -c 'nohup bentoml serve {body.service_name} "
                 f"--host 0.0.0.0 --port {body.port} > ~/bentoml_{body.port}.log 2>&1 &'"
@@ -97,15 +107,12 @@ async def deploy_service(
             bentoml_conn.endpoint_url = f"http://{vm.host}:{body.port}"
             bentoml_conn.status = "deployed"
             await db.commit()
-            
+
             return {"status": "success", "message": f"Successfully deployed to {bentoml_conn.endpoint_url}"}
 
     except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        print(f"DEBUG: Deploy error: {repr(e)}")
-        print(f"DEBUG: Traceback: {error_trace}")
-        return {"status": "error", "message": str(e) or repr(e), "traceback": error_trace}
+        log.exception("bentoml: deploy failed")
+        return {"status": "error", "message": str(e) or repr(e)}
 
 
 @router.put("/{conn_id}")

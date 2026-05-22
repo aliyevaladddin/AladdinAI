@@ -1,5 +1,22 @@
 "use client";
 
+/**
+ * TerminalDrawer — plugin-slot edition.
+ *
+ * We no longer own xterm. Each tab is an <iframe> pointed at whatever provider
+ * the backend chose (ttyd / Wetty / Guacamole / custom). Our job is to:
+ *   1. ask `POST /api/terminal/session` for a URL (provider handles auth & PTY),
+ *   2. render the iframe with a strict sandbox + no-referrer policy,
+ *   3. show our own spinner until the iframe says `onload`,
+ *   4. show a Reconnect button on iframe error or 5xx / token expiry,
+ *   5. keep all opened iframes mounted so a backgrounded tab keeps its state
+ *      (display: none, NOT unmount).
+ *
+ * Drawer chrome (drag handle, tabs with close, [+] menu, collapse) is
+ * unchanged in spirit but trimmed down — no more wheel routing, no fit/RO,
+ * no ws lifecycle, no canvas/DOM renderer choice.
+ */
+
 import {
   useCallback,
   useEffect,
@@ -16,27 +33,68 @@ import {
   Shield,
   Circle,
   GripHorizontal,
+  RefreshCw,
+  Settings,
 } from "lucide-react";
 import {
   useTerminal,
   type TerminalSession,
   type SessionStatus,
-  type TerminalInstance,
   type VM,
 } from "./TerminalProvider";
-import "xterm/css/xterm.css";
 
-/** Drawer sits over `.shell__body`, snapped to its bottom edge. */
+/* ------------------------------------------------------------------ */
+/* Drawer shell                                                       */
+/* ------------------------------------------------------------------ */
+
 export function TerminalDrawer() {
   const t = useTerminal();
-  if (!t.open || t.sessions.length === 0) {
-    return null; // hidden by default until user opens it
-  }
+  if (!t.open) return null;
+  if (t.sessions.length === 0) return <EmptyDrawer />;
   return <DrawerInner />;
+}
+
+/**
+ * Drawer opened with no sessions yet — spawn one and let DrawerInner take over.
+ * Module-level latch survives StrictMode's mount→cleanup→mount in dev so we
+ * don't double-spawn or get stuck on the placeholder.
+ */
+let __emptyDrawerSpawned = false;
+function EmptyDrawer() {
+  const t = useTerminal();
+  useEffect(() => {
+    if (__emptyDrawerSpawned) return;
+    __emptyDrawerSpawned = true;
+    void t.newLocal();
+    return () => { __emptyDrawerSpawned = false; };
+  }, [t]);
+
+  return (
+    <div
+      className="term-drawer"
+      style={{ height: t.height }}
+      role="region"
+      aria-label="Terminal drawer"
+    >
+      <div className="term-drawer__head">
+        <div className="term-drawer__title">
+          <TerminalIcon size={13} />
+          <span>Starting terminal…</span>
+        </div>
+        <div className="term-drawer__actions">
+          <button type="button" className="term-iconbtn" title="Collapse" onClick={t.hide}>
+            <ChevronDown size={14} />
+          </button>
+        </div>
+      </div>
+      <div className="term-drawer__body" />
+    </div>
+  );
 }
 
 function DrawerInner() {
   const t = useTerminal();
+  const drawerRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startY: number; startH: number } | null>(null);
   const plusBtnRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -47,9 +105,7 @@ function DrawerInner() {
   // VM list for the [+] picker.
   useEffect(() => {
     let active = true;
-    t.listVMs().then((list) => {
-      if (active) setVms(list);
-    });
+    t.listVMs().then((list) => { if (active) setVms(list); });
     return () => { active = false; };
   }, [t]);
 
@@ -72,21 +128,14 @@ function DrawerInner() {
   }, [pickerOpen]);
 
   const togglePicker = () => {
-    if (pickerOpen) {
-      setPickerOpen(false);
-      return;
-    }
+    if (pickerOpen) { setPickerOpen(false); return; }
     const rect = plusBtnRef.current?.getBoundingClientRect();
-    console.log("[Terminal] +menu click; btn rect =", rect);
     if (rect) {
-      // Popup pinned above the button — drawer is at the bottom of the viewport,
-      // so dropping up keeps it on-screen and out of the terminal body.
       setPickerPos({
         left: Math.max(8, rect.left),
         bottom: Math.max(8, window.innerHeight - rect.top + 6),
       });
     } else {
-      // Fallback: pin to bottom-left if we can't measure.
       setPickerPos({ left: 16, bottom: 60 });
     }
     setPickerOpen(true);
@@ -114,16 +163,13 @@ function DrawerInner() {
 
   return (
     <div
+      ref={drawerRef}
       className="term-drawer"
       style={{ height: t.height }}
       role="region"
       aria-label="Terminal drawer"
     >
-      <div
-        className="term-drawer__grip"
-        onMouseDown={onMouseDown}
-        title="Drag to resize"
-      >
+      <div className="term-drawer__grip" onMouseDown={onMouseDown} title="Drag to resize">
         <GripHorizontal size={12} />
       </div>
 
@@ -142,17 +188,26 @@ function DrawerInner() {
               aria-selected={s.id === active?.id}
               className={`term-tab ${s.id === active?.id ? "is-active" : ""}`}
               onClick={() => t.setActive(s.id)}
+              title={s.providerType !== "none" ? `via ${s.providerType}` : undefined}
             >
               <SessionDot status={s.status} vm={s.vm} />
               <span className="term-tab__label">{s.title}</span>
+              {s.status === "error" && (
+                <span
+                  className="term-tab__action"
+                  role="button"
+                  aria-label={`Reconnect ${s.title}`}
+                  title="Reconnect"
+                  onClick={(ev) => { ev.stopPropagation(); void t.reconnect(s.id); }}
+                >
+                  <RefreshCw size={11} />
+                </span>
+              )}
               <span
                 className="term-tab__close"
                 role="button"
                 aria-label={`Close ${s.title}`}
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  t.closeSession(s.id);
-                }}
+                onClick={(ev) => { ev.stopPropagation(); t.closeSession(s.id); }}
               >
                 <X size={11} />
               </span>
@@ -175,12 +230,7 @@ function DrawerInner() {
         </div>
 
         <div className="term-drawer__actions">
-          <button
-            type="button"
-            className="term-iconbtn"
-            title="Collapse"
-            onClick={t.hide}
-          >
+          <button type="button" className="term-iconbtn" title="Collapse" onClick={t.hide}>
             <ChevronDown size={14} />
           </button>
         </div>
@@ -188,12 +238,10 @@ function DrawerInner() {
 
       <div className="term-drawer__body">
         {t.sessions.map((s) => (
-          <XTermPane key={s.id} session={s} visible={s.id === active?.id} />
+          <IframePane key={s.id} session={s} visible={s.id === active?.id} />
         ))}
       </div>
 
-      {/* Picker popup is portalled to <body> so no parent stacking context
-          (the drawer itself sets z-index + absolute) can clip it. */}
       {pickerOpen && pickerPos && typeof document !== "undefined" && createPortal(
         <div
           ref={popupRef}
@@ -204,7 +252,7 @@ function DrawerInner() {
           <button
             type="button"
             className="term-newmenu__row"
-            onClick={() => { t.newLocal(); setPickerOpen(false); }}
+            onClick={() => { void t.newLocal(); setPickerOpen(false); }}
           >
             <TerminalIcon size={12} />
             Local shell
@@ -220,7 +268,7 @@ function DrawerInner() {
               key={vm.id}
               type="button"
               className="term-newmenu__row"
-              onClick={() => { t.newSSH(vm); setPickerOpen(false); }}
+              onClick={() => { void t.newSSH(vm); setPickerOpen(false); }}
             >
               <Shield size={12} />
               {vm.name}
@@ -236,301 +284,112 @@ function DrawerInner() {
 
 function SessionDot({ status, vm }: { status: SessionStatus; vm: VM | null }) {
   let color = "var(--fg-4)";
-  if (status === "connected") color = "var(--ok, #5ec27a)";
-  else if (status === "connecting") color = "var(--amber, #d8a25c)";
-  else if (status === "closed") color = "var(--err, #c25e63)";
+  if (status === "ready") color = "var(--ok, #5ec27a)";
+  else if (status === "loading") color = "var(--amber, #d8a25c)";
+  else if (status === "error") color = "var(--err, #c25e63)";
   else if (vm === null) color = "var(--violet)";
   return <Circle size={7} fill={color} stroke="none" style={{ flexShrink: 0 }} />;
 }
 
-/* ----------------------------------------------------------------- */
-/* XTermPane — owns one xterm instance and the optional websocket.   */
-/* The instance lives in the provider's instancesRef so collapsing   */
-/* the drawer does not destroy it.                                   */
-/* ----------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* IframePane — one iframe per session, kept mounted while backgrounded */
+/* ------------------------------------------------------------------ */
 
-function XTermPane({ session, visible }: { session: TerminalSession; visible: boolean }) {
+/**
+ * Sandbox flags rationale:
+ *   - allow-scripts          — ttyd/Wetty need JS to render the terminal
+ *   - allow-same-origin      — required for clipboard/cookies on a same-origin provider
+ *   - allow-forms            — Guacamole login form posts back to itself
+ *   - allow-clipboard-*      — paste into the terminal, copy selection out
+ * We deliberately omit allow-top-navigation, allow-popups, allow-modals, etc.
+ * `referrerpolicy="no-referrer"` keeps the dashboard URL out of provider logs.
+ */
+const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-forms allow-clipboard-read allow-clipboard-write";
+const IFRAME_ALLOW = "clipboard-read; clipboard-write";
+
+function IframePane({ session, visible }: { session: TerminalSession; visible: boolean }) {
   const t = useTerminal();
-  const hostRef = useRef<HTMLDivElement>(null);
-  const bootedRef = useRef(false);
-  const cleanupRef = useRef<(() => void) | null>(null);
+  // `display: none` instead of unmount — keeps the iframe's PTY warm when the
+  // user switches to a different tab and comes back.
+  const style: React.CSSProperties = visible
+    ? { display: "block" }
+    : { display: "none" };
 
-  // Initialize xterm on first mount; reuse later mounts via the instance map.
-  useEffect(() => {
-    if (bootedRef.current) return;
-    bootedRef.current = true;
-    let cancelled = false;
+  const onLoad = useCallback(() => {
+    // A cross-origin iframe always fires `load` once the navigation completes,
+    // even if the provider then renders an error page — we can only verify
+    // network-level success. Token-expiry / auth errors must come back as
+    // 5xx from `POST /api/terminal/session` (handled in the provider) so the
+    // tab flips to "error" before we ever render the iframe.
+    if (session.url === "about:blank") return;
+    t.markReady(session.id);
+  }, [session.id, session.url, t]);
 
-    const boot = async () => {
-      if (typeof window === "undefined" || !hostRef.current) return;
-      const { Terminal } = await import("xterm");
-      const { FitAddon } = await import("xterm-addon-fit");
-      if (cancelled || !hostRef.current) return;
+  const onError = useCallback(() => {
+    t.markError(session.id, "Provider iframe failed to load");
+  }, [session.id, t]);
 
-      const instances = t.instancesRef.current;
-      let inst: TerminalInstance | undefined = instances.get(session.id);
-      if (!inst) {
-        inst = { term: null, fitAddon: null, ws: null, localBuf: "" };
-        instances.set(session.id, inst);
-      }
+  // No provider installed yet → empty-state placeholder pointing at settings.
+  if (session.providerType === "none" && session.status === "ready") {
+    return (
+      <div className={`term-pane ${visible ? "is-visible" : "is-hidden"}`} style={style}>
+        <div className="term-empty">
+          <Settings size={18} />
+          <div className="term-empty__title">No terminal provider configured</div>
+          <div className="term-empty__hint">
+            Install one in <strong>Settings → Terminal Providers</strong> (ttyd, Wetty or Guacamole),
+            then reopen this drawer.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-      // If we already have a term (re-mount after collapse), just re-attach.
-      if (inst.term) {
-        try { inst.term.open(hostRef.current); inst.fitAddon?.fit(); inst.term.focus(); } catch { /* ignore */ }
-        cleanupRef.current = registerListeners(inst, session, t);
-        return;
-      }
-
-      const term = new Terminal({
-        cursorBlink: true,
-        fontSize: 12.5,
-        lineHeight: 1.2,
-        fontFamily: "var(--font-jetbrains), 'JetBrains Mono', ui-monospace, monospace",
-        theme: readXTermTheme(),
-        scrollback: 5000,
-        allowProposedApi: true,
-      });
-      const fit = new FitAddon();
-      term.loadAddon(fit);
-      term.open(hostRef.current);
-      try { fit.fit(); } catch { /* ignore */ }
-      term.focus();
-
-      inst.term = term;
-      inst.fitAddon = fit;
-
-      if (!session.vm) {
-        writeLocalBanner(term);
-      } else {
-        connectSSH(session, inst, term, t.setStatus);
-      }
-
-      term.onData((data: string) => {
-        if (inst!.ws && inst!.ws.readyState === WebSocket.OPEN) {
-          inst!.ws.send(JSON.stringify({ type: "data", data }));
-        } else if (!session.vm) {
-          handleLocalInput(inst!, term, data);
-        }
-      });
-
-      cleanupRef.current = registerListeners(inst, session, t);
-    };
-
-    boot();
-    return () => {
-      cancelled = true;
-      cleanupRef.current?.();
-      cleanupRef.current = null;
-    };
-    // session.id is stable for the lifetime of this pane
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Refit when drawer height changes or this tab becomes visible.
-  useEffect(() => {
-    if (!visible) return;
-    const inst = t.instancesRef.current.get(session.id);
-    if (!inst?.fitAddon || !inst.term) return;
-    const raf = requestAnimationFrame(() => {
-      try { inst.fitAddon.fit(); } catch { /* ignore */ }
-      if (inst.ws && inst.ws.readyState === WebSocket.OPEN) {
-        inst.ws.send(JSON.stringify({ type: "resize", cols: inst.term.cols, rows: inst.term.rows }));
-      }
-      inst.term.focus();
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [visible, t.height, session.id, t.instancesRef]);
+  if (session.status === "error") {
+    return (
+      <div className={`term-pane ${visible ? "is-visible" : "is-hidden"}`} style={style}>
+        <div className="term-empty">
+          <RefreshCw size={18} />
+          <div className="term-empty__title">Session unavailable</div>
+          <div className="term-empty__hint">{session.errorMessage ?? "The provider returned an error."}</div>
+          <button type="button" className="term-iconbtn" onClick={() => void t.reconnect(session.id)}>
+            <RefreshCw size={12} /> Reconnect
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      ref={hostRef}
-      className={`term-pane ${visible ? "is-visible" : "is-hidden"}`}
-      onClick={() => t.instancesRef.current.get(session.id)?.term?.focus()}
-    />
+    <div className={`term-pane ${visible ? "is-visible" : "is-hidden"}`} style={style}>
+      {session.status === "loading" && (
+        <div className="term-pane__overlay" aria-hidden>
+          <div className="term-spinner" />
+          <span>Connecting…</span>
+        </div>
+      )}
+      <iframe
+        // Keying on (id, url) — when reconnect() refreshes the URL we want a
+        // hard reload of the iframe even if the new URL string happens to
+        // match the old one.
+        key={`${session.id}:${session.url}`}
+        src={session.url}
+        title={session.title}
+        className="term-iframe"
+        sandbox={IFRAME_SANDBOX}
+        referrerPolicy="no-referrer"
+        allow={IFRAME_ALLOW}
+        onLoad={onLoad}
+        onError={onError}
+      />
+    </div>
   );
 }
 
-/* ---------------- helpers ---------------- */
+/* ------------------------------------------------------------------ */
+/* Launcher button (status bar) — unchanged contract                  */
+/* ------------------------------------------------------------------ */
 
-function registerListeners(
-  inst: TerminalInstance,
-  session: TerminalSession,
-  t: ReturnType<typeof useTerminal>,
-): () => void {
-  const onResize = () => {
-    try { inst.fitAddon?.fit(); } catch { /* ignore */ }
-    if (inst.ws && inst.ws.readyState === WebSocket.OPEN && inst.term) {
-      inst.ws.send(JSON.stringify({ type: "resize", cols: inst.term.cols, rows: inst.term.rows }));
-    }
-  };
-  window.addEventListener("resize", onResize);
-
-  const themeObs = new MutationObserver(() => {
-    const newTheme = readXTermTheme();
-    try {
-      if (inst.term) inst.term.options.theme = newTheme;
-    } catch { /* ignore */ }
-  });
-  themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  // session/t intentionally not used yet — kept for future hooks (e.g. status updates)
-  void session; void t;
-  return () => {
-    window.removeEventListener("resize", onResize);
-    themeObs.disconnect();
-  };
-}
-
-function readXTermTheme() {
-  if (typeof window === "undefined") {
-    return { background: "#0c0c12", foreground: "#f2f3f7", cursor: "#f2f3f7" };
-  }
-  const styles = getComputedStyle(document.documentElement);
-  const bg0 = styles.getPropertyValue("--bg-0").trim() || "#0c0c12";
-  const fg = styles.getPropertyValue("--fg").trim() || "#f2f3f7";
-  return {
-    background: bg0,
-    foreground: fg,
-    cursor: fg,
-    cursorAccent: bg0,
-    selectionBackground: "rgba(190, 165, 255, 0.28)",
-    black: "#0c0c12",
-    red: "#e26b6b",
-    green: "#5ec27a",
-    yellow: "#d8a25c",
-    blue: "#7aa6e4",
-    magenta: "#b88cff",
-    cyan: "#7ec7d6",
-    white: fg,
-  };
-}
-
-function writeLocalBanner(term: import("xterm").Terminal) {
-  const lines = [
-    "\x1b[38;5;183m  Aladdin Operational Console  \x1b[0m",
-    "\x1b[38;5;245m  Local shell — type `help` for available commands.\x1b[0m",
-    "",
-  ];
-  term.writeln(lines.join("\r\n"));
-  term.write("\x1b[38;5;141m$\x1b[0m ");
-}
-
-/** Tiny local command set. */
-function handleLocalInput(
-  inst: TerminalInstance,
-  term: import("xterm").Terminal,
-  data: string,
-) {
-  for (const ch of data) {
-    if (ch === "\r") {
-      term.write("\r\n");
-      runLocal(term, inst.localBuf);
-      inst.localBuf = "";
-      term.write("\x1b[38;5;141m$\x1b[0m ");
-    } else if (ch === "") {
-      if (inst.localBuf.length > 0) {
-        inst.localBuf = inst.localBuf.slice(0, -1);
-        term.write("\b \b");
-      }
-    } else if (ch >= " " || ch === "\t") {
-      inst.localBuf += ch;
-      term.write(ch);
-    }
-  }
-}
-
-function runLocal(term: import("xterm").Terminal, raw: string) {
-  const cmd = raw.trim();
-  if (!cmd) return;
-  const [head, ...rest] = cmd.split(/\s+/);
-  switch (head.toLowerCase()) {
-    case "help":
-      term.writeln("  help            Show this list");
-      term.writeln("  clear           Clear screen");
-      term.writeln("  echo …          Echo back");
-      term.writeln("  Tip: use the [+] menu to open an SSH session.");
-      break;
-    case "clear":
-      term.clear();
-      break;
-    case "echo":
-      term.writeln(rest.join(" "));
-      break;
-    default:
-      term.writeln(`\x1b[38;5;167mUnknown:\x1b[0m ${head} — try \x1b[38;5;183mhelp\x1b[0m`);
-  }
-}
-
-function connectSSH(
-  session: TerminalSession,
-  inst: TerminalInstance,
-  term: import("xterm").Terminal,
-  setStatus: (id: string, status: SessionStatus) => void,
-) {
-  if (!session.vm) return;
-  setStatus(session.id, "connecting");
-  term.writeln(`\x1b[38;5;245mConnecting to ${session.vm.name}…\x1b[0m`);
-
-  const token = (typeof window !== "undefined")
-    ? window.localStorage.getItem("access_token")
-    : null;
-  const url = buildTerminalWsUrl(session.vm.id, token);
-
-  const ws = new WebSocket(url);
-  inst.ws = ws;
-
-  ws.onopen = () => {
-    setStatus(session.id, "connected");
-    term.write("\x1b[2J\x1b[H");
-    ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
-  };
-  ws.onmessage = (ev) => {
-    try {
-      const msg = JSON.parse(ev.data);
-      if (msg.type === "data") {
-        term.write(msg.data);
-      } else if (msg.type === "error") {
-        term.writeln(`\r\n\x1b[38;5;167mSSH error:\x1b[0m ${msg.message}`);
-      }
-    } catch {
-      /* ignore malformed frame */
-    }
-  };
-  ws.onclose = () => {
-    setStatus(session.id, "closed");
-    term.writeln("\r\n\x1b[38;5;245mConnection closed.\x1b[0m");
-  };
-  ws.onerror = () => {
-    setStatus(session.id, "closed");
-    term.writeln("\r\n\x1b[38;5;167mConnection error.\x1b[0m");
-  };
-}
-
-/**
- * Resolve the backend WebSocket origin. The backend lives at `NEXT_PUBLIC_API_URL`
- * (defaults to http://localhost:8000/api); we strip the trailing /api and swap
- * http(s) for ws(s). Falls back to the current page origin so a same-origin
- * deployment keeps working without an env var.
- */
-function buildTerminalWsUrl(vmId: number, token: string | null): string {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  let origin = "";
-  try {
-    if (apiUrl) {
-      const u = new URL(apiUrl);
-      const wsProto = u.protocol === "https:" ? "wss:" : "ws:";
-      origin = `${wsProto}//${u.host}`;
-    }
-  } catch {
-    /* malformed env var — fall through to window.location */
-  }
-  if (!origin && typeof window !== "undefined") {
-    const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    origin = `${wsProto}//${window.location.host}`;
-  }
-  return `${origin}/ws/terminal/${vmId}?token=${encodeURIComponent(token ?? "")}`;
-}
-
-/* Status-bar launcher button — kept in this file so we don't double-import xterm. */
 export function TerminalLauncherButton() {
   const t = useTerminal();
   const count = t.sessions.length;
@@ -538,17 +397,7 @@ export function TerminalLauncherButton() {
     <button
       type="button"
       className="sb-launcher"
-      onClick={() => {
-        console.log("[Terminal] launcher clicked", {
-          sessions: t.sessions.length,
-          open: t.open,
-        });
-        if (t.sessions.length === 0) {
-          t.newLocal();
-        } else {
-          t.toggle();
-        }
-      }}
+      onClick={() => { t.open ? t.hide() : t.show(); }}
       title="Toggle terminal (Ctrl+`)"
     >
       <TerminalIcon size={11} />

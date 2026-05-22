@@ -1,108 +1,139 @@
 import asyncio
+import json
+import logging
+
 import asyncssh
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy import select
+
+from app.crypto import decrypt
 from app.database import async_session
 from app.models.vm import VMConnection
 from app.security import get_current_user_ws
-import json
 
-router = APIRouter(prefix="/ws/terminal", tags=["Terminal WS"])
+log = logging.getLogger(__name__)
 
-@router.websocket("/{vm_id}")
-async def terminal_websocket(
-    websocket: WebSocket,
-    vm_id: int
-):
-    print(f"DEBUG: WebSocket connection attempt for VM {vm_id}")
+router = APIRouter(tags=["Terminal WS"])
+
+
+@router.websocket("/ws/terminal/{vm_id}")
+async def terminal_websocket(websocket: WebSocket, vm_id: int):
+    log.debug("terminal WS attempt for VM %s", vm_id)
     await websocket.accept()
-    
-    # Verify authentication
+
     token = websocket.query_params.get("token")
     if not token:
-        await websocket.send_text(json.dumps({"type": "error", "message": "Authentication token missing"}))
+        await websocket.send_text(json.dumps({"type": "error", "message": "Auth token missing"}))
         await websocket.close(code=1008)
         return
-    
+
     async with async_session() as db:
         try:
             user = await get_current_user_ws(token, db)
-        except Exception as e:
-            await websocket.send_text(json.dumps({"type": "error", "message": f"Auth failed: {str(e)}"}))
-            await websocket.close(code=1008)
-            return
+            log.debug("terminal WS auth OK for user %s", user.id)
 
-        # Find VM
-        result = await db.execute(
-            select(VMConnection).where(
-                VMConnection.id == vm_id,
-                VMConnection.user_id == user.id
+            result = await db.execute(
+                select(VMConnection).where(
+                    VMConnection.id == vm_id,
+                    VMConnection.user_id == user.id,
+                )
             )
-        )
-        vm = result.scalar_one_or_none()
-        if not vm:
-            await websocket.send_text(json.dumps({"type": "error", "message": "VM not found"}))
-            await websocket.close(code=1003)
-            return
+            vm = result.scalar_one_or_none()
+            if not vm:
+                log.warning("terminal WS: VM %s not found or access denied", vm_id)
+                await websocket.send_text(json.dumps({"type": "error", "message": "VM not found"}))
+                await websocket.close(code=1003)
+                return
 
-        # SSH Connection parameters
-        connect_kwargs = {
-            "host": vm.host,
-            "port": vm.port,
-            "username": vm.username,
-            "known_hosts": None,
-            "connect_timeout": 15,
-        }
-        if vm.ssh_key_encrypted:
-            connect_kwargs["client_keys"] = [asyncssh.import_private_key(vm.ssh_key_encrypted)]
-        elif vm.password_encrypted:
-            connect_kwargs["password"] = vm.password_encrypted
+            log.info("terminal WS: connecting to %s:%s", vm.host, vm.port)
 
-        try:
+            connect_kwargs = {
+                "host": vm.host,
+                "port": vm.port,
+                "username": vm.username,
+                "known_hosts": None,
+                "connect_timeout": 30,
+            }
+            if vm.ssh_key_encrypted:
+                connect_kwargs["client_keys"] = [asyncssh.import_private_key(decrypt(vm.ssh_key_encrypted))]
+            elif vm.password_encrypted:
+                connect_kwargs["password"] = decrypt(vm.password_encrypted)
+
             async with asyncssh.connect(**connect_kwargs) as conn:
-                async with conn.create_session(asyncssh.SSHClientSession, term_type='xterm-256color', term_size=(80, 24)) as (stdin, stdout, stderr):
-                    
-                    async def pipe_stdout():
-                        try:
-                            while True:
-                                data = await stdout.read(4096)
-                                if not data:
-                                    break
-                                await websocket.send_text(json.dumps({"type": "data", "data": data}))
-                        except Exception as e:
-                            print(f"Stdout pipe error: {e}")
+                log.debug("terminal WS: SSH connected, starting interactive shell")
+                # create_process() with term_type requests a PTY and, when no command
+                # is given, runs the user's login shell — which is what makes a black
+                # interactive pane actually produce a prompt. open_session() alone
+                # was opening a channel but never starting any program, so stdout
+                # stayed silent and the xterm pane looked frozen.
+                process = await conn.create_process(
+                    term_type="xterm-256color",
+                    term_size=(80, 24),
+                    encoding="utf-8",
+                )
+                log.info("terminal WS: shell started for VM %s", vm_id)
 
-                    async def pipe_stderr():
-                        try:
-                            while True:
-                                data = await stderr.read(4096)
-                                if not data:
-                                    break
-                                await websocket.send_text(json.dumps({"type": "data", "data": data}))
-                        except Exception as e:
-                            print(f"Stderr pipe error: {e}")
-
-                    stdout_task = asyncio.create_task(pipe_stdout())
-                    stderr_task = asyncio.create_task(pipe_stderr())
-
+                async def pipe_out(stream, label: str):
                     try:
                         while True:
-                            msg_text = await websocket.receive_text()
-                            msg = json.loads(msg_text)
-                            
-                            if msg["type"] == "data":
-                                stdin.write(msg["data"])
-                            elif msg["type"] == "resize":
-                                # We could support terminal resizing here
-                                pass
-                    except WebSocketDisconnect:
-                        print("WebSocket disconnected")
-                    except Exception as e:
-                        print(f"WebSocket processing error: {e}")
-                    finally:
-                        stdout_task.cancel()
-                        stderr_task.cancel()
-                        
+                            data = await stream.read(4096)
+                            if not data:
+                                log.debug("terminal WS: %s EOF", label)
+                                break
+                            await websocket.send_text(json.dumps({"type": "data", "data": data}))
+                    except Exception:
+                        log.exception("terminal WS: %s pipe error", label)
+
+                tasks = [
+                    asyncio.create_task(pipe_out(process.stdout, "stdout")),
+                    asyncio.create_task(pipe_out(process.stderr, "stderr")),
+                ]
+                try:
+                    while True:
+                        msg_text = await websocket.receive_text()
+                        msg = json.loads(msg_text)
+                        if msg["type"] == "data":
+                            process.stdin.write(msg["data"])
+                        elif msg["type"] == "resize":
+                            process.change_terminal_size(msg["cols"], msg["rows"])
+                            log.debug("terminal WS resize: %sx%s", msg["cols"], msg["rows"])
+                except WebSocketDisconnect:
+                    log.debug("terminal WS: disconnected by client")
+                finally:
+                    for t in tasks:
+                        t.cancel()
+                    try:
+                        process.terminate()
+                    except Exception:
+                        pass
+        except asyncio.TimeoutError:
+            log.warning("terminal WS: SSH connection timeout for VM %s", vm_id)
+            await websocket.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "message": "\r\n\x1b[31mError: Connection Timeout. Is the VM/Phone reachable?\x1b[0m\r\n",
+                    }
+                )
+            )
+        except asyncssh.PermissionDenied:
+            log.warning("terminal WS: SSH permission denied for VM %s", vm_id)
+            await websocket.send_text(
+                json.dumps(
+                    {
+                        "type": "error",
+                        "message": "\r\n\x1b[31mError: Permission Denied. Check username/password.\x1b[0m\r\n",
+                    }
+                )
+            )
         except Exception as e:
-            await websocket.send_text(json.dumps({"type": "error", "message": f"SSH connection failed: {str(e)}"}))
-            await websocket.close()
+            log.exception("terminal WS: unhandled error for VM %s", vm_id)
+            await websocket.send_text(
+                json.dumps({"type": "error", "message": f"\r\n\x1b[31mError: {str(e)}\x1b[0m\r\n"})
+            )
+        finally:
+            log.debug("terminal WS: cleanup done")
+            try:
+                await websocket.close()
+            except Exception:
+                pass

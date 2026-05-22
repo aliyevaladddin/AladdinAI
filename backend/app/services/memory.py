@@ -28,6 +28,8 @@ import certifi
 import httpx
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from sqlalchemy import select
+
+from app.crypto import decrypt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.llm_provider import LLMProvider
@@ -69,7 +71,7 @@ async def get_mongo_db(db: AsyncSession, user_id: int) -> AsyncIOMotorDatabase:
     if cached is None:
         conn = await _resolve_mongo(db, user_id)
         client = AsyncIOMotorClient(
-            conn.connection_string_encrypted,
+            decrypt(conn.connection_string_encrypted),
             serverSelectionTimeoutMS=5000,
             tlsCAFile=certifi.where(),
         )
@@ -106,9 +108,10 @@ async def _resolve_nim_provider(db: AsyncSession, user_id: int) -> LLMProvider:
 async def embed(db: AsyncSession, user_id: int, text: str) -> list[float]:
     """Embed text via NIM and return a 2048-dim vector."""
     provider = await _resolve_nim_provider(db, user_id)
+    api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
     headers = {"Content-Type": "application/json"}
-    if provider.api_key_encrypted:
-        headers["Authorization"] = f"Bearer {provider.api_key_encrypted}"
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
     url = f"{provider.base_url.rstrip('/')}/v1/embeddings"
     payload = {
