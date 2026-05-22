@@ -1,20 +1,22 @@
 "use client";
 
 /**
- * Plugin-slot terminal session model.
+ * Plugin-slot terminal provider.
  *
- * The drawer is no longer an xterm host; it embeds an iframe whose `src` is
- * issued by the backend (`POST /api/terminal/session`). The backend picks the
- * user's active terminal provider, mints a single-use HMAC token, and returns
- * a Traefik-routable URL.
+ * Each session is just a URL slot — we don't own the terminal anymore. The
+ * pluggable backend provider (ttyd / Wetty / Guacamole / custom) sits on the
+ * other side of an iframe and is responsible for its own PTY, rendering, and
+ * input routing. This file only tracks render-state.
  *
- * State surface intentionally kept small — one session at a time in the MVP,
- * because the backend exposes one active provider per user. Multi-pane comes
- * later (it would need a provider × instance graph).
+ * Compared to the old xterm-owning provider:
+ *   removed: `TerminalInstance`, `instancesRef`, xterm/ws lifecycle, fit logic.
+ *   added:   `status: loading|ready|error`, `url`, `expiresAt`, `providerType`,
+ *            `openSession({vm})`, `reconnect(id)`.
  *
- * `newSSH(vm)` is kept as a *compat shim* for VmsSettings — it just opens the
- * drawer (provider chooses the shell; VM-pick happens server-side, or in a
- * future SSH adapter). We don't break the existing button.
+ * The transport contract with the backend (see TODOs at the bottom):
+ *   POST /api/terminal/session  { vm_id? }  -> 200 { url, expires_at, provider_type, provider_session_id? }
+ *                                              503 if no terminal provider installed
+ *   DELETE /api/terminal/session/{provider_session_id}                 (best-effort)
  */
 
 import {
@@ -27,7 +29,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { API_URL } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 
 /** Kept for VmsSettings compatibility — fields no longer used at the iframe layer. */
 export interface VM {
@@ -38,21 +40,35 @@ export interface VM {
   username: string;
 }
 
-export type SessionStatus =
-  | "idle"          // no session yet
-  | "loading"      // /session call in flight
-  | "ready"        // iframe URL issued
-  | "no-provider"  // 503: user has no active provider — render empty state
-  | "error";       // any other failure — show retry
+/** Set of provider implementations we know how to label in the UI. */
+export type ProviderType = "ttyd" | "wetty" | "guacamole" | "custom" | "none";
 
-export interface TerminalSlot {
-  /** Stable id for React key purposes. Cycles on each (re)load. */
+export type SessionStatus = "loading" | "ready" | "error";
+
+/** Render-state view of a session. No imperative resources. */
+export interface TerminalSession {
   id: string;
   url: string | null;
   providerType: string | null;
   expiresAt: number | null;       // unix seconds
   status: SessionStatus;
-  error: string | null;
+  /** URL pointed at the terminal provider, or "about:blank" while loading / when no provider installed. */
+  url: string;
+  /** Optional ISO date — used by the drawer to surface a "Reconnect" button when the token expires. */
+  expiresAt: string | null;
+  /** Provider-side session id for cleanup on close. */
+  providerSessionId: string | null;
+  providerType: ProviderType;
+  /** Human-readable error surfaced from the bootstrap call or the iframe `onerror`. */
+  errorMessage: string | null;
+}
+
+/** Shape returned by `POST /api/terminal/session`. Mirrored on the backend when the endpoint lands. */
+export interface TerminalSessionResponse {
+  url: string;
+  expires_at: string | null;
+  provider_type: ProviderType;
+  provider_session_id?: string | null;
 }
 
 interface TerminalCtx {
@@ -63,12 +79,25 @@ interface TerminalCtx {
   toggle: () => void;
   show: () => void;
   hide: () => void;
-  /** Mint a fresh session URL from the backend. */
-  refresh: () => Promise<void>;
-  /** Compat shim — opens the drawer; VM is informational. */
-  newSSH: (vm: VM) => void;
-  /** Compat shim — opens the drawer (alias of show()). */
-  newLocal: () => void;
+  setActive: (id: string) => void;
+  /**
+   * Open a new session. `vm = null` is a host-local shell (uses whichever
+   * provider is configured as default on the backend); a VM yields an SSH
+   * session via the same provider.
+   */
+  openSession: (vm: VM | null) => Promise<string>;
+  /** Legacy alias kept so `VmsSettings.newSSH(vm)` keeps compiling. */
+  newSSH: (vm: VM) => Promise<string>;
+  /** Legacy alias kept for the [+] menu and Ctrl+` hotkey. */
+  newLocal: () => Promise<string>;
+  closeSession: (id: string) => void;
+  /** Re-bootstrap the session URL after token expiry or iframe error. */
+  reconnect: (id: string) => Promise<void>;
+  /** Internal — used by the drawer when the iframe finally fires `onload`. */
+  markReady: (id: string) => void;
+  /** Internal — surfaced as the "error" status, drives the Reconnect button. */
+  markError: (id: string, message: string) => void;
+  listVMs: () => Promise<VM[]>;
 }
 
 const TerminalContext = createContext<TerminalCtx | null>(null);
@@ -100,22 +129,54 @@ function readInitialHeight(): number {
   return DEFAULT_HEIGHT;
 }
 
-/** Reads the current access token without depending on `api.get` (we hit the
- *  session endpoint manually because we want fine-grained status codes). */
-function authHeader(): Record<string, string> {
-  if (typeof window === "undefined") return {};
-  const tok = window.localStorage.getItem("access_token");
-  return tok ? { Authorization: `Bearer ${tok}` } : {};
+/**
+ * Try to bootstrap a session URL from the backend. The endpoint is not live yet
+ * (the SOA agent is implementing it in parallel) so we treat any non-2xx as
+ * "no provider configured" and surface the empty-state placeholder. We do NOT
+ * fall back to `xterm` — the whole point of this refactor is that we don't
+ * own the terminal anymore.
+ */
+async function bootstrapSession(vm: VM | null): Promise<TerminalSessionResponse> {
+  const body = vm ? { vm_id: vm.id } : {};
+  try {
+    const res = await fetch(`${API_URL}/terminal/session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(typeof window !== "undefined" && localStorage.getItem("access_token")
+          ? { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+          : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    if (res.status === 404 || res.status === 503) {
+      // 404 — endpoint not deployed yet (we're ahead of the backend).
+      // 503 — endpoint exists but no provider is installed in this dashboard.
+      return { url: "about:blank", expires_at: null, provider_type: "none", provider_session_id: null };
+    }
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Bootstrap failed (${res.status}): ${text || "unknown error"}`);
+    }
+    return (await res.json()) as TerminalSessionResponse;
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("Bootstrap failed")) throw e;
+    // Network error / endpoint missing — degrade to placeholder, not a hard error.
+    return { url: "about:blank", expires_at: null, provider_type: "none", provider_session_id: null };
+  }
 }
 
 export function TerminalProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [height, setHeightState] = useState<number>(readInitialHeight);
-  const [slot, setSlot] = useState<TerminalSlot>(EMPTY_SLOT);
+  const [sessions, setSessions] = useState<TerminalSession[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Guard against StrictMode double-invocation: any one render must not fire
-  // two parallel /session requests.
-  const fetchingRef = useRef(false);
+  // Mutable mirror of `sessions` for closures that fire long after their
+  // creation (e.g. iframe onload, reconnect callbacks). Reading state through
+  // a ref avoids stale closures without adding the array to every effect dep.
+  const sessionsRef = useRef<TerminalSession[]>([]);
+  useEffect(() => { sessionsRef.current = sessions; }, [sessions]);
 
   const setHeight = useCallback((h: number) => {
     const max = typeof window !== "undefined"
@@ -129,102 +190,132 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback(() => setOpen((v) => !v), []);
   const show = useCallback(() => setOpen(true), []);
   const hide = useCallback(() => setOpen(false), []);
+  const setActive = useCallback((id: string) => setActiveId(id), []);
 
-  const refresh = useCallback(async () => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
-    setSlot((cur) => ({ ...cur, status: "loading", error: null }));
+  const patchSession = useCallback((id: string, patch: Partial<TerminalSession>) => {
+    setSessions((cur) => cur.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  }, []);
+
+  const markReady = useCallback((id: string) => {
+    const cur = sessionsRef.current.find((s) => s.id === id);
+    // Only flip loading -> ready. If the iframe fires onload AFTER we already
+    // marked it as error (e.g. cross-origin frame's about:blank load event)
+    // we keep the error state visible.
+    if (cur && cur.status === "loading") patchSession(id, { status: "ready", errorMessage: null });
+  }, [patchSession]);
+
+  const markError = useCallback((id: string, message: string) => {
+    patchSession(id, { status: "error", errorMessage: message });
+  }, [patchSession]);
+
+  const openSession = useCallback(async (vm: VM | null): Promise<string> => {
+    const id = nextId();
+    const initial: TerminalSession = {
+      id,
+      title: vm ? vm.name : "local",
+      vm,
+      status: "loading",
+      url: "about:blank",
+      expiresAt: null,
+      providerSessionId: null,
+      providerType: "none",
+      errorMessage: null,
+    };
+    setSessions((cur) => [...cur, initial]);
+    setActiveId(id);
+    setOpen(true);
+
     try {
-      const res = await fetch(`${API_URL}/terminal/session`, {
-        method: "POST",
-        headers: {
-          ...authHeader(),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
-      if (res.status === 503) {
-        // No provider installed — drawer renders the empty state with a link
-        // to the marketplace. This is *not* an error from the user's POV.
-        setSlot({
-          id: nextSlotId(),
-          url: null,
-          providerType: null,
-          expiresAt: null,
-          status: "no-provider",
-          error: null,
-        });
-        return;
-      }
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        setSlot((cur) => ({
-          ...cur,
-          url: null,
-          providerType: null,
-          expiresAt: null,
-          status: "error",
-          error: text || `HTTP ${res.status}`,
-        }));
-        return;
-      }
-      const data = await res.json() as {
-        url: string;
-        expires_at: string;
-        provider_type: string;
-      };
-      setSlot({
-        id: nextSlotId(),
-        url: data.url,
-        providerType: data.provider_type,
-        expiresAt: data.expires_at ? Math.floor(new Date(data.expires_at).getTime() / 1000) : null,
-        status: "ready",
-        error: null,
+      const resp = await bootstrapSession(vm);
+      patchSession(id, {
+        url: resp.url,
+        expiresAt: resp.expires_at,
+        providerType: resp.provider_type,
+        providerSessionId: resp.provider_session_id ?? null,
+        // When the backend returned the "none" placeholder we go straight to
+        // "ready" — the drawer renders the empty-state pane, not a spinner.
+        status: resp.provider_type === "none" ? "ready" : "loading",
       });
     } catch (e) {
-      // Network-level failure (CORS, backend down, DNS) — surface a hint that
-      // points at the backend, not a vague "TypeError: Failed to fetch".
-      const msg = e instanceof Error ? e.message : String(e);
-      setSlot((cur) => ({
-        ...cur,
-        url: null,
-        providerType: null,
-        expiresAt: null,
-        status: "error",
-        error: `${msg} — is the backend running on ${API_URL}?`,
-      }));
-    } finally {
-      fetchingRef.current = false;
+      markError(id, e instanceof Error ? e.message : "Failed to start session");
+    }
+    return id;
+  }, [patchSession, markError]);
+
+  const newSSH = useCallback((vm: VM) => openSession(vm), [openSession]);
+  const newLocal = useCallback(() => openSession(null), [openSession]);
+
+  const closeSession = useCallback((id: string) => {
+    const target = sessionsRef.current.find((s) => s.id === id);
+    if (target?.providerSessionId) {
+      // Best-effort: tell the provider to drop the PTY. We don't await — the
+      // user already clicked close and shouldn't wait for the round-trip.
+      // Ignore failures: stale provider sessions are GC'd by the backend.
+      api.delete(`/terminal/session/${target.providerSessionId}`).catch(() => { /* ignore */ });
+    }
+    setSessions((cur) => {
+      const remaining = cur.filter((x) => x.id !== id);
+      setActiveId((prev) => {
+        if (prev !== id) return prev;
+        const next = remaining[remaining.length - 1];
+        return next ? next.id : null;
+      });
+      return remaining;
+    });
+  }, []);
+
+  const reconnect = useCallback(async (id: string) => {
+    const target = sessionsRef.current.find((s) => s.id === id);
+    if (!target) return;
+    patchSession(id, { status: "loading", url: "about:blank", errorMessage: null });
+    try {
+      const resp = await bootstrapSession(target.vm);
+      patchSession(id, {
+        url: resp.url,
+        expiresAt: resp.expires_at,
+        providerType: resp.provider_type,
+        providerSessionId: resp.provider_session_id ?? null,
+        status: resp.provider_type === "none" ? "ready" : "loading",
+      });
+    } catch (e) {
+      markError(id, e instanceof Error ? e.message : "Failed to reconnect");
+    }
+  }, [patchSession, markError]);
+
+  const listVMs = useCallback(async () => {
+    try {
+      return await api.get<VM[]>("/vms");
+    } catch {
+      return [];
     }
   }, []);
 
-  // Mint a session the first time the drawer opens, and re-mint on each open
-  // if the previous token has expired. Tokens are 5min single-use, but the
-  // iframe consumes the token on its first load — re-opens after that just
-  // navigate inside the iframe.
-  // Auto-mint on first open of an idle slot. We deliberately don't auto-retry
-  // on `error` or `no-provider` — those are terminal states the user resolves
-  // via the explicit "Try again" / "Open marketplace" CTAs in the drawer.
-  // Auto-retrying on error would loop forever when the backend is down.
-  useEffect(() => {
-    if (!open) return;
-    if (slot.status === "idle") void refresh();
-  }, [open, slot.status, refresh]);
-
-  // Compat shims — VmsSettings & friends still call these.
-  const newLocal = useCallback(() => { setOpen(true); }, []);
-  const newSSH = useCallback((_vm: VM) => { setOpen(true); }, []);
-
-  // Global hotkey: Ctrl+`  (Cmd+` on macOS) — toggle the drawer.
+  // Ctrl+` / Cmd+` — toggle drawer; spawn a session if none exist.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "`") {
         e.preventDefault();
-        setOpen((v) => !v);
+        if (sessionsRef.current.length === 0) {
+          void openSession(null);
+        } else {
+          setOpen((v) => !v);
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [openSession]);
+
+  // On provider unmount (logout / nav away) tell the backend to clean up any
+  // provider-side sessions we left dangling.
+  useEffect(() => {
+    return () => {
+      for (const s of sessionsRef.current) {
+        if (s.providerSessionId) {
+          api.delete(`/terminal/session/${s.providerSessionId}`).catch(() => { /* ignore */ });
+        }
+      }
+    };
   }, []);
 
   const value = useMemo<TerminalCtx>(
@@ -236,11 +327,22 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
       toggle,
       show,
       hide,
-      refresh,
-      newLocal,
+      setActive,
+      openSession,
       newSSH,
+      newLocal,
+      closeSession,
+      reconnect,
+      markReady,
+      markError,
+      listVMs,
     }),
-    [open, height, slot, setHeight, toggle, show, hide, refresh, newLocal, newSSH],
+    [
+      open, height, sessions, activeId,
+      setHeight, toggle, show, hide, setActive,
+      openSession, newSSH, newLocal, closeSession, reconnect,
+      markReady, markError, listVMs,
+    ],
   );
 
   return <TerminalContext.Provider value={value}>{children}</TerminalContext.Provider>;

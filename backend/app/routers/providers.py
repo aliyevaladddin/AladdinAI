@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models.llm_provider import LLMProvider
 from app.models.user import User
@@ -26,7 +27,7 @@ async def create_provider(body: LLMProviderCreate, user: User = Depends(get_curr
         user_id=user.id,
         name=body.name,
         type=body.type,
-        api_key_encrypted=body.api_key,
+        api_key_encrypted=encrypt(body.api_key) if body.api_key else body.api_key,
         base_url=body.base_url,
     )
     db.add(provider)
@@ -42,14 +43,16 @@ async def connect_provider(provider_id: int, user: User = Depends(get_current_us
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
 
+    api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
+
     headers: dict = {"Content-Type": "application/json"}
-    if provider.api_key_encrypted:
-        headers["Authorization"] = f"Bearer {provider.api_key_encrypted}"
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
     try:
         if provider.type == "huggingface":
             # For Hugging Face, we verify the token and return recommended models
-            headers = {"Authorization": f"Bearer {provider.api_key_encrypted}"}
+            headers = {"Authorization": f"Bearer {api_key}"}
             async with httpx.AsyncClient(timeout=15) as client:
                 resp = await client.get("https://huggingface.co/api/whoami-v2", headers=headers)
                 resp.raise_for_status()
@@ -143,7 +146,7 @@ async def update_provider(
     provider.type = body.type
     provider.base_url = body.base_url
     if body.api_key:
-        provider.api_key_encrypted = body.api_key
+        provider.api_key_encrypted = encrypt(body.api_key)
         
     await db.commit()
     await db.refresh(provider)

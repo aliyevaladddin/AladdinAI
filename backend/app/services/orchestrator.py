@@ -9,6 +9,7 @@ from app.models.messaging_channel import MessagingChannel
 from app.services.agent_runner import run_agent
 from app.services.crm_service import find_or_create_contact, log_activity
 from app.services.llm_service import LLMError
+from app.services.router_resolver import resolve_agent_id
 from app.services.messaging_service import (
     parse_sms_message,
     parse_telegram_message,
@@ -92,9 +93,16 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
             activity_type="message_in", channel=channel_type, content=text,
         )
 
+        # Router rules can override the channel's default agent based on
+        # message content. If none matches, fall back to channel.agent_id.
+        routed_agent_id = await resolve_agent_id(
+            db, channel.user_id, text or "", channel_agent_id=channel.agent_id
+        )
+        target_agent_id = routed_agent_id if routed_agent_id is not None else channel.agent_id
+
         agent = None
-        if channel.agent_id:
-            result = await db.execute(select(Agent).where(Agent.id == channel.agent_id))
+        if target_agent_id:
+            result = await db.execute(select(Agent).where(Agent.id == target_agent_id))
             agent = result.scalar_one_or_none()
 
         reply = "I received your message. An agent will respond shortly."

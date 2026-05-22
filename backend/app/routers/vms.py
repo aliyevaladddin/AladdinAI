@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models.user import User
 from app.models.vm import VMConnection
@@ -26,8 +27,8 @@ async def create_vm(body: VMCreate, user: User = Depends(get_current_user), db: 
         host=body.host,
         port=body.port,
         username=body.username,
-        ssh_key_encrypted=body.ssh_key,
-        password_encrypted=body.password,
+        ssh_key_encrypted=encrypt(body.ssh_key) if body.ssh_key else None,
+        password_encrypted=encrypt(body.password) if body.password else None,
     )
     db.add(vm)
     await db.commit()
@@ -52,9 +53,9 @@ async def connect_vm(vm_id: int, user: User = Depends(get_current_user), db: Asy
 
     # Если есть SSH-ключ — используем его, иначе пробуем пароль
     if vm.ssh_key_encrypted:
-        connect_kwargs["client_keys"] = [asyncssh.import_private_key(vm.ssh_key_encrypted)]
+        connect_kwargs["client_keys"] = [asyncssh.import_private_key(decrypt(vm.ssh_key_encrypted))]
     elif vm.password_encrypted:
-        connect_kwargs["password"] = vm.password_encrypted
+        connect_kwargs["password"] = decrypt(vm.password_encrypted)
     else:
         connect_kwargs["password"] = ""
 
@@ -108,9 +109,9 @@ async def update_vm(
     vm.port = body.port
     vm.username = body.username
     if body.ssh_key:
-        vm.ssh_key_encrypted = body.ssh_key
+        vm.ssh_key_encrypted = encrypt(body.ssh_key)
     if body.password:
-        vm.password_encrypted = body.password
+        vm.password_encrypted = encrypt(body.password)
         
     await db.commit()
     await db.refresh(vm)

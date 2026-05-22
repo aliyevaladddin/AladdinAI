@@ -16,16 +16,23 @@ always return tool_calls=None — they fall back to text-only.
 """
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import httpx
 
+from app.crypto import decrypt
 from app.models.llm_provider import LLMProvider
+
+log = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 180.0
 DEFAULT_MAX_TOKENS = 1024
 
 OPENAI_COMPATIBLE = {"openai", "nvidia_nim", "ollama", "custom"}
+# Provider families that currently honor `tools=` in chat_completion.
+# Keep in sync with the branches in chat_completion below.
+TOOL_CALLING_SUPPORTED = OPENAI_COMPATIBLE
 
 
 class LLMError(Exception):
@@ -48,12 +55,21 @@ async def chat_completion(
     `tools` and `tool_choice` are honored only by OpenAI-compatible providers.
     """
     ptype = (provider.type or "").lower()
-    api_key = provider.api_key_encrypted
+    api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
 
     if ptype in OPENAI_COMPATIBLE:
         return await _openai_compatible(
             provider.base_url, api_key, model, messages, max_tokens, timeout, tools, tool_choice
         )
+
+    # Below branches don't currently support tool calling — make the loss explicit.
+    if tools:
+        log.warning(
+            "Provider %r (model %r) does not support tool calling; "
+            "dropping %d tool(s) and falling back to text-only.",
+            ptype, model, len(tools),
+        )
+
     if ptype == "anthropic":
         text = await _anthropic(provider.base_url, api_key, model, messages, max_tokens, timeout)
         return {"content": text, "tool_calls": None, "finish_reason": "stop", "raw": {}}
