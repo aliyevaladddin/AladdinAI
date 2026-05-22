@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crypto import decrypt
 from app.database import get_db
 from app.models.user import User
 from app.models.vm import VMConnection
@@ -49,9 +50,9 @@ async def ssh_exec(
     }
 
     if vm.ssh_key_encrypted:
-        connect_kwargs["client_keys"] = [asyncssh.import_private_key(vm.ssh_key_encrypted)]
+        connect_kwargs["client_keys"] = [asyncssh.import_private_key(decrypt(vm.ssh_key_encrypted))]
     elif vm.password_encrypted:
-        connect_kwargs["password"] = vm.password_encrypted
+        connect_kwargs["password"] = decrypt(vm.password_encrypted)
     else:
         connect_kwargs["password"] = ""
 
