@@ -14,6 +14,11 @@ export function ThemePicker() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
+  // Theme is read from localStorage on the client, but SSR renders the default.
+  // The swatch and label inevitably diverge between the two — they're marked
+  // suppressHydrationWarning on the rendering nodes below so React tolerates
+  // the deliberate post-hydration patch.
+
   useEffect(() => {
     if (!open) return;
     const onDocClick = (e: MouseEvent) => {
@@ -44,11 +49,11 @@ export function ThemePicker() {
         aria-label="Switch theme"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="dot-pair" aria-hidden="true">
-          <i style={{ background: current.primary }} />
-          <i style={{ background: current.accent }} />
+        <span className="dot-pair" aria-hidden="true" suppressHydrationWarning>
+          <i style={{ background: current.primary }} suppressHydrationWarning />
+          <i style={{ background: current.accent }} suppressHydrationWarning />
         </span>
-        <span className="theme-trigger-name">{current.name}</span>
+        <span className="theme-trigger-name" suppressHydrationWarning>{current.name}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11" aria-hidden="true">
           <polyline points="6 9 12 15 18 9" />
         </svg>

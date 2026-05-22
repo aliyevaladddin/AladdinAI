@@ -9,7 +9,6 @@ import {
 import "./globals.css";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/components/shell/ThemeProvider";
-import { DEFAULT_THEME } from "@/components/shell/theme-list";
 
 /* UI workhorse */
 const inter = Inter({
@@ -69,7 +68,6 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme={DEFAULT_THEME}
       className={`${fontClasses} h-full antialiased`}
       suppressHydrationWarning
     >
