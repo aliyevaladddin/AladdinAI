@@ -6,10 +6,9 @@ import { VmsSettings } from "@/components/settings/VmsSettings";
 import { MongoSettings } from "@/components/settings/MongoSettings";
 import { BentoSettings } from "@/components/settings/BentoSettings";
 import { RouterSettings } from "@/components/settings/RouterSettings";
-import { TerminalSettings } from "@/components/settings/TerminalSettings";
-import { Cpu, Cloud, Database, Server, Network, Terminal as TerminalIcon } from "lucide-react";
+import { Cpu, Cloud, Database, Server, Network } from "lucide-react";
 
-type TabId = "providers" | "vms" | "mongo" | "bento" | "router" | "terminal";
+type TabId = "providers" | "vms" | "mongo" | "bento" | "router";
 
 const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
   { id: "providers", label: "LLM Providers", icon: Cpu },
@@ -17,7 +16,6 @@ const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: numbe
   { id: "mongo", label: "MongoDB", icon: Database },
   { id: "bento", label: "BentoML", icon: Server },
   { id: "router", label: "Routing", icon: Network },
-  { id: "terminal", label: "Terminal", icon: TerminalIcon },
 ];
 
 export default function SettingsPage() {
@@ -63,7 +61,6 @@ export default function SettingsPage() {
           {activeTab === "mongo" && <MongoSettings />}
           {activeTab === "bento" && <BentoSettings />}
           {activeTab === "router" && <RouterSettings />}
-          {activeTab === "terminal" && <TerminalSettings />}
         </div>
       </div>
     </div>

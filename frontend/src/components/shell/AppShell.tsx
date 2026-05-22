@@ -10,6 +10,10 @@ interface AppShellProps {
   activity?: ReactNode;
   /** Status bar element — pass null on public/auth screens. */
   status?: ReactNode;
+  /** Overlay rendered inside .shell__body (after .shell__main). The terminal
+   *  drawer uses this to absolute-snap to the bottom of the body without
+   *  breaking the grid that hosts the status bar. */
+  bodyOverlay?: ReactNode;
   children: ReactNode;
 }
 
@@ -21,8 +25,9 @@ interface AppShellProps {
  *   ├──────┬───────────────────────────────────────────────┤
  *   │ 56px │                                               │
  *   │ act. │              children (page body)             │
- *   │ bar  │                                               │
- *   ├──────┴───────────────────────────────────────────────┤
+ *   │ bar  │     ┌──────────── bodyOverlay ──────────┐     │
+ *   │      │     │ Terminal drawer (snaps to bottom) │     │
+ *   ├──────┴─────└───────────────────────────────────┘─────┤
  *   │  28px Status bar                                     │
  *   └──────────────────────────────────────────────────────┘
  *
@@ -34,6 +39,7 @@ export function AppShell({
   titlebarRight,
   activity,
   status,
+  bodyOverlay,
   children,
 }: AppShellProps) {
   return (
@@ -42,6 +48,7 @@ export function AppShell({
       <div className={`shell__body${activity ? " shell__body--with-activity" : ""}`}>
         {activity}
         <div className="shell__main">{children}</div>
+        {bodyOverlay}
       </div>
       {status}
     </div>

@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+build
+.cache
+.npm
+.yarn
+*.log
+.DS_Store
+dist

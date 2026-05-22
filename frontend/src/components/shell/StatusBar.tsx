@@ -14,6 +14,8 @@ export interface StatusItem {
 
 interface StatusBarProps {
   items?: StatusItem[];
+  /** Custom element rendered between the spacer and the right-aligned items. */
+  rightExtra?: ReactNode;
 }
 
 const DEFAULT_ITEMS: StatusItem[] = [
@@ -25,7 +27,7 @@ const DEFAULT_ITEMS: StatusItem[] = [
   { id: "version",  right: true,   label: "aladdin-ai",   code: "v1.2.0" },
 ];
 
-export function StatusBar({ items = DEFAULT_ITEMS }: StatusBarProps) {
+export function StatusBar({ items = DEFAULT_ITEMS, rightExtra }: StatusBarProps) {
   const left  = items.filter((i) => !i.right);
   const right = items.filter((i) =>  i.right);
 
@@ -35,6 +37,7 @@ export function StatusBar({ items = DEFAULT_ITEMS }: StatusBarProps) {
         <StatusEntry key={item.id} item={item} />
       ))}
       <span className="sb-spacer" />
+      {rightExtra}
       {right.map((item) => (
         <StatusEntry key={item.id} item={item} />
       ))}

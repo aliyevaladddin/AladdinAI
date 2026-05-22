@@ -795,8 +795,15 @@
 .shell__main {
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
   background: var(--bg-1);
+}
+/* Children that need full height (e.g. centred auth card) can use this. */
+.shell__main > * {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /* ----- Titlebar ----- */
@@ -1135,3 +1142,477 @@
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--line);
 }
+
+/* ============================================================
+   Auth split-screen layout
+   Left: AuthHero (large lamp + wordmark + tagline + pillars)
+   Right: form column, vertically centred, ~440px content width
+   Mobile (<768px): hero hidden, form full-width centred.
+   ============================================================ */
+.auth-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100%;
+  width: 100%;
+  background: var(--bg-1);
+}
+
+@media (min-width: 768px) {
+  .auth-split {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  }
+}
+
+/* ---------- Hero (left) ---------- */
+.auth-hero {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  padding: clamp(40px, 6vw, 72px);
+  border-right: 1px solid var(--line);
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--bg-0) 88%, transparent) 0%,
+      var(--bg-1) 55%,
+      color-mix(in oklab, var(--bg-2) 92%, transparent) 100%);
+  color: var(--fg);
+  isolation: isolate;
+}
+
+@media (min-width: 768px) {
+  .auth-hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+}
+
+/* Ambient radial glow — amber upper-left, violet lower-right */
+.auth-hero__ambient {
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 18% 22%,
+      color-mix(in oklab, var(--amber) 26%, transparent) 0%,
+      transparent 68%),
+    radial-gradient(55% 45% at 82% 78%,
+      color-mix(in oklab, var(--violet) 28%, transparent) 0%,
+      transparent 72%),
+    radial-gradient(40% 35% at 65% 18%,
+      color-mix(in oklab, var(--violet) 14%, transparent) 0%,
+      transparent 70%);
+  filter: blur(0.5px);
+  opacity: 0.85;
+  animation: authHeroDrift 18s ease-in-out infinite alternate;
+}
+
+@keyframes authHeroDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(2%, -1.5%, 0) scale(1.04); }
+}
+
+/* Subtle vertical grid lines for depth (kept very faint) */
+.auth-hero__grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right,
+      color-mix(in oklab, var(--fg) 5%, transparent) 1px,
+      transparent 1px);
+  background-size: 64px 100%;
+  mask-image: radial-gradient(80% 60% at 40% 50%, #000 30%, transparent 85%);
+  -webkit-mask-image: radial-gradient(80% 60% at 40% 50%, #000 30%, transparent 85%);
+  opacity: 0.5;
+}
+
+.auth-hero__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(28px, 4vw, 44px);
+  max-width: 520px;
+}
+
+.auth-hero__brand {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.auth-hero__lamp {
+  /* Wrapper lets us amplify the halo without touching <Lamp /> markup */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  filter: drop-shadow(0 12px 32px color-mix(in oklab, var(--amber) 32%, transparent));
+}
+
+.auth-hero__wordmark {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight, 600);
+  font-size: clamp(48px, 6vw, 72px);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  color: var(--fg);
+  margin: 0;
+}
+.auth-hero__wordmark i {
+  color: var(--amber);
+  font-style: italic;
+  font-weight: inherit;
+}
+
+.auth-hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-hero__tagline {
+  font-family: var(--font-display);
+  font-size: clamp(20px, 1.9vw, 26px);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--fg);
+  margin: 0;
+  font-weight: 500;
+}
+
+.auth-hero__subtitle {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fg-2);
+  margin: 0;
+  max-width: 42ch;
+}
+
+.auth-hero__pillars {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-hero__pillars li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--fg-2);
+  line-height: 1.4;
+}
+
+.auth-hero__pillar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--amber);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--amber) 18%, transparent);
+  flex-shrink: 0;
+}
+
+.auth-hero__footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+.auth-hero__sep { color: var(--fg-4); }
+
+/* ---------- Light themes: invert ambient intensity, keep readable ---------- */
+[data-theme="ivory-indigo"] .auth-hero,
+[data-theme="linen-sand"] .auth-hero,
+[data-theme="mist-sapphire"] .auth-hero {
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--bg-0) 96%, transparent) 0%,
+      var(--bg-1) 60%,
+      color-mix(in oklab, var(--bg-2) 96%, transparent) 100%);
+}
+
+[data-theme="ivory-indigo"] .auth-hero__ambient,
+[data-theme="linen-sand"] .auth-hero__ambient,
+[data-theme="mist-sapphire"] .auth-hero__ambient {
+  opacity: 0.6;
+  background:
+    radial-gradient(60% 50% at 18% 22%,
+      color-mix(in oklab, var(--amber) 30%, transparent) 0%,
+      transparent 68%),
+    radial-gradient(55% 45% at 82% 78%,
+      color-mix(in oklab, var(--violet) 22%, transparent) 0%,
+      transparent 72%);
+}
+
+[data-theme="ivory-indigo"] .auth-hero__grid,
+[data-theme="linen-sand"] .auth-hero__grid,
+[data-theme="mist-sapphire"] .auth-hero__grid {
+  background-image:
+    linear-gradient(to right,
+      color-mix(in oklab, var(--fg) 8%, transparent) 1px,
+      transparent 1px);
+  opacity: 0.35;
+}
+
+/* Dim/twilight needs the same softening */
+[data-theme="twilight-cyan"] .auth-hero__ambient {
+  opacity: 0.7;
+}
+
+/* ---------- Form column (right) ---------- */
+.auth-form-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(32px, 5vw, 56px) clamp(20px, 4vw, 48px);
+  background: var(--bg-1);
+  min-width: 0;
+}
+
+.auth-form-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .auth-hero__ambient { animation: none; }
+}
+
+/* ===========================================================
+   Terminal drawer
+   Floats above .shell__body, snapped to its bottom edge.
+   Status bar stays visible underneath because it is a sibling
+   of .shell__body in the grid.
+   =========================================================== */
+.term-drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-0);
+  border-top: 1px solid var(--line-strong, var(--line));
+  box-shadow:
+    0 -8px 24px -10px rgba(0, 0, 0, 0.45),
+    0 -1px 0 var(--line);
+  color: var(--fg-2);
+  min-height: 160px;
+  /* width is full; height set inline */
+}
+
+.term-drawer__grip {
+  height: 8px;
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-4);
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, transparent, var(--bg-1));
+  flex-shrink: 0;
+}
+.term-drawer__grip:hover { color: var(--fg-3); }
+
+.term-drawer__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px 0 12px;
+  height: 34px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.term-drawer__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding-right: 8px;
+  border-right: 1px solid var(--line);
+}
+.term-drawer__tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  min-width: 0;
+}
+.term-drawer__tabs::-webkit-scrollbar { height: 0; }
+.term-drawer__actions { display: flex; gap: 2px; }
+
+.term-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px 0 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-3);
+  font-size: 12px;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+}
+.term-tab:hover { background: var(--bg-2); color: var(--fg-2); }
+.term-tab.is-active {
+  background: var(--bg-2);
+  color: var(--fg);
+  box-shadow: inset 0 -2px 0 var(--violet);
+}
+.term-tab__label { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.term-tab__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  color: var(--fg-4);
+}
+.term-tab__close:hover { background: var(--bg-3); color: var(--fg); }
+
+.term-iconbtn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-3);
+  border: 0;
+  cursor: pointer;
+}
+.term-iconbtn:hover { background: var(--bg-2); color: var(--fg); }
+
+.term-newmenu { display: inline-flex; }
+/* Popup is portalled to <body> and absolute-positioned in fixed coordinates.
+   Forced opaque + very high z-index so no parent stacking context clips it. */
+.term-newmenu__pop {
+  position: fixed;
+  z-index: 10000;
+  min-width: 240px;
+  background: var(--bg-1, #11111a);
+  color: var(--fg, #f2f3f7);
+  border: 1px solid var(--line, rgba(255,255,255,0.1));
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.55);
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto;
+}
+.term-newmenu__empty {
+  padding: 10px 12px;
+  color: var(--fg-4);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.term-newmenu__sep {
+  padding: 8px 10px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.term-newmenu__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--fg-2);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.term-newmenu__row:hover { background: var(--bg-2); color: var(--fg); }
+.term-newmenu__hint {
+  margin-left: auto;
+  color: var(--fg-4);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+}
+
+.term-drawer__body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--bg-0);
+}
+.term-pane {
+  position: absolute;
+  inset: 0;
+  padding: 8px 10px 4px;
+}
+.term-pane.is-hidden { visibility: hidden; pointer-events: none; }
+.term-pane.is-visible { visibility: visible; }
+
+/* Make sure xterm fills the pane and uses our background. */
+.term-pane .xterm,
+.term-pane .xterm-viewport,
+.term-pane .xterm-screen { background: transparent !important; }
+.term-pane .xterm-viewport { padding: 0 !important; }
+.term-pane .xterm-screen { width: 100% !important; }
+
+/* The shell body needs position:relative so the drawer can absolute-bottom into it. */
+.shell__body { position: relative; }
+
+/* ----- Status bar launcher button ----- */
+.sb-launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 20px;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--fg-2);
+  font-size: 11.5px;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.sb-launcher:hover {
+  background: var(--bg-2);
+  color: var(--fg);
+  border-color: var(--line-strong, var(--violet));
+}
+.sb-launcher code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--violet);
+  color: var(--bg-0);
+  padding: 0 5px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
