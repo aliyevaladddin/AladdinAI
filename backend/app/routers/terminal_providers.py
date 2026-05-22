@@ -1,0 +1,453 @@
+# NOTICE: This file is protected under RCF-PL v2.0.3
+# [RCF:PROTECTED]
+"""
+Terminal-provider marketplace + session router.
+
+Two surfaces:
+  /api/terminal/providers/*    — install/start/stop/list providers
+  /api/terminal/session        — what the drawer calls to get an iframe URL
+
+The router owns DB rows + manifest lookup + token issuance, then delegates
+to docker_runner for container ops and to adapters for transport details.
+"""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import yaml
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from fastapi import Request, Response
+from urllib.parse import parse_qs, urlsplit
+
+from app.config import settings
+from app.database import get_db
+from app.models.terminal_provider import TerminalProvider
+from app.models.user import User
+from app.schemas.terminal import (
+    MarketplaceEntry,
+    ProviderInstall,
+    ProviderResponse,
+    SessionRequest,
+    SessionResponse,
+)
+from app.security import get_current_user
+from app.services import docker_runner
+from app.services.terminal_adapters import get_adapter
+from app.services.terminal_token_broker import (
+    TerminalTokenError,
+    consume_token,
+    issue_session_cookie,
+    issue_token,
+    verify_session_cookie,
+)
+
+router = APIRouter(tags=["terminal-providers"])
+
+
+# ── manifest loader ─────────────────────────────────────────────────────
+# Manifests live next to the backend code so they're shipped with the
+# image. We cache them per-process; the catalogue is tiny.
+
+_MANIFEST_DIR = Path(__file__).resolve().parent.parent / "terminal_plugins"
+_manifest_cache: Optional[Dict[str, Dict[str, Any]]] = None
+
+
+def _load_manifests() -> Dict[str, Dict[str, Any]]:
+    global _manifest_cache
+    if _manifest_cache is not None:
+        return _manifest_cache
+    out: Dict[str, Dict[str, Any]] = {}
+    if _MANIFEST_DIR.is_dir():
+        for path in sorted(_MANIFEST_DIR.glob("*.yaml")):
+            try:
+                with path.open("r", encoding="utf-8") as fh:
+                    data = yaml.safe_load(fh) or {}
+                if isinstance(data, dict) and data.get("type"):
+                    out[str(data["type"])] = data
+            except yaml.YAMLError:
+                # A broken manifest shouldn't poison the catalogue; the
+                # marketplace endpoint just skips it.
+                continue
+    _manifest_cache = out
+    return out
+
+
+def _manifest_entry(t: str) -> Dict[str, Any]:
+    m = _load_manifests().get(t)
+    if not m:
+        raise HTTPException(status_code=404, detail=f"unknown provider type: {t}")
+    return m
+
+
+def _project(provider: TerminalProvider) -> ProviderResponse:
+    return ProviderResponse(
+        id=provider.id,
+        name=provider.name,
+        type=provider.type,
+        source=provider.source,
+        image=provider.image,
+        internal_port=provider.internal_port,
+        requires_ssh_proxy=provider.requires_ssh_proxy,
+        is_active=provider.is_active,
+        status=provider.status,
+        container_id=provider.container_id,
+        last_health_at=provider.last_health_at,
+        last_error=provider.last_error,
+        created_at=provider.created_at,
+    )
+
+
+# ── marketplace ─────────────────────────────────────────────────────────
+
+
+@router.get("/marketplace", response_model=List[MarketplaceEntry])
+async def marketplace(_: User = Depends(get_current_user)):
+    """Catalogue of builtin manifests this backend can install."""
+    out: List[MarketplaceEntry] = []
+    for m in _load_manifests().values():
+        out.append(MarketplaceEntry(
+            type=m["type"],
+            name=m.get("name") or m["type"],
+            description=m.get("description"),
+            image=m["image"],
+            internal_port=int(m.get("internal_port") or 7681),
+            requires_ssh_proxy=bool(m.get("requires_ssh_proxy")),
+        ))
+    return out
+
+
+# ── CRUD ────────────────────────────────────────────────────────────────
+
+
+@router.get("/providers", response_model=List[ProviderResponse])
+async def list_providers(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(TerminalProvider).where(TerminalProvider.user_id == user.id),
+    )
+    return [_project(p) for p in result.scalars().all()]
+
+
+@router.post("/providers", response_model=ProviderResponse, status_code=201)
+async def install_provider(
+    body: ProviderInstall,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    m = _manifest_entry(body.type)
+
+    provider = TerminalProvider(
+        user_id=user.id,
+        name=body.name or m.get("name") or body.type,
+        type=body.type,
+        source="builtin",
+        image=m["image"],
+        config=json.dumps(body.config or {}),
+        internal_port=int(m.get("internal_port") or 7681),
+        requires_ssh_proxy=bool(m.get("requires_ssh_proxy")),
+        url_template=str(m.get("url_template")
+                         or "{scheme}://{host}/p/{provider_id}/?token={token}"),
+        status="stopped",
+    )
+    db.add(provider)
+    await db.commit()
+    await db.refresh(provider)
+    return _project(provider)
+
+
+@router.delete("/providers/{provider_id}", status_code=204)
+async def delete_provider(
+    provider_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    provider = await _load_owned(db, user, provider_id)
+    if provider.container_id:
+        # Best-effort — if docker is unavailable the row still goes away.
+        try:
+            await docker_runner.remove_container(provider.container_id)
+        except docker_runner.DockerUnavailable:
+            pass
+        except docker_runner.DockerOperationError:
+            pass
+    await db.delete(provider)
+    await db.commit()
+
+
+@router.post("/providers/{provider_id}/start", response_model=ProviderResponse)
+async def start_provider(
+    provider_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    provider = await _load_owned(db, user, provider_id)
+    manifest = _manifest_entry(provider.type)
+    adapter = get_adapter(provider.type)
+    config_dict = json.loads(provider.config or "{}")
+
+    spec = adapter.build_container_spec(
+        provider_id=provider.id,
+        user_id=user.id,
+        image=provider.image,
+        manifest=manifest,
+        config=config_dict,
+    )
+
+    try:
+        await docker_runner.pull_image(provider.image)
+        cid = await docker_runner.start_container(
+            provider_id=provider.id,
+            user_id=user.id,
+            provider_type=provider.type,
+            image=provider.image,
+            command=spec.command,
+            env=spec.env,
+            labels=spec.labels,
+            healthcheck=spec.healthcheck,
+            internal_port=spec.internal_port,
+        )
+    except docker_runner.DockerUnavailable as exc:
+        provider.status = "error"
+        provider.last_error = str(exc)
+        await db.commit()
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except docker_runner.DockerOperationError as exc:
+        provider.status = "error"
+        provider.last_error = str(exc)
+        await db.commit()
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    provider.container_id = cid
+    provider.status = "running"
+    provider.last_error = None
+    provider.last_health_at = datetime.now(timezone.utc)
+    await db.commit()
+    await db.refresh(provider)
+    return _project(provider)
+
+
+@router.post("/providers/{provider_id}/stop", response_model=ProviderResponse)
+async def stop_provider(
+    provider_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    provider = await _load_owned(db, user, provider_id)
+    if provider.container_id:
+        try:
+            await docker_runner.stop_container(provider.container_id)
+        except docker_runner.DockerUnavailable as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except docker_runner.DockerOperationError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+    provider.status = "stopped"
+    await db.commit()
+    await db.refresh(provider)
+    return _project(provider)
+
+
+@router.post("/providers/{provider_id}/set_active", response_model=ProviderResponse)
+async def set_active_provider(
+    provider_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    provider = await _load_owned(db, user, provider_id)
+    # Clear active flag on every other provider of this user.
+    await db.execute(
+        update(TerminalProvider)
+        .where(TerminalProvider.user_id == user.id)
+        .values(is_active=False),
+    )
+    provider.is_active = True
+    await db.commit()
+    await db.refresh(provider)
+    return _project(provider)
+
+
+# ── diagnostics ─────────────────────────────────────────────────────────
+
+
+@router.get("/providers/{provider_id}/logs", response_model=dict)
+async def provider_logs(
+    provider_id: int,
+    tail: int = 200,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Last `tail` lines of combined stdout/stderr from this provider's
+    container. Useful when a provider stops with `last_error` set and the
+    user wants to know what crashed inside. Soft-fails to a string body if
+    docker is unreachable — the UI just renders whatever we return."""
+    provider = await _load_owned(db, user, provider_id)
+    if not provider.container_id:
+        return {"logs": "", "note": "container has not been started yet"}
+    # Cap `tail` to a sane upper bound so the response can't balloon.
+    capped = max(1, min(int(tail), 2000))
+    text = await docker_runner.container_logs(provider.container_id, tail=capped)
+    return {"logs": text, "container_id": provider.container_id, "tail": capped}
+
+
+# ── session issuance ────────────────────────────────────────────────────
+
+
+@router.post("/session", response_model=SessionResponse)
+async def issue_session(
+    body: SessionRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Drawer entry point: hand back a URL the iframe can navigate to."""
+    result = await db.execute(
+        select(TerminalProvider)
+        .where(TerminalProvider.user_id == user.id)
+        .where(TerminalProvider.is_active.is_(True)),
+    )
+    provider = result.scalar_one_or_none()
+    if provider is None:
+        # No provider installed — frontend renders the empty-state pane.
+        raise HTTPException(status_code=503, detail="no active terminal provider")
+    if provider.status != "running" or not provider.container_id:
+        raise HTTPException(status_code=409, detail="provider is not running")
+
+    adapter = get_adapter(provider.type)
+    token, exp = issue_token(user_id=user.id, provider_id=provider.id)
+    url = adapter.build_session_url(
+        provider_id=provider.id,
+        url_template=provider.url_template,
+        scheme=settings.terminal_public_scheme,
+        host=settings.terminal_public_host,
+        token=token,
+    )
+    return SessionResponse(
+        url=url,
+        expires_at=datetime.fromtimestamp(exp, tz=timezone.utc),
+        provider_type=provider.type,
+        provider_session_id=None,
+    )
+
+
+# Deletion endpoint the frontend best-effort-calls on tab close. We don't
+# tear down the container for that — the container is shared across the
+# user's sessions. We just shred the token bookkeeping (no-op in MVP).
+@router.delete("/session/{provider_session_id}", status_code=204)
+async def end_session(provider_session_id: str, _: User = Depends(get_current_user)):
+    return None
+
+
+# ── Traefik forward-auth ────────────────────────────────────────────────
+# Traefik calls this endpoint *before* proxying any /p/{id}/… request to the
+# provider container. Two acceptance paths:
+#
+#   1. The request URL carries `?token=…` (single-use entry token). We
+#      `consume_token` it, then issue a long-lived session cookie scoped to
+#      the public host. Subsequent fetches from the iframe will carry the
+#      cookie automatically.
+#   2. The request carries `Cookie: aladdin_term_sess=…`. We verify it
+#      statelessly; no DB hit, no jti consume — this is the hot path for
+#      CSS/JS/WS sub-resources.
+#
+# On success we return 200 with `X-Aladdin-User` / `X-Aladdin-Provider` so the
+# container can log who's talking to it. On failure we return 401 — Traefik
+# rejects the upstream request and the iframe shows the provider's own error.
+
+
+def _extract_token_from_uri(uri: str) -> str | None:
+    """Pull `?token=` out of an X-Forwarded-Uri value.
+
+    Traefik sets X-Forwarded-Uri to the path *with* query string ("/p/42/?token=…"),
+    so we parse it as if it were a URL. We deliberately do not look at the
+    Authorization header — the token is meant to ride only in the query of
+    the initial navigation request.
+    """
+    if not uri:
+        return None
+    parts = urlsplit(uri)
+    qs = parse_qs(parts.query)
+    raw = qs.get("token")
+    return raw[0] if raw else None
+
+
+@router.get("/auth")
+async def forward_auth(request: Request, response: Response):
+    """Auth probe for Traefik's forward-auth middleware.
+
+    Wired in Traefik via:
+        traefik.http.middlewares.aladdin-auth.forwardauth.address=
+            http://backend:8000/api/terminal/auth
+        traefik.http.middlewares.aladdin-auth.forwardauth.authResponseHeaders=
+            Set-Cookie,X-Aladdin-User,X-Aladdin-Provider
+
+    `authResponseHeaders` is critical — without it Traefik strips our
+    `Set-Cookie` from the response and the iframe never picks up the
+    session cookie.
+    """
+    # Path 1 — session cookie already present.
+    cookie_value = request.cookies.get(settings.terminal_session_cookie_name)
+    if cookie_value:
+        try:
+            claims = verify_session_cookie(cookie_value)
+        except TerminalTokenError:
+            # Bad cookie → fall through to entry-token path. We don't 401
+            # immediately because the next page navigation may carry a fresh
+            # `?token=`.
+            pass
+        else:
+            response.headers["X-Aladdin-User"] = str(claims.user_id)
+            response.headers["X-Aladdin-Provider"] = str(claims.provider_id)
+            return {"ok": True}
+
+    # Path 2 — fresh entry token in the forwarded URI.
+    forwarded_uri = request.headers.get("X-Forwarded-Uri") or request.url.query
+    token = _extract_token_from_uri(forwarded_uri)
+    if not token:
+        raise HTTPException(status_code=401, detail="no token")
+    try:
+        claims = await consume_token(token)
+    except TerminalTokenError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    # Issue a session cookie bound to this (user, provider). Cookie is
+    # scoped to the *public* terminal host — Traefik forwards Set-Cookie
+    # back to the browser. We use HttpOnly + SameSite=Lax — the iframe
+    # is same-host with our public terminal domain so Lax is enough.
+    cookie_val, _ = issue_session_cookie(
+        user_id=claims.user_id, provider_id=claims.provider_id,
+    )
+    secure = settings.terminal_public_scheme == "https"
+    response.set_cookie(
+        key=settings.terminal_session_cookie_name,
+        value=cookie_val,
+        max_age=settings.terminal_session_ttl_seconds,
+        httponly=True,
+        secure=secure,
+        samesite="lax",
+        path="/",
+    )
+    response.headers["X-Aladdin-User"] = str(claims.user_id)
+    response.headers["X-Aladdin-Provider"] = str(claims.provider_id)
+    return {"ok": True}
+
+
+# ── helpers ─────────────────────────────────────────────────────────────
+
+
+async def _load_owned(db: AsyncSession, user: User, provider_id: int) -> TerminalProvider:
+    result = await db.execute(
+        select(TerminalProvider)
+        .where(TerminalProvider.id == provider_id)
+        .where(TerminalProvider.user_id == user.id),
+    )
+    provider = result.scalar_one_or_none()
+    if provider is None:
+        raise HTTPException(status_code=404, detail="provider not found")
+    return provider

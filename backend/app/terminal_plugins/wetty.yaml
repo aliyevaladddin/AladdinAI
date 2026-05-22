@@ -1,0 +1,46 @@
+# Builtin terminal provider — wetty
+#
+# wetty wraps an SSH session in a web terminal (xterm.js inside the container)
+# so the user can SSH into a remote host through their browser. Unlike ttyd
+# which opens a shell *inside* the container, wetty acts as an SSH client and
+# requires VM coordinates at session-issue time.
+#
+# MVP simplification: this manifest declares `requires_ssh_proxy: true`. The
+# session endpoint will populate the SSH target from the user's selected VM
+# via the adapter's session-URL builder. The container itself is generic.
+#
+# Container model identical to ttyd — one per (user, provider), no host port
+# published, Traefik handles ingress. Internal port is 3000.
+
+type: wetty
+name: wetty (SSH in browser)
+description: |
+  Web terminal that SSHs into one of your saved VMs. Per-session, the
+  active VM is brokered to the container at connect time.
+
+image: wettyoss/wetty:latest
+
+internal_port: 3000
+
+# wetty's entrypoint reads --ssh-host/--ssh-port/--ssh-user from argv. We
+# leave them empty here; the adapter overrides them per session using the
+# user's selected VM. `--base /p/{provider_id}/` keeps relative paths working
+# under the Traefik strip-prefix middleware.
+command:
+  - node
+  - .
+  - --port
+  - "3000"
+
+env: {}
+
+healthcheck:
+  test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/"]
+  interval: 30s
+  timeout: 5s
+  retries: 3
+  start_period: 8s
+
+requires_ssh_proxy: true
+
+url_template: "{scheme}://{host}/p/{provider_id}/?token={token}"

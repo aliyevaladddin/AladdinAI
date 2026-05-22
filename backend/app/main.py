@@ -13,10 +13,12 @@ from app.security import get_current_user_ws
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
     chat, crm_activities, crm_contacts, crm_deals, dashboard, mongodb,
-    notifications, providers, router_config, search, ssh_exec, triggers as triggers_router, vms, webhooks
+    notifications, providers, router_config, search, ssh_exec, terminal_providers,
+    triggers as triggers_router, vms, webhooks
 )
 from app.services import triggers as triggers_service
 from app.services import telegram_poller
+from app.services import terminal_health
 
 app = FastAPI(title="AladdinAI API")
 
@@ -25,12 +27,14 @@ app = FastAPI(title="AladdinAI API")
 async def _start_scheduler():
     await triggers_service.hydrate_from_db()
     await telegram_poller.start()
+    terminal_health.start()
 
 
 @app.on_event("shutdown")
 async def _stop_scheduler():
     await triggers_service.shutdown()
     await telegram_poller.stop()
+    terminal_health.stop()
 
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
@@ -152,6 +156,7 @@ app.include_router(ssh_exec.router, prefix="/api")
 app.include_router(triggers_router.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
+app.include_router(terminal_providers.router, prefix="/api/terminal", tags=["terminal"])
 
 @app.get("/")
 async def root():
