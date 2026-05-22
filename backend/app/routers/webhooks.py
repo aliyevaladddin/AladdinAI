@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import hmac
 import json
@@ -7,6 +8,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.crypto import encrypt
 from app.database import async_session, get_db
 from app.models.messaging_channel import MessagingChannel
 from app.models.outgoing_webhook import OutgoingWebhook
@@ -33,7 +35,7 @@ async def create_outgoing_webhook(body: OutgoingWebhookCreate, user: User = Depe
         user_id=user.id,
         name=body.name,
         url=body.url,
-        secret=body.secret,
+        secret=encrypt(body.secret) if body.secret else None,
         events=body.events,
         is_active=body.is_active,
     )
@@ -104,10 +106,50 @@ def _verify_waha(channel: MessagingChannel, request: Request, raw_body: bytes) -
     return hmac.compare_digest(sig_header, expected)
 
 
-def _verify_sms(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
-    """SMS providers vary. For now we require a shared secret in
-    X-Aladdin-Webhook-Secret header. Twilio HMAC validation is a TODO.
+def _verify_twilio(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
+    """Twilio signs requests with HMAC-SHA1 (base64) over the full URL
+    concatenated with all POST params sorted alphabetically by key.
+    Header: X-Twilio-Signature. Token lives in channel.config["twilio_auth_token"].
+
+    See https://www.twilio.com/docs/usage/webhooks/webhooks-security
     """
+    token = (channel.config or {}).get("twilio_auth_token")
+    if not token:
+        return False
+    sig_header = request.headers.get("X-Twilio-Signature", "")
+    if not sig_header:
+        return False
+
+    # Twilio signs the URL it called — reconstruct from request, honoring
+    # X-Forwarded-Proto/Host when behind a proxy (common in production).
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    host = request.headers.get("x-forwarded-host", request.url.netloc)
+    url = f"{proto}://{host}{request.url.path}"
+    if request.url.query:
+        url = f"{url}?{request.url.query}"
+
+    # POST params come from the form-encoded body, sorted by key, concatenated as k+v.
+    try:
+        from urllib.parse import parse_qsl
+        params = sorted(parse_qsl(raw_body.decode("utf-8"), keep_blank_values=True))
+    except Exception:
+        params = []
+
+    payload = url + "".join(k + v for k, v in params)
+    expected = base64.b64encode(
+        hmac.new(token.encode("utf-8"), payload.encode("utf-8"), hashlib.sha1).digest()
+    ).decode("utf-8")
+    return hmac.compare_digest(expected, sig_header)
+
+
+def _verify_sms(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
+    """SMS providers vary. If channel.config has `twilio_auth_token`, we use
+    real Twilio HMAC-SHA1 signature validation. Otherwise we fall back to
+    a shared secret in `X-Aladdin-Webhook-Secret` header (custom providers).
+    """
+    if (channel.config or {}).get("twilio_auth_token"):
+        return _verify_twilio(channel, request, raw_body)
+
     if not channel.webhook_secret:
         log.warning("sms channel %s has no webhook_secret — rejecting request", channel.id)
         return False

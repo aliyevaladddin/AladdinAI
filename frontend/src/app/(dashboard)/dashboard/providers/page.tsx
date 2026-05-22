@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { RefreshCw, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 
 interface Provider {
   id: number;
@@ -35,7 +37,10 @@ export default function ProvidersPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", type: "huggingface", api_key: "", base_url: "" });
   const [loading, setLoading] = useState<Record<number, boolean>>({});
+  const [refreshing, setRefreshing] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<Record<number, ConnectResult>>({});
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [models, setModels] = useState<Record<number, string[]>>({});
 
   const load = () => api.get<Provider[]>("/providers").then(setProviders);
   useEffect(() => { load(); }, []);
@@ -54,11 +59,47 @@ export default function ProvidersPage() {
     try {
       const res = await api.post<ConnectResult>(`/providers/${id}/connect`);
       setResult((prev) => ({ ...prev, [id]: res }));
+      if (res.models) setModels((prev) => ({ ...prev, [id]: res.models! }));
       load();
     } catch {
       setResult((prev) => ({ ...prev, [id]: { status: "error", message: "Request failed" } }));
     } finally {
       setLoading((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
+  // Refresh hits the same /connect endpoint — that's what re-fetches /v1/models
+  // and persists the catalog. Keep the connected status visible while it runs.
+  const handleRefreshModels = async (id: number) => {
+    setRefreshing((prev) => ({ ...prev, [id]: true }));
+    try {
+      const res = await api.post<ConnectResult>(`/providers/${id}/connect`);
+      if (res.status === "connected") {
+        setResult((prev) => ({ ...prev, [id]: res }));
+        if (res.models) setModels((prev) => ({ ...prev, [id]: res.models! }));
+        toast.success(`Refreshed — ${res.count ?? res.models?.length ?? 0} models available`);
+      } else {
+        toast.error(res.message || "Refresh failed");
+        setResult((prev) => ({ ...prev, [id]: res }));
+        load();
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Refresh failed");
+    } finally {
+      setRefreshing((prev) => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const toggleExpand = async (id: number) => {
+    const willOpen = !expanded[id];
+    setExpanded((prev) => ({ ...prev, [id]: willOpen }));
+    if (willOpen && !models[id]) {
+      try {
+        const res = await api.get<{ models: string[]; hint?: string }>(`/providers/${id}/models`);
+        setModels((prev) => ({ ...prev, [id]: res.models || [] }));
+      } catch {
+        // ignore — empty state will render
+      }
     }
   };
 
@@ -127,14 +168,14 @@ export default function ProvidersPage() {
       <div className="space-y-3">
         {providers.map((p) => (
           <div key={p.id} className="rounded-lg border border-border p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">{p.name}</p>
-                <p className="text-sm text-muted-foreground">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium truncate">{p.name}</p>
+                <p className="text-sm text-muted-foreground truncate">
                   {TYPE_LABELS[p.type] ?? p.type} — {p.base_url}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <span className={`text-xs px-2 py-1 rounded ${
                   p.status === "connected"
                     ? "bg-green-500/20 text-green-400"
@@ -143,14 +184,28 @@ export default function ProvidersPage() {
                   {p.status}
                 </span>
                 {p.status === "connected" ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDisconnect(p.id)}
-                    disabled={loading[p.id]}
-                  >
-                    {loading[p.id] ? "..." : "Disconnect"}
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRefreshModels(p.id)}
+                      disabled={refreshing[p.id] || loading[p.id]}
+                      title="Re-fetch the model catalog from the provider"
+                    >
+                      {refreshing[p.id]
+                        ? <Loader2 size={12} className="animate-spin" />
+                        : <RefreshCw size={12} />}
+                      Refresh models
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDisconnect(p.id)}
+                      disabled={loading[p.id]}
+                    >
+                      {loading[p.id] ? "..." : "Disconnect"}
+                    </Button>
+                  </>
                 ) : (
                   <Button
                     variant="outline"
@@ -166,6 +221,37 @@ export default function ProvidersPage() {
                 </Button>
               </div>
             </div>
+
+            {p.status === "connected" && (
+              <button
+                type="button"
+                onClick={() => toggleExpand(p.id)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {expanded[p.id] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {models[p.id]
+                  ? `${models[p.id].length} models available`
+                  : "Show models"}
+              </button>
+            )}
+
+            {expanded[p.id] && (
+              <div className="rounded-md border border-border bg-muted/30 p-3 max-h-64 overflow-y-auto">
+                {models[p.id] && models[p.id].length > 0 ? (
+                  <ul className="space-y-1 text-xs font-mono">
+                    {models[p.id].map((m) => (
+                      <li key={m} className="text-muted-foreground hover:text-foreground transition-colors">
+                        {m}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    No models cached. Click <span className="font-medium">Refresh models</span> to fetch from the provider.
+                  </p>
+                )}
+              </div>
+            )}
 
             {result[p.id] && (
               <div className={`text-xs rounded p-2 ${

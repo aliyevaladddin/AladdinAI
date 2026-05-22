@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Mail, MessageSquare, Plus, X, Pencil, Trash2,
   Check, RefreshCw, PlugZap, Link2, Loader2, QrCode,
+  ShieldAlert, Copy,
 } from "lucide-react";
 
 /* ── Types ───────────────────────────────────────────────────────── */
@@ -48,6 +49,15 @@ export default function ChannelsPage() {
   });
 
   const [qrModal, setQrModal] = useState<{ open: boolean; image: string | null; loading: boolean, error: string | null }>({ open: false, image: null, loading: false, error: null });
+
+  // Webhook config modal — surfaces the secret + provider-specific setup instructions
+  const [webhookModal, setWebhookModal] = useState<{
+    open: boolean;
+    loading: boolean;
+    channel: MessagingChannel | null;
+    data: { webhook_url: string; webhook_secret: string | null; instructions: Record<string, string> } | null;
+    error: string | null;
+  }>({ open: false, loading: false, channel: null, data: null, error: null });
 
   // Loading states per id
   const [testing,  setTesting]  = useState<Record<number, boolean>>({});
@@ -163,6 +173,30 @@ export default function ChannelsPage() {
     } catch (e: any) {
       setQrModal({ open: true, image: null, loading: false, error: e.message || "Error fetching QR" });
     }
+  };
+
+  const handleShowWebhookConfig = async (c: MessagingChannel) => {
+    setWebhookModal({ open: true, loading: true, channel: c, data: null, error: null });
+    try {
+      const res = await api.get<{ webhook_url: string; webhook_secret: string | null; instructions: Record<string, string> }>(`/channels/messaging/${c.id}/webhook-config`);
+      // Resolve relative webhook_url to absolute using the dev-port convention
+      const base = window.location.origin.replace("3000", "8000");
+      const absoluteUrl = res.webhook_url.startsWith("http") ? res.webhook_url : `${base}${res.webhook_url}`;
+      setWebhookModal({
+        open: true,
+        loading: false,
+        channel: c,
+        data: { ...res, webhook_url: absoluteUrl },
+        error: null,
+      });
+    } catch (e: any) {
+      setWebhookModal({ open: true, loading: false, channel: c, data: null, error: e.message || "Failed to fetch webhook config" });
+    }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard?.writeText(text).catch(() => {});
+    toast.success(`${label} copied`);
   };
 
   const handleDeleteChannel = async (id: number) => {
@@ -454,13 +488,26 @@ export default function ChannelsPage() {
                       {c.status}
                     </span>
                     {c.type === "whatsapp_waha" && (
-                      <Button variant="outline" size="sm" onClick={() => handleShowQr(c.id)}>
-                        <QrCode size={12} /> QR Code
-                      </Button>
+                      <>
+                        <span
+                          className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border flex items-center gap-1 text-amber-400 bg-amber-500/10 border-amber-500/20"
+                          title="WAHA accepts unsigned webhooks by default. Click Webhook setup to harden."
+                        >
+                          <ShieldAlert size={10} />
+                          Unsigned by default
+                        </span>
+                        <Button variant="outline" size="sm" onClick={() => handleShowQr(c.id)}>
+                          <QrCode size={12} /> QR Code
+                        </Button>
+                      </>
                     )}
                     <Button variant="outline" size="sm" onClick={() => handleTestChannel(c.id)} disabled={testing[c.id]}>
                       {testing[c.id] ? <Loader2 size={12} className="animate-spin" /> : <PlugZap size={12} />}
                       Test
+                    </Button>
+                    <Button variant="ghost" size="icon-sm" onClick={() => handleShowWebhookConfig(c)}
+                      title="Webhook setup (URL + signing secret)" className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]">
+                      <ShieldAlert size={13} />
                     </Button>
                     <Button variant="ghost" size="icon-sm" onClick={() => copyWebhookUrl(c)}
                       title="Copy webhook URL" className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]">
@@ -477,6 +524,81 @@ export default function ChannelsPage() {
           )}
         </div>
       </section>
+
+      {/* Webhook Config Modal */}
+      {webhookModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-lg rounded-2xl border p-6 shadow-xl" style={{ background: "var(--color-surface-1)", borderColor: "var(--color-border)" }}>
+            <Button variant="ghost" size="icon-sm" className="absolute top-3 right-3"
+              onClick={() => setWebhookModal({ open: false, loading: false, channel: null, data: null, error: null })}>
+              <X size={14} />
+            </Button>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <ShieldAlert size={18} style={{ color: "var(--color-fg-muted)" }} />
+                  Webhook setup
+                </h3>
+                <p className="text-xs mt-1" style={{ color: "var(--color-fg-muted)" }}>
+                  {webhookModal.channel?.name} · <span className="capitalize">{webhookModal.channel?.type.replace("_", " ")}</span>
+                </p>
+              </div>
+
+              {webhookModal.loading && <div className="py-6 flex justify-center"><Loader2 className="animate-spin" /></div>}
+              {webhookModal.error && <p className="text-sm text-red-500">{webhookModal.error}</p>}
+
+              {webhookModal.data && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium" style={{ color: "var(--color-fg-muted)" }}>Webhook URL</label>
+                    <div className="mt-1 flex items-center gap-2">
+                      <code className="flex-1 text-xs px-2.5 py-2 rounded border break-all"
+                        style={{ background: "var(--color-surface-2)", borderColor: "var(--color-border)" }}>
+                        {webhookModal.data.webhook_url}
+                      </code>
+                      <Button variant="outline" size="sm" onClick={() => copyToClipboard(webhookModal.data!.webhook_url, "URL")}>
+                        <Copy size={12} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium" style={{ color: "var(--color-fg-muted)" }}>Signing secret</label>
+                    <div className="mt-1 flex items-center gap-2">
+                      <code className="flex-1 text-xs px-2.5 py-2 rounded border break-all font-mono"
+                        style={{ background: "var(--color-surface-2)", borderColor: "var(--color-border)" }}>
+                        {webhookModal.data.webhook_secret || "(not configured)"}
+                      </code>
+                      {webhookModal.data.webhook_secret && (
+                        <Button variant="outline" size="sm"
+                          onClick={() => copyToClipboard(webhookModal.data!.webhook_secret!, "Secret")}>
+                          <Copy size={12} />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {webhookModal.data.instructions.signing && (
+                    <div className="rounded-md border p-3 text-xs leading-relaxed"
+                      style={{ background: "var(--color-surface-2)", borderColor: "var(--color-border)", color: "var(--color-fg-muted)" }}>
+                      <p className="font-semibold mb-1" style={{ color: "var(--color-fg)" }}>
+                        How to enable signature verification:
+                      </p>
+                      <p>{webhookModal.data.instructions.signing}</p>
+                      {webhookModal.data.instructions.header && (
+                        <p className="mt-2"><span className="font-medium">Header:</span> <code>{webhookModal.data.instructions.header}</code></p>
+                      )}
+                      {webhookModal.data.instructions.hmac_algorithm && (
+                        <p className="mt-1"><span className="font-medium">Algorithm:</span> {webhookModal.data.instructions.hmac_algorithm}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* QR Code Modal */}
       {qrModal.open && (
