@@ -1,0 +1,49 @@
+import { type ReactNode } from "react";
+import { Titlebar } from "./Titlebar";
+
+interface AppShellProps {
+  /** Crumbs / page title chain shown in the titlebar. */
+  crumbs?: ReactNode;
+  /** Right-aligned titlebar slot (search, notifications, avatar). */
+  titlebarRight?: ReactNode;
+  /** Activity bar element — pass null on public/auth screens. */
+  activity?: ReactNode;
+  /** Status bar element — pass null on public/auth screens. */
+  status?: ReactNode;
+  children: ReactNode;
+}
+
+/**
+ * Top-level chrome composer.
+ *
+ *   ┌──────────────────────────────────────────────────────┐
+ *   │  44px  Titlebar  (lamp │ wordmark + crumbs │ tools)  │
+ *   ├──────┬───────────────────────────────────────────────┤
+ *   │ 56px │                                               │
+ *   │ act. │              children (page body)             │
+ *   │ bar  │                                               │
+ *   ├──────┴───────────────────────────────────────────────┤
+ *   │  28px Status bar                                     │
+ *   └──────────────────────────────────────────────────────┘
+ *
+ * Activity bar and status bar are optional — auth/public pages
+ * keep the titlebar (lamp + wordmark) but omit the rest.
+ */
+export function AppShell({
+  crumbs,
+  titlebarRight,
+  activity,
+  status,
+  children,
+}: AppShellProps) {
+  return (
+    <div className={`shell${status ? " shell--with-status" : ""}`}>
+      <Titlebar crumbs={crumbs} right={titlebarRight} />
+      <div className={`shell__body${activity ? " shell__body--with-activity" : ""}`}>
+        {activity}
+        <div className="shell__main">{children}</div>
+      </div>
+      {status}
+    </div>
+  );
+}
