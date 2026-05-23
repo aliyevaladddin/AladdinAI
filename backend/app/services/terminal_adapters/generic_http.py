@@ -16,7 +16,7 @@ spec — the token rides in the URL only.
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from app.services.terminal_adapters.base import ContainerSpec, TerminalAdapter
 
@@ -71,7 +71,14 @@ class GenericHttpAdapter(TerminalAdapter):
         scheme: str,
         host: str,
         token: str,
+        host_port: Optional[int] = None,
     ) -> str:
+        # Local-publish path bypasses the template — we point straight at
+        # the published host port over plain HTTP. The token rides in the
+        # query string so the container UI can pass it back if it wants;
+        # in local mode there's no edge gate intercepting it.
+        if host_port is not None:
+            return f"http://{host}:{host_port}/?token={token}"
         return url_template.format(
             provider_id=provider_id,
             scheme=scheme,

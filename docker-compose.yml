@@ -23,11 +23,32 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      # Backend runs inside this container, but the terminal containers we
+      # spawn must be reachable from the user's browser on the host. Bind
+      # the published ports on 0.0.0.0 so they show up on the host's
+      # network namespace via docker's port forwarding.
+      TERMINAL_LOCAL_BIND_HOST: "0.0.0.0"
+      # The browser hits these containers as http://localhost:<port>/ —
+      # this is also what the adapter substitutes into the session URL.
+      TERMINAL_LOCAL_HOST: "localhost"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      # Sibling-container model: we manage docker on the host daemon
+      # rather than running a nested daemon (DinD). Cheap, but it means
+      # the backend container is root-equivalent on the host — keep this
+      # mount out of any deployment that exposes backend to untrusted
+      # users.
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      # Linux needs this explicitly — on Mac/Windows docker desktop adds
+      # it automatically. Lets backend reach the docker daemon via
+      # `tcp://host.docker.internal:…` if we ever swap off the unix
+      # socket for a TLS endpoint.
+      - "host.docker.internal:host-gateway"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:

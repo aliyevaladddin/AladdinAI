@@ -67,6 +67,12 @@ class TerminalAdapter(Protocol):
         scheme: str,
         host: str,
         token: str,
+        host_port: Optional[int] = None,
     ) -> str:
-        """Substitute {provider_id}, {token}, {scheme}, {host} into the template."""
+        """Substitute {provider_id}, {token}, {scheme}, {host} into the template.
+
+        When `host_port` is set, the adapter is free to ignore the template
+        and return a direct `http://<host>:<host_port>/?token=…` URL — this
+        is the local-publish path where Traefik isn't in the picture.
+        """
         ...

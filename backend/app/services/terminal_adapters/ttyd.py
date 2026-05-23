@@ -14,7 +14,7 @@ Notes:
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from app.services.terminal_adapters.base import ContainerSpec, TerminalAdapter
 
@@ -59,7 +59,14 @@ class TtydAdapter(TerminalAdapter):
         scheme: str,
         host: str,
         token: str,
+        host_port: Optional[int] = None,
     ) -> str:
+        # Local-publish path bypasses the template — we point straight at
+        # the published host port. ttyd has no native auth, but in local
+        # mode the container is bound to 127.0.0.1 so the gate is the
+        # loopback boundary itself.
+        if host_port is not None:
+            return f"http://{host}:{host_port}/?token={token}"
         return url_template.format(
             provider_id=provider_id,
             scheme=scheme,

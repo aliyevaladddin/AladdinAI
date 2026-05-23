@@ -49,6 +49,19 @@ class Settings(BaseSettings):
     # with anything the provider container itself might set.
     terminal_session_cookie_name: str = "aladdin_term_sess"
 
+    # ── Local port-publish mode ──────────────────────────────────────
+    # Skip Traefik entirely and publish the container's internal_port on a
+    # host port — the iframe then loads http://<local_host>:<host_port>/
+    # directly. Designed for the "own machine" dev path so a user can run
+    # ttyd from the marketplace without setting up a reverse-proxy stack.
+    # We bind to 127.0.0.1 only — these are single-user dev sessions, not
+    # network-exposed services. Edge auth (forward-auth tokens) is skipped
+    # in this mode because nothing intercepts the connection; the user is
+    # already on their own host. Switch to Traefik mode for multi-user.
+    terminal_local_publish: bool = True
+    terminal_local_host: str = "localhost"
+    terminal_local_bind_host: str = "127.0.0.1"
+
     model_config = {"env_file": "../.env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 

@@ -167,6 +167,44 @@ function statusLabel(s: Status): string {
   return s;
 }
 
+/* ───────── error helpers ───────── */
+
+/**
+ * Pull the FastAPI `detail` out of an api.post() error message.
+ *
+ * `api.post` wraps non-2xx responses as:
+ *   `Failed to POST to <path> (Status: 503): {"detail":"<msg>"}`
+ *
+ * For the terminal start/stop flow `<msg>` is the operator-facing
+ * recommendation produced by docker_runner.diagnose_runtime() — that is
+ * what we want in the toast, not the JSON envelope. Falls back to the
+ * raw message if anything in the unwrap fails, so we never *lose*
+ * information by parsing.
+ */
+function extractDetail(e: unknown): string {
+  const raw = e instanceof Error ? e.message : String(e);
+  // Find the JSON body after the last "): " separator emitted by api.post.
+  const sepIndex = raw.lastIndexOf("): ");
+  const tail = sepIndex >= 0 ? raw.slice(sepIndex + 3) : raw;
+  const trimmed = tail.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        "detail" in parsed &&
+        typeof (parsed as { detail: unknown }).detail === "string"
+      ) {
+        return (parsed as { detail: string }).detail;
+      }
+    } catch {
+      // Body wasn't valid JSON — fall through and return the raw tail.
+    }
+  }
+  return trimmed || raw;
+}
+
 /* ───────── component ───────── */
 
 export function TerminalSettings() {
@@ -209,7 +247,7 @@ export function TerminalSettings() {
       await load();
     } catch (e) {
       toast.error("Install failed", {
-        description: e instanceof Error ? e.message : String(e),
+        description: extractDetail(e),
       });
     } finally {
       setBusyKey(`install:${entry.type}`, false);
@@ -227,8 +265,14 @@ export function TerminalSettings() {
       toast.success(label);
       await load();
     } catch (e) {
+      // FastAPI returns `{"detail": "..."}` on 4xx/5xx; api.post wraps that
+      // raw body inside a noisy "Failed to POST to … (Status: 503): {…}"
+      // string. Unwrap it so the toast shows the operator-actionable
+      // recommendation (e.g. "Backend is running inside a container
+      // without /var/run/docker.sock mounted. Rebuild your devcontainer…")
+      // instead of the JSON envelope.
       toast.error(`${label} failed`, {
-        description: e instanceof Error ? e.message : String(e),
+        description: extractDetail(e),
       });
     } finally {
       setBusyKey(`${action}:${id}`, false);
@@ -244,7 +288,7 @@ export function TerminalSettings() {
       await load();
     } catch (e) {
       toast.error("Delete failed", {
-        description: e instanceof Error ? e.message : String(e),
+        description: extractDetail(e),
       });
     } finally {
       setBusyKey(`delete:${p.id}`, false);

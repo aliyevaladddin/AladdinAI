@@ -94,6 +94,7 @@ def _project(provider: TerminalProvider) -> ProviderResponse:
         source=provider.source,
         image=provider.image,
         internal_port=provider.internal_port,
+        host_port=provider.host_port,
         requires_ssh_proxy=provider.requires_ssh_proxy,
         is_active=provider.is_active,
         status=provider.status,
@@ -204,7 +205,7 @@ async def start_provider(
 
     try:
         await docker_runner.pull_image(provider.image)
-        cid = await docker_runner.start_container(
+        cid, host_port = await docker_runner.start_container(
             provider_id=provider.id,
             user_id=user.id,
             provider_type=provider.type,
@@ -214,12 +215,34 @@ async def start_provider(
             labels=spec.labels,
             healthcheck=spec.healthcheck,
             internal_port=spec.internal_port,
+            # Owner contract — today every provider start comes from a
+            # human user; when /agents grows runtime access, it'll call
+            # the same function with owner_kind="agent".
+            owner_kind="user",
+            owner_id=str(user.id),
+            # Tie the container to a stable session-id (provider row id is
+            # fine — one container per row) + the cookie TTL we already
+            # configure on the token broker. The reaper uses these.
+            session_id=f"p{provider.id}",
+            session_ttl_seconds=settings.terminal_session_ttl_seconds,
         )
     except docker_runner.DockerUnavailable as exc:
         provider.status = "error"
         provider.last_error = str(exc)
         await db.commit()
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        # Translate the bare SDK error into an operator-actionable message
+        # whenever the runtime diagnostics has a concrete recommendation
+        # for *why* the daemon is unreachable (e.g. devcontainer without
+        # the docker socket mounted). The raw SDK error is appended so
+        # log scraping still works.
+        try:
+            diag = await docker_runner.diagnose_runtime()
+        except Exception:
+            diag = None
+        detail = str(exc)
+        if diag is not None and diag.recommendations:
+            detail = f"{diag.recommendations[0]} (underlying: {exc})"
+        raise HTTPException(status_code=503, detail=detail) from exc
     except docker_runner.DockerOperationError as exc:
         provider.status = "error"
         provider.last_error = str(exc)
@@ -227,6 +250,10 @@ async def start_provider(
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     provider.container_id = cid
+    # In local-publish mode docker hands us a random host port; persist it so
+    # `issue_session` can build a direct URL without re-inspecting the daemon.
+    # In Traefik mode `host_port` is None and we leave the column null.
+    provider.host_port = host_port
     provider.status = "running"
     provider.last_error = None
     provider.last_health_at = datetime.now(timezone.utc)
@@ -277,6 +304,27 @@ async def set_active_provider(
 # ── diagnostics ─────────────────────────────────────────────────────────
 
 
+@router.get("/providers/health", response_model=dict)
+async def providers_health(_: User = Depends(get_current_user)):
+    """Runtime-environment probe for the terminal subsystem.
+
+    Returns the structured `RuntimeDiagnostics` snapshot — docker SDK
+    presence, socket path/existence, daemon reachability + version,
+    whether this backend itself runs inside a container, whether spawned
+    terminals will be reachable from the host browser, plus a list of
+    human-readable recommendations. The frontend can call this before
+    offering a Start button so users see the actionable cause (e.g.
+    "rebuild your devcontainer with the docker socket mounted") instead
+    of a raw FileNotFoundError from the docker SDK.
+
+    Defined under `/providers/health` (not `/health`) so it routes
+    alongside the rest of the marketplace surface and stays behind the
+    same auth dependency.
+    """
+    diag = await docker_runner.diagnose_runtime()
+    return diag.to_dict()
+
+
 @router.get("/providers/{provider_id}/logs", response_model=dict)
 async def provider_logs(
     provider_id: int,
@@ -321,12 +369,17 @@ async def issue_session(
 
     adapter = get_adapter(provider.type)
     token, exp = issue_token(user_id=user.id, provider_id=provider.id)
+    # Local-publish mode wins when both a flag and a recorded host_port are
+    # present — falling back to the Traefik template otherwise so existing
+    # deployments keep working unchanged.
+    use_local = bool(settings.terminal_local_publish and provider.host_port)
     url = adapter.build_session_url(
         provider_id=provider.id,
         url_template=provider.url_template,
-        scheme=settings.terminal_public_scheme,
-        host=settings.terminal_public_host,
+        scheme="http" if use_local else settings.terminal_public_scheme,
+        host=settings.terminal_local_host if use_local else settings.terminal_public_host,
         token=token,
+        host_port=provider.host_port if use_local else None,
     )
     return SessionResponse(
         url=url,

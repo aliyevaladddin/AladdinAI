@@ -36,6 +36,7 @@ class ProviderResponse(BaseModel):
     source: str
     image: str
     internal_port: int
+    host_port: Optional[int] = None
     requires_ssh_proxy: bool
     is_active: bool
     status: str

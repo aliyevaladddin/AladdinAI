@@ -1,17 +1,23 @@
 {
     "name": "AladdinAI Dev Container",
-    "build": {
-        "dockerfile": "Dockerfile",
-        "context": "."
-    },
+    "image": "mcr.microsoft.com/devcontainers/python:3.13-slim",
     "runArgs": [
         "--platform=linux/amd64"
+    ],
+    "mounts": [
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
     ],
     "features": {
         "ghcr.io/devcontainers/features/node:1": {
             "version": "22"
+        },
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+            "version": "latest",
+            "moby": true,
+            "installDockerBuildx": true
         }
     },
+    "postCreateCommand": "pip install -r backend/requirements.txt && cd frontend && npm install",
     "customizations": {
         "vscode": {
             "settings": {

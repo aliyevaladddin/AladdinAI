@@ -1751,6 +1751,8 @@
       color-mix(in oklab, var(--bg-3) 94%, transparent) 100%);
   padding: 18px 20px;
   isolation: isolate;
+  min-height: 92px;
+  display: block;
 }
 .mkt-hero::before {
   content: '';
