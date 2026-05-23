@@ -37,6 +37,8 @@ pgdata/
 .aider.messages.jsonl
 .aider.prompts/
 .claude/
+claude-proxy-config.yaml
+session-ses_1ada.md
 # Project specific
 .idx/
 
