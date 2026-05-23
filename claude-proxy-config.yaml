@@ -1,0 +1,11 @@
+model_list:
+  - model_name: claude-3-5-sonnet-20241022
+    litellm_params:
+      model: openai/kr/claude-sonnet-4.5
+      api_base: "http://localhost:20128/v1"
+      api_key: "sk-590f6cb1834b826f-16fcfb-bb866940"
+  - model_name: claude-3-5-haiku-20241022
+    litellm_params:
+      model: openai/kr/claude-haiku-4.5
+      api_base: "http://localhost:20128/v1"
+      api_key: "sk-590f6cb1834b826f-16fcfb-bb866940"
