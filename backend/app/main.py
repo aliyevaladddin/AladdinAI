@@ -7,7 +7,7 @@ from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
     chat, crm_activities, crm_contacts, crm_deals, dashboard, mongodb,
     notifications, providers, router_config, search, ssh_exec,
-    terminal_ws, triggers as triggers_router, vms, webhooks,
+    terminal_providers, terminal_ws, triggers as triggers_router, vms, webhooks,
 )
 from app.services import triggers as triggers_service
 from app.services import telegram_poller

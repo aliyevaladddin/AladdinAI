@@ -62,8 +62,6 @@ def _client():
     that didn't install the dep yet (the requirements pin is new in this
     commit and existing deployments need `pip install -r requirements.txt`).
     """
-    if not settings.docker_remote_url:
-        raise DockerUnavailable("docker_remote_url is not configured")
     try:
         import docker
         from docker.tls import TLSConfig
@@ -72,15 +70,18 @@ def _client():
             "docker SDK not installed — run `pip install -r requirements.txt`",
         ) from exc
 
+    # If docker_remote_url is empty, fall back to local socket for dev
+    base_url = settings.docker_remote_url or "unix:///var/run/docker.sock"
+
     tls = None
-    if settings.docker_tls_cert_path and settings.docker_tls_key_path:
+    if settings.docker_remote_url and settings.docker_tls_cert_path and settings.docker_tls_key_path:
         tls = TLSConfig(
             client_cert=(settings.docker_tls_cert_path, settings.docker_tls_key_path),
             ca_cert=settings.docker_tls_ca_path or None,
             verify=bool(settings.docker_tls_ca_path) and settings.docker_tls_verify,
         )
     try:
-        return docker.DockerClient(base_url=settings.docker_remote_url, tls=tls, timeout=20)
+        return docker.DockerClient(base_url=base_url, tls=tls, timeout=20)
     except Exception as exc:  # docker.errors.DockerException et al.
         raise DockerUnavailable(f"cannot reach docker daemon: {exc}") from exc
 
