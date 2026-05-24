@@ -48,9 +48,8 @@ export type SessionStatus = "loading" | "ready" | "error";
 /** Render-state view of a session. No imperative resources. */
 export interface TerminalSession {
   id: string;
-  url: string | null;
-  providerType: string | null;
-  expiresAt: number | null;       // unix seconds
+  title: string;
+  vm: VM | null;
   status: SessionStatus;
   /** URL pointed at the terminal provider, or "about:blank" while loading / when no provider installed. */
   url: string;
@@ -71,9 +70,20 @@ export interface TerminalSessionResponse {
   provider_session_id?: string | null;
 }
 
+export interface TerminalSlot {
+  id: string;
+  url: string | null;
+  providerType: ProviderType | null;
+  expiresAt: string | null;
+  status: "idle" | "loading" | "ready" | "error";
+  error: string | null;
+}
+
 interface TerminalCtx {
   open: boolean;
   height: number;
+  sessions: TerminalSession[];
+  activeId: string | null;
   slot: TerminalSlot;
   setHeight: (h: number) => void;
   toggle: () => void;
@@ -109,6 +119,7 @@ const HEIGHT_KEY = "aladdin-terminal-height";
 
 let slotCounter = 0;
 const nextSlotId = () => `slot-${++slotCounter}-${Date.now()}`;
+const nextId = nextSlotId;
 
 const EMPTY_SLOT: TerminalSlot = {
   id: "empty",
@@ -318,10 +329,24 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const activeSession = sessions.find((s) => s.id === activeId);
+  const slot: TerminalSlot = activeSession
+    ? {
+        id: activeSession.id,
+        url: activeSession.url,
+        providerType: activeSession.providerType,
+        expiresAt: activeSession.expiresAt,
+        status: activeSession.status,
+        error: activeSession.errorMessage,
+      }
+    : EMPTY_SLOT;
+
   const value = useMemo<TerminalCtx>(
     () => ({
       open,
       height,
+      sessions,
+      activeId,
       slot,
       setHeight,
       toggle,
@@ -338,7 +363,7 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
       listVMs,
     }),
     [
-      open, height, sessions, activeId,
+      open, height, sessions, activeId, slot,
       setHeight, toggle, show, hide, setActive,
       openSession, newSSH, newLocal, closeSession, reconnect,
       markReady, markError, listVMs,

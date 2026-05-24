@@ -23,6 +23,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
   X,
@@ -31,7 +32,10 @@ import {
   Terminal as TerminalIcon,
   GripHorizontal,
   RefreshCw,
+  RotateCcw,
   Settings,
+  Shield,
+  Circle,
 } from "lucide-react";
 import {
   useTerminal,
@@ -156,6 +160,7 @@ function DrawerInner() {
     window.addEventListener("mouseup", onUp);
   }, [t]);
 
+  const active = t.sessions.find((s) => s.id === t.activeId);
   const title = t.slot.providerType ?? "Terminal";
 
   return (
@@ -211,20 +216,33 @@ function DrawerInner() {
             </button>
           ))}
 
+          <button
+            ref={plusBtnRef}
+            type="button"
+            className="term-iconbtn"
+            title="New terminal"
+            onClick={togglePicker}
+          >
+            <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
+          </button>
+        </div>
+
         <div className="term-drawer__actions">
-          {t.slot.status === "ready" && (
+          {active?.status === "ready" && (
             <button
               type="button"
               className="term-iconbtn"
               title="Reload session"
-              onClick={() => void t.refresh()}
+              onClick={() => void t.reconnect(active.id)}
             >
               <RotateCcw size={13} />
             </button>
-          </div>
-        </div>
+          )}
 
-        <div className="term-drawer__actions">
+          <Link href="/dashboard/settings/terminal" className="term-iconbtn" title="Terminal settings">
+            <Settings size={13} />
+          </Link>
+
           <button type="button" className="term-iconbtn" title="Collapse" onClick={t.hide}>
             <ChevronDown size={14} />
           </button>

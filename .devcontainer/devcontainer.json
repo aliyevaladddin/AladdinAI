@@ -10,6 +10,9 @@
     "features": {
         "ghcr.io/devcontainers/features/node:1": {
             "version": "22"
+        },
+        "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+            "moby": false
         }
     },
     "customizations": {

@@ -28,6 +28,9 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      # OrbStack/Docker Desktop expose the daemon socket here on the host.
+      # If your setup uses a different path, set DOCKER_SOCK_PATH in .env.
+      - ${DOCKER_SOCK_PATH:-/var/run/docker.sock}:/var/run/docker.sock
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
