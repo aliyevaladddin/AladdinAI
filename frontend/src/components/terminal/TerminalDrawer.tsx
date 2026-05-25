@@ -36,7 +36,10 @@ import {
   Settings,
   Shield,
   Circle,
+  Play,
+  Loader2,
 } from "lucide-react";
+import { quickSetupDefault } from "@/app/(dashboard)/dashboard/settings/terminal/api";
 import {
   useTerminal,
   type TerminalSession,
@@ -56,18 +59,18 @@ export function TerminalDrawer() {
 }
 
 /**
- * Drawer opened with no sessions yet — spawn one and let DrawerInner take over.
- * Module-level latch survives StrictMode's mount→cleanup→mount in dev so we
- * don't double-spawn or get stuck on the placeholder.
+ * Drawer opened with no sessions — show a small chooser card with Local
+ * shell + the list of configured VMs. The user explicitly picks; we never
+ * auto-spawn anymore (closing all tabs used to auto-respawn a local shell).
  */
-let __emptyDrawerSpawned = false;
 function EmptyDrawer() {
   const t = useTerminal();
+  const [vms, setVms] = useState<VM[]>([]);
+
   useEffect(() => {
-    if (__emptyDrawerSpawned) return;
-    __emptyDrawerSpawned = true;
-    void t.newLocal();
-    return () => { __emptyDrawerSpawned = false; };
+    let active = true;
+    t.listVMs().then((list) => { if (active) setVms(list); });
+    return () => { active = false; };
   }, [t]);
 
   return (
@@ -80,15 +83,51 @@ function EmptyDrawer() {
       <div className="term-drawer__head">
         <div className="term-drawer__title">
           <TerminalIcon size={13} />
-          <span>Starting terminal…</span>
+          <span>Terminal</span>
         </div>
         <div className="term-drawer__actions">
+          <Link href="/dashboard/settings/terminal" className="term-iconbtn" title="Terminal settings">
+            <Settings size={13} />
+          </Link>
           <button type="button" className="term-iconbtn" title="Collapse" onClick={t.hide}>
             <ChevronDown size={14} />
           </button>
         </div>
       </div>
-      <div className="term-drawer__body" />
+      <div className="term-drawer__body">
+        <div className="term-empty">
+          <div className="term-chooser" role="menu">
+            <div className="term-chooser__title">New terminal</div>
+            <button
+              type="button"
+              className="term-chooser__row"
+              onClick={() => void t.newLocal()}
+            >
+              <TerminalIcon size={13} />
+              <span>Local shell</span>
+              <span className="term-chooser__hint">host</span>
+            </button>
+            {vms.length > 0 && <div className="term-chooser__sep">SSH sessions</div>}
+            {vms.map((vm) => (
+              <button
+                key={vm.id}
+                type="button"
+                className="term-chooser__row"
+                onClick={() => void t.newSSH(vm)}
+              >
+                <Shield size={13} />
+                <span>{vm.name}</span>
+                <span className="term-chooser__hint">{vm.username}@{vm.host}</span>
+              </button>
+            ))}
+            {vms.length === 0 && (
+              <div className="term-chooser__empty">
+                No VMs configured. <Link href="/dashboard/settings/cloud">Add one</Link>.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -342,18 +381,12 @@ function IframePane({ session, visible }: { session: TerminalSession; visible: b
     t.markError(session.id, "Provider iframe failed to load");
   }, [session.id, t]);
 
-  // No provider installed yet → empty-state placeholder pointing at settings.
+  // No provider installed yet → big Play button that installs+starts+activates
+  // ttyd in one go, then refreshes the session so the iframe takes over.
   if (session.providerType === "none" && session.status === "ready") {
     return (
       <div className={`term-pane ${visible ? "is-visible" : "is-hidden"}`} style={style}>
-        <div className="term-empty">
-          <Settings size={18} />
-          <div className="term-empty__title">No terminal provider configured</div>
-          <div className="term-empty__hint">
-            Install one in <strong>Settings → Terminal Providers</strong> (ttyd, Wetty or Guacamole),
-            then reopen this drawer.
-          </div>
-        </div>
+        <QuickSetupPanel sessionId={session.id} />
       </div>
     );
   }
@@ -395,6 +428,117 @@ function IframePane({ session, visible }: { session: TerminalSession; visible: b
         onLoad={onLoad}
         onError={onError}
       />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Quick Setup — one-click install + start + activate (default: ttyd) */
+/* ------------------------------------------------------------------ */
+
+type QuickStep = "idle" | "installing" | "starting" | "activating" | "done" | "error";
+
+function QuickSetupPanel({ sessionId }: { sessionId: string }) {
+  const t = useTerminal();
+  const [step, setStep] = useState<QuickStep>("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  const stepLabel: Record<QuickStep, string> = {
+    idle: "Start terminal",
+    installing: "Installing ttyd…",
+    starting: "Starting container…",
+    activating: "Activating…",
+    done: "Ready",
+    error: "Try again",
+  };
+
+  const busy = step === "installing" || step === "starting" || step === "activating";
+
+  const run = async () => {
+    setError(null);
+    try {
+      // The api helper does install → start → activate, skipping steps that
+      // are already satisfied. We can't see intermediate progress from one
+      // call, so we lean on the label cycling client-side for feedback.
+      setStep("installing");
+      await quickSetupDefault("ttyd");
+      setStep("done");
+      // Refresh the iframe URL — backend will now return a real provider URL
+      // instead of "about:blank" / "no active provider".
+      await t.reconnect(sessionId);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg);
+      setStep("error");
+    }
+  };
+
+  return (
+    <div className="term-empty">
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 14,
+          textAlign: "center",
+          maxWidth: 360,
+        }}
+      >
+        <button
+          type="button"
+          onClick={run}
+          disabled={busy}
+          aria-label={busy ? "Provisioning terminal" : "Start terminal"}
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            border: "1px solid var(--violet-line, var(--line-strong))",
+            background:
+              "linear-gradient(180deg, color-mix(in oklab, var(--violet) 18%, transparent), color-mix(in oklab, var(--violet) 6%, transparent))",
+            color: "var(--violet)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: busy ? "default" : "pointer",
+            transition: "transform 120ms ease, box-shadow 160ms ease",
+            boxShadow: "0 4px 18px -8px color-mix(in oklab, var(--violet) 60%, transparent)",
+          }}
+          onMouseEnter={(e) => {
+            if (!busy) e.currentTarget.style.transform = "scale(1.04)";
+          }}
+          onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+        >
+          {busy ? <Loader2 size={26} className="animate-spin" /> : <Play size={26} fill="currentColor" />}
+        </button>
+
+        <div>
+          <div className="term-empty__title" style={{ marginBottom: 4 }}>
+            {step === "error" ? "Couldn’t start the terminal" : stepLabel[step]}
+          </div>
+          <div className="term-empty__hint">
+            {step === "idle" && "One click installs ttyd, starts it, and wires it to the drawer."}
+            {busy && "This takes a few seconds the first time — the image is being pulled."}
+            {step === "done" && "Connecting…"}
+            {step === "error" && (error ?? "Something went wrong.")}
+          </div>
+        </div>
+
+        {step === "error" && (
+          <Link
+            href="/dashboard/settings/terminal"
+            style={{
+              fontSize: 11.5,
+              color: "var(--fg-3)",
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
+            Open Terminal Settings
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     # production; defaults are unusable for cross-process verification
     # but won't crash a dev session.
     terminal_token_secret: str = "change-me-terminal-token-secret"
-    terminal_token_ttl_seconds: int = 300   # 5 min — one-time entry token
+    terminal_token_ttl_seconds: int = 3600  # 1 hour — multi-use token, lives as long as the session
     # Longer-lived cookie issued by forward-auth after the entry token is
     # consumed; covers all sub-resource fetches the iframe makes (CSS, JS,
     # WS upgrade). Keep this comfortably above a typical idle session length
@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     # Cookie name set on `terminal_public_host`. Picked to avoid colliding
     # with anything the provider container itself might set.
     terminal_session_cookie_name: str = "aladdin_term_sess"
+
+    # Directory where the backend writes per-provider Traefik routing configs.
+    # Traefik mounts this directory read-only and hot-reloads on change.
+    # In docker-compose this is the shared ./traefik-dynamic volume.
+    traefik_dynamic_config_dir: str = "/traefik-dynamic"
 
     model_config = {"env_file": "../.env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

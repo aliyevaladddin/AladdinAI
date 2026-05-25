@@ -4,9 +4,14 @@
         "dockerfile": "Dockerfile",
         "context": "."
     },
-    "runArgs": [
-        "--platform=linux/amd64"
+    "mounts": [
+        {
+            "source": "${localEnv:HOME}/.orbstack/run/docker.sock",
+            "target": "/var/run/docker.sock",
+            "type": "bind"
+        }
     ],
+    "postCreateCommand": "sudo chmod 666 /var/run/docker.sock 2>/dev/null || true",
     "features": {
         "ghcr.io/devcontainers/features/node:1": {
             "version": "22"
@@ -17,9 +22,7 @@
     },
     "customizations": {
         "vscode": {
-            "settings": {
-                "python.defaultInterpreterPath": "/usr/local/bin/python"
-            },
+            "settings": {},
             "extensions": [
                 "ms-python.python",
                 "ms-python.vscode-pylance"

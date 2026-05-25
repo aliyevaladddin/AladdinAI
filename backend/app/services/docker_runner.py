@@ -23,9 +23,12 @@ docker creds yet.
 from __future__ import annotations
 
 import asyncio
+import os
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+
+import yaml
 
 from app.config import settings
 
@@ -128,8 +131,13 @@ def _normalize_healthcheck(hc: Optional[Dict[str, Any]]) -> Optional[Dict[str, A
 def _traefik_labels(*, provider_id: int, internal_port: int) -> Dict[str, str]:
     router = f"aladdin-term-{provider_id}"
     svc = f"aladdin-term-{provider_id}-svc"
+    auth_mw = f"{router}-auth"
+    strip_mw = f"{router}-strip"
     # Strip the trailing slash so the rule matches both `/p/42` and `/p/42/…`.
     rule = f"Host(`{settings.terminal_public_host}`) && PathPrefix(`/p/{provider_id}`)"
+    # Backend URL Traefik calls for forward-auth. The backend service is
+    # reachable as `backend:8000` on the shared docker network.
+    auth_address = f"http://backend:8000/api/terminal/auth"
     labels = {
         "traefik.enable": "true",
         "traefik.docker.network": settings.terminal_traefik_network,
@@ -138,10 +146,16 @@ def _traefik_labels(*, provider_id: int, internal_port: int) -> Dict[str, str]:
         f"traefik.http.routers.{router}.service": svc,
         f"traefik.http.routers.{router}.priority": str(settings.terminal_traefik_router_priority),
         f"traefik.http.services.{svc}.loadbalancer.server.port": str(internal_port),
+        # forward-auth middleware — Traefik calls /api/terminal/auth before
+        # every request. authResponseHeaders is critical so Set-Cookie flows
+        # back to the iframe after the initial token consumption.
+        f"traefik.http.middlewares.{auth_mw}.forwardauth.address": auth_address,
+        f"traefik.http.middlewares.{auth_mw}.forwardauth.authResponseHeaders":
+            "Set-Cookie,X-Aladdin-User,X-Aladdin-Provider",
         # Path stripping so the container sees a clean `/` for its own UI.
-        # The named middleware is per-router to avoid collisions.
-        f"traefik.http.middlewares.{router}-strip.stripprefix.prefixes": f"/p/{provider_id}",
-        f"traefik.http.routers.{router}.middlewares": f"{router}-strip",
+        f"traefik.http.middlewares.{strip_mw}.stripprefix.prefixes": f"/p/{provider_id}",
+        # Order matters: auth first (gate), then strip (rewrite).
+        f"traefik.http.routers.{router}.middlewares": f"{auth_mw},{strip_mw}",
     }
     if settings.terminal_traefik_entrypoint == "websecure":
         labels[f"traefik.http.routers.{router}.tls"] = "true"
@@ -316,3 +330,106 @@ async def list_containers_by_user(user_id: int) -> List[Dict[str, Any]]:
             })
         return out
     return await asyncio.to_thread(_do)
+
+
+# ── Traefik file-provider config ────────────────────────────────────────
+# Traefik no longer uses the Docker API to discover containers (OrbStack
+# incompatibility with API v1.24). Instead, the backend writes a YAML
+# routing config for each terminal provider into a shared directory that
+# Traefik watches with --providers.file.watch=true.
+
+
+def _traefik_config_path(provider_id: int) -> str:
+    return os.path.join(settings.traefik_dynamic_config_dir, f"terminal-p{provider_id}.yaml")
+
+
+def _write_traefik_config_sync(
+    *, provider_id: int, user_id: int, internal_port: int
+) -> None:
+    """Write a Traefik dynamic YAML routing config for this provider."""
+    container_name = f"aladdin-term-u{user_id}-p{provider_id}"
+    router = f"aladdin-term-{provider_id}"
+    svc = f"aladdin-term-{provider_id}-svc"
+    auth_mw = f"{router}-auth"
+    strip_mw = f"{router}-strip"
+    rule = (
+        f"Host(`{settings.terminal_public_host}`) "
+        f"&& PathPrefix(`/p/{provider_id}`)"
+    )
+    auth_address = "http://backend:8000/api/terminal/auth"
+
+    config: Dict[str, Any] = {
+        "http": {
+            "routers": {
+                router: {
+                    "rule": rule,
+                    "service": svc,
+                    "middlewares": [auth_mw, strip_mw],
+                    "priority": settings.terminal_traefik_router_priority,
+                    "entryPoints": [settings.terminal_traefik_entrypoint],
+                }
+            },
+            "middlewares": {
+                auth_mw: {
+                    "forwardAuth": {
+                        "address": auth_address,
+                        "authResponseHeaders": [
+                            "X-Aladdin-User",
+                            "X-Aladdin-Provider",
+                        ],
+                        # addAuthCookiesToResponse is the correct Traefik v3
+                        # mechanism to forward Set-Cookie from the auth service
+                        # to the browser. authResponseHeaders only forwards
+                        # headers to the upstream request, not the browser.
+                        "addAuthCookiesToResponse": [
+                            settings.terminal_session_cookie_name,
+                        ],
+                    }
+                },
+                strip_mw: {
+                    "stripPrefix": {
+                        "prefixes": [f"/p/{provider_id}"]
+                    }
+                },
+            },
+            "services": {
+                svc: {
+                    "loadBalancer": {
+                        "servers": [
+                            {"url": f"http://{container_name}:{internal_port}"}
+                        ]
+                    }
+                }
+            },
+        }
+    }
+
+    path = _traefik_config_path(provider_id)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        yaml.safe_dump(config, fh, default_flow_style=False, allow_unicode=True)
+
+
+def _remove_traefik_config_sync(provider_id: int) -> None:
+    """Remove the Traefik routing config file for this provider."""
+    try:
+        os.remove(_traefik_config_path(provider_id))
+    except FileNotFoundError:
+        pass
+
+
+async def write_traefik_config(
+    *, provider_id: int, user_id: int, internal_port: int
+) -> None:
+    """Async wrapper — write Traefik file-provider config for a terminal provider."""
+    await asyncio.to_thread(
+        _write_traefik_config_sync,
+        provider_id=provider_id,
+        user_id=user_id,
+        internal_port=internal_port,
+    )
+
+
+async def remove_traefik_config(provider_id: int) -> None:
+    """Async wrapper — remove Traefik file-provider config for a terminal provider."""
+    await asyncio.to_thread(_remove_traefik_config_sync, provider_id)

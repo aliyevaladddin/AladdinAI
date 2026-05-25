@@ -1,0 +1,4 @@
+# This directory is mounted into both backend and Traefik containers.
+# backend writes per-provider routing configs here (terminal-p{id}.yaml).
+# Traefik reads them via --providers.file.directory and hot-reloads on change.
+# The actual yaml files are gitignored (generated at runtime).

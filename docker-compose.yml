@@ -23,15 +23,46 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      # Dev override: Traefik in compose listens on plain HTTP at the `web`
+      # entrypoint, so the URLs we hand to the iframe must match. In prod
+      # these are flipped to https/websecure via .env.
+      TERMINAL_PUBLIC_HOST: ${TERMINAL_PUBLIC_HOST:-terminal.localhost}
+      TERMINAL_PUBLIC_SCHEME: ${TERMINAL_PUBLIC_SCHEME:-http}
+      TERMINAL_TRAEFIK_ENTRYPOINT: ${TERMINAL_TRAEFIK_ENTRYPOINT:-web}
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - ./backend:/app
-      # OrbStack/Docker Desktop expose the daemon socket here on the host.
-      # If your setup uses a different path, set DOCKER_SOCK_PATH in .env.
       - ${DOCKER_SOCK_PATH:-/var/run/docker.sock}:/var/run/docker.sock
+      # Shared with Traefik: backend writes routing configs here, Traefik reads them.
+      - ./backend/traefik-dynamic:/traefik-dynamic
+    networks:
+      - default
+      - aladdin_terminal
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  traefik:
+    # File provider only — no Docker API needed, no OrbStack compatibility issues.
+    image: traefik:v3.7.1
+    command:
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --log.level=INFO
+    ports:
+      - "80:80"
+      - "8081:8080"
+    volumes:
+      # Read-only: backend writes here, Traefik hot-reloads routes.
+      - ./backend/traefik-dynamic:/etc/traefik/dynamic:ro
+    networks:
+      - aladdin_terminal
+    depends_on:
+      - backend
 
   frontend:
     build: ./frontend
@@ -48,3 +79,10 @@ services:
 
 volumes:
   pgdata:
+
+networks:
+  default:
+    name: aladdinai_default
+  aladdin_terminal:
+    name: aladdin_terminal
+    driver: bridge

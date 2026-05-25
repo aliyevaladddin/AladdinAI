@@ -7,12 +7,18 @@ __pycache__/
 venv/
 env/
 .python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Node
 node_modules/
 .next/
 dist/
 build/
+*.tsbuildinfo
 
 # Database
 *.db
@@ -51,8 +57,13 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+._*
 
 # Temporary / Backups
 *.tmp
 *.bak
 *.swp
+
+# Traefik dynamic configs (generated at runtime)
+backend/traefik-dynamic/*.yaml
+backend/traefik-dynamic/*.yml
