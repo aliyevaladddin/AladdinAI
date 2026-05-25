@@ -31,16 +31,20 @@ command:
   - .
   - --port
   - "3000"
+  - --base
+  - /p/{provider_id}/
 
 env: {}
 
 healthcheck:
-  test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/"]
+  test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:3000/p/{provider_id}/"]
   interval: 30s
   timeout: 5s
   retries: 3
   start_period: 8s
 
 requires_ssh_proxy: true
+
+strip_prefix: false
 
 url_template: "{scheme}://{host}/p/{provider_id}/?token={token}"

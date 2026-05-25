@@ -27,6 +27,7 @@ class ProviderInstall(BaseModel):
     type: str = Field(..., description="Manifest type, e.g. 'ttyd'")
     name: Optional[str] = Field(None, description="Display name; defaults to manifest name")
     config: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    vm_id: Optional[int] = Field(None, description="VM to connect to (for SSH-based providers like wetty)")
 
 
 class ProviderResponse(BaseModel):

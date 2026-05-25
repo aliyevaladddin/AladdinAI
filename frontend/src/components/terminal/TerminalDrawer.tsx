@@ -356,7 +356,7 @@ function SessionDot({ status, vm }: { status: SessionStatus; vm: VM | null }) {
  * We deliberately omit allow-top-navigation, allow-popups, allow-modals, etc.
  * `referrerpolicy="no-referrer"` keeps the dashboard URL out of provider logs.
  */
-const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-forms allow-clipboard-read allow-clipboard-write";
+const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-forms";
 const IFRAME_ALLOW = "clipboard-read; clipboard-write";
 
 function IframePane({ session, visible }: { session: TerminalSession; visible: boolean }) {
