@@ -27,9 +27,11 @@ from fastapi import Request, Response
 from urllib.parse import parse_qs, urlsplit
 
 from app.config import settings
+from app.crypto import decrypt
 from app.database import get_db
 from app.models.terminal_provider import TerminalProvider
 from app.models.user import User
+from app.models.vm import VMConnection
 from app.schemas.terminal import (
     MarketplaceEntry,
     ProviderInstall,
@@ -145,13 +147,18 @@ async def install_provider(
 ):
     m = _manifest_entry(body.type)
 
+    # Merge vm_id into config if provided
+    config_dict = body.config or {}
+    if body.vm_id is not None:
+        config_dict["vm_id"] = body.vm_id
+
     provider = TerminalProvider(
         user_id=user.id,
         name=body.name or m.get("name") or body.type,
         type=body.type,
         source="builtin",
         image=m["image"],
-        config=json.dumps(body.config or {}),
+        config=json.dumps(config_dict),
         internal_port=int(m.get("internal_port") or 7681),
         requires_ssh_proxy=bool(m.get("requires_ssh_proxy")),
         url_template=str(m.get("url_template")
@@ -196,6 +203,31 @@ async def start_provider(
     adapter = get_adapter(provider.type)
     config_dict = json.loads(provider.config or "{}")
 
+    # If this provider requires SSH and has a vm_id in config, fetch VM credentials
+    # and inject them into the config so the adapter can use them.
+    if provider.requires_ssh_proxy and config_dict.get("vm_id"):
+        vm_id = config_dict["vm_id"]
+        result = await db.execute(
+            select(VMConnection).where(
+                VMConnection.id == vm_id,
+                VMConnection.user_id == user.id,
+            )
+        )
+        vm = result.scalar_one_or_none()
+        if vm:
+            # Decrypt credentials and add to config for adapter
+            config_dict["ssh_host"] = vm.host
+            config_dict["ssh_port"] = vm.port
+            config_dict["ssh_user"] = vm.username
+            if vm.password_encrypted:
+                config_dict["ssh_password"] = decrypt(vm.password_encrypted)
+            # SSH key handling would go here if needed
+        else:
+            provider.status = "error"
+            provider.last_error = f"VM {vm_id} not found"
+            await db.commit()
+            raise HTTPException(status_code=404, detail=f"VM {vm_id} not found")
+
     spec = adapter.build_container_spec(
         provider_id=provider.id,
         user_id=user.id,
@@ -235,10 +267,12 @@ async def start_provider(
     await db.commit()
     await db.refresh(provider)
     # Write Traefik file-provider routing config so the container is reachable.
+    strip_prefix = manifest.get("strip_prefix", True)  # Default to True for backwards compat
     await docker_runner.write_traefik_config(
         provider_id=provider.id,
         user_id=user.id,
         internal_port=spec.internal_port,
+        strip_prefix=strip_prefix,
     )
     return _project(provider)
 
@@ -316,17 +350,51 @@ async def issue_session(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Drawer entry point: hand back a URL the iframe can navigate to."""
+    """Drawer entry point: hand back a URL the iframe can navigate to.
+
+    Provider selection logic:
+      - If vm_id is provided: find a running SSH-capable provider (wetty) with
+        that vm_id in its config. If multiple match, prefer is_active=True.
+      - If vm_id is None: find a running local-shell provider (ttyd). If
+        multiple exist, prefer is_active=True.
+    """
     result = await db.execute(
         select(TerminalProvider)
         .where(TerminalProvider.user_id == user.id)
-        .where(TerminalProvider.is_active.is_(True)),
+        .where(TerminalProvider.status == "running"),
     )
-    provider = result.scalar_one_or_none()
-    if provider is None:
-        # No provider installed — frontend renders the empty-state pane.
-        raise HTTPException(status_code=503, detail="no active terminal provider")
-    if provider.status != "running" or not provider.container_id:
+    candidates = result.scalars().all()
+
+    if not candidates:
+        raise HTTPException(status_code=503, detail="no running terminal provider")
+
+    provider: TerminalProvider | None = None
+
+    if body.vm_id is not None:
+        # SSH session — find a provider with requires_ssh_proxy=True and matching vm_id in config
+        ssh_providers = [
+            p for p in candidates
+            if p.requires_ssh_proxy and json.loads(p.config or "{}").get("vm_id") == body.vm_id
+        ]
+        if not ssh_providers:
+            raise HTTPException(
+                status_code=404,
+                detail=f"no SSH provider configured for VM {body.vm_id}",
+            )
+        # Prefer active, fall back to first match
+        provider = next((p for p in ssh_providers if p.is_active), ssh_providers[0])
+    else:
+        # Local shell — find a provider with requires_ssh_proxy=False
+        local_providers = [p for p in candidates if not p.requires_ssh_proxy]
+        if not local_providers:
+            raise HTTPException(
+                status_code=503,
+                detail="no local shell provider installed (install ttyd)",
+            )
+        # Prefer active, fall back to first match
+        provider = next((p for p in local_providers if p.is_active), local_providers[0])
+
+    if not provider.container_id:
         raise HTTPException(status_code=409, detail="provider is not running")
 
     adapter = get_adapter(provider.type)
@@ -434,6 +502,7 @@ async def forward_auth(request: Request, response: Response):
         user_id=claims.user_id, provider_id=claims.provider_id,
     )
     secure = settings.terminal_public_scheme == "https"
+    cookie_domain = settings.terminal_public_host.split(":")[0]
     response.set_cookie(
         key=settings.terminal_session_cookie_name,
         value=cookie_val,
@@ -441,7 +510,7 @@ async def forward_auth(request: Request, response: Response):
         httponly=True,
         secure=secure,
         samesite="lax",
-        domain=settings.terminal_public_host,
+        domain=cookie_domain,
         path="/",
     )
     response.headers["X-Aladdin-User"] = str(claims.user_id)

@@ -41,14 +41,15 @@ class GenericHttpAdapter(TerminalAdapter):
         # Manifest defaults; per-row `config` (JSON in the DB) can override
         # `command` and `env`. Lists in config replace, dicts merge — same
         # rule across adapters so the UI can render a uniform form.
+        # Interpolate {provider_id} in command arguments
         command = list(config.get("command") or manifest.get("command") or [])
+        command = [c.replace("{provider_id}", str(provider_id)) for c in command]
 
         env_merged: Dict[str, str] = {}
         env_merged.update(manifest.get("env") or {})
         env_merged.update(config.get("env") or {})
-        # Coerce values to strings — docker SDK rejects ints/bools silently
-        # on some platforms.
-        env_merged = {k: ("" if v is None else str(v)) for k, v in env_merged.items()}
+        # Interpolate {provider_id} in env values and coerce to strings
+        env_merged = {k: str(v).replace("{provider_id}", str(provider_id)) for k, v in env_merged.items()}
 
         internal_port = int(manifest.get("internal_port") or 7681)
 

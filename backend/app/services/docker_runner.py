@@ -110,10 +110,12 @@ def _duration_to_ns(value: Any) -> int:
     return n * _DUR_MUL[unit]
 
 
-def _normalize_healthcheck(hc: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def _normalize_healthcheck(hc: Optional[Dict[str, Any]], provider_id: int) -> Optional[Dict[str, Any]]:
     if not hc:
         return None
-    out: Dict[str, Any] = {"test": list(hc["test"])}
+    # Interpolate {provider_id} in healthcheck test command
+    test = [str(item).replace("{provider_id}", str(provider_id)) for item in hc["test"]]
+    out: Dict[str, Any] = {"test": test}
     for k in ("interval", "timeout", "start_period"):
         if k in hc and hc[k] is not None:
             out[k] = _duration_to_ns(hc[k])
@@ -225,6 +227,14 @@ async def start_container(
                 # Already gone or daemon racing; either is fine.
                 pass
 
+        # Also reap by explicit name to prevent Docker name conflict errors (e.g. if labels differ)
+        container_name = f"aladdin-term-u{user_id}-p{provider_id}"
+        try:
+            stale = client.containers.get(container_name)
+            stale.remove(force=True)
+        except Exception:
+            pass
+
         try:
             container = client.containers.run(
                 image=image,
@@ -235,7 +245,7 @@ async def start_container(
                 detach=True,
                 restart_policy={"Name": "unless-stopped"},
                 # No port publish — Traefik handles ingress.
-                healthcheck=_normalize_healthcheck(healthcheck),
+                healthcheck=_normalize_healthcheck(healthcheck, provider_id),
                 name=f"aladdin-term-u{user_id}-p{provider_id}",
             )
         except Exception as exc:
@@ -344,7 +354,7 @@ def _traefik_config_path(provider_id: int) -> str:
 
 
 def _write_traefik_config_sync(
-    *, provider_id: int, user_id: int, internal_port: int
+    *, provider_id: int, user_id: int, internal_port: int, strip_prefix: bool = True
 ) -> None:
     """Write a Traefik dynamic YAML routing config for this provider."""
     container_name = f"aladdin-term-u{user_id}-p{provider_id}"
@@ -352,11 +362,25 @@ def _write_traefik_config_sync(
     svc = f"aladdin-term-{provider_id}-svc"
     auth_mw = f"{router}-auth"
     strip_mw = f"{router}-strip"
-    rule = (
-        f"Host(`{settings.terminal_public_host}`) "
-        f"&& PathPrefix(`/p/{provider_id}`)"
-    )
+    # Strip port if present in public host for Traefik's Host() matcher
+    host_only = settings.terminal_public_host.split(":")[0]
+    if host_only in ("localhost", "127.0.0.1"):
+        rule = (
+            f"(Host(`localhost`) || Host(`127.0.0.1`)) "
+            f"&& PathPrefix(`/p/{provider_id}`)"
+        )
+    else:
+        rule = (
+            f"Host(`{host_only}`) "
+            f"&& PathPrefix(`/p/{provider_id}`)"
+        )
     auth_address = "http://backend:8000/api/terminal/auth"
+    headers_mw = f"{router}-headers"
+
+    # Build middlewares list — auth is always first, headers to allow iframe, strip is optional
+    middlewares = [auth_mw, headers_mw]
+    if strip_prefix:
+        middlewares.append(strip_mw)
 
     config: Dict[str, Any] = {
         "http": {
@@ -364,7 +388,7 @@ def _write_traefik_config_sync(
                 router: {
                     "rule": rule,
                     "service": svc,
-                    "middlewares": [auth_mw, strip_mw],
+                    "middlewares": middlewares,
                     "priority": settings.terminal_traefik_router_priority,
                     "entryPoints": [settings.terminal_traefik_entrypoint],
                 }
@@ -386,9 +410,11 @@ def _write_traefik_config_sync(
                         ],
                     }
                 },
-                strip_mw: {
-                    "stripPrefix": {
-                        "prefixes": [f"/p/{provider_id}"]
+                headers_mw: {
+                    "headers": {
+                        "customResponseHeaders": {
+                            "X-Frame-Options": "",
+                        }
                     }
                 },
             },
@@ -403,6 +429,14 @@ def _write_traefik_config_sync(
             },
         }
     }
+
+    # Only add stripPrefix middleware definition if needed
+    if strip_prefix:
+        config["http"]["middlewares"][strip_mw] = {
+            "stripPrefix": {
+                "prefixes": [f"/p/{provider_id}"]
+            }
+        }
 
     path = _traefik_config_path(provider_id)
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -419,7 +453,7 @@ def _remove_traefik_config_sync(provider_id: int) -> None:
 
 
 async def write_traefik_config(
-    *, provider_id: int, user_id: int, internal_port: int
+    *, provider_id: int, user_id: int, internal_port: int, strip_prefix: bool = True
 ) -> None:
     """Async wrapper — write Traefik file-provider config for a terminal provider."""
     await asyncio.to_thread(
@@ -427,6 +461,7 @@ async def write_traefik_config(
         provider_id=provider_id,
         user_id=user_id,
         internal_port=internal_port,
+        strip_prefix=strip_prefix,
     )
 
 
