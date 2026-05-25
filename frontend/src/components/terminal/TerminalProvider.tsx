@@ -30,6 +30,7 @@ import {
   type ReactNode,
 } from "react";
 import { api, API_URL } from "@/lib/api";
+import { quickSetupDefault } from "@/app/(dashboard)/dashboard/settings/terminal/api";
 
 /** Kept for VmsSettings compatibility — fields no longer used at the iframe layer. */
 export interface VM {
@@ -237,7 +238,17 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
     setOpen(true);
 
     try {
-      const resp = await bootstrapSession(vm);
+      let resp: TerminalSessionResponse;
+      try {
+        resp = await bootstrapSession(vm);
+      } catch (e) {
+        if (e instanceof Error && /\b409\b/.test(e.message)) {
+          await quickSetupDefault("ttyd");
+          resp = await bootstrapSession(vm);
+        } else {
+          throw e;
+        }
+      }
       patchSession(id, {
         url: resp.url,
         expiresAt: resp.expires_at,
@@ -280,7 +291,20 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
     if (!target) return;
     patchSession(id, { status: "loading", url: "about:blank", errorMessage: null });
     try {
-      const resp = await bootstrapSession(target.vm);
+      let resp: TerminalSessionResponse;
+      try {
+        resp = await bootstrapSession(target.vm);
+      } catch (e) {
+        // 409 = provider exists+active but its container died. Re-run the
+        // quick-setup chain (install → start → activate, skipping satisfied
+        // steps) to bring the container back, then retry the bootstrap.
+        if (e instanceof Error && /\b409\b/.test(e.message)) {
+          await quickSetupDefault("ttyd");
+          resp = await bootstrapSession(target.vm);
+        } else {
+          throw e;
+        }
+      }
       patchSession(id, {
         url: resp.url,
         expiresAt: resp.expires_at,

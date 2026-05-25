@@ -16,7 +16,15 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import {
+  listProviders,
+  installPreset,
+  installCustom as installCustomApi,
+  startProvider,
+  stopProvider,
+  activateProvider,
+  uninstallProvider,
+} from "./api";
 import { MARKETPLACE, getMarketplaceProvider, type MarketplaceProvider } from "./marketplace";
 import { ProviderIcon } from "./ProviderIcon";
 import { InstallStepper } from "./InstallStepper";
@@ -59,8 +67,8 @@ export default function TerminalProvidersPage() {
 
   const load = async () => {
     try {
-      const res = await api.get<InstalledProvider[]>("/terminal-providers");
-      setInstalled(Array.isArray(res) ? res : []);
+      const res = await listProviders();
+      setInstalled(res);
       setError(null);
     } catch (e: any) {
       // 404 on first run is acceptable — backend may not have wired the route yet.
@@ -102,7 +110,7 @@ export default function TerminalProvidersPage() {
     ]);
     setTab("installed");
     try {
-      await api.post("/terminal-providers/install", { preset: mp.id });
+      await installPreset(mp.id, mp.name);
       toast.success(`${mp.name} install queued`);
       load();
     } catch (e: any) {
@@ -113,7 +121,7 @@ export default function TerminalProvidersPage() {
 
   const installCustom = async (draft: CustomProviderDraft) => {
     try {
-      await api.post("/terminal-providers/install", { preset: "custom", custom: draft });
+      await installCustomApi(draft);
       toast.success(`${draft.name} install queued`);
       setTab("installed");
       load();
@@ -123,9 +131,12 @@ export default function TerminalProvidersPage() {
   };
 
   const toggleRunning = async (p: InstalledProvider) => {
-    const next = p.status === "running" ? "stopped" : "running";
     try {
-      await api.post(`/terminal-providers/${p.id}/${next === "running" ? "start" : "stop"}`);
+      if (p.status === "running") {
+        await stopProvider(p.id);
+      } else {
+        await startProvider(p.id);
+      }
       load();
     } catch (e: any) {
       toast.error(e?.message || "Action failed");
@@ -134,7 +145,7 @@ export default function TerminalProvidersPage() {
 
   const setActive = async (p: InstalledProvider) => {
     try {
-      await api.post(`/terminal-providers/${p.id}/activate`);
+      await activateProvider(p.id);
       // Optimistic — flip locally then reload.
       setInstalled((list) => list.map((x) => ({ ...x, active: x.id === p.id })));
       load();
@@ -146,7 +157,7 @@ export default function TerminalProvidersPage() {
   const uninstall = async (p: InstalledProvider) => {
     if (!confirm(`Uninstall ${p.name}? Running sessions will be terminated.`)) return;
     try {
-      await api.delete(`/terminal-providers/${p.id}`);
+      await uninstallProvider(p.id);
       toast.success(`${p.name} uninstalled`);
       load();
     } catch (e: any) {

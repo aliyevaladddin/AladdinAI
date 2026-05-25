@@ -42,9 +42,9 @@ from app.services import docker_runner
 from app.services.terminal_adapters import get_adapter
 from app.services.terminal_token_broker import (
     TerminalTokenError,
-    consume_token,
     issue_session_cookie,
     issue_token,
+    peek_token,
     verify_session_cookie,
 )
 
@@ -179,6 +179,8 @@ async def delete_provider(
             pass
         except docker_runner.DockerOperationError:
             pass
+    # Clean up Traefik routing config regardless of container state.
+    await docker_runner.remove_traefik_config(provider.id)
     await db.delete(provider)
     await db.commit()
 
@@ -232,6 +234,12 @@ async def start_provider(
     provider.last_health_at = datetime.now(timezone.utc)
     await db.commit()
     await db.refresh(provider)
+    # Write Traefik file-provider routing config so the container is reachable.
+    await docker_runner.write_traefik_config(
+        provider_id=provider.id,
+        user_id=user.id,
+        internal_port=spec.internal_port,
+    )
     return _project(provider)
 
 
@@ -250,6 +258,8 @@ async def stop_provider(
         except docker_runner.DockerOperationError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
     provider.status = "stopped"
+    # Remove Traefik routing config — container is no longer serving.
+    await docker_runner.remove_traefik_config(provider.id)
     await db.commit()
     await db.refresh(provider)
     return _project(provider)
@@ -412,7 +422,7 @@ async def forward_auth(request: Request, response: Response):
     if not token:
         raise HTTPException(status_code=401, detail="no token")
     try:
-        claims = await consume_token(token)
+        claims = peek_token(token)
     except TerminalTokenError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
@@ -431,6 +441,7 @@ async def forward_auth(request: Request, response: Response):
         httponly=True,
         secure=secure,
         samesite="lax",
+        domain=settings.terminal_public_host,
         path="/",
     )
     response.headers["X-Aladdin-User"] = str(claims.user_id)

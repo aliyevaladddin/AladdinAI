@@ -1,21 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ProvidersSettings } from "@/components/settings/ProvidersSettings";
 import { VmsSettings } from "@/components/settings/VmsSettings";
 import { MongoSettings } from "@/components/settings/MongoSettings";
 import { BentoSettings } from "@/components/settings/BentoSettings";
 import { RouterSettings } from "@/components/settings/RouterSettings";
-import { TerminalSettings } from "@/components/settings/TerminalSettings";
-import { Cpu, Cloud, Database, Server, Network, Terminal } from "lucide-react";
+import { Cpu, Cloud, Database, Server, Network } from "lucide-react";
 
-type TabId = "providers" | "vms" | "terminal" | "mongo" | "bento" | "router";
+type TabId = "providers" | "vms" | "mongo" | "bento" | "router";
 
 const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
   { id: "providers", label: "LLM Providers", icon: Cpu },
   { id: "vms", label: "Cloud VMs", icon: Cloud },
-  { id: "terminal", label: "Terminal", icon: Terminal },
   { id: "mongo", label: "MongoDB", icon: Database },
   { id: "bento", label: "BentoML", icon: Server },
   { id: "router", label: "Routing", icon: Network },
@@ -24,9 +22,16 @@ const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: numbe
 const VALID_TABS = new Set<TabId>(tabs.map((t) => t.id));
 
 export default function SettingsPage() {
-  // Deep-link via ?tab=terminal so the drawer's empty-state CTA can land
-  // directly on the marketplace.
   const params = useSearchParams();
+  const router = useRouter();
+
+  // Legacy deep-link: /settings?tab=terminal now lives at /settings/terminal.
+  useEffect(() => {
+    if (params.get("tab") === "terminal") {
+      router.replace("/dashboard/settings/terminal");
+    }
+  }, [params, router]);
+
   const initial = ((): TabId => {
     const raw = params.get("tab");
     return raw && VALID_TABS.has(raw as TabId) ? (raw as TabId) : "providers";
@@ -81,7 +86,6 @@ export default function SettingsPage() {
         <div className="flex-1 min-w-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 overflow-y-auto">
           {activeTab === "providers" && <ProvidersSettings />}
           {activeTab === "vms" && <VmsSettings />}
-          {activeTab === "terminal" && <TerminalSettings />}
           {activeTab === "mongo" && <MongoSettings />}
           {activeTab === "bento" && <BentoSettings />}
           {activeTab === "router" && <RouterSettings />}

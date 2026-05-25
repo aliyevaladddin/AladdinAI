@@ -239,7 +239,7 @@ export default function ProvidersPage() {
               <div className="rounded-md border border-border bg-muted/30 p-3 max-h-64 overflow-y-auto">
                 {models[p.id] && models[p.id].length > 0 ? (
                   <ul className="space-y-1 text-xs font-mono">
-                    {models[p.id].map((m) => (
+                    {Array.from(new Set(models[p.id])).map((m) => (
                       <li key={m} className="text-muted-foreground hover:text-foreground transition-colors">
                         {m}
                       </li>
