@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 import {
   listProviders,
   installPreset,
@@ -62,6 +63,8 @@ export default function TerminalProvidersPage() {
   const [error, setError] = useState<string | null>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [detail, setDetail] = useState<MarketplaceProvider | null>(null);
+  const [vmSelectOpen, setVmSelectOpen] = useState(false);
+  const [pendingProvider, setPendingProvider] = useState<MarketplaceProvider | null>(null);
   /** Per-slug install progress, keyed while a provider is in `installing` state. */
   const [installSteps, setInstallSteps] = useState<Record<string, InstallStep[]>>({});
 
@@ -91,7 +94,7 @@ export default function TerminalProvidersPage() {
 
   const installedSlugs = useMemo(() => new Set(installed.map((p) => p.slug)), [installed]);
 
-  const installFromMarketplace = async (mp: MarketplaceProvider) => {
+  const installFromMarketplace = async (mp: MarketplaceProvider, vmId?: number) => {
     setInstallSteps((s) => ({ ...s, [mp.id]: DEFAULT_STEPS.map((x) => ({ ...x, status: x.key === "pull" ? "running" : "pending" })) }));
     // Optimistic insert
     setInstalled((p) => [
@@ -110,13 +113,31 @@ export default function TerminalProvidersPage() {
     ]);
     setTab("installed");
     try {
-      await installPreset(mp.id, mp.name);
+      await installPreset(mp.id, mp.name, vmId);
       toast.success(`${mp.name} install queued`);
       load();
     } catch (e: any) {
       toast.error(e?.message || `Failed to install ${mp.name}`);
       setInstalled((p) => p.filter((x) => x.slug !== mp.id || x.id > 0));
     }
+  };
+
+  const handleInstallClick = (mp: MarketplaceProvider) => {
+    // If wetty, show VM selector first
+    if (mp.id === "wetty") {
+      setPendingProvider(mp);
+      setVmSelectOpen(true);
+    } else {
+      installFromMarketplace(mp);
+    }
+  };
+
+  const handleVmSelected = (vmId: number) => {
+    if (pendingProvider) {
+      installFromMarketplace(pendingProvider, vmId);
+    }
+    setVmSelectOpen(false);
+    setPendingProvider(null);
   };
 
   const installCustom = async (draft: CustomProviderDraft) => {
@@ -199,7 +220,7 @@ export default function TerminalProvidersPage() {
       ) : (
         <MarketplacePanel
           installedSlugs={installedSlugs}
-          onInstall={installFromMarketplace}
+          onInstall={handleInstallClick}
           onOpenDetail={setDetail}
         />
       )}
@@ -210,11 +231,16 @@ export default function TerminalProvidersPage() {
         onClose={() => setCustomOpen(false)}
         onSubmit={installCustom}
       />
+      <VmSelectModal
+        open={vmSelectOpen}
+        onClose={() => { setVmSelectOpen(false); setPendingProvider(null); }}
+        onSelect={handleVmSelected}
+      />
       <MarketplaceDetail
         provider={detail}
         installed={detail ? installedSlugs.has(detail.id) : false}
         onClose={() => setDetail(null)}
-        onInstall={(mp) => { setDetail(null); installFromMarketplace(mp); }}
+        onInstall={(mp) => { setDetail(null); handleInstallClick(mp); }}
       />
     </div>
   );
@@ -792,3 +818,144 @@ function EmptyOrError({
     </div>
   );
 }
+
+/* ============================================================
+   VM Select Modal — for wetty installation
+   ============================================================ */
+function VmSelectModal({
+  open, onClose, onSelect,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSelect: (vmId: number) => void;
+}) {
+  const [vms, setVms] = useState<Array<{ id: number; name: string; host: string }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    api.get<Array<{ id: number; name: string; host: string }>>("/vms")
+      .then((data) => {
+        setVms(Array.isArray(data) ? data : []);
+        if (data.length > 0) setSelected(data[0].id);
+      })
+      .catch((err) => {
+        console.error("Failed to load VMs:", err);
+        setVms([]);
+      })
+      .finally(() => setLoading(false));
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Select VM for Wetty"
+      className="fixed inset-0 z-[200] flex items-center justify-center motion-safe:animate-[modalFadeIn_180ms_cubic-bezier(0.16,1,0.3,1)]"
+      style={{ background: "color-mix(in oklab, var(--bg-0) 70%, transparent)", backdropFilter: "blur(6px)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="relative w-full max-w-[480px] mx-4 motion-safe:animate-[modalSlideIn_220ms_cubic-bezier(0.16,1,0.3,1)]"
+        style={{
+          background: "var(--bg-1)",
+          border: "1px solid var(--line-strong)",
+          borderRadius: "var(--r-lg)",
+          boxShadow: "0 32px 80px -16px rgba(0,0,0,0.55)",
+          overflow: "hidden",
+        }}
+      >
+        <div className="p-5 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-[16px] font-semibold tracking-tight" style={{ color: "var(--fg)" }}>
+                Select VM for Wetty
+              </h3>
+              <p className="text-[12px] mt-1" style={{ color: "var(--fg-3)" }}>
+                Wetty will SSH into this VM when you open the terminal.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="size-7 inline-flex items-center justify-center rounded-md"
+              style={{ background: "var(--bg-2)", color: "var(--fg-2)", border: "1px solid var(--line)" }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="py-8 flex items-center justify-center gap-2" style={{ color: "var(--fg-3)" }}>
+              <Loader2 size={16} className="motion-safe:animate-spin" />
+              <span className="text-[12px]">Loading VMs...</span>
+            </div>
+          ) : vms.length === 0 ? (
+            <div className="py-8 text-center space-y-2">
+              <p className="text-[13px]" style={{ color: "var(--fg-2)" }}>No VMs configured yet.</p>
+              <p className="text-[12px]" style={{ color: "var(--fg-3)" }}>
+                Add a VM in Settings → Cloud VMs first.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {vms.map((vm) => (
+                <label
+                  key={vm.id}
+                  className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors"
+                  style={{
+                    background: selected === vm.id ? "var(--violet-soft)" : "var(--bg-2)",
+                    border: `1px solid ${selected === vm.id ? "var(--violet-line)" : "var(--line)"}`,
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="vm"
+                    value={vm.id}
+                    checked={selected === vm.id}
+                    onChange={() => setSelected(vm.id)}
+                    className="size-4"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium truncate" style={{ color: "var(--fg)" }}>
+                      {vm.name}
+                    </p>
+                    <p className="text-[11.5px] truncate" style={{ color: "var(--fg-3)", fontFamily: "var(--font-mono)" }}>
+                      {vm.host}
+                    </p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-2" style={{ borderTop: "1px solid var(--line)" }}>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => selected && onSelect(selected)}
+              disabled={!selected || vms.length === 0}
+            >
+              Install Wetty
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

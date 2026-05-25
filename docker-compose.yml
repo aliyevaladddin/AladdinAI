@@ -27,7 +27,7 @@ services:
       # Dev override: Traefik in compose listens on plain HTTP at the `web`
       # entrypoint, so the URLs we hand to the iframe must match. In prod
       # these are flipped to https/websecure via .env.
-      TERMINAL_PUBLIC_HOST: ${TERMINAL_PUBLIC_HOST:-terminal.localhost}
+      TERMINAL_PUBLIC_HOST: ${TERMINAL_PUBLIC_HOST:-localhost:8086}
       TERMINAL_PUBLIC_SCHEME: ${TERMINAL_PUBLIC_SCHEME:-http}
       TERMINAL_TRAEFIK_ENTRYPOINT: ${TERMINAL_TRAEFIK_ENTRYPOINT:-web}
     depends_on:
@@ -54,7 +54,7 @@ services:
       - --api.insecure=true
       - --log.level=INFO
     ports:
-      - "80:80"
+      - "8086:80"
       - "8081:8080"
     volumes:
       # Read-only: backend writes here, Traefik hot-reloads routes.

@@ -1419,7 +1419,7 @@
    of .shell__body in the grid.
    =========================================================== */
 .term-drawer {
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   bottom: 0;

@@ -27,9 +27,9 @@ class Settings(BaseSettings):
     # path prefix that Traefik routes to the matching container.
     # Example:  terminal_public_host = "terminal.aladdin.local"
     #           url -> https://terminal.aladdin.local/p/<provider_id>/?token=…
-    terminal_public_host: str = "terminal.localhost"
-    terminal_public_scheme: str = "https"
-    terminal_traefik_entrypoint: str = "websecure"   # web | websecure
+    terminal_public_host: str = "localhost:8086"
+    terminal_public_scheme: str = "http"
+    terminal_traefik_entrypoint: str = "web"   # web | websecure
     terminal_traefik_network: str = "aladdin_terminal"
     terminal_traefik_router_priority: int = 100
     # When the docker network already exists on the remote host, we just
