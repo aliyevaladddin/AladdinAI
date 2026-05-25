@@ -60,10 +60,11 @@ export async function listProviders(): Promise<InstalledProvider[]> {
   return Array.isArray(res) ? res.map(adaptProvider) : [];
 }
 
-export async function installPreset(presetType: string, name?: string): Promise<InstalledProvider> {
+export async function installPreset(presetType: string, name?: string, vmId?: number): Promise<InstalledProvider> {
   const res = await api.post<BackendProvider>("/terminal/providers", {
     type: presetType,
     name,
+    vm_id: vmId,
   });
   return adaptProvider(res);
 }

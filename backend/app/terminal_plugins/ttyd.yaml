@@ -13,7 +13,7 @@
 # from this manifest + settings.terminal_public_host + provider.id.
 
 type: ttyd
-name: ttyd (local shell)
+name: ttyd
 description: |
   Lightweight web terminal that opens a shell inside a per-user container.
   Good default for browsing the dashboard host without configuring SSH.
@@ -53,6 +53,8 @@ healthcheck:
 # Setting this true would tell the router to broker the user's VM creds
 # through `POST /terminal/exchange-token` and the adapter to wire them.
 requires_ssh_proxy: false
+
+strip_prefix: true
 
 # Pinned to the Traefik path layout — substituted at session-issue time.
 url_template: "{scheme}://{host}/p/{provider_id}/?token={token}"

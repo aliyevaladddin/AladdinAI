@@ -12,12 +12,13 @@ from typing import Dict
 from app.services.terminal_adapters.base import TerminalAdapter
 from app.services.terminal_adapters.generic_http import GenericHttpAdapter
 from app.services.terminal_adapters.ttyd import TtydAdapter
+from app.services.terminal_adapters.wetty import WettyAdapter
 
 # Keyed by `TerminalProvider.type` (the manifest's `type:`). Add new entries
 # here as new builtin adapters land.
 _ADAPTERS: Dict[str, TerminalAdapter] = {
     "ttyd": TtydAdapter(),
-    "wetty": GenericHttpAdapter(adapter_label="wetty"),
+    "wetty": WettyAdapter(),
     "code-server": GenericHttpAdapter(adapter_label="code-server"),
 }
 
