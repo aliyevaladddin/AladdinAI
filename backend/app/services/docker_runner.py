@@ -196,6 +196,7 @@ async def start_container(
     labels: Dict[str, str],
     healthcheck: Optional[Dict[str, Any]],
     internal_port: int,
+    volumes: Optional[List[str]] = None,
 ) -> str:
     """Boot a container for this provider and return its container_id.
 
@@ -247,6 +248,7 @@ async def start_container(
                 # No port publish — Traefik handles ingress.
                 healthcheck=_normalize_healthcheck(healthcheck, provider_id),
                 name=f"aladdin-term-u{user_id}-p{provider_id}",
+                volumes=volumes or None,
             )
         except Exception as exc:
             raise DockerOperationError(f"start failed for {image}: {exc}") from exc

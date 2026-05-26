@@ -17,8 +17,10 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from app.services.terminal_adapters.base import ContainerSpec, TerminalAdapter
+from app.services.terminal_adapters.registry import terminal_adapter
 
 
+@terminal_adapter("ttyd")
 class TtydAdapter(TerminalAdapter):
     def build_container_spec(
         self,

@@ -39,6 +39,7 @@ from app.schemas.terminal import (
     SessionRequest,
     SessionResponse,
 )
+from app.schemas.terminal_manifest import TerminalManifest
 from app.security import get_current_user
 from app.services import docker_runner
 from app.services.terminal_adapters import get_adapter
@@ -58,30 +59,43 @@ router = APIRouter(tags=["terminal-providers"])
 # image. We cache them per-process; the catalogue is tiny.
 
 _MANIFEST_DIR = Path(__file__).resolve().parent.parent / "terminal_plugins"
-_manifest_cache: Optional[Dict[str, Dict[str, Any]]] = None
+_manifest_cache: Optional[Dict[str, TerminalManifest]] = None
 
 
-def _load_manifests() -> Dict[str, Dict[str, Any]]:
+def _load_manifests() -> Dict[str, TerminalManifest]:
+    """Load and validate all terminal provider manifests from YAML files.
+
+    Returns a dict mapping provider type to validated TerminalManifest.
+    Invalid manifests are logged and skipped to avoid poisoning the catalogue.
+    """
     global _manifest_cache
     if _manifest_cache is not None:
         return _manifest_cache
-    out: Dict[str, Dict[str, Any]] = {}
+    out: Dict[str, TerminalManifest] = {}
     if _MANIFEST_DIR.is_dir():
         for path in sorted(_MANIFEST_DIR.glob("*.yaml")):
             try:
                 with path.open("r", encoding="utf-8") as fh:
                     data = yaml.safe_load(fh) or {}
-                if isinstance(data, dict) and data.get("type"):
-                    out[str(data["type"])] = data
-            except yaml.YAMLError:
-                # A broken manifest shouldn't poison the catalogue; the
-                # marketplace endpoint just skips it.
+                if not isinstance(data, dict):
+                    continue
+                # Validate with Pydantic
+                manifest = TerminalManifest(**data)
+                out[manifest.type] = manifest
+            except yaml.YAMLError as exc:
+                # YAML syntax error — skip this manifest
+                print(f"Warning: Failed to parse {path.name}: {exc}")
+                continue
+            except Exception as exc:
+                # Pydantic validation error or other issue — skip this manifest
+                print(f"Warning: Invalid manifest {path.name}: {exc}")
                 continue
     _manifest_cache = out
     return out
 
 
-def _manifest_entry(t: str) -> Dict[str, Any]:
+def _manifest_entry(t: str) -> TerminalManifest:
+    """Get a validated manifest by type, or raise 404."""
     m = _load_manifests().get(t)
     if not m:
         raise HTTPException(status_code=404, detail=f"unknown provider type: {t}")
@@ -115,12 +129,12 @@ async def marketplace(_: User = Depends(get_current_user)):
     out: List[MarketplaceEntry] = []
     for m in _load_manifests().values():
         out.append(MarketplaceEntry(
-            type=m["type"],
-            name=m.get("name") or m["type"],
-            description=m.get("description"),
-            image=m["image"],
-            internal_port=int(m.get("internal_port") or 7681),
-            requires_ssh_proxy=bool(m.get("requires_ssh_proxy")),
+            type=m.type,
+            name=m.name,
+            description=m.description,
+            image=m.image,
+            internal_port=m.internal_port,
+            requires_ssh_proxy=m.requires_ssh_proxy,
         ))
     return out
 
@@ -154,15 +168,14 @@ async def install_provider(
 
     provider = TerminalProvider(
         user_id=user.id,
-        name=body.name or m.get("name") or body.type,
+        name=body.name or m.name,
         type=body.type,
         source="builtin",
-        image=m["image"],
+        image=m.image,
         config=json.dumps(config_dict),
-        internal_port=int(m.get("internal_port") or 7681),
-        requires_ssh_proxy=bool(m.get("requires_ssh_proxy")),
-        url_template=str(m.get("url_template")
-                         or "{scheme}://{host}/p/{provider_id}/?token={token}"),
+        internal_port=m.internal_port,
+        requires_ssh_proxy=m.requires_ssh_proxy,
+        url_template=m.url_template,
         status="stopped",
     )
     db.add(provider)
@@ -232,7 +245,7 @@ async def start_provider(
         provider_id=provider.id,
         user_id=user.id,
         image=provider.image,
-        manifest=manifest,
+        manifest=manifest.model_dump(),
         config=config_dict,
     )
 
@@ -248,6 +261,7 @@ async def start_provider(
             labels=spec.labels,
             healthcheck=spec.healthcheck,
             internal_port=spec.internal_port,
+            volumes=spec.volumes,
         )
     except docker_runner.DockerUnavailable as exc:
         provider.status = "error"
@@ -267,7 +281,7 @@ async def start_provider(
     await db.commit()
     await db.refresh(provider)
     # Write Traefik file-provider routing config so the container is reachable.
-    strip_prefix = manifest.get("strip_prefix", True)  # Default to True for backwards compat
+    strip_prefix = manifest.strip_prefix
     await docker_runner.write_traefik_config(
         provider_id=provider.id,
         user_id=user.id,
@@ -391,8 +405,12 @@ async def issue_session(
                 status_code=503,
                 detail="no local shell provider installed (install ttyd)",
             )
-        # Prefer active, fall back to first match
-        provider = next((p for p in local_providers if p.is_active), local_providers[0])
+        # Prefer ttyd as default local shell, then active, then first match
+        ttyd_providers = [p for p in local_providers if p.type == "ttyd"]
+        if ttyd_providers:
+            provider = next((p for p in ttyd_providers if p.is_active), ttyd_providers[0])
+        else:
+            provider = next((p for p in local_providers if p.is_active), local_providers[0])
 
     if not provider.container_id:
         raise HTTPException(status_code=409, detail="provider is not running")

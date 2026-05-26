@@ -25,6 +25,13 @@ build/
 *.sqlite
 media/
 pgdata/
+fix-stale-containers.sql
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
 
 # Environment files
 .env
@@ -67,3 +74,8 @@ Thumbs.db
 # Traefik dynamic configs (generated at runtime)
 backend/traefik-dynamic/*.yaml
 backend/traefik-dynamic/*.yml
+backend/terminal-manifests/terminal*
+
+# Guacamole config (may contain credentials)
+backend/guacamole-config/user-mapping.xml
+backend/guacamole-config/guacamole.properties
