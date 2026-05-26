@@ -20,8 +20,10 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from app.services.terminal_adapters.base import ContainerSpec, TerminalAdapter
+from app.services.terminal_adapters.registry import terminal_adapter
 
 
+@terminal_adapter("wetty")
 class WettyAdapter(TerminalAdapter):
     """Adapter for wetty — injects SSH parameters from the user's selected VM."""
 
