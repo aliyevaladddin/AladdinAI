@@ -16,6 +16,7 @@ We believe the next wave of AI adoption won't happen in shared clouds. It will h
 - **Memory** — private + shared stores with vector search (MongoDB Atlas + NIM embeddings). Memory is extracted automatically per message. Every recall and write decision is logged via pluggable Gates.
 - **CRM** — contacts, deals, activities. Every inbound message is auto-attributed to a contact and logged to the activity timeline.
 - **Channels** — Telegram, WhatsApp (Cloud API), SMS providers, IMAP/SMTP email. Outgoing webhooks for fan-out.
+- **Terminal Providers** — browser-based terminals (ttyd for local shell, wetty for SSH) for remote server management.
 - **Triggers & routing** — cron-scheduled fan-out tasks via APScheduler, per-agent model overrides, fallback chains across providers.
 - **Infrastructure** — manage LLM provider connections, MongoDB clusters, cloud VMs (SSH), and BentoML deployments from the UI.
 
@@ -169,6 +170,37 @@ make clean                         # remove .venv, caches, build artefacts
 - **Database** — switch `DATABASE_URL` to Postgres. SQLite is fine locally but not for multi-worker deployments.
 - **Frontend URL** — set `NEXT_PUBLIC_API_URL` to the public backend URL the browser will reach.
 - **API keys** — provider keys live in the database (encrypted at rest, set via the UI), not in `.env`.
+
+---
+
+## Terminal Providers
+
+AladdinAI includes browser-based terminal access to remote servers. Both providers run in isolated Docker containers with Traefik routing and forward-auth security.
+
+### Available Providers
+
+#### 1. **ttyd** - Local Shell
+- Lightweight Bash/Zsh terminal in browser
+- Perfect for quick commands and scripts
+- Minimal resource usage
+- Default choice for local terminal access
+
+#### 2. **wetty** - SSH Client
+- SSH-in-browser with server-side proxy
+- Password and key-based authentication
+- Connect to remote Linux/Unix servers
+- Automatic VM credential injection
+
+### Setup
+
+Terminal providers are installed through the UI (Settings → Terminal Providers). No additional setup required.
+
+### Architecture
+
+- **Manifests** - YAML files in `backend/app/terminal_plugins/` define each provider
+- **Adapters** - Python classes in `backend/app/services/terminal_adapters/` handle container specs
+- **Transport Layer** - Abstracts connection methods (local shell vs SSH proxy)
+- **Lifecycle FSM** - State machine validates provider transitions (installed → starting → running)
 
 ---
 
