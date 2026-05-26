@@ -10,6 +10,20 @@ We believe the next wave of AI adoption won't happen in shared clouds. It will h
 
 ---
 
+## Did you try this? Tell me how it went.
+
+I'm building AladdinAI in public and I read every message personally. Even one sentence helps — especially the negative ones.
+
+- **Quick form:** https://aliyev.site/AladdinAI/feedback
+- **Email:** aladdin@aliyev.site
+- **GitHub:** [open an issue](https://github.com/aliyevaladddin/AladdinAI/issues/new) or [start a discussion](https://github.com/aliyevaladddin/AladdinAI/discussions)
+
+"This is broken." "Didn't get past step 2." "Cool but not for me." All of it useful. No spam, no auto-emails — just me trying to make this better.
+
+— Aladdin
+
+---
+
 ## What's inside
 
 - **Agents** — per-user agents with their own model, system prompt, tool set, and safety stack (ingress/egress moderation via NemoGuard / Llama-Guard, PII redaction via GLiNER).

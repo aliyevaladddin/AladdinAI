@@ -52,6 +52,7 @@ fix-stale-containers.sql
 .claude/
 claude-proxy-config.yaml
 session-ses_1ada.md
+docs/blog-architecture-deep-dive.md
 # Project specific
 .idx/
 
