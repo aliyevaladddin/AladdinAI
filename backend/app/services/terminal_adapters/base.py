@@ -25,6 +25,8 @@ class ContainerSpec:
     image: str
     command: Optional[List[str]] = None
     env: Dict[str, str] = field(default_factory=dict)
+    # Volume mounts: list of "host_path:container_path" or "host_path:container_path:ro"
+    volumes: List[str] = field(default_factory=list)
     # Container label map — docker_runner merges in its own bookkeeping
     # labels (aladdin.terminal.user_id, aladdin.terminal.provider_id) and
     # the Traefik routing labels on top of this.

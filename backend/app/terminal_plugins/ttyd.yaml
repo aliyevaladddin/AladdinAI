@@ -20,7 +20,8 @@ description: |
 
 # Image we pull/start. The user can override this in a future "advanced"
 # pane, but builtin installs lock to the version we tested.
-image: tsl0922/ttyd:1.7.4
+# Using alpine tag for multi-arch support (amd64 + arm64)
+image: tsl0922/ttyd:alpine
 
 # What ttyd listens on inside the container. We never expose this on the
 # host directly; Traefik routes from terminal_public_host to this port over
