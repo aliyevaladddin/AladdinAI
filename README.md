@@ -37,10 +37,6 @@
 
 <br/>
 
-```
-→ npx aladdin-ai
-```
-
 <div align="center">
   <img src="demo.svg" alt="AladdinAI terminal demo" width="700"/>
 </div>
