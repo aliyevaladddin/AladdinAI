@@ -47,6 +47,11 @@
 - Export terminal adapters in init, fix database event import, and remove unused variable in dashboard router ([db99793](https://github.com/aliyevaladddin/AladdinAI/commit/db99793ba82cc3a5e1f8e5f78401739c24b36630))
 
 
+### Style
+
+- Update README CI and deployment badges to use consistent shield styles ([4f9d65e](https://github.com/aliyevaladddin/AladdinAI/commit/4f9d65e32b9ecd66285c5621c41a40b513ea8ad4))
+
+
 ### Bug fixes
 
 - Prepend venv activation to remote shell commands and restyle terminal container for full-screen layout ([4716399](https://github.com/aliyevaladddin/AladdinAI/commit/47163998252d211249c780cb854ee9ec2d92ed6c))
