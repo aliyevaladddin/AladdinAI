@@ -4,9 +4,6 @@ import hmac
 import hashlib
 import time
 from typing import Optional, Tuple
-from sqlalchemy import select, update
-from app.database import async_session
-from app.models.outgoing_webhook import OutgoingWebhook
 
 class RCFProtocol:
     """

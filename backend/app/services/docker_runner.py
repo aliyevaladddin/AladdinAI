@@ -139,7 +139,7 @@ def _traefik_labels(*, provider_id: int, internal_port: int) -> Dict[str, str]:
     rule = f"Host(`{settings.terminal_public_host}`) && PathPrefix(`/p/{provider_id}`)"
     # Backend URL Traefik calls for forward-auth. The backend service is
     # reachable as `backend:8000` on the shared docker network.
-    auth_address = f"http://backend:8000/api/terminal/auth"
+    auth_address = "http://backend:8000/api/terminal/auth"
     labels = {
         "traefik.enable": "true",
         "traefik.docker.network": settings.terminal_traefik_network,

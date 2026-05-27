@@ -18,9 +18,7 @@ from __future__ import annotations
 from typing import Optional
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
 from app.crypto import decrypt
 from app.database import get_db
 from app.models.vm import VMConnection
