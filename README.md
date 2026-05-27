@@ -23,6 +23,8 @@
 [![Node](https://img.shields.io/badge/node-18%2B-4ecdc4?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
 [![Stars](https://img.shields.io/github/stars/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)](https://github.com/aliyevaladddin/AladdinAI/stargazers)
 [![Issues](https://img.shields.io/github/issues/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)](https://github.com/aliyevaladddin/AladdinAI/issues)
+[![NPM Version](https://img.shields.io/npm/v/aladdin-ai?style=flat-square&color=4ecdc4)](https://www.npmjs.com/package/aladdin-ai)
+
 
 <br/>
 
