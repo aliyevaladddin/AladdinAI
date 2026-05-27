@@ -1,4 +1,5 @@
-<div align="center">
+[![Site status](https://img.shields.io/website?url=https%3A%2F%2Faliyev.site%2FAladdinAI&style=flat-square&color=4ecdc4&logo=vercel&logoColor=white&label=live+demo)](https://aliyev.site/AladdinAI/)
+<div align="center1/3">
 
 <br/>
 
@@ -26,6 +27,7 @@
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 ![Last commit](https://img.shields.io/github/last-commit/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 ![Repo size](https://img.shields.io/github/repo-size/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
+
 
 
 
