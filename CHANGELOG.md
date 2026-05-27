@@ -44,6 +44,8 @@
 
 - Migrate terminal routing to Traefik file-provider and unify session management ([11ce753](https://github.com/aliyevaladddin/AladdinAI/commit/11ce7532984b27103384d8ddcc11fac624d8907c))
 
+- Export terminal adapters in init, fix database event import, and remove unused variable in dashboard router ([db99793](https://github.com/aliyevaladddin/AladdinAI/commit/db99793ba82cc3a5e1f8e5f78401739c24b36630))
+
 
 ### Bug fixes
 
