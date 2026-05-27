@@ -7,7 +7,7 @@ Validates the structure of YAML manifests in app/terminal_plugins/*.yaml
 before they're used to start containers.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 

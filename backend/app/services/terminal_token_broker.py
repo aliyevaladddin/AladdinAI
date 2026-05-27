@@ -33,7 +33,7 @@ import secrets
 import time
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import Dict, Optional
+from typing import Dict
 
 from app.config import settings
 

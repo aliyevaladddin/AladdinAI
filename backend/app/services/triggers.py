@@ -112,7 +112,7 @@ async def _fire_trigger(trigger_id: int) -> list[int]:
             title=f"Trigger \"{trig.name}\" fired",
             body=f"Dispatched task to {len(agent_ids)} agent(s): {trig.task_template[:120]}",
             category="trigger",
-            link=f"/dashboard/automations",
+            link="/dashboard/automations",
         )
         db.add(notif)
 
