@@ -1,5 +1,5 @@
 [![Site status](https://img.shields.io/website?url=https%3A%2F%2Faliyev.site%2FAladdinAI&style=flat-square&color=4ecdc4&logo=vercel&logoColor=white&label=live+demo)](https://aliyev.site/AladdinAI/)
-<div align="center1/3">
+<div align="center">
 
 <br/>
 
