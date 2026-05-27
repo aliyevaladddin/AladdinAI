@@ -65,7 +65,6 @@ async def get_dashboard_stats(
         int(aid): int(cnt) for aid, cnt in agent_msgs_res.all()
     }
 
-    agent_id_to_name = {a.id: a.name for a in agents_rows}
     top_agents = sorted(
         [
             {
