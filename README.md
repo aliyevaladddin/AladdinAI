@@ -1,6 +1,7 @@
 [![Site status](https://img.shields.io/website?url=https%3A%2F%2Faliyev.site%2FAladdinAI&style=flat-square&color=4ecdc4&logo=vercel&logoColor=white&label=live+demo)](https://aliyev.site/AladdinAI/)
 ![Repo size](https://img.shields.io/github/repo-size/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 [![CI](https://github.com/aliyevaladddin/AladdinAI/actions/workflows/ci.yml/badge.svg)](https://github.com/aliyevaladddin/AladdinAI/actions/workflows/ci.yml) 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/aliyevaladddin/AladdinAI)
 
 <div align="center">
 
