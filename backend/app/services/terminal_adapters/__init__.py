@@ -13,4 +13,10 @@ from app.services.terminal_adapters.registry import get_adapter, list_adapters
 from app.services.terminal_adapters.ttyd import TtydAdapter
 from app.services.terminal_adapters.wetty import WettyAdapter
 
-__all__ = ["TerminalAdapter", "get_adapter", "list_adapters"]
+__all__ = [
+    "TerminalAdapter",
+    "TtydAdapter",
+    "WettyAdapter",
+    "get_adapter",
+    "list_adapters",
+]
