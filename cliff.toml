@@ -1,0 +1,21 @@
+[changelog]
+header = "# Changelog\n\n"
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first }}
+{% for commit in commits %}
+- {{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/aliyevaladddin/AladdinAI/commit/{{ commit.id }}))
+{% endfor %}
+{% endfor %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+commit_parsers = [
+  { message = "^feat", group = "features" },
+  { message = "^fix", group = "bug fixes" },
+  { message = "^perf", group = "performance" },
+  { message = "^doc", group = "docs" },
+  { message = "^chore", group = "chore", skip = true },
+]

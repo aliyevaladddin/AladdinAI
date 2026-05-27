@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: aladdinai-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///./aladdinai.db
+
+  - type: web
+    name: aladdinai-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: aladdinai-backend
+          type: web
+          property: host
