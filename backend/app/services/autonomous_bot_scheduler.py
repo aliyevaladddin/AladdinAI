@@ -12,7 +12,6 @@ from datetime import datetime, timedelta
 import httpx
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from app.config import settings
 from app.services.github_app_auth import get_aladdinai_bot_token
 
 log = logging.getLogger(__name__)
