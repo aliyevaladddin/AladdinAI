@@ -54,6 +54,17 @@ class Settings(BaseSettings):
     # In docker-compose this is the shared ./traefik-dynamic volume.
     traefik_dynamic_config_dir: str = "/traefik-dynamic"
 
+    # ── GitHub App Bots ──────────────────────────────────────────────
+    # AladdinAI[bot] - general purpose automation
+    aladdinai_bot_app_id: str = ""
+    aladdinai_bot_private_key: str = ""  # PEM format private key
+    aladdinai_bot_installation_id: str = ""
+
+    # NVIDIA Code Review[bot] - automated code reviews
+    nvidia_bot_app_id: str = ""
+    nvidia_bot_private_key: str = ""  # PEM format private key
+    nvidia_bot_installation_id: str = ""
+
     model_config = {"env_file": "../.env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
