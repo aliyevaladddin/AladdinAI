@@ -73,6 +73,10 @@
 
 - Add AladdinAI bot with reactions and Telegram notifications ([0e5d47e](https://github.com/aliyevaladddin/AladdinAI/commit/0e5d47ed26b9f581f79309fe79374522bfc6b79a))
 
+- Add issue milestone celebrations, mention handling, random PR roasts, and automated reviewer assignment ([efa686b](https://github.com/aliyevaladddin/AladdinAI/commit/efa686bc7b2fa5ee4f7494333ef9e960233f451a))
+
+- Add autonomous AI personality and advanced features to AladdinAI bot ([c19956b](https://github.com/aliyevaladddin/AladdinAI/commit/c19956b43d1f3c4907226afc9a5c34c4c107d37b))
+
 
 ### Refactor
 
