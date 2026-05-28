@@ -7,7 +7,15 @@ Processes incoming GitHub webhook events and triggers appropriate actions.
 from __future__ import annotations
 
 import logging
+import sys
+from pathlib import Path
 from typing import Any
+
+# Add .github/agents to path for importing bots
+github_agents_path = Path(__file__).parent.parent.parent.parent / ".github" / "agents"
+sys.path.insert(0, str(github_agents_path))
+
+from aladdinai_bot import AladdinAIBot
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +29,24 @@ async def handle_github_event(event_type: str, payload: dict[str, Any]) -> None:
     """
     log.info(f"Processing GitHub event: {event_type}")
 
+    # Run AladdinAI bot for all events
+    try:
+        from app.config import settings
+        from app.services.github_app_auth import get_aladdinai_bot_token
+
+        token = await get_aladdinai_bot_token()
+
+        bot = AladdinAIBot(
+            token=token,
+            telegram_bot_token=getattr(settings, "telegram_bot_token", None),
+            telegram_chat_id=getattr(settings, "telegram_chat_id", None),
+        )
+
+        await bot.run(event_type, payload)
+    except Exception as e:
+        log.error(f"Error running AladdinAI bot: {e}", exc_info=True)
+
+    # Additional event-specific handlers
     handlers = {
         "pull_request": _handle_pull_request,
         "push": _handle_push,
@@ -34,8 +60,6 @@ async def handle_github_event(event_type: str, payload: dict[str, Any]) -> None:
             await handler(payload)
         except Exception as e:
             log.error(f"Error handling {event_type} event: {e}", exc_info=True)
-    else:
-        log.debug(f"No handler for event type: {event_type}")
 
 
 async def _handle_pull_request(payload: dict[str, Any]) -> None:
