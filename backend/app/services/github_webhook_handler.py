@@ -7,15 +7,7 @@ Processes incoming GitHub webhook events and triggers appropriate actions.
 from __future__ import annotations
 
 import logging
-import sys
-from pathlib import Path
 from typing import Any
-
-# Add .github/agents to path for importing bots
-github_agents_path = Path(__file__).parent.parent.parent.parent / ".github" / "agents"
-sys.path.insert(0, str(github_agents_path))
-
-from aladdinai_bot import AladdinAIBot
 
 log = logging.getLogger(__name__)
 
@@ -31,8 +23,17 @@ async def handle_github_event(event_type: str, payload: dict[str, Any]) -> None:
 
     # Run AladdinAI bot for all events
     try:
+        import sys
+        from pathlib import Path
+
         from app.config import settings
         from app.services.github_app_auth import get_aladdinai_bot_token
+
+        # Add .github/agents to path for importing bots
+        github_agents_path = Path(__file__).parent.parent.parent.parent / ".github" / "agents"
+        sys.path.insert(0, str(github_agents_path))
+
+        from aladdinai_bot import AladdinAIBot
 
         token = await get_aladdinai_bot_token()
 
