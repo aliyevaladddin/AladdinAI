@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     nvidia_bot_private_key: str = ""  # PEM format private key
     nvidia_bot_installation_id: str = ""
 
+    # ── Telegram Notifications ───────────────────────────────────────
+    telegram_bot_token: str = ""  # Optional: for AladdinAI bot notifications
+    telegram_chat_id: str = ""  # Optional: chat ID for notifications
+
     model_config = {"env_file": "../.env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
