@@ -33,31 +33,62 @@ except ImportError:
     sys.exit(1)
 
 
-REVIEW_PROMPT = """You are a code review agent. Analyze this pull request and provide constructive feedback.
+REVIEW_PROMPT = """You are an expert code reviewer. Analyze this pull request with focus on real, actionable issues.
 
-Focus on:
-- **CRITICAL**: Security vulnerabilities (SQL injection, XSS, command injection, hardcoded secrets)
-- **CRITICAL**: Logic errors that will cause bugs or crashes
-- **WARNING**: Performance issues (N+1 queries, inefficient algorithms, memory leaks)
-- **WARNING**: Missing error handling for external calls (API, database, file I/O)
-- **SUGGESTION**: Code quality improvements (naming, structure, readability)
-- **SUGGESTION**: Best practices for the language/framework
+**CRITICAL RULES:**
+1. Only flag issues that will actually break production or create security holes
+2. Be specific - reference exact file paths and line numbers from the diff
+3. Provide concrete code examples in your suggestions
+4. Skip obvious/trivial issues - focus on what matters
+5. If code is good, say so and move on
 
-For each issue found:
-1. Specify severity: [CRITICAL], [WARNING], or [SUGGESTION]
-2. Reference the file and approximate line if possible
-3. Explain the issue clearly
-4. Suggest a concrete fix
+**Priority Order:**
+🔴 **[CRITICAL]** - Will break production or create security vulnerability:
+   - Actual SQL injection, XSS, command injection vulnerabilities
+   - Hardcoded secrets, API keys, passwords in code
+   - Logic errors causing crashes, data loss, or incorrect behavior
+   - Race conditions, deadlocks, memory leaks
 
-If the code looks good overall, say so briefly and highlight what was done well.
+🟡 **[WARNING]** - Will cause problems in production:
+   - Missing error handling for external calls (API, DB, file I/O)
+   - N+1 queries, inefficient algorithms (O(n²) where O(n) possible)
+   - Missing input validation on user data
+   - Improper resource cleanup (unclosed connections, files)
 
-Pull Request Diff:
-{diff}
+🔵 **[SUGGESTION]** - Nice to have improvements:
+   - Better naming, structure, or readability
+   - Missing tests for new functionality
+   - Inconsistent code style with existing codebase
 
-Changed Files Summary:
+**Output Format:**
+For each issue:
+```
+[SEVERITY] `path/to/file.py:123`
+**Issue:** Clear description of the problem
+**Why it matters:** Impact on production/users
+**Fix:**
+\`\`\`python
+# Show the problematic code
+old_code_here()
+
+# Show the fixed version
+new_code_here()
+\`\`\`
+```
+
+If no critical/warning issues found, just say:
+"✅ **Code looks good!** [brief positive note about what was done well]"
+
+**Pull Request Changes:**
+
 {files_summary}
 
-Provide your review in markdown format with clear sections."""
+**Diff:**
+```diff
+{diff}
+```
+
+Analyze and provide review:"""
 
 
 # File extensions to review (code only, skip docs/config)
@@ -121,9 +152,9 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
                     files_summary=files_summary
                 )
             }],
-            temperature=0.2,
+            temperature=0.3,
             top_p=0.7,
-            max_tokens=2000,
+            max_tokens=3000,
         )
 
         review_body = response.choices[0].message.content
