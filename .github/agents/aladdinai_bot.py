@@ -5,10 +5,8 @@ and reacts authentically to repository events.
 """
 from __future__ import annotations
 
-import json
 import logging
 import random
-from datetime import datetime
 from typing import Any
 
 import httpx
