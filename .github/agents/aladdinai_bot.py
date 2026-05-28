@@ -99,7 +99,7 @@ class AladdinAIBot:
             await self._react_to_issue(owner, repo_name, issue_number)
 
             # Milestone celebration
-            if issue_number % 10 == 0:
+            if issue_number and issue_number % 10 == 0:
                 await self._post_issue_comment(
                     owner,
                     repo_name,
