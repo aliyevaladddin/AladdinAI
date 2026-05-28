@@ -1,6 +1,11 @@
 # Changelog
 
 
+### Test
+
+- Trigger webhook for AladdinAI bot ([f433b46](https://github.com/aliyevaladddin/AladdinAI/commit/f433b46156df868171de9c8b95067b1db105be6c))
+
+
 ### Bug fixes
 
 - Replace git-cliff-action with direct binary ([5a62536](https://github.com/aliyevaladddin/AladdinAI/commit/5a62536cc14d94ba376c26076e5fb7a3ce020ee8))
