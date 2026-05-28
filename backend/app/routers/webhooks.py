@@ -250,3 +250,33 @@ async def sms_webhook(channel_id: int, request: Request, background_tasks: Backg
     from app.services.orchestrator import handle_incoming_message
     background_tasks.add_task(handle_incoming_message, channel, "sms", payload)
     return {"status": "ok"}
+
+
+@router.post("/github")
+async def github_webhook(request: Request, background_tasks: BackgroundTasks):
+    from app.config import settings
+
+    raw_body = await request.body()
+
+    # If a secret is configured, require and verify the signature
+    secret = settings.github_webhook_secret
+    if secret:
+        sig_header = request.headers.get("X-Hub-Signature-256", "")
+        if not sig_header.startswith("sha256="):
+            raise HTTPException(status_code=401, detail="Missing or invalid signature format")
+
+        expected = "sha256=" + hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig_header, expected):
+            raise HTTPException(status_code=401, detail="Webhook signature verification failed")
+
+    payload = json.loads(raw_body or b"{}")
+    event_type = request.headers.get("X-GitHub-Event", "unknown")
+
+    log.info("github webhook: received event %s", event_type)
+
+    # Dispatch to background handler
+    from app.services.github_webhook_handler import handle_github_event
+    background_tasks.add_task(handle_github_event, event_type, payload)
+
+    return {"status": "ok"}
+

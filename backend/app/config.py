@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     traefik_dynamic_config_dir: str = "/traefik-dynamic"
 
     # ── GitHub App Bots ──────────────────────────────────────────────
+    github_webhook_secret: str = ""
+
     # AladdinAI[bot] - general purpose automation
     aladdinai_bot_app_id: str = ""
     aladdinai_bot_private_key: str = ""  # PEM format private key
