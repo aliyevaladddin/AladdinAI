@@ -61,6 +61,8 @@ async def handle_github_event(event_type: str, payload: dict[str, Any]) -> None:
             await handler(payload)
         except Exception as e:
             log.error(f"Error handling {event_type} event: {e}", exc_info=True)
+    else:
+        log.debug(f"No additional handler for event type: {event_type}")
 
 
 async def _handle_pull_request(payload: dict[str, Any]) -> None:
