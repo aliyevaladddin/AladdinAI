@@ -9,6 +9,22 @@
 
 - Update changelog workflow to use AladdinAI bot and create PRs ([beb141f](https://github.com/aliyevaladddin/AladdinAI/commit/beb141f54daf50e4ba91b45b25966918d6722af7))
 
+- Add validation for GitHub tools parameters per code review feedback ([3de2583](https://github.com/aliyevaladddin/AladdinAI/commit/3de25834b4d85f1114aa77e17ee1636d479845b6))
+
+- Improve error message for empty installation_id ([1e99697](https://github.com/aliyevaladddin/AladdinAI/commit/1e9969774cb32fe10735a585cf99397d52f78f87))
+
+- Add token validation and improve repo format regex per code review ([1407562](https://github.com/aliyevaladddin/AladdinAI/commit/1407562c14d5e2da5009451056833b1b1fff0ba1))
+
+- Move imports inside function to resolve ruff E402 ([e620ee7](https://github.com/aliyevaladddin/AladdinAI/commit/e620ee7593e66252f1a7b37f0b9bb0e45afeb505))
+
+- Add input validation and logging per code review suggestions ([30795c0](https://github.com/aliyevaladddin/AladdinAI/commit/30795c0ed412c2c34be7307e0fc2b36755746994))
+
+- Add logging for unhandled event types ([d7cb663](https://github.com/aliyevaladddin/AladdinAI/commit/d7cb6638dae7011fe3320fc2b9b8e9cacda34059))
+
+- Add explicit HTTP error handling with logging ([c68b025](https://github.com/aliyevaladddin/AladdinAI/commit/c68b02542ae899816009af35a7da5c04f9885df5))
+
+- Add error handling and logging to AladdinAI bot ([ea8a8cf](https://github.com/aliyevaladddin/AladdinAI/commit/ea8a8cf02f64376bc8778ba099f76346606bf209))
+
 
 ### Docs
 
@@ -50,6 +66,12 @@
 - Add bot-commits workflow for GitHub App demo ([6d4f7a4](https://github.com/aliyevaladddin/AladdinAI/commit/6d4f7a47bb7f43c7f06991e86f699c667a50a84c))
 
 - Add auto-merge for bot PRs ([a35ab06](https://github.com/aliyevaladddin/AladdinAI/commit/a35ab06b0e95963d30d59d5e21af5ec36f07a92c))
+
+- Integrate GitHub App bots into backend with tools and auth service ([2ac13a5](https://github.com/aliyevaladddin/AladdinAI/commit/2ac13a5f7ff62dc3c8b0a63b97984cc0feb31468))
+
+- Add GitHub webhook handler with event processing ([3a66503](https://github.com/aliyevaladddin/AladdinAI/commit/3a66503eaf4c92450e40321b959a44f3dcc7ab46))
+
+- Add AladdinAI bot with reactions and Telegram notifications ([0e5d47e](https://github.com/aliyevaladddin/AladdinAI/commit/0e5d47ed26b9f581f79309fe79374522bfc6b79a))
 
 
 ### Refactor
