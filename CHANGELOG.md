@@ -7,6 +7,8 @@
 
 - Add write permissions to changelog workflow ([43351d4](https://github.com/aliyevaladddin/AladdinAI/commit/43351d487c13feaddd3709993913eb41b008d5d3))
 
+- Update changelog workflow to use AladdinAI bot and create PRs ([beb141f](https://github.com/aliyevaladddin/AladdinAI/commit/beb141f54daf50e4ba91b45b25966918d6722af7))
+
 
 ### Docs
 
@@ -39,6 +41,16 @@
 
 - Add CI, changelog, render deploy ([abf5185](https://github.com/aliyevaladddin/AladdinAI/commit/abf518560f4e827d884b57ee06ec52fbf41848c0))
 
+- Implement multi-agent orchestration framework and add suite of specialized agents with automated workflow triggers ([fafd2f8](https://github.com/aliyevaladddin/AladdinAI/commit/fafd2f884ff566421f096d16223123d167a20c86))
+
+- Add documentation for demo agents and clean up proactive reminder service imports ([83d4502](https://github.com/aliyevaladddin/AladdinAI/commit/83d4502f14a85256e2432def8f69068666afb12b))
+
+- Refine code review agent prompt and add bot commit workflow demo ([9afe5d3](https://github.com/aliyevaladddin/AladdinAI/commit/9afe5d3cc9b3bba68f0edfc978f77d5e8626f5a1))
+
+- Add bot-commits workflow for GitHub App demo ([6d4f7a4](https://github.com/aliyevaladddin/AladdinAI/commit/6d4f7a47bb7f43c7f06991e86f699c667a50a84c))
+
+- Add auto-merge for bot PRs ([a35ab06](https://github.com/aliyevaladddin/AladdinAI/commit/a35ab06b0e95963d30d59d5e21af5ec36f07a92c))
+
 
 ### Refactor
 
@@ -46,10 +58,19 @@
 
 - Export terminal adapters in init, fix database event import, and remove unused variable in dashboard router ([db99793](https://github.com/aliyevaladddin/AladdinAI/commit/db99793ba82cc3a5e1f8e5f78401739c24b36630))
 
+- Migrate code review agent to use NIM and update generation parameters ([7475fcf](https://github.com/aliyevaladddin/AladdinAI/commit/7475fcfe427b0156c364dd5c0c6cbec22b531c35))
+
+- Update code review agent to use NVIDIA NIM, add file filtering, structured review summaries, and migrate to GitHub App authentication ([b824704](https://github.com/aliyevaladddin/AladdinAI/commit/b8247043367ce68dea121e31cfc4e30326a2bf03))
+
 
 ### Style
 
 - Update README CI and deployment badges to use consistent shield styles ([4f9d65e](https://github.com/aliyevaladddin/AladdinAI/commit/4f9d65e32b9ecd66285c5621c41a40b513ea8ad4))
+
+
+### Test
+
+- Add file with intentional issues to trigger code review bot ([deeafb5](https://github.com/aliyevaladddin/AladdinAI/commit/deeafb51ca65e1bb4120fbb9e3be662dfb818565))
 
 
 ### Bug fixes
