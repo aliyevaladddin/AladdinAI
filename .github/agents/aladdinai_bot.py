@@ -137,18 +137,19 @@ class AladdinAIBot:
             # Random roast
             roast = random.choice(ROASTS)
 
-            await self._post_pr_comment(
-                owner,
-                repo_name,
-                pr_number,
-                f"Thanks for the PR @{user}! 🚀 NVIDIA Code Review Bot will review shortly...\n\n"
-                f"_{roast}_\n\n"
-                f"*— AladdinAI Bot*",
-            )
-            await self._react_to_issue(owner, repo_name, pr_number)
+            if pr_number:
+                await self._post_pr_comment(
+                    owner,
+                    repo_name,
+                    pr_number,
+                    f"Thanks for the PR @{user}! 🚀 NVIDIA Code Review Bot will review shortly...\n\n"
+                    f"_{roast}_\n\n"
+                    f"*— AladdinAI Bot*",
+                )
+                await self._react_to_issue(owner, repo_name, pr_number)
 
-            # Assign reviewer
-            await self._assign_reviewer(owner, repo_name, pr_number, ["aliyevaladddin"])
+                # Assign reviewer
+                await self._assign_reviewer(owner, repo_name, pr_number, ["aliyevaladddin"])
 
         # 🚀 Push
         elif event_type == "push":
