@@ -25,6 +25,8 @@
 
 - Add error handling and logging to AladdinAI bot ([ea8a8cf](https://github.com/aliyevaladddin/AladdinAI/commit/ea8a8cf02f64376bc8778ba099f76346606bf209))
 
+- Remove unused settings import in autonomous_bot_scheduler ([c7af3b9](https://github.com/aliyevaladddin/AladdinAI/commit/c7af3b966ce2c11121fa8fc6c12fdeb575b96526))
+
 
 ### Docs
 
@@ -76,6 +78,12 @@
 - Add issue milestone celebrations, mention handling, random PR roasts, and automated reviewer assignment ([efa686b](https://github.com/aliyevaladddin/AladdinAI/commit/efa686bc7b2fa5ee4f7494333ef9e960233f451a))
 
 - Add autonomous AI personality and advanced features to AladdinAI bot ([c19956b](https://github.com/aliyevaladddin/AladdinAI/commit/c19956b43d1f3c4907226afc9a5c34c4c107d37b))
+
+- Add autonomous bot scheduler with morning standup and Friday recap ([637bc4a](https://github.com/aliyevaladddin/AladdinAI/commit/637bc4ab644cb4a66a441c7ca7f8b9efd5e8fc25))
+
+- Add automatic issue assignment functionality for the aladdinai bot ([c372744](https://github.com/aliyevaladddin/AladdinAI/commit/c3727445c7a1af7733516b9a7601e8baa573d370))
+
+- Add user interaction tracking with personalized bot responses ([bdf162c](https://github.com/aliyevaladddin/AladdinAI/commit/bdf162c65a4dfe4a402ce42da6ebadb8bbc29bf5))
 
 
 ### Refactor
