@@ -72,33 +72,6 @@ class AladdinAIBot:
         owner = repo.get("owner", {}).get("login", "")
         repo_name = repo.get("name", "")
 
-    async def _get_user_context(self, username: str, owner: str) -> str:
-        """Get personalized context based on user interaction history.
-
-        Args:
-            username: GitHub username
-            owner: Repository owner username
-
-        Returns:
-            Context string to add to bot personality prompt
-        """
-        # Owner gets special treatment
-        if username == owner:
-            return "This is the OWNER of the repository. Show ultimate respect and loyalty."
-
-        # Increment interaction count
-        self.user_interactions[username] = self.user_interactions.get(username, 0) + 1
-        interaction_count = self.user_interactions[username]
-
-        if interaction_count == 1:
-            return "This is their FIRST interaction with the repo. Be extra welcoming!"
-        elif interaction_count > 50:
-            return "This is a CORE contributor. Show deep respect and excitement."
-        elif interaction_count > 10:
-            return f"This is an old friend — they've interacted {interaction_count} times. Be familiar and warm."
-        else:
-            return f"They've interacted {interaction_count} times. Be friendly and encouraging."
-
         # ⭐ Star event
         if event_type == "star" and action == "created":
             user = payload.get("sender", {}).get("login", "")
@@ -217,6 +190,37 @@ class AladdinAIBot:
         elif event_type == "watch" and action == "started":
             user = payload.get("sender", {}).get("login", "")
             await self._notify_telegram(f"👀 @{user} is now watching AladdinAI!")
+
+    async def _get_user_context(self, username: str, owner: str) -> str:
+        """Get personalized context based on user interaction history.
+
+        Args:
+            username: GitHub username
+            owner: Repository owner username
+
+        Returns:
+            Context string to add to bot personality prompt
+        """
+        # Defensive check for empty strings
+        if not username or not owner:
+            return "Regular user interaction."
+
+        # Owner gets special treatment
+        if username == owner:
+            return "This is the OWNER of the repository. Show ultimate respect and loyalty."
+
+        # Increment interaction count
+        self.user_interactions[username] = self.user_interactions.get(username, 0) + 1
+        interaction_count = self.user_interactions[username]
+
+        if interaction_count == 1:
+            return "This is their FIRST interaction with the repo. Be extra welcoming!"
+        elif interaction_count > 50:
+            return "This is a CORE contributor. Show deep respect and excitement."
+        elif interaction_count > 10:
+            return f"This is an old friend — they've interacted {interaction_count} times. Be familiar and warm."
+        else:
+            return f"They've interacted {interaction_count} times. Be friendly and encouraging."
 
     async def _post_issue_comment(self, owner: str, repo: str, issue_number: int, body: str) -> None:
         """Post a comment on an issue."""

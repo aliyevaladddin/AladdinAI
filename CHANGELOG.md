@@ -7,6 +7,28 @@
 
 - Add write permissions to changelog workflow ([43351d4](https://github.com/aliyevaladddin/AladdinAI/commit/43351d487c13feaddd3709993913eb41b008d5d3))
 
+- Update changelog workflow to use AladdinAI bot and create PRs ([beb141f](https://github.com/aliyevaladddin/AladdinAI/commit/beb141f54daf50e4ba91b45b25966918d6722af7))
+
+- Add validation for GitHub tools parameters per code review feedback ([3de2583](https://github.com/aliyevaladddin/AladdinAI/commit/3de25834b4d85f1114aa77e17ee1636d479845b6))
+
+- Improve error message for empty installation_id ([1e99697](https://github.com/aliyevaladddin/AladdinAI/commit/1e9969774cb32fe10735a585cf99397d52f78f87))
+
+- Add token validation and improve repo format regex per code review ([1407562](https://github.com/aliyevaladddin/AladdinAI/commit/1407562c14d5e2da5009451056833b1b1fff0ba1))
+
+- Move imports inside function to resolve ruff E402 ([e620ee7](https://github.com/aliyevaladddin/AladdinAI/commit/e620ee7593e66252f1a7b37f0b9bb0e45afeb505))
+
+- Add input validation and logging per code review suggestions ([30795c0](https://github.com/aliyevaladddin/AladdinAI/commit/30795c0ed412c2c34be7307e0fc2b36755746994))
+
+- Add logging for unhandled event types ([d7cb663](https://github.com/aliyevaladddin/AladdinAI/commit/d7cb6638dae7011fe3320fc2b9b8e9cacda34059))
+
+- Add explicit HTTP error handling with logging ([c68b025](https://github.com/aliyevaladddin/AladdinAI/commit/c68b02542ae899816009af35a7da5c04f9885df5))
+
+- Add error handling and logging to AladdinAI bot ([ea8a8cf](https://github.com/aliyevaladddin/AladdinAI/commit/ea8a8cf02f64376bc8778ba099f76346606bf209))
+
+- Remove unused settings import in autonomous_bot_scheduler ([c7af3b9](https://github.com/aliyevaladddin/AladdinAI/commit/c7af3b966ce2c11121fa8fc6c12fdeb575b96526))
+
+- Correct indentation and add owner parameter to _get_user_context ([e95d9ba](https://github.com/aliyevaladddin/AladdinAI/commit/e95d9ba21b4519604ee395bcf10224780c32a9ef))
+
 
 ### Docs
 
@@ -39,6 +61,32 @@
 
 - Add CI, changelog, render deploy ([abf5185](https://github.com/aliyevaladddin/AladdinAI/commit/abf518560f4e827d884b57ee06ec52fbf41848c0))
 
+- Implement multi-agent orchestration framework and add suite of specialized agents with automated workflow triggers ([fafd2f8](https://github.com/aliyevaladddin/AladdinAI/commit/fafd2f884ff566421f096d16223123d167a20c86))
+
+- Add documentation for demo agents and clean up proactive reminder service imports ([83d4502](https://github.com/aliyevaladddin/AladdinAI/commit/83d4502f14a85256e2432def8f69068666afb12b))
+
+- Refine code review agent prompt and add bot commit workflow demo ([9afe5d3](https://github.com/aliyevaladddin/AladdinAI/commit/9afe5d3cc9b3bba68f0edfc978f77d5e8626f5a1))
+
+- Add bot-commits workflow for GitHub App demo ([6d4f7a4](https://github.com/aliyevaladddin/AladdinAI/commit/6d4f7a47bb7f43c7f06991e86f699c667a50a84c))
+
+- Add auto-merge for bot PRs ([a35ab06](https://github.com/aliyevaladddin/AladdinAI/commit/a35ab06b0e95963d30d59d5e21af5ec36f07a92c))
+
+- Integrate GitHub App bots into backend with tools and auth service ([2ac13a5](https://github.com/aliyevaladddin/AladdinAI/commit/2ac13a5f7ff62dc3c8b0a63b97984cc0feb31468))
+
+- Add GitHub webhook handler with event processing ([3a66503](https://github.com/aliyevaladddin/AladdinAI/commit/3a66503eaf4c92450e40321b959a44f3dcc7ab46))
+
+- Add AladdinAI bot with reactions and Telegram notifications ([0e5d47e](https://github.com/aliyevaladddin/AladdinAI/commit/0e5d47ed26b9f581f79309fe79374522bfc6b79a))
+
+- Add issue milestone celebrations, mention handling, random PR roasts, and automated reviewer assignment ([efa686b](https://github.com/aliyevaladddin/AladdinAI/commit/efa686bc7b2fa5ee4f7494333ef9e960233f451a))
+
+- Add autonomous AI personality and advanced features to AladdinAI bot ([c19956b](https://github.com/aliyevaladddin/AladdinAI/commit/c19956b43d1f3c4907226afc9a5c34c4c107d37b))
+
+- Add autonomous bot scheduler with morning standup and Friday recap ([637bc4a](https://github.com/aliyevaladddin/AladdinAI/commit/637bc4ab644cb4a66a441c7ca7f8b9efd5e8fc25))
+
+- Add automatic issue assignment functionality for the aladdinai bot ([c372744](https://github.com/aliyevaladddin/AladdinAI/commit/c3727445c7a1af7733516b9a7601e8baa573d370))
+
+- Add user interaction tracking with personalized bot responses ([bdf162c](https://github.com/aliyevaladddin/AladdinAI/commit/bdf162c65a4dfe4a402ce42da6ebadb8bbc29bf5))
+
 
 ### Refactor
 
@@ -46,10 +94,19 @@
 
 - Export terminal adapters in init, fix database event import, and remove unused variable in dashboard router ([db99793](https://github.com/aliyevaladddin/AladdinAI/commit/db99793ba82cc3a5e1f8e5f78401739c24b36630))
 
+- Migrate code review agent to use NIM and update generation parameters ([7475fcf](https://github.com/aliyevaladddin/AladdinAI/commit/7475fcfe427b0156c364dd5c0c6cbec22b531c35))
+
+- Update code review agent to use NVIDIA NIM, add file filtering, structured review summaries, and migrate to GitHub App authentication ([b824704](https://github.com/aliyevaladddin/AladdinAI/commit/b8247043367ce68dea121e31cfc4e30326a2bf03))
+
 
 ### Style
 
 - Update README CI and deployment badges to use consistent shield styles ([4f9d65e](https://github.com/aliyevaladddin/AladdinAI/commit/4f9d65e32b9ecd66285c5621c41a40b513ea8ad4))
+
+
+### Test
+
+- Add file with intentional issues to trigger code review bot ([deeafb5](https://github.com/aliyevaladddin/AladdinAI/commit/deeafb51ca65e1bb4120fbb9e3be662dfb818565))
 
 
 ### Bug fixes
