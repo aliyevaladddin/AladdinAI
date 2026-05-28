@@ -1,0 +1,63 @@
+name: Bot Commits Demo
+
+on:
+  workflow_dispatch:  # Manual trigger for testing
+
+jobs:
+  aladdin-bot-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.ALADDINAI_BOT_APP_ID }}
+          private_key: ${{ secrets.ALADDINAI_BOT_PRIVATE_KEY }}
+
+      - name: Configure Git for Bot
+        run: |
+          git config user.name "AladdinAI[bot]"
+          git config user.email "AladdinAI[bot]@users.noreply.github.com"
+
+      - name: Create Bot Commit
+        run: |
+          echo "# AladdinAI Bot Activity" > .github/bot-activity.md
+          echo "Last activity: $(date)" >> .github/bot-activity.md
+          git add .github/bot-activity.md
+          git commit -m "chore: update bot activity log" || echo "No changes to commit"
+          git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:main
+
+  nvidia-bot-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.NVIDIA_BOT_APP_ID }}
+          private_key: ${{ secrets.NVIDIA_BOT_PRIVATE_KEY }}
+
+      - name: Configure Git for Bot
+        run: |
+          git config user.name "NVIDIA Code Review[bot]"
+          git config user.email "NVIDIA-Code-Review[bot]@users.noreply.github.com"
+
+      - name: Create Bot Commit
+        run: |
+          echo "# NVIDIA Bot Activity" > .github/nvidia-bot-activity.md
+          echo "Last activity: $(date)" >> .github/nvidia-bot-activity.md
+          git add .github/nvidia-bot-activity.md
+          git commit -m "chore: update nvidia bot activity log" || echo "No changes to commit"
+          git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:main
