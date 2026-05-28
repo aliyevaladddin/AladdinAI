@@ -37,11 +37,21 @@ jobs:
           git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:"$BRANCH_NAME"
 
           # Create PR using GitHub API
-          curl -X POST \
+          PR_RESPONSE=$(curl -s -X POST \
             -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${{ github.repository }}/pulls \
-            -d "{\"title\":\"chore: AladdinAI bot activity update\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated activity log update from AladdinAI bot\"}"
+            -d "{\"title\":\"chore: AladdinAI bot activity update\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated activity log update from AladdinAI bot\"}")
+
+          # Extract PR number and enable auto-merge
+          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
+          if [ "$PR_NUMBER" != "null" ]; then
+            curl -s -X PUT \
+              -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge \
+              -d '{"merge_method":"squash"}'
+          fi
 
   nvidia-bot-commit:
     runs-on: ubuntu-latest
@@ -76,8 +86,18 @@ jobs:
           git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:"$BRANCH_NAME"
 
           # Create PR using GitHub API
-          curl -X POST \
+          PR_RESPONSE=$(curl -s -X POST \
             -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${{ github.repository }}/pulls \
-            -d "{\"title\":\"chore: NVIDIA bot activity update\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated activity log update from NVIDIA Code Review bot\"}"
+            -d "{\"title\":\"chore: NVIDIA bot activity update\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated activity log update from NVIDIA Code Review bot\"}")
+
+          # Extract PR number and enable auto-merge
+          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
+          if [ "$PR_NUMBER" != "null" ]; then
+            curl -s -X PUT \
+              -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge \
+              -d '{"merge_method":"squash"}'
+          fi
