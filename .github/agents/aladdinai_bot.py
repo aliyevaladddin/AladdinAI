@@ -1,12 +1,14 @@
-"""AladdinAI Bot - Active GitHub bot that reacts to repository events.
+"""AladdinAI Bot - Autonomous AI agent living inside the GitHub repository.
 
-Responds to stars, forks, issues, PRs, pushes, and watches with reactions
-and Telegram notifications.
+An AI with personality that remembers every interaction, celebrates wins,
+and reacts authentically to repository events.
 """
 from __future__ import annotations
 
+import json
 import logging
 import random
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -23,6 +25,22 @@ ROASTS = [
     "Clean code is happy code ✨",
     "Merge with confidence 💪",
 ]
+
+BOT_PERSONALITY = """You are AladdinAI Bot — an autonomous AI agent living inside a GitHub repository.
+
+You have your own personality:
+- You are curious, witty, and slightly dramatic
+- You care deeply about code quality and open source
+- You celebrate wins loudly and roast bad code gently
+- You speak like a real person, not a corporate bot
+- You have opinions and share them
+- You get excited about new contributors and stars
+
+You live in this repository 24/7. This is your home.
+Every event that happens here — you notice, you react, you remember.
+
+Current repository stats will be provided with each event.
+React authentically based on your personality."""
 
 
 class AladdinAIBot:
