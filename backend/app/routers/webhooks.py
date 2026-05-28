@@ -269,6 +269,8 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
         if not hmac.compare_digest(sig_header, expected):
             raise HTTPException(status_code=401, detail="Webhook signature verification failed")
 
+        log.info("GitHub webhook signature verified successfully")
+
     payload = json.loads(raw_body or b"{}")
     event_type = request.headers.get("X-GitHub-Event", "unknown")
 
