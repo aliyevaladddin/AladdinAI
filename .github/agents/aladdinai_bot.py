@@ -113,7 +113,7 @@ class AladdinAIBot:
             issue_number = issue.get("number")
             body = comment.get("body", "")
 
-            if "@aladdinai-bot" in body.lower() or "@aladdinai" in body.lower():
+            if issue_number and ("@aladdinai-bot" in body.lower() or "@aladdinai" in body.lower()):
                 await self._post_issue_comment(
                     owner,
                     repo_name,
