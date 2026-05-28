@@ -27,6 +27,8 @@
 
 - Remove unused settings import in autonomous_bot_scheduler ([c7af3b9](https://github.com/aliyevaladddin/AladdinAI/commit/c7af3b966ce2c11121fa8fc6c12fdeb575b96526))
 
+- Correct indentation and add owner parameter to _get_user_context ([e95d9ba](https://github.com/aliyevaladddin/AladdinAI/commit/e95d9ba21b4519604ee395bcf10224780c32a9ef))
+
 
 ### Docs
 
