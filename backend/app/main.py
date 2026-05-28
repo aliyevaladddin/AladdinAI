@@ -12,6 +12,7 @@ from app.routers import (
 from app.services import triggers as triggers_service
 from app.services import telegram_poller
 from app.services import terminal_health
+from app.services import autonomous_bot_scheduler
 
 app = FastAPI(title="AladdinAI API")
 
@@ -21,6 +22,7 @@ async def _start_scheduler():
     await triggers_service.hydrate_from_db()
     await telegram_poller.start()
     terminal_health.start()
+    autonomous_bot_scheduler.start_scheduler()
 
 
 @app.on_event("shutdown")
@@ -28,6 +30,7 @@ async def _stop_scheduler():
     await triggers_service.shutdown()
     await telegram_poller.stop()
     terminal_health.stop()
+    autonomous_bot_scheduler.stop_scheduler()
 
 ALLOWED_ORIGINS = [
     "http://localhost:3000",

@@ -5,10 +5,8 @@ and reacts authentically to repository events.
 """
 from __future__ import annotations
 
-import json
 import logging
 import random
-from datetime import datetime
 from typing import Any
 
 import httpx
@@ -60,6 +58,7 @@ class AladdinAIBot:
         self.token = token
         self.telegram_bot_token = telegram_bot_token
         self.telegram_chat_id = telegram_chat_id
+        self.user_interactions: dict[str, int] = {}  # Track interaction count per user
 
     async def run(self, event_type: str, payload: dict[str, Any]) -> None:
         """Process GitHub webhook event.
@@ -73,6 +72,28 @@ class AladdinAIBot:
         owner = repo.get("owner", {}).get("login", "")
         repo_name = repo.get("name", "")
 
+    async def _get_user_context(self, username: str) -> str:
+        """Get personalized context based on user interaction history.
+
+        Args:
+            username: GitHub username
+
+        Returns:
+            Context string to add to bot personality prompt
+        """
+        # Increment interaction count
+        self.user_interactions[username] = self.user_interactions.get(username, 0) + 1
+        interaction_count = self.user_interactions[username]
+
+        if interaction_count == 1:
+            return "This is their FIRST interaction with the repo. Be extra welcoming!"
+        elif interaction_count > 50:
+            return "This is a CORE contributor. Show deep respect and excitement."
+        elif interaction_count > 10:
+            return f"This is an old friend — they've interacted {interaction_count} times. Be familiar and warm."
+        else:
+            return f"They've interacted {interaction_count} times. Be friendly and encouraging."
+
         # ⭐ Star event
         if event_type == "star" and action == "created":
             user = payload.get("sender", {}).get("login", "")
@@ -84,18 +105,28 @@ class AladdinAIBot:
             issue = payload.get("issue", {})
             issue_number = issue.get("number")
             user = issue.get("user", {}).get("login", "")
-            await self._post_issue_comment(
-                owner,
-                repo_name,
-                issue_number,
-                f"Thanks for opening this issue @{user}! 🙌\n\n"
-                f"Our AI agents are reviewing it now...\n\n"
-                f"*— AladdinAI Bot*",
-            )
+
+            # Get personalized context
+            user_context = await self._get_user_context(user)
+
+            # Assign bot to issue
+            await self._assign_to_issue(owner, repo_name, issue_number, ["aliyevaladddin"])
+
+            # Personalized welcome based on interaction history
+            if "FIRST interaction" in user_context:
+                message = f"Welcome to AladdinAI, @{user}! 🎉\n\nThanks for opening your first issue! Our AI agents are reviewing it now...\n\n*— AladdinAI Bot*"
+            elif "CORE contributor" in user_context:
+                message = f"Always great to hear from you, @{user}! 🌟\n\nYour insights are invaluable. Our AI agents are on it!\n\n*— AladdinAI Bot*"
+            elif "old friend" in user_context:
+                message = f"Hey @{user}! Good to see you again 👋\n\nOur AI agents are reviewing your issue...\n\n*— AladdinAI Bot*"
+            else:
+                message = f"Thanks for opening this issue @{user}! 🙌\n\nOur AI agents are reviewing it now...\n\n*— AladdinAI Bot*"
+
+            await self._post_issue_comment(owner, repo_name, issue_number, message)
             await self._react_to_issue(owner, repo_name, issue_number)
 
             # Milestone celebration
-            if issue_number % 10 == 0:
+            if issue_number and issue_number % 10 == 0:
                 await self._post_issue_comment(
                     owner,
                     repo_name,
@@ -110,16 +141,20 @@ class AladdinAIBot:
             issue = payload.get("issue", {})
             issue_number = issue.get("number")
             body = comment.get("body", "")
+            user = comment.get("user", {}).get("login", "")
 
-            if "@aladdinai-bot" in body.lower() or "@aladdinai" in body.lower():
-                await self._post_issue_comment(
-                    owner,
-                    repo_name,
-                    issue_number,
-                    f"👋 You called? I'm here to help!\n\n"
-                    f"I'm still learning, but feel free to ask questions about AladdinAI.\n\n"
-                    f"*— AladdinAI Bot*",
-                )
+            if issue_number and ("@aladdinai-bot" in body.lower() or "@aladdinai" in body.lower()):
+                # Get personalized context
+                user_context = await self._get_user_context(user)
+
+                if "FIRST interaction" in user_context:
+                    message = f"👋 Welcome @{user}! I'm here to help!\n\nI'm still learning, but feel free to ask questions about AladdinAI.\n\n*— AladdinAI Bot*"
+                elif "CORE contributor" in user_context:
+                    message = f"👋 @{user}! Always happy to help a core contributor.\n\nWhat can I do for you?\n\n*— AladdinAI Bot*"
+                else:
+                    message = f"👋 You called? I'm here to help!\n\nI'm still learning, but feel free to ask questions about AladdinAI.\n\n*— AladdinAI Bot*"
+
+                await self._post_issue_comment(owner, repo_name, issue_number, message)
 
         # 🍴 Fork
         elif event_type == "fork":
@@ -132,21 +167,33 @@ class AladdinAIBot:
             pr_number = pr.get("number")
             user = pr.get("user", {}).get("login", "")
 
+            # Get personalized context
+            user_context = await self._get_user_context(user)
+
             # Random roast
             roast = random.choice(ROASTS)
 
-            await self._post_pr_comment(
-                owner,
-                repo_name,
-                pr_number,
-                f"Thanks for the PR @{user}! 🚀 NVIDIA Code Review Bot will review shortly...\n\n"
-                f"_{roast}_\n\n"
-                f"*— AladdinAI Bot*",
-            )
-            await self._react_to_issue(owner, repo_name, pr_number)
+            # Personalized PR greeting
+            if "FIRST interaction" in user_context:
+                greeting = f"Welcome to AladdinAI, @{user}! 🎉 Your first PR — exciting!\n\nNVIDIA Code Review Bot will review shortly...\n\n_{roast}_"
+            elif "CORE contributor" in user_context:
+                greeting = f"@{user} bringing the heat again! 🔥\n\nNVIDIA Code Review Bot will review shortly...\n\n_{roast}_"
+            elif "old friend" in user_context:
+                greeting = f"Thanks for the PR @{user}! 🚀 Always good to see your contributions.\n\nNVIDIA Code Review Bot will review shortly...\n\n_{roast}_"
+            else:
+                greeting = f"Thanks for the PR @{user}! 🚀 NVIDIA Code Review Bot will review shortly...\n\n_{roast}_"
 
-            # Assign reviewer
-            await self._assign_reviewer(owner, repo_name, pr_number, ["aliyevaladddin"])
+            if pr_number:
+                await self._post_pr_comment(
+                    owner,
+                    repo_name,
+                    pr_number,
+                    f"{greeting}\n\n*— AladdinAI Bot*",
+                )
+                await self._react_to_issue(owner, repo_name, pr_number)
+
+                # Assign reviewer
+                await self._assign_reviewer(owner, repo_name, pr_number, ["aliyevaladddin"])
 
         # 🚀 Push
         elif event_type == "push":
@@ -247,3 +294,21 @@ class AladdinAIBot:
                 response.raise_for_status()
         except httpx.HTTPError as e:
             log.error(f"Failed to assign reviewers to PR #{pr_number}: {e}")
+
+    async def _assign_to_issue(self, owner: str, repo: str, issue_number: int, assignees: list[str]) -> None:
+        """Assign users to an issue."""
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{GITHUB_API}/repos/{owner}/{repo}/issues/{issue_number}/assignees",
+                    headers={
+                        "Authorization": f"Bearer {self.token}",
+                        "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                    },
+                    json={"assignees": assignees},
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+        except httpx.HTTPError as e:
+            log.error(f"Failed to assign to issue #{issue_number}: {e}")
