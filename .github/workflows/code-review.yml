@@ -15,6 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.NVIDIA_BOT_APP_ID }}
+          private_key: ${{ secrets.NVIDIA_BOT_PRIVATE_KEY }}
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -26,7 +33,7 @@ jobs:
 
       - name: Run Code Review Agent
         env:
-          PATH_TOKEN: ${{ secrets.PATH_TOKEN }}
+          PATH_TOKEN: ${{ steps.generate_token.outputs.token }}
           NIM_API_KEY: ${{ secrets.NIM_API_KEY }}
           NIM_BASE_URL: ${{ secrets.NIM_BASE_URL }}
           NIM_MODEL: ${{ secrets.NIM_MODEL }}

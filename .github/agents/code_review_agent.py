@@ -36,15 +36,20 @@ except ImportError:
 REVIEW_PROMPT = """You are a code review agent. Analyze this pull request and provide constructive feedback.
 
 Focus on:
-- Code quality and readability
-- Potential bugs or logic errors
-- Security vulnerabilities (SQL injection, XSS, command injection, etc.)
-- Performance issues
-- Best practices for the language/framework
-- Missing error handling
-- Unclear variable/function names
+- **CRITICAL**: Security vulnerabilities (SQL injection, XSS, command injection, hardcoded secrets)
+- **CRITICAL**: Logic errors that will cause bugs or crashes
+- **WARNING**: Performance issues (N+1 queries, inefficient algorithms, memory leaks)
+- **WARNING**: Missing error handling for external calls (API, database, file I/O)
+- **SUGGESTION**: Code quality improvements (naming, structure, readability)
+- **SUGGESTION**: Best practices for the language/framework
 
-Be concise and actionable. If the code looks good, say so briefly.
+For each issue found:
+1. Specify severity: [CRITICAL], [WARNING], or [SUGGESTION]
+2. Reference the file and approximate line if possible
+3. Explain the issue clearly
+4. Suggest a concrete fix
+
+If the code looks good overall, say so briefly and highlight what was done well.
 
 Pull Request Diff:
 {diff}
@@ -52,12 +57,24 @@ Pull Request Diff:
 Changed Files Summary:
 {files_summary}
 
-Provide your review as a single comment body (markdown supported).
-"""
+Provide your review in markdown format with clear sections."""
+
+
+# File extensions to review (code only, skip docs/config)
+REVIEWABLE_EXTENSIONS = {
+    '.py', '.js', '.ts', '.tsx', '.jsx', '.java', '.go', '.rs', '.c', '.cpp', '.h',
+    '.cs', '.rb', '.php', '.swift', '.kt', '.scala', '.sh', '.sql', '.vue', '.svelte'
+}
+
+
+def should_review_file(filename: str) -> bool:
+    """Check if file should be reviewed based on extension."""
+    ext = Path(filename).suffix.lower()
+    return ext in REVIEWABLE_EXTENSIONS
 
 
 async def review_pr(owner: str, repo: str, pr_number: int) -> None:
-    """Fetch PR, analyze with Claude, post review."""
+    """Fetch PR, analyze with NIM, post review."""
     print(f"Reviewing PR #{pr_number} in {owner}/{repo}")
 
     # Fetch PR diff and files
@@ -65,7 +82,14 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
     diff = await get_pr_diff(owner, repo, pr_number)
 
     print("Fetching changed files...")
-    files = await list_pr_files(owner, repo, pr_number)
+    all_files = await list_pr_files(owner, repo, pr_number)
+
+    # Filter to reviewable files only
+    files = [f for f in all_files if should_review_file(f['filename'])]
+
+    if not files:
+        print("No reviewable code files found in this PR (only docs/config)")
+        return
 
     files_summary = "\n".join([
         f"- {f['filename']} (+{f['additions']} -{f['deletions']}) [{f['status']}]"
@@ -110,12 +134,41 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
 
     # Post review to GitHub
     print("Posting review to GitHub...")
+
+    # Count severity levels for summary
+    critical_count = review_body.count('[CRITICAL]')
+    warning_count = review_body.count('[WARNING]')
+    suggestion_count = review_body.count('[SUGGESTION]')
+
+    # Build summary header
+    summary_parts = []
+    if critical_count > 0:
+        summary_parts.append(f"🔴 {critical_count} critical")
+    if warning_count > 0:
+        summary_parts.append(f"🟡 {warning_count} warning{'s' if warning_count > 1 else ''}")
+    if suggestion_count > 0:
+        summary_parts.append(f"🔵 {suggestion_count} suggestion{'s' if suggestion_count > 1 else ''}")
+
+    summary = " · ".join(summary_parts) if summary_parts else "✅ No issues found"
+
+    formatted_review = f"""## 🤖 Automated Code Review
+
+**Summary:** {summary}
+
+---
+
+{review_body}
+
+---
+
+<sub>Powered by NVIDIA NIM · [meta/llama-3.1-70b-instruct](https://build.nvidia.com/meta/llama-3_1-70b-instruct)</sub>"""
+
     try:
         result = await post_pr_review(
             owner=owner,
             repo=repo,
             pr_number=pr_number,
-            body=f"## 🤖 Automated Code Review\n\n{review_body}",
+            body=formatted_review,
             event="COMMENT"
         )
         print(f"✓ Review posted: {result['html_url']}")
