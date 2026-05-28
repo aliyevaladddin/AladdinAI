@@ -33,7 +33,7 @@ async def get_installation_token(
         httpx.HTTPError: If token generation fails
     """
     if not installation_id:
-        raise ValueError("Installation ID is required")
+        raise ValueError("Installation ID is required and must be a non-empty string")
 
     # Generate JWT for GitHub App authentication
     now = int(time.time())
