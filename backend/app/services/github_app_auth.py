@@ -6,11 +6,14 @@ Generates installation tokens for GitHub App bots to authenticate API requests.
 """
 from __future__ import annotations
 
+import logging
 import time
 from typing import Optional
 
 import httpx
 import jwt
+
+log = logging.getLogger(__name__)
 
 
 async def get_installation_token(
@@ -32,6 +35,10 @@ async def get_installation_token(
         ValueError: If installation_id is empty
         httpx.HTTPError: If token generation fails
     """
+    if not app_id:
+        raise ValueError("GitHub App ID is required and must be a non-empty string")
+    if not private_key_pem:
+        raise ValueError("Private key is required and must be a non-empty string")
     if not installation_id:
         raise ValueError("Installation ID is required and must be a non-empty string")
 
@@ -60,6 +67,8 @@ async def get_installation_token(
         data = response.json()
         if "token" not in data:
             raise ValueError("Installation token not found in GitHub API response")
+
+        log.info(f"Successfully generated GitHub App installation token for installation {installation_id}")
         return data["token"]
 
 
