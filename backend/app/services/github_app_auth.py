@@ -29,8 +29,12 @@ async def get_installation_token(
         Installation access token valid for 1 hour
 
     Raises:
+        ValueError: If installation_id is empty
         httpx.HTTPError: If token generation fails
     """
+    if not installation_id:
+        raise ValueError("Installation ID is required")
+
     # Generate JWT for GitHub App authentication
     now = int(time.time())
     payload = {
