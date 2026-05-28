@@ -27,11 +27,21 @@ jobs:
 
       - name: Create Bot Commit
         run: |
+          BRANCH_NAME="bot/aladdin-activity-$(date +%s)"
+          git checkout -b "$BRANCH_NAME"
+
           echo "# AladdinAI Bot Activity" > .github/bot-activity.md
           echo "Last activity: $(date)" >> .github/bot-activity.md
           git add .github/bot-activity.md
           git commit -m "chore: update bot activity log" || echo "No changes to commit"
-          git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:main
+          git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:"$BRANCH_NAME"
+
+          # Create PR using GitHub API
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/pulls \
+            -d "{\"title\":\"chore: AladdinAI bot activity update\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated activity log update from AladdinAI bot\"}"
 
   nvidia-bot-commit:
     runs-on: ubuntu-latest
@@ -56,8 +66,18 @@ jobs:
 
       - name: Create Bot Commit
         run: |
+          BRANCH_NAME="bot/nvidia-activity-$(date +%s)"
+          git checkout -b "$BRANCH_NAME"
+
           echo "# NVIDIA Bot Activity" > .github/nvidia-bot-activity.md
           echo "Last activity: $(date)" >> .github/nvidia-bot-activity.md
           git add .github/nvidia-bot-activity.md
           git commit -m "chore: update nvidia bot activity log" || echo "No changes to commit"
-          git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:main
+          git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:"$BRANCH_NAME"
+
+          # Create PR using GitHub API
+          curl -X POST \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/pulls \
+            -d "{\"title\":\"chore: NVIDIA bot activity update\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated activity log update from NVIDIA Code Review bot\"}"
