@@ -5,10 +5,13 @@ and Telegram notifications.
 """
 from __future__ import annotations
 
+import logging
 import random
 from typing import Any
 
 import httpx
+
+log = logging.getLogger(__name__)
 
 GITHUB_API = "https://api.github.com"
 REACTIONS = ["+1", "rocket", "heart", "hooray", "eyes"]
@@ -98,54 +101,70 @@ class AladdinAIBot:
 
     async def _post_issue_comment(self, owner: str, repo: str, issue_number: int, body: str) -> None:
         """Post a comment on an issue."""
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{GITHUB_API}/repos/{owner}/{repo}/issues/{issue_number}/comments",
-                headers={
-                    "Authorization": f"Bearer {self.token}",
-                    "Accept": "application/vnd.github+json",
-                    "X-GitHub-Api-Version": "2022-11-28",
-                },
-                json={"body": body},
-                timeout=30.0,
-            )
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{GITHUB_API}/repos/{owner}/{repo}/issues/{issue_number}/comments",
+                    headers={
+                        "Authorization": f"Bearer {self.token}",
+                        "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                    },
+                    json={"body": body},
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+        except httpx.HTTPError as e:
+            log.error(f"Failed to post comment on issue #{issue_number}: {e}")
 
     async def _post_pr_comment(self, owner: str, repo: str, pr_number: int, body: str) -> None:
         """Post a comment on a pull request."""
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{GITHUB_API}/repos/{owner}/{repo}/issues/{pr_number}/comments",
-                headers={
-                    "Authorization": f"Bearer {self.token}",
-                    "Accept": "application/vnd.github+json",
-                    "X-GitHub-Api-Version": "2022-11-28",
-                },
-                json={"body": body},
-                timeout=30.0,
-            )
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{GITHUB_API}/repos/{owner}/{repo}/issues/{pr_number}/comments",
+                    headers={
+                        "Authorization": f"Bearer {self.token}",
+                        "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                    },
+                    json={"body": body},
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+        except httpx.HTTPError as e:
+            log.error(f"Failed to post comment on PR #{pr_number}: {e}")
 
     async def _react_to_issue(self, owner: str, repo: str, issue_number: int) -> None:
         """Add a random reaction to an issue or PR."""
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                f"{GITHUB_API}/repos/{owner}/{repo}/issues/{issue_number}/reactions",
-                headers={
-                    "Authorization": f"Bearer {self.token}",
-                    "Accept": "application/vnd.github+json",
-                    "X-GitHub-Api-Version": "2022-11-28",
-                },
-                json={"content": random.choice(REACTIONS)},
-                timeout=30.0,
-            )
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{GITHUB_API}/repos/{owner}/{repo}/issues/{issue_number}/reactions",
+                    headers={
+                        "Authorization": f"Bearer {self.token}",
+                        "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                    },
+                    json={"content": random.choice(REACTIONS)},
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+        except httpx.HTTPError as e:
+            log.error(f"Failed to add reaction to issue #{issue_number}: {e}")
 
     async def _notify_telegram(self, message: str) -> None:
         """Send notification to Telegram."""
         if not self.telegram_bot_token or not self.telegram_chat_id:
             return
 
-        async with httpx.AsyncClient() as client:
-            await client.post(
-                f"https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage",
-                json={"chat_id": self.telegram_chat_id, "text": message},
-                timeout=30.0,
-            )
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage",
+                    json={"chat_id": self.telegram_chat_id, "text": message},
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+        except httpx.HTTPError as e:
+            log.error(f"Failed to send Telegram notification: {e}")
