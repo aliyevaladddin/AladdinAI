@@ -28,6 +28,9 @@ async def github_create_issue(
     Returns:
         Created issue data with url, number, etc.
     """
+    if not isinstance(repo, str) or "/" not in repo:
+        raise ValueError("Invalid repository format. Should be 'owner/repo'")
+
     token = await get_aladdinai_bot_token()
 
     payload = {
@@ -148,6 +151,10 @@ async def github_review_pr(
     Returns:
         Created review data
     """
+    allowed_events = ["COMMENT", "APPROVE", "REQUEST_CHANGES"]
+    if event not in allowed_events:
+        raise ValueError(f"Invalid event. Should be one of {allowed_events}")
+
     token = await get_nvidia_bot_token()
 
     async with httpx.AsyncClient() as client:
