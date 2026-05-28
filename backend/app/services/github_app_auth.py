@@ -58,6 +58,8 @@ async def get_installation_token(
         )
         response.raise_for_status()
         data = response.json()
+        if "token" not in data:
+            raise ValueError("Installation token not found in GitHub API response")
         return data["token"]
 
 
