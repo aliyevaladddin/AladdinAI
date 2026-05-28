@@ -90,6 +90,44 @@ async def list_presets():
     return [{"id": k, "cron": v} for k, v in PRESETS.items()]
 
 
+@router.get("/templates")
+async def list_trigger_templates():
+    """Predefined trigger templates for common use cases."""
+    return [
+        {
+            "id": "proactive_crm_reminders",
+            "name": "Daily CRM Reminders",
+            "description": "Proactively checks CRM deals with approaching deadlines and sends reminders",
+            "schedule_preset": "every_morning_9",
+            "task_template": (
+                "Check CRM deals with deadlines in the next 24-48 hours. "
+                "For each deal approaching deadline, generate a personalized reminder message "
+                "and send it via the contact's preferred channel (Telegram, Email, or WhatsApp). "
+                "Include: deal name, contact name, deadline, suggested next steps."
+            ),
+            "context_template": {
+                "role": "proactive CRM assistant",
+                "instructions": "Be concise, actionable, and professional. Focus on urgency and next steps."
+            },
+        },
+        {
+            "id": "daily_digest",
+            "name": "Daily Activity Digest",
+            "description": "Sends a summary of yesterday's activities and today's priorities",
+            "schedule_preset": "every_morning_9",
+            "task_template": (
+                "Generate a daily digest: summarize yesterday's activities (messages, deals, tasks) "
+                "and highlight today's priorities (upcoming deadlines, pending follow-ups). "
+                "Send via user's preferred channel."
+            ),
+            "context_template": {
+                "role": "executive assistant",
+                "instructions": "Keep it brief (3-5 bullet points max). Focus on actionable items."
+            },
+        },
+    ]
+
+
 @router.get("/preview")
 async def preview_cron(cron: str):
     try:

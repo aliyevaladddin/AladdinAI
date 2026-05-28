@@ -30,6 +30,15 @@ interface Preset {
   cron: string;
 }
 
+interface TriggerTemplate {
+  id: string;
+  name: string;
+  description: string;
+  schedule_preset: string;
+  task_template: string;
+  context_template: Record<string, unknown> | null;
+}
+
 const PRESET_LABELS: Record<string, string> = {
   every_15_minutes: "Every 15 minutes",
   every_hour: "Every hour",
@@ -63,23 +72,27 @@ export function AgentTriggersPanel() {
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [agents, setAgents] = useState<AgentRef[]>([]);
   const [presets, setPresets] = useState<Preset[]>([]);
+  const [templates, setTemplates] = useState<TriggerTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [draft, setDraft] = useState<DraftState>(EMPTY_DRAFT);
   const [preview, setPreview] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [t, a, p] = await Promise.all([
+      const [t, a, p, tmpl] = await Promise.all([
         api.get<Trigger[]>("/triggers"),
         api.get<AgentRef[]>("/agents"),
         api.get<Preset[]>("/triggers/presets"),
+        api.get<TriggerTemplate[]>("/triggers/templates"),
       ]);
       setTriggers(t);
       setAgents(a);
       setPresets(p);
+      setTemplates(tmpl);
     } catch (e) {
       console.error(e);
       toast.error("Failed to load triggers");
@@ -96,6 +109,21 @@ export function AgentTriggersPanel() {
     setDraft(EMPTY_DRAFT);
     setEditingId("new");
     setPreview(null);
+  };
+
+  const startFromTemplate = (tmpl: TriggerTemplate) => {
+    setDraft({
+      name: tmpl.name,
+      schedule_kind: "preset",
+      schedule_preset: tmpl.schedule_preset,
+      cron: presets.find((p) => p.id === tmpl.schedule_preset)?.cron ?? "0 9 * * *",
+      agent_ids: [],
+      task_template: tmpl.task_template,
+      enabled: true,
+    });
+    setEditingId("new");
+    setPreview(null);
+    setShowTemplates(false);
   };
 
   const startEdit = (t: Trigger) => {
@@ -228,11 +256,43 @@ export function AgentTriggersPanel() {
           </p>
         </div>
         {editingId === null && (
-          <Button onClick={startNew} size="sm">
-            New trigger
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setShowTemplates(!showTemplates)} variant="outline" size="sm">
+              {showTemplates ? "Hide templates" : "Browse templates"}
+            </Button>
+            <Button onClick={startNew} size="sm">
+              New trigger
+            </Button>
+          </div>
         )}
       </div>
+
+      {showTemplates && editingId === null && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {templates.map((tmpl) => (
+            <div
+              key={tmpl.id}
+              className="rounded-lg border border-border p-4 space-y-2 hover:border-accent transition-colors cursor-pointer"
+              onClick={() => startFromTemplate(tmpl)}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h4 className="font-medium text-sm">{tmpl.name}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {tmpl.description}
+                  </p>
+                </div>
+                <span className="text-[10px] px-2 py-1 rounded bg-accent/10 text-accent shrink-0">
+                  {PRESET_LABELS[tmpl.schedule_preset] ?? tmpl.schedule_preset}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground line-clamp-2 italic">
+                "{tmpl.task_template.slice(0, 120)}..."
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {editingId !== null && (
         <div className="rounded-lg border border-border p-4 space-y-3">
