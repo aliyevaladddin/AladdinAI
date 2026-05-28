@@ -84,6 +84,10 @@ class AladdinAIBot:
             issue = payload.get("issue", {})
             issue_number = issue.get("number")
             user = issue.get("user", {}).get("login", "")
+
+            # Assign bot to issue
+            await self._assign_to_issue(owner, repo_name, issue_number, ["aliyevaladddin"])
+
             await self._post_issue_comment(
                 owner,
                 repo_name,
@@ -247,3 +251,21 @@ class AladdinAIBot:
                 response.raise_for_status()
         except httpx.HTTPError as e:
             log.error(f"Failed to assign reviewers to PR #{pr_number}: {e}")
+
+    async def _assign_to_issue(self, owner: str, repo: str, issue_number: int, assignees: list[str]) -> None:
+        """Assign users to an issue."""
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{GITHUB_API}/repos/{owner}/{repo}/issues/{issue_number}/assignees",
+                    headers={
+                        "Authorization": f"Bearer {self.token}",
+                        "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                    },
+                    json={"assignees": assignees},
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+        except httpx.HTTPError as e:
+            log.error(f"Failed to assign to issue #{issue_number}: {e}")
