@@ -1,0 +1,44 @@
+name: Code Review Agent
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.NVIDIA_BOT_APP_ID }}
+          private_key: ${{ secrets.NVIDIA_BOT_PRIVATE_KEY }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install httpx openai
+
+      - name: Run Code Review Agent
+        env:
+          PATH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          NIM_API_KEY: ${{ secrets.NIM_API_KEY }}
+          NIM_BASE_URL: ${{ secrets.NIM_BASE_URL }}
+          NIM_MODEL: ${{ secrets.NIM_MODEL }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          python .github/agents/code_review_agent.py
