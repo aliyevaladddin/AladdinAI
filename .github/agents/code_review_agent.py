@@ -72,8 +72,8 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
         for f in files
     ])
 
-    # Analyze with Claude
-    print("Analyzing with Claude...")
+    # Analyze with NIM
+    print("Analyzing with NIM...")
     api_key = os.getenv("NIM_API_KEY")
     if not api_key:
         print("Error: NIM_API_KEY not set", file=sys.stderr)
@@ -83,8 +83,8 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
     model = os.getenv("NIM_MODEL", "meta/llama-3.1-70b-instruct")
 
     client = OpenAI(
-        api_key=api_key,
-        base_url=base_url
+        base_url=base_url,
+        api_key=api_key
     )
 
     try:
@@ -97,8 +97,9 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
                     files_summary=files_summary
                 )
             }],
+            temperature=0.2,
+            top_p=0.7,
             max_tokens=2000,
-            temperature=0.7
         )
 
         review_body = response.choices[0].message.content
