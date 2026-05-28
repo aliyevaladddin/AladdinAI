@@ -7,8 +7,6 @@
 
 - Add write permissions to changelog workflow ([43351d4](https://github.com/aliyevaladddin/AladdinAI/commit/43351d487c13feaddd3709993913eb41b008d5d3))
 
-- Update changelog workflow to use AladdinAI bot and create PRs ([beb141f](https://github.com/aliyevaladddin/AladdinAI/commit/beb141f54daf50e4ba91b45b25966918d6722af7))
-
 - Add validation for GitHub tools parameters per code review feedback ([3de2583](https://github.com/aliyevaladddin/AladdinAI/commit/3de25834b4d85f1114aa77e17ee1636d479845b6))
 
 - Improve error message for empty installation_id ([1e99697](https://github.com/aliyevaladddin/AladdinAI/commit/1e9969774cb32fe10735a585cf99397d52f78f87))
@@ -26,6 +24,8 @@
 - Add error handling and logging to AladdinAI bot ([ea8a8cf](https://github.com/aliyevaladddin/AladdinAI/commit/ea8a8cf02f64376bc8778ba099f76346606bf209))
 
 - Remove unused settings import in autonomous_bot_scheduler ([c7af3b9](https://github.com/aliyevaladddin/AladdinAI/commit/c7af3b966ce2c11121fa8fc6c12fdeb575b96526))
+
+- Update changelog workflow to use AladdinAI bot and create PRs ([beb141f](https://github.com/aliyevaladddin/AladdinAI/commit/beb141f54daf50e4ba91b45b25966918d6722af7))
 
 - Correct indentation and add owner parameter to _get_user_context ([e95d9ba](https://github.com/aliyevaladddin/AladdinAI/commit/e95d9ba21b4519604ee395bcf10224780c32a9ef))
 
@@ -86,6 +86,8 @@
 - Add automatic issue assignment functionality for the aladdinai bot ([c372744](https://github.com/aliyevaladddin/AladdinAI/commit/c3727445c7a1af7733516b9a7601e8baa573d370))
 
 - Add user interaction tracking with personalized bot responses ([bdf162c](https://github.com/aliyevaladddin/AladdinAI/commit/bdf162c65a4dfe4a402ce42da6ebadb8bbc29bf5))
+
+- Add repository owner recognition with special treatment ([1c78f25](https://github.com/aliyevaladddin/AladdinAI/commit/1c78f252cc2a7b07448d5c29b796f346ff892af8))
 
 
 ### Refactor
