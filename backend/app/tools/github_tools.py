@@ -3,12 +3,15 @@
 """GitHub tools for agents using GitHub App bots."""
 from __future__ import annotations
 
+import logging
 import re
 
 import httpx
 
 from app.services.github_app_auth import get_aladdinai_bot_token, get_nvidia_bot_token
 from app.tools import ToolContext, tool
+
+log = logging.getLogger(__name__)
 
 
 @tool
@@ -43,18 +46,22 @@ async def github_create_issue(
         payload["labels"] = labels
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"https://api.github.com/repos/{repo}/issues",
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
-            },
-            json=payload,
-            timeout=30.0,
-        )
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = await client.post(
+                f"https://api.github.com/repos/{repo}/issues",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                },
+                json=payload,
+                timeout=30.0,
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as e:
+            log.error(f"Failed to create GitHub issue in {repo}: {e}")
+            raise
 
 
 @tool

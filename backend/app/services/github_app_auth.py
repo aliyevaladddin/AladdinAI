@@ -54,16 +54,21 @@ async def get_installation_token(
 
     # Exchange JWT for installation token
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"https://api.github.com/app/installations/{installation_id}/access_tokens",
-            headers={
-                "Authorization": f"Bearer {jwt_token}",
-                "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
-            },
-            timeout=30.0,
-        )
-        response.raise_for_status()
+        try:
+            response = await client.post(
+                f"https://api.github.com/app/installations/{installation_id}/access_tokens",
+                headers={
+                    "Authorization": f"Bearer {jwt_token}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                },
+                timeout=30.0,
+            )
+            response.raise_for_status()
+        except httpx.HTTPError as e:
+            log.error(f"Failed to generate GitHub App installation token: {e}")
+            raise
+
         data = response.json()
         if "token" not in data:
             raise ValueError("Installation token not found in GitHub API response")
