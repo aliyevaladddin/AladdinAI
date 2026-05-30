@@ -11,6 +11,8 @@
 
 - Replace preDeployCommand with startCommand for SQLite migrations ([453c1e0](https://github.com/aliyevaladddin/AladdinAI/commit/453c1e0c6e6f1e7deae9b287e589dcba79df719d))
 
+- Correct alembic migration chain and move to startCommand for SQLite ([0126ac7](https://github.com/aliyevaladddin/AladdinAI/commit/0126ac788b341d8ab21744237c1c81bb09464dc0))
+
 
 ### Bug fixes
 
