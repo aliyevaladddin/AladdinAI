@@ -28,7 +28,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 6. Make sure your code follows the existing style:
    - **Backend**: FastAPI, Pydantic models, type hints
    - **Frontend**: Next.js App Router, TailwindCSS, TypeScript
-   - **CLI**: TypeScript, Commander.js
+   - **CLI**: JavaScript (ES modules), Commander.js
 
 ## Development Setup
 
@@ -119,8 +119,10 @@ Format: `<type>: <description>`
 - `perf:` — performance improvement
 - `docs:` — documentation only
 - `chore:` — maintenance (skipped in changelog)
-- `test:` — adding or updating tests
-- `refactor:` — code change that neither fixes a bug nor adds a feature
+- `test:` — adding or updating tests (not in changelog)
+- `refactor:` — code change that neither fixes a bug nor adds a feature (not in changelog)
+
+> **Note:** Only `feat`, `fix`, `perf`, and `docs` appear in the auto-generated changelog (see `cliff.toml`). Other types are valid but won't be included in release notes.
 
 **Examples:**
 ```
