@@ -2,6 +2,10 @@
 ![Repo size](https://img.shields.io/github/repo-size/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 [![CI](https://img.shields.io/github/actions/workflow/status/aliyevaladddin/AladdinAI/ci.yml?style=flat-square&color=4ecdc4&label=CI&logo=githubactions&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI/actions/workflows/ci.yml)
 [![Deploy to Render](https://img.shields.io/badge/deploy%20to-render-4ecdc4?style=flat-square&logo=render&logoColor=white)](https://render.com/deploy?repo=https://github.com/aliyevaladddin/AladdinAI)
+![Last commit](https://img.shields.io/github/last-commit/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
+
+
 
 <div align="center">
 
@@ -30,7 +34,6 @@
 [![Issues](https://img.shields.io/github/issues/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)](https://github.com/aliyevaladddin/AladdinAI/issues)
 [![NPM Version](https://img.shields.io/npm/v/aladdin-ai?style=flat-square&color=4ecdc4&logo=npm&logoColor=white)](https://www.npmjs.com/package/aladdin-ai)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
-![Last commit](https://img.shields.io/github/last-commit/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 
 <br/>
 
