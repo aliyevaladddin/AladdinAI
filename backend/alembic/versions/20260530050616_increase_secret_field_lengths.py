@@ -22,6 +22,18 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    """
+    Increase the length of secret fields to accommodate GitHub's new token format.
+
+    GitHub App installation tokens are transitioning from the old format (ghp_...)
+    to a new stateless format (ghs_...) that can be up to ~520 characters long.
+    This migration updates the following fields from VARCHAR(255) to VARCHAR(1024):
+
+    - messaging_channels.webhook_secret: Used for incoming webhook authentication
+    - outgoing_webhooks.secret: Used for outgoing webhook signing
+
+    The 1024 character limit provides headroom for future token format changes.
+    """
     # Increase length of secret fields to accommodate GitHub's new token format
     # Old format: ghp_... (~40 chars)
     # New format: ghs_... (~520 chars)
