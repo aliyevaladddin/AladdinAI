@@ -34,7 +34,15 @@ function stripHtml(html: string): string {
   if (!html.includes("<")) return html.trim();
 
   if (typeof window === "undefined" || typeof DOMParser === "undefined") {
-    return html.replace(/<[^>]+>/g, " ").trim();
+    return html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&")
+      .replace(/[ \t]{2,}/g, " ")
+      .trim();
   }
 
   const parser = new DOMParser();
