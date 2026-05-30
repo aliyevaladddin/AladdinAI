@@ -3,7 +3,7 @@
 First off, thank you for considering contributing to AladdinAI! It's people like you that make AladdinAI a great sovereign platform.
 
 ## Code of Conduct
-By participating in this project, you agree to maintain a respectful and collaborative environment. We value constructive feedback, technical excellence, and alignment with the project's sovereign principles.
+By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## How Can I Contribute?
 
@@ -51,10 +51,11 @@ npx aladdin-ai
 
 Backend:
 ```bash
-cd backend
+# Create venv at root level to avoid conflicts with Makefile
 python -m venv .venv
 source .venv/bin/activate  # or `.venv\Scripts\activate` on Windows
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
+cd backend
 uvicorn app.main:app --reload --port 8000
 ```
 
