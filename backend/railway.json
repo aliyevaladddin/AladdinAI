@@ -6,6 +6,7 @@
     "buildEnvironment": "V3"
   },
   "deploy": {
+    "preDeployCommand": "alembic upgrade head",
     "runtime": "V2",
     "numReplicas": 1,
     "sleepApplication": true,
