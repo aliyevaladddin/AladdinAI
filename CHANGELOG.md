@@ -26,6 +26,8 @@
 
 - Bump httpx from 0.27.0 to 0.28.1 ([2de2791](https://github.com/aliyevaladddin/AladdinAI/commit/2de2791be1f87ab5fb56ac20da44aa1f0304d8df))
 
+- Bump fastapi from 0.115.0 to 0.136.3 ([501ff69](https://github.com/aliyevaladddin/AladdinAI/commit/501ff695800bc3c284dfd64713370995f42a3a16))
+
 
 ### Ci
 
