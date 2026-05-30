@@ -20,6 +20,8 @@
 
 - Bump actions/checkout from 4 to 6 ([53f4bd2](https://github.com/aliyevaladddin/AladdinAI/commit/53f4bd236322e782abe1ab90224a29c2db8e0e72))
 
+- Bump python-multipart from 0.0.12 to 0.0.29 ([d059ee4](https://github.com/aliyevaladddin/AladdinAI/commit/d059ee4d177ed32f5654276b910bec4c670179c2))
+
 
 ### Ci
 
