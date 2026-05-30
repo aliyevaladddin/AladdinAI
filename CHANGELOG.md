@@ -20,6 +20,8 @@
 
 - Add Privacy Policy and Terms of Service for GitHub Marketplace ([36367c5](https://github.com/aliyevaladddin/AladdinAI/commit/36367c551f0beb6034f9718cb8b7ddefc566f255))
 
+- Add MongoDB for Startups badge and credits info ([788519e](https://github.com/aliyevaladddin/AladdinAI/commit/788519e83686ad40f785f21515e969350c35f369))
+
 
 ### Features
 
