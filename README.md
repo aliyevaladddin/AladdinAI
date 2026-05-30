@@ -63,7 +63,7 @@ AladdinAI is the platform that makes that possible — without building everythi
 > **Status:** actively developed. Most features are wired end-to-end and usable locally. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full picture.
 
 ---
-
+ 
 ## ◈ What's inside
 
 | Module | Description |
