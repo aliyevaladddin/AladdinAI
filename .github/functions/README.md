@@ -38,8 +38,8 @@ In Cloudflare Pages → Settings → Environment variables, add:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `GITHUB_WEBHOOK_SECRET` | GitHub App webhook secret | ✅ Yes |
-| `GITHUB_APP_TOKEN` | GitHub App installation token or PAT | ✅ Yes |
+| `WEBHOOK_SECRET` | GitHub App webhook secret | ✅ Yes |
+| `GITHUB_TOKEN` | GitHub App installation token or PAT | ✅ Yes |
 
 **Getting GitHub App Token:**
 
@@ -67,7 +67,7 @@ Option 2 - Personal Access Token:
    ```
    https://your-domain.pages.dev/api/webhooks/github
    ```
-4. Webhook secret: use the same value as `GITHUB_WEBHOOK_SECRET` env var
+4. Webhook secret: use the same value as `WEBHOOK_SECRET` env var
 
 ### 4. Subscribe to Events
 
@@ -131,7 +131,7 @@ Check Cloudflare logs:
 
 **Bot not responding:**
 1. Check webhook URL is correct in GitHub App settings
-2. Verify `GITHUB_WEBHOOK_SECRET` matches in both places
+2. Verify `WEBHOOK_SECRET` matches in both places
 3. Check Cloudflare Functions logs for errors
 4. Verify events are subscribed in GitHub App settings
 
@@ -140,7 +140,7 @@ Check Cloudflare logs:
 - Check Recent Deliveries in GitHub App for error details
 
 **GitHub API errors:**
-- Check `GITHUB_APP_TOKEN` is valid and has correct permissions
+- Check `GITHUB_TOKEN` is valid and has correct permissions
 - Token might be expired (installation tokens expire after 1 hour)
 
 ## Architecture

@@ -39,9 +39,9 @@ export async function onRequestPost(context) {
     }
 
     // Read webhook secret from environment
-    const webhookSecret = env.GITHUB_WEBHOOK_SECRET;
+    const webhookSecret = env.WEBHOOK_SECRET || env.GITHUB_WEBHOOK_SECRET;
     if (!webhookSecret) {
-      console.error('GITHUB_WEBHOOK_SECRET not configured');
+      console.error('WEBHOOK_SECRET not configured');
       return new Response(
         JSON.stringify({ error: 'Webhook secret not configured' }),
         { status: 500, headers: corsHeaders }
@@ -245,7 +245,7 @@ function generateMentionReply(comment, issue) {
 }
 
 async function postComment(repoFullName, issueNumber, body, env) {
-  const githubToken = env.GITHUB_APP_TOKEN || env.GITHUB_TOKEN;
+  const githubToken = env.GITHUB_TOKEN || env.PATH_TOKEN || env.GITHUB_APP_TOKEN;
 
   if (!githubToken) {
     console.error('GitHub token not configured');
