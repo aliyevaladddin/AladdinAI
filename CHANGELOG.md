@@ -9,8 +9,6 @@
 
 - Move alembic migrations to preDeployCommand, remove multi-region ([ce7b05e](https://github.com/aliyevaladddin/AladdinAI/commit/ce7b05e8f136d38a22016f892b8ff90e332de222))
 
-- Replace preDeployCommand with startCommand for SQLite migrations ([453c1e0](https://github.com/aliyevaladddin/AladdinAI/commit/453c1e0c6e6f1e7deae9b287e589dcba79df719d))
-
 
 ### Bug fixes
 
