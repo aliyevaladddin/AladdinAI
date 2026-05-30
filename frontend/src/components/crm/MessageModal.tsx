@@ -29,34 +29,30 @@ interface Props {
 
 function stripHtml(html: string): string {
   if (!html) return "";
-  
+
   // If it doesn't look like HTML, just return it
   if (!html.includes("<")) return html.trim();
 
-  const sanitizePass = (value: string): string =>
-    value
-      .replace(/<style\b[\s\S]*?<\/style\s*[^>]*>/gi, "")
-      .replace(/<script\b[\s\S]*?<\/script\s*[^>]*>/gi, "")
-      .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n") // Add newline after block elements
-      .replace(/<br\s*\/?>/gi, "\n") // Replace <br> with newline
-      .replace(/<[^>]+>/g, " ") // Strip other tags
-      .replace(/&nbsp;/g, " ")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"')
-      .replace(/&amp;/g, "&")
-      .replace(/[ \t]{2,}/g, " ") // Collapse multiple spaces (but preserve newlines)
-      .replace(/\n\s*\n/g, "\n\n") // Collapse multiple empty lines into max 2
-      .trim();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
 
-  let previous: string;
-  let current = html;
-  do {
-    previous = current;
-    current = sanitizePass(current);
-  } while (current !== previous);
+  // Remove non-content nodes
+  doc.querySelectorAll("script, style, noscript").forEach((node) => node.remove());
 
-  return current;
+  // Preserve readable structure with line breaks
+  doc.querySelectorAll("br").forEach((node) => {
+    node.replaceWith(doc.createTextNode("\n"));
+  });
+
+  doc.querySelectorAll("p, div, h1, h2, h3, h4, h5, h6, li, tr").forEach((node) => {
+    node.appendChild(doc.createTextNode("\n"));
+  });
+
+  return (doc.body.textContent || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n\s*\n/g, "\n\n")
+    .trim();
 }
 
 /* ── Component ───────────────────────────────────────────────────── */
