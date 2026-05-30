@@ -33,7 +33,6 @@
 [![MongoDB for Startups](https://img.shields.io/badge/MongoDB-for%20Startups-4ecdc4?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/startups)
 [![Issues](https://img.shields.io/github/issues/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)](https://github.com/aliyevaladddin/AladdinAI/issues)
 [![NPM Version](https://img.shields.io/npm/v/aladdin-ai?style=flat-square&color=4ecdc4&logo=npm&logoColor=white)](https://www.npmjs.com/package/aladdin-ai)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 
 <br/>
 
