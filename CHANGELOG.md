@@ -15,6 +15,8 @@
 
 - Move railway.json to repo root with correct paths ([e06f119](https://github.com/aliyevaladddin/AladdinAI/commit/e06f1199f740c20343a2e12ee0d574bd2811894d))
 
+- Add dockerContext to railway.json ([770164b](https://github.com/aliyevaladddin/AladdinAI/commit/770164b18a31dfdfa76b4a3b6e659ba09edd8542))
+
 
 ### Bug fixes
 
