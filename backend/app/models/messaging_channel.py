@@ -14,7 +14,9 @@ class MessagingChannel(Base):
     type: Mapped[str] = mapped_column(String(50))  # telegram, whatsapp, sms
     name: Mapped[str] = mapped_column(String(255))
     config: Mapped[dict] = mapped_column(JSON)  # bot_token for telegram, phone_number_id for whatsapp, etc.
-    webhook_secret: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    webhook_secret: Mapped[str | None] = mapped_column(
+        String(1024), nullable=True
+    )  # Secret token for webhook authentication (supports GitHub's new ghs_... format up to ~520 chars)
     agent_id: Mapped[int | None] = mapped_column(ForeignKey("agents.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="disconnected")
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
