@@ -1,6 +1,38 @@
 # Changelog
 
 
+### Bug fixes
+
+- Verify GitHub webhook signature against raw body bytes ([c8a8ea2](https://github.com/aliyevaladddin/AladdinAI/commit/c8a8ea2c8599ff540ac8f361afb881016afa09a7))
+
+- Improve security and error handling in webhook handler ([af4a852](https://github.com/aliyevaladddin/AladdinAI/commit/af4a8522323603f7c115c0d5fb3c0d4be240ff3c))
+
+
+### Docs
+
+- Update CONTRIBUTING.md with actual setup commands and conventional commits ([6391a27](https://github.com/aliyevaladddin/AladdinAI/commit/6391a273077321172ab43f108852fbeb8c7b5ce5))
+
+- Restore CODE_OF_CONDUCT link and fix backend venv setup ([0b6a498](https://github.com/aliyevaladddin/AladdinAI/commit/0b6a4988162009392f586a87c0fda3e6020cb31a))
+
+- Fix CLI language and clarify changelog commit types ([35d74bf](https://github.com/aliyevaladddin/AladdinAI/commit/35d74bf100a78c4ebe6e0cbd21b27a0f95ee2da0))
+
+- Add docstrings and comments for secret field changes ([9258452](https://github.com/aliyevaladddin/AladdinAI/commit/92584521cc4a1be5fd71f58aeb97d5df130745ca))
+
+- Add Privacy Policy and Terms of Service for GitHub Marketplace ([36367c5](https://github.com/aliyevaladddin/AladdinAI/commit/36367c551f0beb6034f9718cb8b7ddefc566f255))
+
+
+### Features
+
+- Add Cloudflare Functions for GitHub bot webhook ([5c9d283](https://github.com/aliyevaladddin/AladdinAI/commit/5c9d28349d970e2147123fe55c5005dad1de63f6))
+
+- Increase secret field lengths for GitHub App token format change ([ea4d62a](https://github.com/aliyevaladddin/AladdinAI/commit/ea4d62a91b47c65f27ab16951c16f64a6a72099a))
+
+
+### Refactor
+
+- Update Cloudflare Functions env variable names ([715ab34](https://github.com/aliyevaladddin/AladdinAI/commit/715ab348b329648bd81b20f95cd9cde133bd0965))
+
+
 ### Test
 
 - Trigger webhook for AladdinAI bot ([f433b46](https://github.com/aliyevaladddin/AladdinAI/commit/f433b46156df868171de9c8b95067b1db105be6c))
