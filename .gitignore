@@ -53,6 +53,7 @@ fix-stale-containers.sql
 claude-proxy-config.yaml
 session-ses_1ada.md
 docs/blog-architecture-deep-dive.md
+test_bot_trigger.py
 
 # Project specific
 .idx/
