@@ -59,6 +59,8 @@
 
 - Increase secret field lengths for GitHub App token format change ([ea4d62a](https://github.com/aliyevaladddin/AladdinAI/commit/ea4d62a91b47c65f27ab16951c16f64a6a72099a))
 
+- Add descriptive metadata and parameter schemas to GitHub tools ([50724dc](https://github.com/aliyevaladddin/AladdinAI/commit/50724dc2fbe8343ec76427a061145f2e8c142429))
+
 
 ### Refactor
 
