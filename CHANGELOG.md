@@ -3,6 +3,11 @@
 
 ### Bug fixes
 
+- Update dockerfilePath from /backend/Dockerfile to Dockerfile ([8e92bea](https://github.com/aliyevaladddin/AladdinAI/commit/8e92beaa2b35ea4dbb45ebcb5f1cd07b54eb04b4))
+
+
+### Bug fixes
+
 - Verify GitHub webhook signature against raw body bytes ([c8a8ea2](https://github.com/aliyevaladddin/AladdinAI/commit/c8a8ea2c8599ff540ac8f361afb881016afa09a7))
 
 - Improve security and error handling in webhook handler ([af4a852](https://github.com/aliyevaladddin/AladdinAI/commit/af4a8522323603f7c115c0d5fb3c0d4be240ff3c))
