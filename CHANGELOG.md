@@ -22,6 +22,8 @@
 
 - Bump python-multipart from 0.0.12 to 0.0.29 ([d059ee4](https://github.com/aliyevaladddin/AladdinAI/commit/d059ee4d177ed32f5654276b910bec4c670179c2))
 
+- Bump pyjwt from 2.8.0 to 2.13.0 ([14ce10d](https://github.com/aliyevaladddin/AladdinAI/commit/14ce10d0bef2a9eaa93b210da1b4131319adfd50))
+
 
 ### Ci
 
