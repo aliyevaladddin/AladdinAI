@@ -12,6 +12,8 @@
 
 - Remove Node.js 18.x from CI build matrix ([15312ad](https://github.com/aliyevaladddin/AladdinAI/commit/15312adc46bbf9fa63f81d2e14b1fbfc3fff4d3a))
 
+- Bump next from 16.2.4 to 16.2.6 in /frontend ([fc27ef6](https://github.com/aliyevaladddin/AladdinAI/commit/fc27ef6a11fca684d1670caf82f5dbe244144b7a))
+
 
 ### Ci
 
