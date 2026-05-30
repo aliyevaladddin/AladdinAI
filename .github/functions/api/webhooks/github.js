@@ -113,26 +113,45 @@ export async function onRequestPost(context) {
 }
 
 async function verifySignature(payload, signature, secret) {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
+  try {
+    const encoder = new TextEncoder();
 
-  const signatureBytes = await crypto.subtle.sign(
-    'HMAC',
-    key,
-    encoder.encode(payload)
-  );
+    // Import secret as HMAC key
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
 
-  const expectedSignature = 'sha256=' + Array.from(new Uint8Array(signatureBytes))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+    // Compute HMAC-SHA256 signature
+    const signatureBytes = await crypto.subtle.sign(
+      'HMAC',
+      key,
+      encoder.encode(payload)
+    );
 
-  return signature === expectedSignature;
+    // Convert to hex string with 'sha256=' prefix (GitHub format)
+    const expectedSignature = 'sha256=' + Array.from(new Uint8Array(signatureBytes))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    // Constant-time comparison to prevent timing attacks
+    if (signature.length !== expectedSignature.length) {
+      return false;
+    }
+
+    let result = 0;
+    for (let i = 0; i < signature.length; i++) {
+      result |= signature.charCodeAt(i) ^ expectedSignature.charCodeAt(i);
+    }
+
+    return result === 0;
+  } catch (error) {
+    console.error('Signature verification error:', error);
+    return false;
+  }
 }
 
 async function handlePullRequest(payload, env) {
@@ -260,27 +279,66 @@ async function postComment(repoFullName, issueNumber, body, env) {
 
   if (!githubToken) {
     console.error('GitHub token not configured');
-    return;
+    return { success: false, error: 'Token not configured' };
   }
 
   const url = `https://api.github.com/repos/${repoFullName}/issues/${issueNumber}/comments`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${githubToken}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-      'User-Agent': 'AladdinAI-Bot'
-    },
-    body: JSON.stringify({ body })
-  });
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${githubToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'AladdinAI-Bot'
+      },
+      body: JSON.stringify({ body })
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('Failed to post comment:', error);
-    throw new Error(`GitHub API error: ${response.status}`);
+    // Handle rate limiting
+    if (response.status === 403) {
+      const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
+      const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+
+      if (rateLimitRemaining === '0') {
+        const resetTime = new Date(parseInt(rateLimitReset) * 1000);
+        console.error(`Rate limit exceeded. Resets at ${resetTime.toISOString()}`);
+        return { success: false, error: 'Rate limit exceeded' };
+      }
+    }
+
+    // Handle authentication errors
+    if (response.status === 401) {
+      console.error('GitHub API authentication failed - token may be invalid or expired');
+      return { success: false, error: 'Authentication failed' };
+    }
+
+    // Handle permission errors
+    if (response.status === 403) {
+      console.error('GitHub API permission denied - token may lack required scopes');
+      return { success: false, error: 'Permission denied' };
+    }
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`GitHub API error (${response.status}):`, errorBody);
+      return {
+        success: false,
+        error: `GitHub API error: ${response.status}`,
+        details: errorBody
+      };
+    }
+
+    const result = await response.json();
+    return { success: true, data: result };
+
+  } catch (error) {
+    console.error('Failed to post comment:', error.message);
+    return {
+      success: false,
+      error: 'Network or fetch error',
+      details: error.message
+    };
   }
-
-  return response.json();
 }
