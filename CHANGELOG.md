@@ -16,6 +16,8 @@
 
 - Bump python-jose from 3.3.0 to 3.4.0 in /backend ([75a8cee](https://github.com/aliyevaladddin/AladdinAI/commit/75a8ceed6b19e1edab69e1e1e146e187b419df7f))
 
+- Bump sqlalchemy from 2.0.35 to 2.0.50 ([c8092ae](https://github.com/aliyevaladddin/AladdinAI/commit/c8092ae53be1c65d4a40d202fdc37b522b696c22))
+
 
 ### Ci
 
