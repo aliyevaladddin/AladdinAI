@@ -41,10 +41,10 @@ function stripHtml(html: string): string {
       .replace(/<br\s*\/?>/gi, "\n") // Replace <br> with newline
       .replace(/<[^>]+>/g, " ") // Strip other tags
       .replace(/&nbsp;/g, " ")
-      .replace(/&amp;/g, "&")
       .replace(/&lt;/g, "<")
       .replace(/&gt;/g, ">")
       .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&")
       .replace(/[ \t]{2,}/g, " ") // Collapse multiple spaces (but preserve newlines)
       .replace(/\n\s*\n/g, "\n\n") // Collapse multiple empty lines into max 2
       .trim();
