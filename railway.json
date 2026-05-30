@@ -3,10 +3,11 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "backend/Dockerfile",
+    "dockerContext": "backend",
     "buildEnvironment": "V3"
   },
   "deploy": {
-    "startCommand": "cd backend && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}",
+    "startCommand": "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}",
     "runtime": "V2",
     "numReplicas": 1,
     "sleepApplication": false,
