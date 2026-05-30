@@ -14,6 +14,8 @@
 
 - Bump next from 16.2.4 to 16.2.6 in /frontend ([fc27ef6](https://github.com/aliyevaladddin/AladdinAI/commit/fc27ef6a11fca684d1670caf82f5dbe244144b7a))
 
+- Bump python-jose from 3.3.0 to 3.4.0 in /backend ([75a8cee](https://github.com/aliyevaladddin/AladdinAI/commit/75a8ceed6b19e1edab69e1e1e146e187b419df7f))
+
 
 ### Ci
 
