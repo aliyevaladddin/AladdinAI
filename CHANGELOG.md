@@ -28,6 +28,8 @@
 
 - Bump fastapi from 0.115.0 to 0.136.3 ([501ff69](https://github.com/aliyevaladddin/AladdinAI/commit/501ff695800bc3c284dfd64713370995f42a3a16))
 
+- Bump actions/setup-node from 4 to 6 ([6d607f1](https://github.com/aliyevaladddin/AladdinAI/commit/6d607f1e2b61c324033d6e90dba32724a3b48f38))
+
 
 ### Ci
 
