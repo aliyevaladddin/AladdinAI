@@ -26,6 +26,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-4ecdc4?style=flat-square)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-4ecdc4?style=flat-square&logo=docker&logoColor=white)](https://ghcr.io/aliyevaladddin/aladdinai)
 [![Node](https://img.shields.io/badge/node-18%2B-4ecdc4?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![MongoDB for Startups](https://img.shields.io/badge/MongoDB-for%20Startups-4ecdc4?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/startups)
 [![Issues](https://img.shields.io/github/issues/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)](https://github.com/aliyevaladddin/AladdinAI/issues)
 [![NPM Version](https://img.shields.io/npm/v/aladdin-ai?style=flat-square&color=4ecdc4&logo=npm&logoColor=white)](https://www.npmjs.com/package/aladdin-ai)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
@@ -82,6 +83,8 @@ AladdinAI is the platform that makes that possible — without building everythi
 > **NVIDIA NIM** — LLM inference and embeddings on-prem or in any cloud. No dependency on shared inference APIs. Every agent routes to a NIM endpoint, making the entire inference layer sovereign by default.
 
 > **MongoDB Atlas** — Long-term agentic memory with Atlas Vector Search. Handles both structured data (CRM, activity timelines) and the vector layer (semantic memory recall) in a single platform. No separate vector DB to sync.
+> 
+> *Backed by [MongoDB for Startups](https://www.mongodb.com/startups) — $500 in Atlas credits to remove infrastructure barriers for the first 8 months.*
 
 > **BentoML** — Deploy and scale custom tools and local LLMs within your own infrastructure. Swap, scale, or version models directly from the AladdinAI UI — without touching the codebase.
 
