@@ -24,6 +24,8 @@
 
 - Bump pyjwt from 2.8.0 to 2.13.0 ([14ce10d](https://github.com/aliyevaladddin/AladdinAI/commit/14ce10d0bef2a9eaa93b210da1b4131319adfd50))
 
+- Bump httpx from 0.27.0 to 0.28.1 ([2de2791](https://github.com/aliyevaladddin/AladdinAI/commit/2de2791be1f87ab5fb56ac20da44aa1f0304d8df))
+
 
 ### Ci
 
