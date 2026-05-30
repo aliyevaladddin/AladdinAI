@@ -8,7 +8,7 @@
 - Improve security and error handling in webhook handler ([af4a852](https://github.com/aliyevaladddin/AladdinAI/commit/af4a8522323603f7c115c0d5fb3c0d4be240ff3c))
 
 
-### CI
+### Ci
 
 - Update webpack workflow to install dependencies and build from frontend directory ([0b48d00](https://github.com/aliyevaladddin/AladdinAI/commit/0b48d003d0758318248e94524b7475a82097c775))
 
