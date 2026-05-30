@@ -34,15 +34,25 @@ interface ActivityItem {
 
 function stripHtmlPreview(html: string): string {
   if (!html) return "";
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
+
+  let sanitized = html;
+  let previous: string;
+
+  do {
+    previous = sanitized;
+    sanitized = sanitized
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style(?:\s+[^>]*)?\s*>/gi, "")
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script(?:\s+[^>]*)?\s*>/gi, "");
+  } while (sanitized !== previous);
+
+  return sanitized
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
+    .replace(/<[^>]+>/g, " ")
     .replace(/\s{2,}/g, " ")
     .trim()
     .slice(0, 120);
