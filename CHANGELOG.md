@@ -30,6 +30,8 @@
 
 - Bump actions/setup-node from 4 to 6 ([6d607f1](https://github.com/aliyevaladddin/AladdinAI/commit/6d607f1e2b61c324033d6e90dba32724a3b48f38))
 
+- Bump actions/setup-python from 5 to 6 ([07d6e22](https://github.com/aliyevaladddin/AladdinAI/commit/07d6e2251409458b238fd0f1d3afdbb868359097))
+
 
 ### Ci
 
