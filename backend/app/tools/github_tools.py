@@ -14,7 +14,20 @@ from app.tools import ToolContext, tool
 log = logging.getLogger(__name__)
 
 
-@tool
+@tool(
+    name="github_create_issue",
+    description="Create a GitHub issue using AladdinAI[bot]",
+    parameters={
+        "type": "object",
+        "properties": {
+            "repo": {"type": "string", "description": "Repository in format 'owner/repo'"},
+            "title": {"type": "string", "description": "Issue title"},
+            "body": {"type": "string", "description": "Issue description"},
+            "labels": {"type": "array", "items": {"type": "string"}, "description": "Optional list of label names"},
+        },
+        "required": ["repo", "title", "body"],
+    },
+)
 async def github_create_issue(
     ctx: ToolContext,
     repo: str,
@@ -64,7 +77,19 @@ async def github_create_issue(
             raise
 
 
-@tool
+@tool(
+    name="github_comment_on_issue",
+    description="Add a comment to a GitHub issue using AladdinAI[bot]",
+    parameters={
+        "type": "object",
+        "properties": {
+            "repo": {"type": "string", "description": "Repository in format 'owner/repo'"},
+            "issue_number": {"type": "integer", "description": "Issue number"},
+            "comment": {"type": "string", "description": "Comment text"},
+        },
+        "required": ["repo", "issue_number", "comment"],
+    },
+)
 async def github_comment_on_issue(
     ctx: ToolContext,
     repo: str,
@@ -98,7 +123,21 @@ async def github_comment_on_issue(
         return response.json()
 
 
-@tool
+@tool(
+    name="github_create_pr",
+    description="Create a GitHub pull request using AladdinAI[bot]",
+    parameters={
+        "type": "object",
+        "properties": {
+            "repo": {"type": "string", "description": "Repository in format 'owner/repo'"},
+            "title": {"type": "string", "description": "PR title"},
+            "head": {"type": "string", "description": "Branch name with changes"},
+            "base": {"type": "string", "description": "Base branch (usually 'main')"},
+            "body": {"type": "string", "description": "PR description"},
+        },
+        "required": ["repo", "title", "head", "base"],
+    },
+)
 async def github_create_pr(
     ctx: ToolContext,
     repo: str,
@@ -141,7 +180,20 @@ async def github_create_pr(
         return response.json()
 
 
-@tool
+@tool(
+    name="github_review_pr",
+    description="Post a code review on a GitHub PR using NVIDIA Code Review[bot]",
+    parameters={
+        "type": "object",
+        "properties": {
+            "repo": {"type": "string", "description": "Repository in format 'owner/repo'"},
+            "pr_number": {"type": "integer", "description": "PR number"},
+            "body": {"type": "string", "description": "Review comment text"},
+            "event": {"type": "string", "enum": ["COMMENT", "APPROVE", "REQUEST_CHANGES"], "description": "Review event type"},
+        },
+        "required": ["repo", "pr_number", "body"],
+    },
+)
 async def github_review_pr(
     ctx: ToolContext,
     repo: str,
@@ -184,7 +236,19 @@ async def github_review_pr(
         return response.json()
 
 
-@tool
+@tool(
+    name="github_list_issues",
+    description="List GitHub issues using AladdinAI[bot]",
+    parameters={
+        "type": "object",
+        "properties": {
+            "repo": {"type": "string", "description": "Repository in format 'owner/repo'"},
+            "state": {"type": "string", "enum": ["open", "closed", "all"], "description": "Issue state"},
+            "labels": {"type": "array", "items": {"type": "string"}, "description": "Optional list of label names to filter by"},
+        },
+        "required": ["repo"],
+    },
+)
 async def github_list_issues(
     ctx: ToolContext,
     repo: str,
