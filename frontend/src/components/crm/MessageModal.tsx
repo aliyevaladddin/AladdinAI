@@ -33,20 +33,30 @@ function stripHtml(html: string): string {
   // If it doesn't look like HTML, just return it
   if (!html.includes("<")) return html.trim();
 
-  return html
-    .replace(/<style\b[\s\S]*?<\/style\s*[^>]*>/gi, "")
-    .replace(/<script\b[\s\S]*?<\/script\s*[^>]*>/gi, "")
-    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n") // Add newline after block elements
-    .replace(/<br\s*\/?>/gi, "\n") // Replace <br> with newline
-    .replace(/<[^>]+>/g, " ") // Strip other tags
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/[ \t]{2,}/g, " ") // Collapse multiple spaces (but preserve newlines)
-    .replace(/\n\s*\n/g, "\n\n") // Collapse multiple empty lines into max 2
-    .trim();
+  const sanitizePass = (value: string): string =>
+    value
+      .replace(/<style\b[\s\S]*?<\/style\s*[^>]*>/gi, "")
+      .replace(/<script\b[\s\S]*?<\/script\s*[^>]*>/gi, "")
+      .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n") // Add newline after block elements
+      .replace(/<br\s*\/?>/gi, "\n") // Replace <br> with newline
+      .replace(/<[^>]+>/g, " ") // Strip other tags
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/[ \t]{2,}/g, " ") // Collapse multiple spaces (but preserve newlines)
+      .replace(/\n\s*\n/g, "\n\n") // Collapse multiple empty lines into max 2
+      .trim();
+
+  let previous: string;
+  let current = html;
+  do {
+    previous = current;
+    current = sanitizePass(current);
+  } while (current !== previous);
+
+  return current;
 }
 
 /* ── Component ───────────────────────────────────────────────────── */
