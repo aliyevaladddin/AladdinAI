@@ -18,6 +18,8 @@
 
 - Bump sqlalchemy from 2.0.35 to 2.0.50 ([c8092ae](https://github.com/aliyevaladddin/AladdinAI/commit/c8092ae53be1c65d4a40d202fdc37b522b696c22))
 
+- Bump actions/checkout from 4 to 6 ([53f4bd2](https://github.com/aliyevaladddin/AladdinAI/commit/53f4bd236322e782abe1ab90224a29c2db8e0e72))
+
 
 ### Ci
 
