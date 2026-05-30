@@ -34,8 +34,8 @@ function stripHtml(html: string): string {
   if (!html.includes("<")) return html.trim();
 
   return html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style\b[\s\S]*?<\/style\s*[^>]*>/gi, "")
+    .replace(/<script\b[\s\S]*?<\/script\s*[^>]*>/gi, "")
     .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n") // Add newline after block elements
     .replace(/<br\s*\/?>/gi, "\n") // Replace <br> with newline
     .replace(/<[^>]+>/g, " ") // Strip other tags
