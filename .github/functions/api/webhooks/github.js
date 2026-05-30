@@ -48,12 +48,12 @@ export async function onRequestPost(context) {
       );
     }
 
-    // Parse payload
-    const payload = await request.json();
+    // Read raw body BEFORE parsing (GitHub signs the raw bytes)
+    const rawBody = await request.text();
 
-    // Verify signature
+    // Verify signature against raw body
     const isValid = await verifySignature(
-      JSON.stringify(payload),
+      rawBody,
       signature,
       webhookSecret
     );
@@ -62,6 +62,17 @@ export async function onRequestPost(context) {
       return new Response(
         JSON.stringify({ error: 'Invalid signature' }),
         { status: 401, headers: corsHeaders }
+      );
+    }
+
+    // Now parse JSON from raw body
+    let payload;
+    try {
+      payload = JSON.parse(rawBody);
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON payload' }),
+        { status: 400, headers: corsHeaders }
       );
     }
 
