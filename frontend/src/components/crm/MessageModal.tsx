@@ -33,6 +33,10 @@ function stripHtml(html: string): string {
   // If it doesn't look like HTML, just return it
   if (!html.includes("<")) return html.trim();
 
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return html.replace(/<[^>]+>/g, " ").trim();
+  }
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
 
