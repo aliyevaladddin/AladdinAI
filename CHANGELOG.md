@@ -5,6 +5,8 @@
 
 - Update dockerfilePath from /backend/Dockerfile to Dockerfile ([8e92bea](https://github.com/aliyevaladddin/AladdinAI/commit/8e92beaa2b35ea4dbb45ebcb5f1cd07b54eb04b4))
 
+- Replace preDeployCommand with startCommand for SQLite migrations (#125) ([1bdeee1](https://github.com/aliyevaladddin/AladdinAI/commit/1bdeee1023a6831d77e963ebbbff104471a2bdad))
+
 
 ### Bug fixes
 
