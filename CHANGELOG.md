@@ -13,6 +13,8 @@
 
 - Correct alembic migration chain and move to startCommand for SQLite ([0126ac7](https://github.com/aliyevaladddin/AladdinAI/commit/0126ac788b341d8ab21744237c1c81bb09464dc0))
 
+- Move railway.json to repo root with correct paths ([e06f119](https://github.com/aliyevaladddin/AladdinAI/commit/e06f1199f740c20343a2e12ee0d574bd2811894d))
+
 
 ### Bug fixes
 
