@@ -1,6 +1,7 @@
 # NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:RESTRICTED]
-from sqlalchemy import event
+from datetime import datetime
+from sqlalchemy import DateTime, event
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
@@ -20,7 +21,9 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 
 class Base(DeclarativeBase):
-    pass
+    type_annotation_map = {
+        datetime: DateTime(timezone=True),
+    }
 
 
 async def get_db():
