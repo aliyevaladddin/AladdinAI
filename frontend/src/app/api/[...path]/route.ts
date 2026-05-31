@@ -20,25 +20,29 @@ async function proxy(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ): Promise<NextResponse> {
-  const { path } = await params;
-  const backend = getBackendUrl();
-  const targetPath = path.join("/");
-
-  // Preserve query string
-  const search = req.nextUrl.search ?? "";
-  const targetUrl = `${backend}/api/${targetPath}${search}`;
-
-  // Forward headers, excluding host (which must match the target)
-  const headers = new Headers(req.headers);
-  headers.delete("host");
-
-  let body: BodyInit | null = null;
-  const method = req.method.toUpperCase();
-  if (!["GET", "HEAD"].includes(method)) {
-    body = await req.arrayBuffer();
-  }
-
   try {
+    const { path } = await params;
+    const backend = getBackendUrl();
+    const targetPath = path.join("/");
+
+    // Preserve query string
+    const search = req.nextUrl.search ?? "";
+    const targetUrl = `${backend}/api/${targetPath}${search}`;
+
+    // Forward headers, excluding host (which must match the target)
+    const headers = new Headers(req.headers);
+    headers.delete("host");
+
+    let body: BodyInit | null = null;
+    const method = req.method.toUpperCase();
+    if (!["GET", "HEAD"].includes(method)) {
+      try {
+        body = await req.arrayBuffer();
+      } catch (bodyErr) {
+        console.warn(`[api-proxy] Could not read request body for ${method} ${targetUrl}:`, bodyErr);
+      }
+    }
+
     const upstream = await fetch(targetUrl, {
       method,
       headers,
@@ -61,9 +65,9 @@ async function proxy(
       headers: resHeaders,
     });
   } catch (err) {
-    console.error(`[api-proxy] Failed to proxy ${targetUrl}:`, err);
+    console.error(`[api-proxy] Critical proxy failure:`, err);
     return NextResponse.json(
-      { detail: "Backend unreachable", error: String(err) },
+      { detail: "Internal proxy error", error: String(err) },
       { status: 502 }
     );
   }
