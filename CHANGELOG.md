@@ -23,6 +23,15 @@
 
 - Add psycopg2-binary for Alembic sync migrations ([3b8d080](https://github.com/aliyevaladddin/AladdinAI/commit/3b8d0801faacb36b52140897f06358b199dd849f))
 
+- Add verbose logging to render_init.sh for debugging migrations ([77ca475](https://github.com/aliyevaladddin/AladdinAI/commit/77ca475221de6b7e7f31490be0076896f2d22084))
+
+- Force Docker rebuild and upgrade pip to fix PyJWT import ([833fa8d](https://github.com/aliyevaladddin/AladdinAI/commit/833fa8d6bea798aedea1faf5166fca9850034352))
+
+
+### Debug
+
+- Add pip list output to verify PyJWT installation ([2f2d1b6](https://github.com/aliyevaladddin/AladdinAI/commit/2f2d1b69f5eed1dd974df31738739ca461f2d850))
+
 
 ### Features
 
