@@ -1,6 +1,11 @@
 # Changelog
 
 
+### Bug fixes
+
+- Prepend https protocol to Render service hostnames in backend proxy target ([57a849d](https://github.com/aliyevaladddin/AladdinAI/commit/57a849d7dcfe6b8b596493bfffc63d1d9c4d619a))
+
+
 ### Features
 
 - Add Render configuration for AladdinAI-frontend service with environment variable bindings ([6ac400a](https://github.com/aliyevaladddin/AladdinAI/commit/6ac400a5b09a8c36be5b2c3839ca5db2b5036980))
