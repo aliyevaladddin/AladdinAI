@@ -23,6 +23,8 @@
 
 - Add psycopg2-binary for Alembic sync migrations ([3b8d080](https://github.com/aliyevaladddin/AladdinAI/commit/3b8d0801faacb36b52140897f06358b199dd849f))
 
+- Add verbose logging to render_init.sh for debugging migrations ([77ca475](https://github.com/aliyevaladddin/AladdinAI/commit/77ca475221de6b7e7f31490be0076896f2d22084))
+
 
 ### Features
 
