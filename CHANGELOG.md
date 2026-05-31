@@ -21,6 +21,8 @@
 
 - Use sync postgresql driver for Alembic migrations on Render ([dc6238d](https://github.com/aliyevaladddin/AladdinAI/commit/dc6238dcb66e6eff174126e5d712e0b7c1b76400))
 
+- Add psycopg2-binary for Alembic sync migrations ([3b8d080](https://github.com/aliyevaladddin/AladdinAI/commit/3b8d0801faacb36b52140897f06358b199dd849f))
+
 
 ### Features
 
