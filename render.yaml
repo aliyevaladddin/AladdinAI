@@ -6,20 +6,55 @@ services:
   runtime: docker
   repo: https://github.com/aliyevaladddin/AladdinAI
   plan: free
-  envVars:
-  - key: FERNET_KEY
-    sync: false
-  - key: JWT_SECRET
-    sync: false
-  - key: DATABASE_URL
-    sync: false
   region: oregon
+  rootDir: backend
   dockerContext: .
   dockerfilePath: ./Dockerfile
+  autoDeployTrigger: commit
+  previews:
+    generation: manual
   registryCredential:
     fromRegistryCreds:
       name: mycredential
-  autoDeployTrigger: commit
-  rootDir: backend
-  previews:
-    generation: manual
+  envVars:
+  # === Core secrets (set manually in Render Dashboard) ===
+  - key: DATABASE_URL
+    sync: false
+  - key: JWT_SECRET
+    generateValue: true
+  - key: FERNET_KEY
+    sync: false
+
+  # === Terminal ===
+  - key: TERMINAL_TOKEN_SECRET
+    generateValue: true
+  - key: TERMINAL_PUBLIC_HOST
+    sync: false
+  - key: TERMINAL_PUBLIC_SCHEME
+    value: https
+  - key: TERMINAL_TRAEFIK_ENTRYPOINT
+    value: websecure
+
+  # === GitHub App — AladdinAI Bot ===
+  - key: GITHUB_WEBHOOK_SECRET
+    sync: false
+  - key: ALADDINAI_BOT_APP_ID
+    sync: false
+  - key: ALADDINAI_BOT_PRIVATE_KEY
+    sync: false
+  - key: ALADDINAI_BOT_INSTALLATION_ID
+    sync: false
+
+  # === GitHub App — NVIDIA Bot ===
+  - key: NVIDIA_BOT_APP_ID
+    sync: false
+  - key: NVIDIA_BOT_PRIVATE_KEY
+    sync: false
+  - key: NVIDIA_BOT_INSTALLATION_ID
+    sync: false
+
+  # === Telegram (optional) ===
+  - key: TELEGRAM_BOT_TOKEN
+    sync: false
+  - key: TELEGRAM_CHAT_ID
+    sync: false
