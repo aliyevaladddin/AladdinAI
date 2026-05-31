@@ -3,7 +3,6 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "backend/Dockerfile",
-    "dockerContext": "backend",
     "buildEnvironment": "V3"
   },
   "deploy": {
