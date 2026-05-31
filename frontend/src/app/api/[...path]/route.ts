@@ -52,9 +52,10 @@ async function proxy(
     });
 
     const resHeaders = new Headers(upstream.headers);
-    // Don't forward encoding headers — Next.js handles that
+    // Don't forward encoding and length headers — Next.js handles that
     resHeaders.delete("content-encoding");
     resHeaders.delete("transfer-encoding");
+    resHeaders.delete("content-length");
 
     // Read body fully in-memory to prevent stream truncation issues
     const resBody = await upstream.arrayBuffer();
