@@ -17,6 +17,8 @@
 
 - Add dockerContext to railway.json ([770164b](https://github.com/aliyevaladddin/AladdinAI/commit/770164b18a31dfdfa76b4a3b6e659ba09edd8542))
 
+- Remove dockerContext from railway.json to prevent double backend/ path lookup ([e8090f5](https://github.com/aliyevaladddin/AladdinAI/commit/e8090f56a01b58642d9b8f25102ec37cd5f256c7))
+
 
 ### Bug fixes
 
