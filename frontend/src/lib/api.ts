@@ -120,7 +120,13 @@ export const api = {
       console.error(`[API ERROR] GET ${path} | Status: ${res.status} | Body: ${errorText}`);
       throw new Error(`Failed to fetch ${path} (Status: ${res.status})`);
     }
-    return res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text) as T;
+    } catch (parseErr) {
+      console.error(`[API PARSE ERROR] GET ${path} failed to parse JSON. Raw body (length ${text.length}):`, text);
+      throw new Error(`Failed to parse GET ${path} JSON response (length ${text.length}): ${parseErr instanceof Error ? parseErr.message : String(parseErr)} | Raw: ${text.slice(0, 500)}`);
+    }
   },
 
   post: async <T = any>(path: string, body?: any): Promise<T> => {
@@ -134,7 +140,13 @@ export const api = {
       throw new Error(`Failed to POST to ${path} (Status: ${res.status}): ${errorText}`);
     }
     if (res.status === 204) return {} as T;
-    return res.json();
+    const text = await res.text();
+    try {
+      return JSON.parse(text) as T;
+    } catch (parseErr) {
+      console.error(`[API PARSE ERROR] POST ${path} failed to parse JSON. Raw body (length ${text.length}):`, text);
+      throw new Error(`Failed to parse POST ${path} JSON response (length ${text.length}): ${parseErr instanceof Error ? parseErr.message : String(parseErr)} | Raw: ${text.slice(0, 500)}`);
+    }
   },
 
   put: async <T = any>(path: string, body?: any): Promise<T> => {
