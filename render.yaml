@@ -58,3 +58,29 @@ services:
     sync: false
   - key: TELEGRAM_CHAT_ID
     sync: false
+
+- type: web
+  name: AladdinAI-frontend
+  runtime: docker
+  repo: https://github.com/aliyevaladddin/AladdinAI
+  plan: free
+  region: oregon
+  rootDir: frontend
+  dockerContext: .
+  dockerfilePath: ./Dockerfile.prod
+  autoDeployTrigger: commit
+  previews:
+    generation: manual
+  envVars:
+  # Internal URL backend → frontend proxy (server-side rewrite in next.config.ts)
+  - key: BACKEND_INTERNAL_URL
+    fromService:
+      name: AladdinAI
+      type: web
+      property: hostport
+  # Public API URL used in browser (NEXT_PUBLIC_*)
+  - key: NEXT_PUBLIC_API_URL
+    fromService:
+      name: AladdinAI
+      type: web
+      property: host
