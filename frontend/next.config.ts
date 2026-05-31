@@ -11,7 +11,13 @@ const nextConfig: NextConfig = {
     // Server-side proxy target. In Docker this is the backend service hostname;
     // for local dev it falls back to localhost. The browser-facing
     // NEXT_PUBLIC_API_URL is unrelated and stays as it is.
-    const target = process.env.BACKEND_INTERNAL_URL || "http://localhost:8000";
+    //
+    // Render's fromService.property: host returns just the hostname without a
+    // protocol (e.g. "aladdinai-pfd1.onrender.com"). Prepend https:// if needed.
+    let target = process.env.BACKEND_INTERNAL_URL || "http://localhost:8000";
+    if (target && !target.startsWith("http://") && !target.startsWith("https://")) {
+      target = `https://${target}`;
+    }
     return [
       {
         source: "/api/:path*",
