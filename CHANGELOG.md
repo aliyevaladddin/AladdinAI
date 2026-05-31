@@ -19,6 +19,8 @@
 
 - Remove dockerContext from railway.json to prevent double backend/ path lookup ([e8090f5](https://github.com/aliyevaladddin/AladdinAI/commit/e8090f56a01b58642d9b8f25102ec37cd5f256c7))
 
+- Use sync postgresql driver for Alembic migrations on Render ([dc6238d](https://github.com/aliyevaladddin/AladdinAI/commit/dc6238dcb66e6eff174126e5d712e0b7c1b76400))
+
 
 ### Features
 
