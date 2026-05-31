@@ -17,18 +17,20 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* vars are baked at build time — use /api so browser requests
+# go through the Next.js server-side proxy (next.config.ts rewrites).
+ENV NEXT_PUBLIC_API_URL=/api
 RUN npm run build
 
 FROM node:20-alpine AS run
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
-# PORT is intentionally NOT set here — Render injects it at runtime (default: 10000).
-# Next.js standalone server.js reads PORT from the environment automatically.
+# PORT   — Render injects this at runtime (default: 10000)
+# HOSTNAME — MUST be 0.0.0.0 so Render's load balancer can reach the server.
+#            Without this Next.js standalone binds to localhost only → 502.
+ENV HOSTNAME=0.0.0.0
 
-# If next.config has output: "standalone", these paths exist; otherwise we fall
-# back to copying the full build. The COPY uses globs so a missing directory
-# doesn't break the build — at least one of the two will succeed.
 COPY --from=build /app/public ./public
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
