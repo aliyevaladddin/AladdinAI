@@ -6,20 +6,46 @@ services:
   runtime: docker
   repo: https://github.com/aliyevaladddin/AladdinAI
   plan: free
-  envVars:
-  - key: FERNET_KEY
-    sync: false
-  - key: JWT_SECRET
-    sync: false
-  - key: DATABASE_URL
-    sync: false
   region: oregon
+  rootDir: backend
   dockerContext: .
   dockerfilePath: ./Dockerfile
-  registryCredential:
-    fromRegistryCreds:
-      name: mycredential
   autoDeployTrigger: commit
-  rootDir: backend
   previews:
     generation: manual
+  envVars:
+
+  - key: DATABASE_URL
+    sync: true
+  - key: JWT_SECRET
+    generateValue: true         
+  - key: FERNET_KEY
+    sync: true                   
+  - key: TERMINAL_TOKEN_SECRET
+    generateValue: true
+  - key: TERMINAL_PUBLIC_HOST
+    sync: true                   
+  - key: TERMINAL_PUBLIC_SCHEME
+    value: https
+  - key: TERMINAL_TRAEFIK_ENTRYPOINT
+    value: websecure
+
+  - key: GITHUB_WEBHOOK_SECRET
+    sync: true
+  - key: ALADDINAI_BOT_APP_ID
+    sync: true
+  - key: ALADDINAI_BOT_PRIVATE_KEY
+    sync: true
+  - key: ALADDINAI_BOT_INSTALLATION_ID
+    sync: true
+  - key: NVIDIA_BOT_APP_ID
+    sync: true
+  - key: NVIDIA_BOT_PRIVATE_KEY
+    sync: true
+  - key: NVIDIA_BOT_INSTALLATION_ID
+    sync: true
+
+  - key: TELEGRAM_BOT_TOKEN
+    sync: true
+  - key: TELEGRAM_CHAT_ID
+    sync: true
