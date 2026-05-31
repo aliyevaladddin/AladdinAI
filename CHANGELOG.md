@@ -1,6 +1,11 @@
 # Changelog
 
 
+### Features
+
+- Add Render configuration for AladdinAI-frontend service with environment variable bindings ([6ac400a](https://github.com/aliyevaladddin/AladdinAI/commit/6ac400a5b09a8c36be5b2c3839ca5db2b5036980))
+
+
 ### Bug fixes
 
 - Update dockerfilePath from /backend/Dockerfile to Dockerfile ([8e92bea](https://github.com/aliyevaladddin/AladdinAI/commit/8e92beaa2b35ea4dbb45ebcb5f1cd07b54eb04b4))
