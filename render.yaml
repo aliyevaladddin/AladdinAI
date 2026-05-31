@@ -1,31 +1,25 @@
+# Exported from Render on 2026-05-31T04:27:03Z
+version: "1"
 services:
-  - type: web
-    name: aladdinai-backend
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
-    startCommand: ./scripts/render_init.sh
-    envVars:
-      - key: JWT_SECRET
-        generateValue: true
-      - key: DATABASE_URL
-        fromDatabase:
-          name: aladdinai-db
-          property: connectionString
-
-  - type: web
-    name: aladdinai-frontend
-    runtime: docker
-    dockerfilePath: ./frontend/Dockerfile
-    dockerContext: ./frontend
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          name: aladdinai-backend
-          type: web
-          property: host
-
-databases:
-  - name: aladdinai-db
-    databaseName: aladdinai
-    user: aladdinai
+- type: web
+  name: AladdinAI
+  runtime: docker
+  repo: https://github.com/aliyevaladddin/AladdinAI
+  plan: free
+  envVars:
+  - key: FERNET_KEY
+    sync: false
+  - key: JWT_SECRET
+    sync: false
+  - key: DATABASE_URL
+    sync: false
+  region: oregon
+  dockerContext: .
+  dockerfilePath: ./Dockerfile
+  registryCredential:
+    fromRegistryCreds:
+      name: mycredential
+  autoDeployTrigger: commit
+  rootDir: backend
+  previews:
+    generation: manual
