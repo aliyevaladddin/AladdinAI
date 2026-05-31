@@ -1,6 +1,13 @@
 # Changelog
 
 
+### Refactor
+
+- Migrate database timestamps to timezone-aware format and update SQLAlchemy type mapping ([bdac085](https://github.com/aliyevaladddin/AladdinAI/commit/bdac085d8d50d8cdca2f978d969f114020e874ec))
+
+- Remove unused sqlalchemy import in timestamp migration script ([38ac031](https://github.com/aliyevaladddin/AladdinAI/commit/38ac031ad7354354e170cd963b34b021b182ec03))
+
+
 ### Bug fixes
 
 - Prepend https protocol to Render service hostnames in backend proxy target ([57a849d](https://github.com/aliyevaladddin/AladdinAI/commit/57a849d7dcfe6b8b596493bfffc63d1d9c4d619a))
