@@ -52,7 +52,10 @@ async function proxy(
     resHeaders.delete("content-encoding");
     resHeaders.delete("transfer-encoding");
 
-    return new NextResponse(upstream.body, {
+    // Read body fully in-memory to prevent stream truncation issues
+    const resBody = await upstream.arrayBuffer();
+
+    return new NextResponse(resBody, {
       status: upstream.status,
       statusText: upstream.statusText,
       headers: resHeaders,
