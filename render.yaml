@@ -72,15 +72,14 @@ services:
   previews:
     generation: manual
   envVars:
-  # Internal URL backend → frontend proxy (server-side rewrite in next.config.ts)
+  # Internal URL backend → frontend proxy (Route Handler reads this at runtime).
+  # property: host gives the full domain (e.g. aladdinai-pfd1.onrender.com).
+  # The route handler prepends https:// automatically.
   - key: BACKEND_INTERNAL_URL
     fromService:
       name: AladdinAI
       type: web
-      property: hostport
-  # Public API URL used in browser (NEXT_PUBLIC_*)
-  - key: NEXT_PUBLIC_API_URL
-    fromService:
-      name: AladdinAI
-      type: web
       property: host
+  # Public API URL used in browser — points to the Next.js proxy route /api
+  - key: NEXT_PUBLIC_API_URL
+    value: /api
