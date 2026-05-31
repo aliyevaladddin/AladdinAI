@@ -20,6 +20,11 @@
 - Remove dockerContext from railway.json to prevent double backend/ path lookup ([e8090f5](https://github.com/aliyevaladddin/AladdinAI/commit/e8090f56a01b58642d9b8f25102ec37cd5f256c7))
 
 
+### Features
+
+- Configure Render deployment with Postgres and async driver conversion ([8dad10e](https://github.com/aliyevaladddin/AladdinAI/commit/8dad10ec36f436d0825f4e4c5dd5c0421741bfa3))
+
+
 ### Bug fixes
 
 - Verify GitHub webhook signature against raw body bytes ([c8a8ea2](https://github.com/aliyevaladddin/AladdinAI/commit/c8a8ea2c8599ff540ac8f361afb881016afa09a7))
