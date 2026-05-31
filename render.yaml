@@ -72,14 +72,10 @@ services:
   previews:
     generation: manual
   envVars:
-  # Internal URL backend → frontend proxy (Route Handler reads this at runtime).
-  # property: host gives the full domain (e.g. aladdinai-pfd1.onrender.com).
-  # The route handler prepends https:// automatically.
+  # Set this manually in Render Dashboard → AladdinAI-frontend → Environment
+  # Value: https://aladdinai-pfd1.onrender.com  (your backend public URL)
   - key: BACKEND_INTERNAL_URL
-    fromService:
-      name: AladdinAI
-      type: web
-      property: host
+    sync: false
   # Public API URL used in browser — points to the Next.js proxy route /api
   - key: NEXT_PUBLIC_API_URL
     value: /api
