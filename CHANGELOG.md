@@ -10,6 +10,8 @@
 
 - Add Render configuration for AladdinAI-frontend service with environment variable bindings ([6ac400a](https://github.com/aliyevaladddin/AladdinAI/commit/6ac400a5b09a8c36be5b2c3839ca5db2b5036980))
 
+- Replace build-time rewrites with a runtime API proxy route handler to support dynamic environment variables ([95fe05b](https://github.com/aliyevaladddin/AladdinAI/commit/95fe05b9cdec2df2cc97af80cf5faae98e907395))
+
 
 ### Bug fixes
 
