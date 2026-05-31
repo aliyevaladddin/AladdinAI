@@ -1,6 +1,20 @@
 # Changelog
 
 
+### Bug fixes
+
+- Buffer upstream response body in-memory to prevent stream truncation issues ([4c5ee1e](https://github.com/aliyevaladddin/AladdinAI/commit/4c5ee1e4b7fb6e76e78c46dc722fb0618c6d07df))
+
+- Add error handling for request body reading and refine proxy error reporting ([2ba4955](https://github.com/aliyevaladddin/AladdinAI/commit/2ba4955d9f04bff0028e6340d4b4f6601cdc9b1c))
+
+- Add robust JSON parsing and error handling to API request methods ([a236e70](https://github.com/aliyevaladddin/AladdinAI/commit/a236e70b4aa97bdb868ce0f6d48e924ab2d10959))
+
+
+### Features
+
+- Add existence checks to timestamp migration and expand target table list ([51a9b36](https://github.com/aliyevaladddin/AladdinAI/commit/51a9b3676e839ee680db68c7c375c7f22f05af45))
+
+
 ### Refactor
 
 - Migrate database timestamps to timezone-aware format and update SQLAlchemy type mapping ([bdac085](https://github.com/aliyevaladddin/AladdinAI/commit/bdac085d8d50d8cdca2f978d969f114020e874ec))
