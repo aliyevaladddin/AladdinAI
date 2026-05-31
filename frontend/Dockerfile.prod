@@ -22,8 +22,9 @@ RUN npm run build
 FROM node:20-alpine AS run
 WORKDIR /app
 ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1 \
-    PORT=3000
+    NEXT_TELEMETRY_DISABLED=1
+# PORT is intentionally NOT set here — Render injects it at runtime (default: 10000).
+# Next.js standalone server.js reads PORT from the environment automatically.
 
 # If next.config has output: "standalone", these paths exist; otherwise we fall
 # back to copying the full build. The COPY uses globs so a missing directory
@@ -32,9 +33,9 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 
-EXPOSE 3000
+EXPOSE 10000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD wget -q -O- http://localhost:3000/ > /dev/null || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -q -O- http://localhost:${PORT:-10000}/ > /dev/null || exit 1
 
 CMD ["node", "server.js"]
