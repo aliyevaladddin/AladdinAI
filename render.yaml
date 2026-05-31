@@ -3,19 +3,29 @@ services:
     name: aladdinai-backend
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    startCommand: ./scripts/render_init.sh
     envVars:
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
-        value: sqlite:///./aladdinai.db
+        fromDatabase:
+          name: aladdinai-db
+          property: connectionString
 
   - type: web
     name: aladdinai-frontend
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
     envVars:
       - key: NEXT_PUBLIC_API_URL
         fromService:
           name: aladdinai-backend
           type: web
           property: host
+
+databases:
+  - name: aladdinai-db
+    databaseName: aladdinai
+    user: aladdinai
