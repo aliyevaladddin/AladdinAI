@@ -26,6 +26,13 @@ from fastapi import HTTPException
 
 _ALLOWED_SCHEMES = {"http", "https"}
 _ALLOW_LOCALHOST = os.getenv("ALLOW_LOCALHOST_URLS", "false").lower() == "true"
+if _ALLOW_LOCALHOST:
+    import warnings
+    warnings.warn(
+        "ALLOW_LOCALHOST_URLS=true — SSRF loopback protection is DISABLED. "
+        "Never set this in production.",
+        stacklevel=1,
+    )
 
 
 def _is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
