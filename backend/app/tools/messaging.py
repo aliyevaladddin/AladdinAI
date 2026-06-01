@@ -136,6 +136,9 @@ async def send_email(
     body: str,
 ) -> dict:
     """Send an email via the user's configured email account."""
+    import re
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", to.strip()):
+        return {"error": f"Invalid recipient email address: {to!r}"}
     # Find the user's first active email account
     result = await ctx.db.execute(
         select(EmailAccount)
