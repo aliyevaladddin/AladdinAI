@@ -20,6 +20,7 @@ from app.security import get_current_user
 from app.services.agent_runner import run_agent
 from app.services.llm_service import LLMError
 from app.services import media as media_service
+from app.services import speech
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
