@@ -24,6 +24,8 @@
 
 - Add email tool, UI improvements, and image generation ([7495056](https://github.com/aliyevaladddin/AladdinAI/commit/7495056f236353beeafb9eb94dd809c632306478))
 
+- Add send_email tool to default agent capabilities ([09fdb73](https://github.com/aliyevaladddin/AladdinAI/commit/09fdb7303a64b35e570bafc342d2013c90b6d35b))
+
 
 ### Refactor
 
