@@ -28,6 +28,8 @@ services:
       TERMINAL_PUBLIC_HOST: ${TERMINAL_PUBLIC_HOST:-localhost:8086}
       TERMINAL_PUBLIC_SCHEME: ${TERMINAL_PUBLIC_SCHEME:-http}
       TERMINAL_TRAEFIK_ENTRYPOINT: ${TERMINAL_TRAEFIK_ENTRYPOINT:-web}
+      # Allow localhost URLs for WAHA and other local services in development
+      ALLOW_LOCALHOST_URLS: ${ALLOW_LOCALHOST_URLS:-false}
     depends_on:
       postgres:
         condition: service_healthy

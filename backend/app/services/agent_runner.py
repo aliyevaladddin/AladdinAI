@@ -35,7 +35,7 @@ DEFAULT_MAX_ITERATIONS = 5
 DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
     "_default": [
         "ask_agent", "delegate", "recall", "remember",
-        "analyze_image", "send_image",
+        "analyze_image", "send_image", "generate_image",
     ],
 }
 

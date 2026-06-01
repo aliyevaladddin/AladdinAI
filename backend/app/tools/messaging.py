@@ -5,6 +5,10 @@ the `filename` (and an optional caption) — the *channel* and *recipient*
 come from `ToolContext.extra`, populated by whichever surface invoked the
 runner (orchestrator for Telegram/WhatsApp, chat router for the web).
 
+`send_email` lets an agent send emails via SMTP. The agent provides the
+recipient address, subject, and body. The email account is selected from
+the user's configured accounts (defaults to the first active one).
+
 This keeps the tool surface identical across channels: every agent has
 one tool to send images, regardless of how the user reached them. Adding
 a new channel means handling one more branch here, not changing agent
@@ -17,6 +21,7 @@ import logging
 from sqlalchemy import select
 
 from app.models.messaging_channel import MessagingChannel
+from app.models.email_account import EmailAccount
 from app.services import media as media_service
 from app.tools.base import ToolContext, tool
 
@@ -96,3 +101,79 @@ async def send_image(
     except Exception as e:  # noqa: BLE001
         log.exception("send_image failed for channel=%s file=%s", channel_id, filename)
         return {"error": str(e)}
+
+
+@tool(
+    name="send_email",
+    description=(
+        "Send an email to a specified recipient. Use this when the user asks you "
+        "to send an email, compose a message, or contact someone via email. "
+        "Provide the recipient's email address, subject line, and email body."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "to": {
+                "type": "string",
+                "description": "Recipient email address (e.g., user@example.com)",
+            },
+            "subject": {
+                "type": "string",
+                "description": "Email subject line",
+            },
+            "body": {
+                "type": "string",
+                "description": "Email body content (plain text)",
+            },
+        },
+        "required": ["to", "subject", "body"],
+    },
+)
+async def send_email(
+    ctx: ToolContext,
+    to: str,
+    subject: str,
+    body: str,
+) -> dict:
+    """Send an email via the user's configured email account."""
+    import re
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", to.strip()):
+        return {"error": f"Invalid recipient email address: {to!r}"}
+    # Find the user's first active email account
+    result = await ctx.db.execute(
+        select(EmailAccount)
+        .where(
+            EmailAccount.user_id == ctx.user_id,
+            EmailAccount.status == "connected",
+        )
+        .order_by(EmailAccount.id)
+        .limit(1)
+    )
+    account = result.scalar_one_or_none()
+
+    if not account:
+        return {
+            "error": "No email account configured. Please connect an email account in Settings → Email."
+        }
+
+    try:
+        from app.services.email_service import send_email as send_email_service
+
+        await send_email_service(
+            db=ctx.db,
+            account=account,
+            to_email=to,
+            subject=subject,
+            body=body,
+            contact_id=None,
+        )
+
+        return {
+            "status": "sent",
+            "to": to,
+            "subject": subject,
+            "from": account.email,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.exception("send_email failed for user=%s to=%s", ctx.user_id, to)
+        return {"error": f"Failed to send email: {str(e)}"}

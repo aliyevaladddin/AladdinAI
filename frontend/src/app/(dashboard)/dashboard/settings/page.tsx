@@ -7,11 +7,13 @@ import { VmsSettings } from "@/components/settings/VmsSettings";
 import { MongoSettings } from "@/components/settings/MongoSettings";
 import { BentoSettings } from "@/components/settings/BentoSettings";
 import { RouterSettings } from "@/components/settings/RouterSettings";
-import { Cpu, Cloud, Database, Server, Network } from "lucide-react";
+import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
+import { Cpu, Cloud, Database, Server, Network, Palette } from "lucide-react";
 
-type TabId = "providers" | "vms" | "mongo" | "bento" | "router";
+type TabId = "appearance" | "providers" | "vms" | "mongo" | "bento" | "router";
 
 const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
+  { id: "appearance", label: "Appearance", icon: Palette },
   { id: "providers", label: "LLM Providers", icon: Cpu },
   { id: "vms", label: "Cloud VMs", icon: Cloud },
   { id: "mongo", label: "MongoDB", icon: Database },
@@ -34,7 +36,7 @@ export default function SettingsPage() {
 
   const initial = ((): TabId => {
     const raw = params.get("tab");
-    return raw && VALID_TABS.has(raw as TabId) ? (raw as TabId) : "providers";
+    return raw && VALID_TABS.has(raw as TabId) ? (raw as TabId) : "appearance";
   })();
   const [activeTab, setActiveTab] = useState<TabId>(initial);
 
@@ -84,6 +86,7 @@ export default function SettingsPage() {
 
         {/* Content panel — fills remaining space */}
         <div className="flex-1 min-w-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 overflow-y-auto">
+          {activeTab === "appearance" && <AppearanceSettings />}
           {activeTab === "providers" && <ProvidersSettings />}
           {activeTab === "vms" && <VmsSettings />}
           {activeTab === "mongo" && <MongoSettings />}
