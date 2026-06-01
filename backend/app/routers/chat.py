@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.agent import Agent
 from app.models.chat_session import ChatMessage, ChatSession
+from app.models.llm_provider import LLMProvider
 from app.models.user import User
 from app.schemas.router import (
     ChatMessageResponse,
@@ -127,10 +128,20 @@ async def get_messages(
 
 # ── Media upload / serving ────────────────────────────────────────────────────
 
-ALLOWED_UPLOAD_MIMES = {
+ALLOWED_IMAGE_MIMES = {
     "image/jpeg", "image/png", "image/webp", "image/gif",
 }
+ALLOWED_AUDIO_MIMES = {
+    "audio/webm", "audio/ogg", "audio/oga", "audio/mpeg", "audio/mp3",
+    "audio/wav", "audio/x-wav", "audio/wave", "audio/mp4", "audio/flac",
+}
+ALLOWED_UPLOAD_MIMES = ALLOWED_IMAGE_MIMES | ALLOWED_AUDIO_MIMES
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20MB, same as Telegram
+
+
+def _kind_for_mime(mime: str) -> str:
+    """Classify an upload so the frontend/agent knows how to handle it."""
+    return "audio" if mime in ALLOWED_AUDIO_MIMES or mime.startswith("audio/") else "image"
 
 
 @router.post("/upload")
@@ -138,8 +149,8 @@ async def upload_attachment(
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
 ):
-    """Save an uploaded image and return its handle. Client then passes the
-    returned `filename` back via ChatRequest.attachments."""
+    """Save an uploaded image or audio clip and return its handle. Client then
+    passes the returned `filename` back via ChatRequest.attachments."""
     mime = (file.content_type or "").lower()
     if mime not in ALLOWED_UPLOAD_MIMES:
         raise HTTPException(status_code=415, detail=f"Unsupported file type: {mime}")
@@ -151,7 +162,7 @@ async def upload_attachment(
         "filename": saved["filename"],
         "path": saved["path"],
         "mime": saved["mime"],
-        "kind": "image",
+        "kind": _kind_for_mime(mime),
     }
 
 
@@ -184,6 +195,33 @@ async def chat(
     if not agent.llm_provider_id:
         raise HTTPException(status_code=400, detail="Agent has no LLM provider configured")
 
+    # Разделяем вложения на картинки и аудио — у них разная обработка.
+    attachments = body.attachments or []
+    audio_atts = [a for a in attachments if (a.get("kind") == "audio") or str(a.get("mime", "")).startswith("audio/")]
+    image_atts = [a for a in attachments if a not in audio_atts]
+
+    # Голос → текст: если пришло аудио и текст пуст, транскрибируем его и
+    # дальше ведём диалог ровно как с текстом (тот же агент, та же сессия).
+    effective_message = body.message or ""
+    if audio_atts and not effective_message.strip():
+        provider = (await db.execute(
+            select(LLMProvider).where(LLMProvider.id == agent.llm_provider_id)
+        )).scalar_one_or_none()
+        clip = audio_atts[0]
+        p = media_service.resolve(clip.get("filename", ""))
+        if provider and p:
+            try:
+                effective_message = await speech.transcribe(
+                    provider, p.read_bytes(), clip.get("mime") or "audio/webm",
+                    filename=clip.get("filename") or "audio.webm",
+                )
+            except LLMError as e:
+                import logging
+                logging.getLogger(__name__).warning("STT failed: %s", e)
+                raise HTTPException(status_code=502, detail=f"Speech-to-text failed: {e}")
+        if not effective_message.strip():
+            raise HTTPException(status_code=400, detail="Could not transcribe the audio")
+
     # Получаем или создаём сессию
     if body.session_id:
         result = await db.execute(
@@ -196,7 +234,7 @@ async def chat(
         session = ChatSession(
             user_id=user.id,
             agent_id=agent.id,
-            title=body.message[:60] + ("..." if len(body.message) > 60 else ""),
+            title=effective_message[:60] + ("..." if len(effective_message) > 60 else ""),
         )
         db.add(session)
         await db.flush()  # получаем session.id без commit
@@ -214,9 +252,9 @@ async def chat(
     for msg in history:
         messages_payload.append({"role": msg.role, "content": msg.content})
 
-    user_text = body.message or ""
-    if body.attachments:
-        names = [a.get("filename") for a in body.attachments if a.get("filename")]
+    user_text = effective_message or ""
+    if image_atts:
+        names = [a.get("filename") for a in image_atts if a.get("filename")]
         if names:
             listing = ", ".join(names)
             note = (
@@ -231,7 +269,7 @@ async def chat(
     outgoing_attachments: list[dict] = []
     extras = {
         "channel_type": "web",
-        "inbound_attachments": body.attachments or [],
+        "inbound_attachments": attachments,
         "outgoing_attachments": outgoing_attachments,
     }
 
@@ -245,11 +283,33 @@ async def chat(
         logging.getLogger(__name__).exception("run_agent failed for agent %s: %s", agent.id, e)
         raise HTTPException(status_code=502, detail=f"LLM request failed: {e}")
 
+    # Текст → голос: озвучиваем ответ агента, если клиент попросил voice_reply.
+    # Тот же контракт вложений, что у картинок — фронт играет его через <audio>.
+    if body.voice_reply and reply.strip():
+        provider = (await db.execute(
+            select(LLMProvider).where(LLMProvider.id == agent.llm_provider_id)
+        )).scalar_one_or_none()
+        if provider:
+            try:
+                audio_bytes, audio_mime = await speech.synthesize(provider, reply)
+                saved = media_service.save_bytes(audio_bytes, audio_mime)
+                outgoing_attachments.append({
+                    "filename": saved["filename"],
+                    "path": saved["path"],
+                    "mime": saved["mime"],
+                    "kind": "audio",
+                    "caption": reply[:200],
+                })
+            except LLMError as e:
+                # Озвучка — не критична: текст уже есть. Логируем и отдаём как есть.
+                import logging
+                logging.getLogger(__name__).warning("TTS failed, returning text only: %s", e)
+
     # Сохраняем оба сообщения в БД
     now = datetime.now(timezone.utc)
     db.add(ChatMessage(
-        session_id=session.id, role="user", content=body.message,
-        attachments=body.attachments, created_at=now,
+        session_id=session.id, role="user", content=effective_message,
+        attachments=attachments or None, created_at=now,
     ))
     db.add(ChatMessage(
         session_id=session.id, role="assistant", content=reply, model=agent.model,
