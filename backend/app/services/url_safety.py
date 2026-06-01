@@ -11,10 +11,13 @@ endpoint — that is a credential exfiltration primitive.
 resolved address falls into a private, loopback, link-local, multicast,
 or otherwise non-routable range. DNS is resolved up front so a hostname
 that points at `127.0.0.1` is caught the same as a literal `127.0.0.1`.
+
+For development, set ALLOW_LOCALHOST_URLS=true to disable loopback checks.
 """
 from __future__ import annotations
 
 import ipaddress
+import os
 import socket
 from urllib.parse import urlparse
 
@@ -22,9 +25,21 @@ from fastapi import HTTPException
 
 
 _ALLOWED_SCHEMES = {"http", "https"}
+_ALLOW_LOCALHOST = os.getenv("ALLOW_LOCALHOST_URLS", "false").lower() == "true"
+if _ALLOW_LOCALHOST:
+    import warnings
+    warnings.warn(
+        "ALLOW_LOCALHOST_URLS=true — SSRF loopback protection is DISABLED. "
+        "Never set this in production.",
+        stacklevel=1,
+    )
 
 
 def _is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    # In development mode, allow localhost/loopback and private network addresses
+    if _ALLOW_LOCALHOST and (ip.is_loopback or ip.is_private):
+        return False
+
     return (
         ip.is_private
         or ip.is_loopback

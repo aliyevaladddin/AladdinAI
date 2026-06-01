@@ -8,12 +8,18 @@ import {
   Plus,
   Trash2,
   Send,
-  User,
   Bot,
   Globe,
   Paperclip,
   X,
+  Menu,
+  Sparkles,
+  Copy,
+  Check,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface Attachment {
   filename: string;
@@ -86,6 +92,8 @@ export default function ChatPage() {
   const [composingNew, setComposingNew] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const messagesEnd = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -197,6 +205,16 @@ export default function ChatPage() {
     setPendingAttachments((prev) => prev.filter((a) => a.filename !== filename));
   };
 
+  const copyToClipboard = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
   const handleSend = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     const hasText = input.trim().length > 0;
@@ -280,67 +298,61 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] -mx-8 -my-6 overflow-hidden">
-      <aside className="w-72 border-r border-border flex flex-col shrink-0">
-        <div className="p-4 border-b border-border space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold flex items-center gap-2">
-              <MessageSquare size={16} className="text-muted-foreground" />
-              Chats
-            </h2>
-            <Button size="sm" variant="outline" onClick={newChat}>
-              <Plus size={14} className="mr-1" />
-              New
-            </Button>
-          </div>
-
-          <button
-            onClick={openGeneralChat}
-            className={`flex items-center gap-3 w-full p-3 rounded-md border text-left transition-colors ${
-              isGeneralChat
-                ? "border-border bg-muted"
-                : "border-border hover:bg-muted/50"
-            }`}
+    <div className="flex h-[calc(100vh-4rem)] -mx-8 -my-6 overflow-hidden bg-background">
+      {/* Premium Sidebar */}
+      <aside
+        className={`${
+          sidebarOpen ? "w-64" : "w-0"
+        } border-r border-border/50 flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden bg-muted/10`}
+      >
+        <div className="p-4 border-b border-border/50">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={newChat}
+            className="w-full justify-start gap-2.5 h-10 rounded-xl hover:bg-muted/80 font-medium"
           >
-            <Globe size={16} className="text-muted-foreground shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium">General Chat</p>
-              <p className="text-xs text-muted-foreground truncate">
-                Global knowledge access
-              </p>
-            </div>
-          </button>
+            <Plus size={18} />
+            <span className="text-sm">New chat</span>
+          </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          <p className="text-[10px] font-medium text-muted-foreground px-2 py-1 uppercase tracking-wide">
-            Recent
-          </p>
+        <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+          <button
+            onClick={openGeneralChat}
+            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all text-sm ${
+              isGeneralChat
+                ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
+                : "hover:bg-muted/50"
+            }`}
+          >
+            <Globe size={16} className="shrink-0 opacity-70" />
+            <span className="truncate">General Chat</span>
+          </button>
+
+          {sessions.length > 0 && (
+            <div className="pt-4 pb-2">
+              <p className="text-[10px] font-bold text-muted-foreground px-3 py-1 uppercase tracking-wider">
+                Recent
+              </p>
+            </div>
+          )}
+
           {sessions.map((s) => (
             <div
               key={s.id}
               onClick={() => openSession(s)}
-              className={`w-full text-left p-3 rounded-md border transition-colors group cursor-pointer ${
+              className={`w-full text-left px-3 py-2.5 rounded-xl transition-all group cursor-pointer relative ${
                 activeSession?.id === s.id
-                  ? "bg-muted border-border"
-                  : "border-transparent hover:bg-muted/50"
+                  ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
+                  : "hover:bg-muted/50 border border-transparent"
               }`}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{s.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground uppercase tracking-wide">
-                      {agentName(s.agent_id)}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {formatTime(s.updated_at)}
-                    </span>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm truncate flex-1">{s.title}</p>
                 <button
                   onClick={(e) => deleteSession(s.id, e)}
-                  className="p-1 rounded hover:bg-muted text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  className="p-1.5 rounded-lg hover:bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                   aria-label="Delete chat"
                 >
                   <Trash2 size={14} />
@@ -348,67 +360,58 @@ export default function ChatPage() {
               </div>
             </div>
           ))}
-          {sessions.length === 0 && (
-            <p className="text-xs text-muted-foreground py-6 text-center">
-              No conversations yet
-            </p>
-          )}
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col">
-        <header className="h-14 px-6 border-b border-border flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center shrink-0">
-              {isGeneralChat ? (
-                <Globe size={16} className="text-muted-foreground" />
-              ) : (
-                <Bot size={16} className="text-muted-foreground" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="font-medium text-sm truncate">
-                {activeSession
-                  ? activeSession.title
-                  : isGeneralChat
-                  ? "General Chat"
-                  : "Select an agent"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {selectedAgentId
-                  ? agentName(
-                      selectedAgentId === "unified" ? "unified" : parseInt(selectedAgentId)
-                    )
-                  : "—"}
-              </p>
+      {/* Main Content - Centered Gemini Layout */}
+      <div className="flex-1 flex flex-col relative">
+        {/* Minimal Header */}
+        <header className="h-14 px-6 flex items-center justify-between shrink-0 border-b border-border/40 bg-background/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="rounded-xl w-9 h-9 hover:bg-muted/80"
+            >
+              <Menu size={18} />
+            </Button>
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
+                <Sparkles size={14} className="text-primary" />
+              </div>
+              <span className="font-semibold text-sm">
+                {activeSession?.title || (isGeneralChat ? "General Chat" : "AladdinAI")}
+              </span>
             </div>
           </div>
         </header>
 
         {!activeSession && !isGeneralChat && !composingNew ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-            <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center mb-4">
-              <Bot size={28} className="text-muted-foreground" />
+          /* Empty State - Premium style */
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-3xl mx-auto w-full">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center mb-8 shadow-sm">
+              <Sparkles size={40} className="text-primary" />
             </div>
-            <h3 className="text-lg font-semibold mb-1">Start a conversation</h3>
-            <p className="text-sm text-muted-foreground max-w-md mb-6">
-              Pick an agent to start a new chat, or open General Chat from the sidebar.
+            <h3 className="text-3xl font-semibold mb-3 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+              Hello
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md mb-10 leading-relaxed">
+              How can I help you today?
             </p>
-            {agents.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No agents yet — create one in /dashboard/agents.</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-2 w-full max-w-md">
-                {agents.map((agent) => (
+            {agents.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
+                {agents.slice(0, 4).map((agent) => (
                   <button
                     key={agent.id}
                     type="button"
                     onClick={() => startNewChatWithAgent(agent.id)}
-                    className="p-3 rounded-md border border-border hover:bg-muted/50 transition-colors text-left cursor-pointer"
+                    className="p-5 rounded-2xl border border-border/50 hover:border-primary/30 hover:bg-muted/30 hover:shadow-md transition-all text-left cursor-pointer group"
                   >
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                      {agent.role}
+                    <p className="text-sm font-semibold mb-1.5 group-hover:text-primary transition-colors">
+                      {agent.name}
                     </p>
-                    <p className="text-sm font-medium truncate">{agent.name}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{agent.role}</p>
                   </button>
                 ))}
               </div>
@@ -416,104 +419,165 @@ export default function ChatPage() {
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
-              {loadingMessages ? (
-                <p className="text-center text-sm text-muted-foreground py-12">
-                  Loading messages…
-                </p>
-              ) : (
-                messages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`flex ${
-                      msg.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
+            {/* Messages - Premium Chat Style */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+                {loadingMessages ? (
+                  <p className="text-center text-sm text-muted-foreground py-12">
+                    Loading messages…
+                  </p>
+                ) : (
+                  messages.map((msg, i) => (
                     <div
-                      className={`flex gap-3 ${
-                        msg.role === "user" ? "flex-row-reverse" : "flex-row"
-                      }`}
+                      key={i}
+                      className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
                     >
-                      <div className="w-7 h-7 rounded-md shrink-0 flex items-center justify-center bg-muted text-muted-foreground">
-                        {msg.role === "user" ? <User size={14} /> : <Bot size={14} />}
+                      {/* Avatar */}
+                      <div className="shrink-0 mt-1">
+                        {msg.role === "user" ? (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-sm">
+                            <span className="text-[11px] text-white font-semibold">You</span>
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
+                            <Sparkles size={16} className="text-primary" />
+                          </div>
+                        )}
                       </div>
-                      <div
-                        className={`flex flex-col gap-1 ${
-                          msg.role === "user" ? "items-end" : "items-start"
-                        }`}
-                      >
+
+                      {/* Message bubble */}
+                      <div className={`flex-1 min-w-0 ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
+                        {/* Header */}
+                        <div className={`flex items-center gap-2 mb-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                          <span className="text-xs font-semibold text-foreground">
+                            {msg.role === "user" ? "You" : "AladdinAI"}
+                          </span>
+                          {msg.model && (
+                            <span className="text-[10px] text-muted-foreground">· {msg.model}</span>
+                          )}
+                          {msg.created_at && (
+                            <span className="text-[10px] text-muted-foreground">
+                              · {formatTime(msg.created_at)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Content */}
                         <div
-                          className={`inline-block max-w-[640px] px-4 py-2.5 rounded-lg text-sm ${
+                          className={`rounded-2xl px-4 py-3 ${
                             msg.role === "user"
-                              ? "bg-primary text-primary-foreground"
-                              : "border border-border"
+                              ? "bg-gradient-to-br from-blue-500 to-violet-600 text-white shadow-md"
+                              : "bg-muted/50 border border-border/50"
                           }`}
                         >
-                          {msg.model && (
-                            <p className="text-[10px] uppercase tracking-wide opacity-70 mb-1">
-                              {msg.model}
-                            </p>
-                          )}
                           {msg.attachments && msg.attachments.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-2">
+                            <div className="flex flex-wrap gap-2 mb-3">
                               {msg.attachments.map((att) => (
                                 <AuthImage key={att.filename} filename={att.filename} />
                               ))}
                             </div>
                           )}
                           {msg.content && (
-                            <p className="leading-relaxed whitespace-pre-wrap break-words">
-                              {msg.content}
-                            </p>
+                            <div className={`prose prose-sm max-w-none ${
+                              msg.role === "user"
+                                ? "prose-invert prose-headings:text-white prose-p:text-white/95 prose-strong:text-white prose-code:text-white/90"
+                                : "dark:prose-invert"
+                            } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
+                              <ReactMarkdown
+                                components={{
+                                  code({ node, inline, className, children, ...props }) {
+                                    const match = /language-(\w+)/.exec(className || "");
+                                    const codeString = String(children).replace(/\n$/, "");
+                                    const isCopied = copiedCode === codeString;
+
+                                    return !inline && match ? (
+                                      <div className="relative group my-3 not-prose">
+                                        <div className="absolute top-3 right-3 z-10">
+                                          <button
+                                            onClick={() => copyToClipboard(codeString)}
+                                            className="p-2 rounded-lg bg-background/90 hover:bg-background text-foreground transition-all shadow-sm border border-border/50"
+                                            aria-label="Copy code"
+                                          >
+                                            {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                                          </button>
+                                        </div>
+                                        <SyntaxHighlighter
+                                          style={oneDark}
+                                          language={match[1]}
+                                          PreTag="div"
+                                          className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
+                                          {...props}
+                                        >
+                                          {codeString}
+                                        </SyntaxHighlighter>
+                                      </div>
+                                    ) : (
+                                      <code className={`${
+                                        msg.role === "user"
+                                          ? "bg-white/20 text-white"
+                                          : "bg-muted/80 dark:bg-muted/60 text-foreground"
+                                      } px-1.5 py-0.5 rounded text-[13px] font-mono`} {...props}>
+                                        {children}
+                                      </code>
+                                    );
+                                  },
+                                }}
+                              >
+                                {msg.content}
+                              </ReactMarkdown>
+                            </div>
                           )}
                         </div>
-                        {msg.created_at && (
-                          <p className="text-[10px] text-muted-foreground">
-                            {formatTime(msg.created_at)}
-                          </p>
-                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {loading && (
+                  <div className="flex gap-4">
+                    <div className="shrink-0 mt-1">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
+                        <Sparkles size={16} className="text-primary" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-semibold text-foreground">AladdinAI</span>
+                      </div>
+                      <div className="rounded-2xl px-4 py-3 bg-muted/50 border border-border/50 inline-block">
+                        <div className="flex gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.3s]" />
+                          <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.15s]" />
+                          <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                ))
-              )}
-              {loading && (
-                <div className="flex justify-start">
-                  <div className="flex gap-3 items-center">
-                    <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
-                      <Bot size={14} />
-                    </div>
-                    <div className="flex gap-1 px-3 py-2 rounded-lg border border-border">
-                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:-0.3s]" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" />
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEnd} />
+                )}
+                <div ref={messagesEnd} />
+              </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-border">
-              <div className="max-w-4xl mx-auto space-y-2">
+            {/* Input Area - Premium Style */}
+            <div className="px-6 py-4 border-t border-border/50 bg-background/95 backdrop-blur-sm">
+              <div className="max-w-4xl mx-auto space-y-3">
                 {pendingAttachments.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {pendingAttachments.map((att) => (
-                      <div key={att.filename} className="relative">
+                      <div key={att.filename} className="relative group">
                         <AuthImage filename={att.filename} />
                         <button
                           type="button"
                           onClick={() => removePending(att.filename)}
-                          className="absolute top-1 right-1 p-1 rounded-full bg-background border border-border text-muted-foreground hover:text-foreground"
+                          className="absolute -top-2 -right-2 p-1.5 rounded-full bg-red-500 text-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                           aria-label="Remove attachment"
                         >
-                          <X size={12} />
+                          <X size={14} />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
-                <form onSubmit={handleSend} className="flex items-end gap-2">
+                <form onSubmit={handleSend} className="relative">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -522,40 +586,47 @@ export default function ChatPage() {
                     className="hidden"
                     onChange={handleFileChange}
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={handleAttachClick}
-                    disabled={!selectedAgentId || uploading || loading}
-                    aria-label="Attach image"
-                  >
-                    <Paperclip size={14} />
-                  </Button>
-                  <textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    rows={1}
-                    placeholder={
-                      !selectedAgentId ? "Select an agent to start…" : "Type a message…"
-                    }
-                    disabled={!selectedAgentId || loading}
-                    className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm leading-relaxed disabled:opacity-50 max-h-60 overflow-y-auto"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={
-                      loading ||
-                      !selectedAgentId ||
-                      (!input.trim() && pendingAttachments.length === 0)
-                    }
-                  >
-                    <Send size={14} className="mr-1" />
-                    Send
-                  </Button>
+                  <div className="flex items-end gap-3 p-3 rounded-2xl border border-border bg-background shadow-sm hover:border-primary/30 transition-all focus-within:border-primary/50 focus-within:shadow-md focus-within:ring-4 focus-within:ring-primary/10">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleAttachClick}
+                      disabled={!selectedAgentId || uploading || loading}
+                      className="rounded-xl w-10 h-10 shrink-0 hover:bg-muted/80"
+                      aria-label="Attach image"
+                    >
+                      <Paperclip size={18} className="text-muted-foreground" />
+                    </Button>
+                    <textarea
+                      ref={textareaRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      rows={1}
+                      placeholder={
+                        !selectedAgentId ? "Select an agent to start…" : "Message AladdinAI"
+                      }
+                      disabled={!selectedAgentId || loading}
+                      className="flex-1 resize-none bg-transparent px-1 py-2.5 text-[15px] leading-relaxed disabled:opacity-50 max-h-60 overflow-y-auto focus:outline-none placeholder:text-muted-foreground/50"
+                    />
+                    <Button
+                      type="submit"
+                      disabled={
+                        loading ||
+                        !selectedAgentId ||
+                        (!input.trim() && pendingAttachments.length === 0)
+                      }
+                      size="icon"
+                      className="rounded-xl w-10 h-10 shrink-0 bg-gradient-to-br from-blue-500 to-violet-600 hover:from-blue-600 hover:to-violet-700 shadow-md disabled:opacity-50 disabled:from-muted disabled:to-muted"
+                    >
+                      <Send size={18} />
+                    </Button>
+                  </div>
                 </form>
+                <p className="text-[10px] text-center text-muted-foreground/50">
+                  AladdinAI can make mistakes. Check important info.
+                </p>
               </div>
             </div>
           </>
