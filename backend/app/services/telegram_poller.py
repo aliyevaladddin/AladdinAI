@@ -35,6 +35,7 @@ async def _poll_channel(channel_id: int, bot_token: str) -> None:
     """
     offset = 0
     url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
+    conn_backoff = 5  # grows on repeated network failures so we don't spam
 
     log.info("telegram-poll: started polling for channel %s", channel_id)
 
@@ -97,13 +98,26 @@ async def _poll_channel(channel_id: int, bot_token: str) -> None:
                     except Exception:
                         log.exception("telegram-poll: error processing update %s on channel %s", update_id, channel_id)
 
+            # A clean round resets the network backoff.
+            conn_backoff = 5
+
         except httpx.TimeoutException:
             continue
         except asyncio.CancelledError:
             log.info("telegram-poll: cancelled for channel %s", channel_id)
             return
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadError, httpx.RemoteProtocolError) as exc:
+            # Expected when the host can't reach api.telegram.org (no network/DNS,
+            # offline dev box). Log one line, not a full traceback, and back off
+            # progressively so we don't flood the logs every few seconds.
+            log.warning(
+                "telegram-poll: cannot reach Telegram for channel %s (%s); retrying in %ss",
+                channel_id, type(exc).__name__, conn_backoff,
+            )
+            await asyncio.sleep(conn_backoff)
+            conn_backoff = min(conn_backoff * 2, 300)
         except Exception:
-            log.exception("telegram-poll: connection error for channel %s", channel_id)
+            log.exception("telegram-poll: unexpected error for channel %s", channel_id)
             await asyncio.sleep(5)
 
 

@@ -1,6 +1,5 @@
 import { type ReactNode } from "react";
 import { Lamp } from "./Lamp";
-import { ThemePicker } from "./ThemePicker";
 import { Wordmark } from "./Wordmark";
 
 interface TitlebarProps {
@@ -14,6 +13,8 @@ interface TitlebarProps {
  * Top frame of the AladdinAI shell — 44px tall.
  * The lamp sits in a 56px column so it aligns vertically with the
  * activity bar below it (one continuous edge).
+ *
+ * Theme picker has been moved to /dashboard/settings?tab=appearance.
  */
 export function Titlebar({ crumbs, right }: TitlebarProps) {
   return (
@@ -32,7 +33,6 @@ export function Titlebar({ crumbs, right }: TitlebarProps) {
       </div>
       <div className="titlebar__right">
         {right}
-        <ThemePicker />
       </div>
     </header>
   );

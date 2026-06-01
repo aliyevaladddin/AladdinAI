@@ -26,10 +26,11 @@ class RouterConfigResponse(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = ""  # may be empty when speaking — transcript comes from audio
     agent_id: int | None = None
     session_id: int | None = None  # если None — создаётся новая сессия
     attachments: list[dict] | None = None
+    voice_reply: bool = False  # if True, the agent's reply is also synthesized to audio
 
 
 class ChatResponse(BaseModel):
