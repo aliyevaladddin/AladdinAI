@@ -211,8 +211,10 @@ async def chat(
         p = media_service.resolve(clip.get("filename", ""))
         if provider and p:
             try:
+                import asyncio
+                audio_bytes = await asyncio.to_thread(p.read_bytes)
                 effective_message = await speech.transcribe(
-                    provider, p.read_bytes(), clip.get("mime") or "audio/webm",
+                    provider, audio_bytes, clip.get("mime") or "audio/webm",
                     filename=clip.get("filename") or "audio.webm",
                 )
             except LLMError as e:
