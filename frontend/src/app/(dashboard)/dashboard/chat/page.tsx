@@ -485,12 +485,14 @@ export default function ChatPage() {
                             } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
                               <ReactMarkdown
                                 components={{
-                                  code({ node, inline, className, children, ...props }) {
+                                  code({ node, className, children, ...props }) {
                                     const match = /language-(\w+)/.exec(className || "");
                                     const codeString = String(children).replace(/\n$/, "");
                                     const isCopied = copiedCode === codeString;
+                                    // Блочный код имеет language-класс; без него — инлайн
+                                    const isBlock = Boolean(match);
 
-                                    return !inline && match ? (
+                                    return isBlock ? (
                                       <div className="relative group my-3 not-prose">
                                         <div className="absolute top-3 right-3 z-10">
                                           <button
@@ -503,10 +505,10 @@ export default function ChatPage() {
                                         </div>
                                         <SyntaxHighlighter
                                           style={oneDark}
-                                          language={match[1]}
+                                          language={match![1]}
                                           PreTag="div"
                                           className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
-                                          {...props}
+                                          {...(props as object)}
                                         >
                                           {codeString}
                                         </SyntaxHighlighter>
