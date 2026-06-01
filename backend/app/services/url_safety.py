@@ -29,8 +29,8 @@ _ALLOW_LOCALHOST = os.getenv("ALLOW_LOCALHOST_URLS", "false").lower() == "true"
 
 
 def _is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    # In development mode, allow localhost/loopback addresses
-    if _ALLOW_LOCALHOST and ip.is_loopback:
+    # In development mode, allow localhost/loopback and private network addresses
+    if _ALLOW_LOCALHOST and (ip.is_loopback or ip.is_private):
         return False
 
     return (
