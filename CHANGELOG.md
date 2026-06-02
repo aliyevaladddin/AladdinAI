@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to AladdinAI will be documented in this file.
+All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
 ## [Unreleased]
 
@@ -16,6 +16,14 @@ All notable changes to AladdinAI will be documented in this file.
 
 - Resolve potential connection handling issues in chat router endpoints ([c23973c](https://github.com/aliyevaladddin/AladdinAI/commit/c23973c2037728bf6b5ba845284a2079559dba7b))
 
+- Update database engine config with WAL mode and busy timeout ([60d4873](https://github.com/aliyevaladddin/AladdinAI/commit/60d48736ba646f28209ac343e1f27aebf74b93eb))
+
+- Remove unused sqlalchemy text import ([297ce14](https://github.com/aliyevaladddin/AladdinAI/commit/297ce14d65ec4e1c1284ad8eced70101467236c1))
+
+- Resolve busy_timeout redundancy and tighten docs regex in cliff ([eee7ce8](https://github.com/aliyevaladddin/AladdinAI/commit/eee7ce801b72dd3b6fe658d2a9bc010b561f223c))
+
+- Resolve race condition, silent merge failure and clarify connect_args ([0d8cdce](https://github.com/aliyevaladddin/AladdinAI/commit/0d8cdceb573184db1dd273d6fd72c6ce63d38656))
+
 
 ### Features
 
@@ -28,6 +36,8 @@ All notable changes to AladdinAI will be documented in this file.
 - Add email tool, UI improvements, and image generation ([7495056](https://github.com/aliyevaladddin/AladdinAI/commit/7495056f236353beeafb9eb94dd809c632306478))
 
 - Add send_email tool to default agent capabilities ([09fdb73](https://github.com/aliyevaladddin/AladdinAI/commit/09fdb7303a64b35e570bafc342d2013c90b6d35b))
+
+- Add git-cliff config and update changelog workflow ([1bb3018](https://github.com/aliyevaladddin/AladdinAI/commit/1bb3018a6283fa58e2488da8be439bb3e7165cdd))
 
 
 ### Refactor
