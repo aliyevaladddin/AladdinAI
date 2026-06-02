@@ -68,20 +68,26 @@ jobs:
             exit 1
           fi
 
-          echo "Created PR #$PR_NUMBER, auto-merging..."
+          echo "Created PR #$PR_NUMBER, enabling auto-merge..."
 
-          # P2 fix: capture and validate merge response instead of silently ignoring failures
-          MERGE_RESPONSE=$(curl -s -X PUT \
+          # Get PR node ID needed for GraphQL auto-merge mutation
+          PR_NODE_ID=$(echo "$PR_RESPONSE" | jq -r '.node_id')
+
+          # Enable GitHub native auto-merge via GraphQL.
+          # This respects branch-protection rules — PR will merge automatically
+          # once all required checks and reviews are satisfied.
+          GQL_RESPONSE=$(curl -s -X POST \
             -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge \
-            -d '{"merge_method":"squash"}')
+            -H "Content-Type: application/json" \
+            https://api.github.com/graphql \
+            -d "{\"query\": \"mutation { enablePullRequestAutoMerge(input: { pullRequestId: \\\"$PR_NODE_ID\\\", mergeMethod: SQUASH }) { pullRequest { number autoMergeRequest { enabledAt } } } }\"}")
 
-          MERGED=$(echo "$MERGE_RESPONSE" | jq -r '.merged')
-          if [ "$MERGED" != "true" ]; then
-            echo "Auto-merge failed. PR #$PR_NUMBER left open. Response: $MERGE_RESPONSE"
-            exit 1
+          ENABLED_AT=$(echo "$GQL_RESPONSE" | jq -r '.data.enablePullRequestAutoMerge.pullRequest.autoMergeRequest.enabledAt')
+          if [ "$ENABLED_AT" = "null" ] || [ -z "$ENABLED_AT" ]; then
+            echo "Warning: could not enable auto-merge. PR #$PR_NUMBER is open and requires manual merge."
+            echo "GraphQL response: $GQL_RESPONSE"
+          else
+            echo "Auto-merge enabled on PR #$PR_NUMBER. It will merge once all requirements are met."
           fi
 
-          echo "PR #$PR_NUMBER successfully merged."
 
