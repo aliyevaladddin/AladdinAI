@@ -1,5 +1,5 @@
 [changelog]
-header = "# Changelog\n\nAll notable changes to AladdinAI will be documented in this file.\n\n"
+header = "# Changelog\n\nAll notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.\n\n"
 body = """
 {% if version %}\
 ## [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
@@ -26,7 +26,7 @@ commit_parsers = [
   { message = "^fix", group = "Bug Fixes" },
   { message = "^perf", group = "Performance" },
   { message = "^refactor", group = "Refactor" },
-  { message = "^doc", group = "Documentation" },
+  { message = "^docs?(\\(|!|:)", group = "Documentation" },
   { message = "^build", group = "Build" },
   { message = "^ci", group = "CI" },
   { message = "^style", group = "Style" },

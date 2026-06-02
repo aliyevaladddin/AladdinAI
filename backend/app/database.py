@@ -7,11 +7,10 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
 
-_is_sqlite = "sqlite" in settings.database_url
+IS_SQLITE = "sqlite" in settings.database_url
 
-# For SQLite: pass a busy_timeout so concurrent writers wait instead of
-# immediately raising OperationalError("database is locked").
-_connect_args = {"timeout": 15} if _is_sqlite else {}
+# Busy timeout is configured via PRAGMA busy_timeout in the connection listener below.
+_connect_args = {"check_same_thread": False} if IS_SQLITE else {}
 
 engine = create_async_engine(
     settings.database_url,
@@ -22,7 +21,7 @@ engine = create_async_engine(
 
 @event.listens_for(engine.sync_engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
-    if _is_sqlite:
+    if IS_SQLITE:
         cursor = dbapi_connection.cursor()
         # WAL mode: allows concurrent readers alongside one writer — eliminates
         # most "database is locked" errors from background tasks (health polls,
