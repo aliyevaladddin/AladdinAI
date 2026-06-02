@@ -24,6 +24,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Resolve race condition, silent merge failure and clarify connect_args ([0d8cdce](https://github.com/aliyevaladddin/AladdinAI/commit/0d8cdceb573184db1dd273d6fd72c6ce63d38656))
 
+- Replace immediate merge with GitHub native auto-merge via GraphQL ([0c7ff8f](https://github.com/aliyevaladddin/AladdinAI/commit/0c7ff8f1b50aec3850c77ea46a9efa4e4ab61394))
+
 
 ### Features
 
