@@ -27,6 +27,8 @@ media/
 pgdata/
 fix-stale-containers.sql
 *.db-journal
+*.db-shm
+*.db-wal
 # Terraform
 .terraform/
 .terraform.lock.hcl
