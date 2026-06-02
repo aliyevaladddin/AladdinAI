@@ -32,6 +32,15 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Drop Node 20 from CI matrix, require Node 22 LTS minimum ([3e63cb0](https://github.com/aliyevaladddin/AladdinAI/commit/3e63cb08a8581f3e94d181a43f4cdcd125ec9880))
 
 
+### Documentation
+
+- Add INTEGRATIONS.md with memory layer docs and Origin integration ([dd450a6](https://github.com/aliyevaladddin/AladdinAI/commit/dd450a600f34ad9f0af78f25ea4065f41c28949c))
+
+- Fix model name prefix and API route parameter in INTEGRATIONS.md ([f7e920a](https://github.com/aliyevaladddin/AladdinAI/commit/f7e920a25cef48d382892d15cbb3ba5121ce048b))
+
+- Fix vector index filter fields and add npx security notice ([0e57f40](https://github.com/aliyevaladddin/AladdinAI/commit/0e57f4026e4b5f025fecc22cafee3db0f1249a9a))
+
+
 ### Features
 
 - Add existence checks to timestamp migration and expand target table list ([51a9b36](https://github.com/aliyevaladddin/AladdinAI/commit/51a9b3676e839ee680db68c7c375c7f22f05af45))
