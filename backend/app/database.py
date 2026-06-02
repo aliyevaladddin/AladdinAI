@@ -9,7 +9,8 @@ from app.config import settings
 
 IS_SQLITE = "sqlite" in settings.database_url
 
-# Busy timeout is configured via PRAGMA busy_timeout in the connection listener below.
+# check_same_thread=False is required for async SQLite access across threads.
+# Busy timeout is controlled exclusively via PRAGMA busy_timeout in the listener below.
 _connect_args = {"check_same_thread": False} if IS_SQLITE else {}
 
 engine = create_async_engine(
