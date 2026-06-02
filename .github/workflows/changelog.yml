@@ -3,25 +3,32 @@ name: Changelog
 on:
   push:
     branches: [main]
+    tags:
+      - "v*"
+
+# P1 fix: prevent race condition when branch push and tag push fire simultaneously.
+# cancel-in-progress: false ensures the second job queues and waits instead of
+# being cancelled, so both events still produce a changelog update.
+concurrency:
+  group: changelog
+  cancel-in-progress: false
 
 jobs:
   changelog:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Install git-cliff
-        run: |
-          curl -fsSL https://github.com/orhun/git-cliff/releases/download/v2.4.0/git-cliff-2.4.0-x86_64-unknown-linux-gnu.tar.gz \
-          | tar -xz --strip-components=1
-          sudo mv git-cliff /usr/local/bin/
+        run: pip install git-cliff==2.13.1
 
       - name: Generate changelog
-        run: git-cliff --output CHANGELOG.md
+        run: git cliff -o CHANGELOG.md
 
       - name: Generate GitHub App Token
         id: generate_token
@@ -38,28 +45,43 @@ jobs:
           # Check if there are changes
           git add CHANGELOG.md
           if git diff --staged --quiet; then
-            echo "No changelog changes"
+            echo "No changelog changes, skipping."
             exit 0
           fi
 
-          # Create branch and commit
-          BRANCH_NAME="bot/changelog-$(date +%s)"
+          # Use run ID + attempt for a guaranteed-unique branch name across concurrent runs
+          BRANCH_NAME="bot/changelog-${{ github.run_id }}-${{ github.run_attempt }}"
           git checkout -b "$BRANCH_NAME"
           git commit -m "chore: update changelog [skip ci]"
           git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:"$BRANCH_NAME"
 
-          # Create PR and auto-merge
+          # Create PR
           PR_RESPONSE=$(curl -s -X POST \
             -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${{ github.repository }}/pulls \
-            -d "{\"title\":\"chore: update changelog\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated changelog update from AladdinAI bot\"}")
+            -d "{\"title\":\"chore: update changelog\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated changelog update from AladdinAI bot 🤖\"}")
 
           PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
-          if [ "$PR_NUMBER" != "null" ]; then
-            curl -s -X PUT \
-              -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
-              -H "Accept: application/vnd.github+json" \
-              https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge \
-              -d '{"merge_method":"squash"}'
+          if [ "$PR_NUMBER" = "null" ] || [ -z "$PR_NUMBER" ]; then
+            echo "Failed to create PR: $PR_RESPONSE"
+            exit 1
           fi
+
+          echo "Created PR #$PR_NUMBER, auto-merging..."
+
+          # P2 fix: capture and validate merge response instead of silently ignoring failures
+          MERGE_RESPONSE=$(curl -s -X PUT \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge \
+            -d '{"merge_method":"squash"}')
+
+          MERGED=$(echo "$MERGE_RESPONSE" | jq -r '.merged')
+          if [ "$MERGED" != "true" ]; then
+            echo "Auto-merge failed. PR #$PR_NUMBER left open. Response: $MERGE_RESPONSE"
+            exit 1
+          fi
+
+          echo "PR #$PR_NUMBER successfully merged."
+
