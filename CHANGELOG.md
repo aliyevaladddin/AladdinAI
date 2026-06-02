@@ -1,7 +1,10 @@
 # Changelog
 
+All notable changes to AladdinAI will be documented in this file.
 
-### Bug fixes
+## [Unreleased]
+
+### Bug Fixes
 
 - Buffer upstream response body in-memory to prevent stream truncation issues ([4c5ee1e](https://github.com/aliyevaladddin/AladdinAI/commit/4c5ee1e4b7fb6e76e78c46dc722fb0618c6d07df))
 
@@ -24,6 +27,8 @@
 
 - Add email tool, UI improvements, and image generation ([7495056](https://github.com/aliyevaladddin/AladdinAI/commit/7495056f236353beeafb9eb94dd809c632306478))
 
+- Add send_email tool to default agent capabilities ([09fdb73](https://github.com/aliyevaladddin/AladdinAI/commit/09fdb7303a64b35e570bafc342d2013c90b6d35b))
+
 
 ### Refactor
 
@@ -33,8 +38,9 @@
 
 - Improve Markdown code block detection and type safety in chat interface ([3eb3ee7](https://github.com/aliyevaladddin/AladdinAI/commit/3eb3ee7bc2d52cc3b9b033c521710791ce7d16ac))
 
+## [v2.1.5] - 2026-05-31
 
-### Bug fixes
+### Bug Fixes
 
 - Prepend https protocol to Render service hostnames in backend proxy target ([57a849d](https://github.com/aliyevaladddin/AladdinAI/commit/57a849d7dcfe6b8b596493bfffc63d1d9c4d619a))
 
@@ -45,8 +51,9 @@
 
 - Replace build-time rewrites with a runtime API proxy route handler to support dynamic environment variables ([95fe05b](https://github.com/aliyevaladddin/AladdinAI/commit/95fe05b9cdec2df2cc97af80cf5faae98e907395))
 
+## [v2.1.4] - 2026-05-31
 
-### Bug fixes
+### Bug Fixes
 
 - Update dockerfilePath from /backend/Dockerfile to Dockerfile ([8e92bea](https://github.com/aliyevaladddin/AladdinAI/commit/8e92beaa2b35ea4dbb45ebcb5f1cd07b54eb04b4))
 
@@ -73,17 +80,14 @@
 - Force Docker rebuild and upgrade pip to fix PyJWT import ([833fa8d](https://github.com/aliyevaladddin/AladdinAI/commit/833fa8d6bea798aedea1faf5166fca9850034352))
 
 
-### Debug
-
-- Add pip list output to verify PyJWT installation ([2f2d1b6](https://github.com/aliyevaladddin/AladdinAI/commit/2f2d1b69f5eed1dd974df31738739ca461f2d850))
-
-
 ### Features
 
 - Configure Render deployment with Postgres and async driver conversion ([8dad10e](https://github.com/aliyevaladddin/AladdinAI/commit/8dad10ec36f436d0825f4e4c5dd5c0421741bfa3))
 
+## [v2.1.3] - 2026-05-30
+## [v2.1.2] - 2026-05-30
 
-### Bug fixes
+### Bug Fixes
 
 - Verify GitHub webhook signature against raw body bytes ([c8a8ea2](https://github.com/aliyevaladddin/AladdinAI/commit/c8a8ea2c8599ff540ac8f361afb881016afa09a7))
 
@@ -115,12 +119,12 @@
 - Bump actions/setup-python from 5 to 6 ([07d6e22](https://github.com/aliyevaladddin/AladdinAI/commit/07d6e2251409458b238fd0f1d3afdbb868359097))
 
 
-### Ci
+### CI
 
 - Update webpack workflow to install dependencies and build from frontend directory ([0b48d00](https://github.com/aliyevaladddin/AladdinAI/commit/0b48d003d0758318248e94524b7475a82097c775))
 
 
-### Docs
+### Documentation
 
 - Update CONTRIBUTING.md with actual setup commands and conventional commits ([6391a27](https://github.com/aliyevaladddin/AladdinAI/commit/6391a273077321172ab43f108852fbeb8c7b5ce5))
 
@@ -148,13 +152,11 @@
 
 - Update Cloudflare Functions env variable names ([715ab34](https://github.com/aliyevaladddin/AladdinAI/commit/715ab348b329648bd81b20f95cd9cde133bd0965))
 
+## [v2.1.1] - 2026-05-28
 
-### Test
+### Bug Fixes
 
-- Trigger webhook for AladdinAI bot ([f433b46](https://github.com/aliyevaladddin/AladdinAI/commit/f433b46156df868171de9c8b95067b1db105be6c))
-
-
-### Bug fixes
+- Fix readme ([eb05ec5](https://github.com/aliyevaladddin/AladdinAI/commit/eb05ec5fbffb8b6f622263e2f2e3506528b1fa3b))
 
 - Replace git-cliff-action with direct binary ([5a62536](https://github.com/aliyevaladddin/AladdinAI/commit/5a62536cc14d94ba376c26076e5fb7a3ce020ee8))
 
@@ -183,7 +185,7 @@
 - Correct indentation and add owner parameter to _get_user_context ([e95d9ba](https://github.com/aliyevaladddin/AladdinAI/commit/e95d9ba21b4519604ee395bcf10224780c32a9ef))
 
 
-### Docs
+### Documentation
 
 - Rewrite Quick start around npx aladdin-ai ([3457018](https://github.com/aliyevaladddin/AladdinAI/commit/345701851873b78986b6d45b88392d1804e8371a))
 
@@ -259,12 +261,15 @@
 - Update README CI and deployment badges to use consistent shield styles ([4f9d65e](https://github.com/aliyevaladddin/AladdinAI/commit/4f9d65e32b9ecd66285c5621c41a40b513ea8ad4))
 
 
-### Test
+### Testing
 
 - Add file with intentional issues to trigger code review bot ([deeafb5](https://github.com/aliyevaladddin/AladdinAI/commit/deeafb51ca65e1bb4120fbb9e3be662dfb818565))
 
+- Trigger webhook for AladdinAI bot ([f433b46](https://github.com/aliyevaladddin/AladdinAI/commit/f433b46156df868171de9c8b95067b1db105be6c))
 
-### Bug fixes
+## [v2.0.0] - 2026-05-18
+
+### Bug Fixes
 
 - Prepend venv activation to remote shell commands and restyle terminal container for full-screen layout ([4716399](https://github.com/aliyevaladddin/AladdinAI/commit/47163998252d211249c780cb854ee9ec2d92ed6c))
 
@@ -283,7 +288,7 @@
 - Add contact_id to local Activity interface in crm/[id]/page ([c66cb64](https://github.com/aliyevaladddin/AladdinAI/commit/c66cb64c7442db76bd746b7a9fce8003a01f0775))
 
 
-### Docs
+### Documentation
 
 - Comprehensive documentation overhaul and CLI refactor ([6df7cfe](https://github.com/aliyevaladddin/AladdinAI/commit/6df7cfeb644505e37218948afb051f30ced171b4))
 
@@ -293,6 +298,14 @@
 ### Features
 
 - Stabilize terminal lifecycle, fix BentoML deploy & enhance network diagnostics ([f9f40c7](https://github.com/aliyevaladddin/AladdinAI/commit/f9f40c719477b416d19cdfe8e4fd07544af90695))
+
+- Feat: redesign comms/crm/agents pages and add VM password migration
+  - Replace mock cyberpunk UI on /comms, /crm, /agents with real API-driven views
+  - Match design system used by /channels, /deals (shadcn Button, border-border, muted-foreground)
+  - /comms now shows connected messaging channels and email accounts with Test/Sync
+  - /crm becomes Contacts list with create form, search, tags, source
+  - /agents lists real agents with Start/Stop/Delete and provider join
+  - Add Alembic migration adding password_encrypted column to vm_connections ([2d481f0](https://github.com/aliyevaladddin/AladdinAI/commit/2d481f0c16966b68c831e2ea8b1ed8d151625c4d))
 
 - Replace alert() with sonner toasts across dashboard ([e1c7b00](https://github.com/aliyevaladddin/AladdinAI/commit/e1c7b00babf114b3e0de36b4dc61023b7c028aef))
 
@@ -331,83 +344,99 @@
 
 - Update BentoML deployment logic and add repository documentation files ([203dd7c](https://github.com/aliyevaladddin/AladdinAI/commit/203dd7cabe41a0eaec9939284f412993edc0a50f))
 
+## [v1.2.0] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Improve CLI download robustness, update cross-platform open command, and bump package versions to 1.2.0 ([827295f](https://github.com/aliyevaladddin/AladdinAI/commit/827295fcc48856d4cc4201353c84d274626b34bd))
 
+## [v1.1.9] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Resolve Windows installation path opening issue and bump version to 1.1.8 ([1e12b27](https://github.com/aliyevaladddin/AladdinAI/commit/1e12b2755355785a42413a8a2a8098dd7943a416))
 
+## [v1.1.7] - 2026-04-30
 
 ### Features
 
 - Add publish-cli workflow to automate npm releases ([3ef4a36](https://github.com/aliyevaladddin/AladdinAI/commit/3ef4a36826a9407af4d9f65a0cd835ba10e776f2))
 
+## [v1.1.6] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Clean up workflows and prepare for final release v1.1.6 ([63466b4](https://github.com/aliyevaladddin/AladdinAI/commit/63466b4667601e9b557173f6af091398556506c4))
 
+## [v1.1.5] - 2026-04-30
 
-### Ci
+### CI
 
 - Add ubuntu support and consolidate electron build and artifact collection process ([ba8f12c](https://github.com/aliyevaladddin/AladdinAI/commit/ba8f12c2de611d71e40fa0cd819bb74b18927a0c))
 
+## [v1.1.2] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Final build cleanup - remove deprecated next export command ([1c719ba](https://github.com/aliyevaladddin/AladdinAI/commit/1c719bac5d52aa647e989408b3a1b0ea434c8bf0))
 
+## [v1.1.1] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Final build hardening (TS generics, null token support, CSS native patterns) ([2c6b2a4](https://github.com/aliyevaladddin/AladdinAI/commit/2c6b2a4b01de88e5b397b62e9e2738597254315b))
 
+## [v1.1.0] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Add token management methods to api client ([511dfb7](https://github.com/aliyevaladddin/AladdinAI/commit/511dfb7a34ffced1ff5499e12d24b738689a7e8b))
 
+## [v1.0.9] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Make API body optional for POST/PUT and support all CRUD methods ([c74c354](https://github.com/aliyevaladddin/AladdinAI/commit/c74c35416021aa92ced0d100a24e98fa905ae27a))
 
+## [v1.0.8] - 2026-04-30
 
 ### Features
 
 - Implement full CRUD support in api utility by adding post, put, and delete methods ([2e6d672](https://github.com/aliyevaladddin/AladdinAI/commit/2e6d6728721e51597b9d8441933d7f81b0f4a807))
 
+## [v1.0.7] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Add generic support to api client to resolve TS errors ([eccaa28](https://github.com/aliyevaladddin/AladdinAI/commit/eccaa2845e7b5d6e3c3e113fcb43da9350a4842a))
 
+## [v1.0.6] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Move selection styles to native CSS for Tailwind v4 compatibility ([1c6d4f2](https://github.com/aliyevaladddin/AladdinAI/commit/1c6d4f25c851d14907d0e9c328c9768870c14f20))
 
+## [v1.0.5] - 2026-04-30
 
 ### Ix
 
 - Final resolve for Tailwind v4 CSS build errors ([2779da4](https://github.com/aliyevaladddin/AladdinAI/commit/2779da467e86fdb6a053cc2f12714d800cd9efde))
 
+## [v1.0.4] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Resolve Tailwind v4 utility errors and rename Sidebar to SovereignSidebar ([d7ef76a](https://github.com/aliyevaladddin/AladdinAI/commit/d7ef76a07a7951e1375ed54684bbb918e631a724))
 
+## [v1.0.3] - 2026-04-30
 
 ### Features
 
 - Export api compatibility object and update CI to use npm install ([ea1dc00](https://github.com/aliyevaladddin/AladdinAI/commit/ea1dc00c8c5b94f28f6945742e19994f8b1f45fb))
 
+## [v1.0.2] - 2026-04-30
 
-### Bug fixes
+### Bug Fixes
 
 - Use rcf-cli audit command instead of scan ([9146fcb](https://github.com/aliyevaladddin/AladdinAI/commit/9146fcb2b8ec0c0b2a0ce5cbbeba56597e9d6ec7))
 
@@ -416,7 +445,7 @@
 - Use correct npm scope @aladdinaliyev ([88cb8ca](https://github.com/aliyevaladddin/AladdinAI/commit/88cb8ca3268b195c3230b88464f16a3f3062451f))
 
 
-### Ci
+### CI
 
 - Allow npm publish from feature branch for testing ([9b4de16](https://github.com/aliyevaladddin/AladdinAI/commit/9b4de16e7a9662515ac4f51c364559d4102237de))
 
@@ -429,7 +458,7 @@
 - Switch RCF audit to npm rcf-protocol ([875022d](https://github.com/aliyevaladddin/AladdinAI/commit/875022de301d46418d1374836555f6cb3c96c428))
 
 
-### Docs
+### Documentation
 
 - Update README with project badges, feature list, and contribution guidelines, and finalize LICENSE copyright notice ([7f08f0d](https://github.com/aliyevaladddin/AladdinAI/commit/7f08f0d74b838892630c7124cef97fe6a94a441c))
 
@@ -439,6 +468,18 @@
 ### Features
 
 - Project structure initialization (FastAPI backend and Next.js frontend) ([bcde134](https://github.com/aliyevaladddin/AladdinAI/commit/bcde134b5600893fbdf198581eb99e8c8514e401))
+
+- Feat: real VM SSH connect & LLM provider API connect/disconnect
+- Replace TODO SSH stub with asyncssh.connect() real connection
+- Add POST /vms/{id}/connect and /disconnect endpoints
+- Persist VM status (connected/disconnected) in DB after SSH test
+- Replace provider test stub with real GET /v1/models API call
+- Persist provider status and models_available in DB on success
+- Add POST /providers/{id}/connect and /disconnect endpoints
+- Frontend: Connect/Disconnect toggle buttons based on real DB status
+- Frontend: Live inline feedback (success/error/loading) per card
+- Frontend: SSH private key textarea in VM form
+- Add asyncssh==2.18.0 to requirements.txt ([5acf073](https://github.com/aliyevaladddin/AladdinAI/commit/5acf073656487a1ef97b817ab306485068959660))
 
 - Add dynamic model loading, persistent chat sessions, and visual router config ([a94fc3b](https://github.com/aliyevaladddin/AladdinAI/commit/a94fc3bbf03dac958142361ff42c4c510d707bbd))
 
@@ -459,3 +500,4 @@
 
 - Publish under @auroraaccess organization ([d275662](https://github.com/aliyevaladddin/AladdinAI/commit/d275662f5ccf80dddaae66614517938be158ce95))
 
+<!-- Generated by git-cliff -->
