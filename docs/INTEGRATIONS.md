@@ -13,9 +13,9 @@ AladdinAI ships with a built-in vector memory system backed by **MongoDB Atlas**
 | Layer | Backend | Location |
 |---|---|---|
 | Vector store | MongoDB Atlas | `backend/app/services/memory.py` |
-| Embedding model | NVIDIA NIM (`llama-3.2-nv-embedqa-1b-v2`, 2048-dim) | `backend/app/services/memory.py` |
+| Embedding model | NVIDIA NIM (`nvidia/llama-3.2-nv-embedqa-1b-v2`, 2048-dim) | `backend/app/services/memory.py` |
 | Memory tools (agents) | `store_memory`, `search_memory` | `backend/app/tools/memory.py` |
-| Memory router (API) | `GET/POST /api/agents/{id}/memories` | `backend/app/routers/agents.py` |
+| Memory router (API) | `GET/POST /api/agents/{agent_id}/memories` | `backend/app/routers/agents.py` |
 | MongoDB connection config | Per-user, encrypted URI | `backend/app/models/mongo_connection.py` |
 
 **Collections used in MongoDB Atlas:**
