@@ -27,6 +27,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Replace immediate merge with GitHub native auto-merge via GraphQL ([0c7ff8f](https://github.com/aliyevaladddin/AladdinAI/commit/0c7ff8f1b50aec3850c77ea46a9efa4e4ab61394))
 
 
+### CI
+
+- Drop Node 20 from CI matrix, require Node 22 LTS minimum ([3e63cb0](https://github.com/aliyevaladddin/AladdinAI/commit/3e63cb08a8581f3e94d181a43f4cdcd125ec9880))
+
+
 ### Features
 
 - Add existence checks to timestamp migration and expand target table list ([51a9b36](https://github.com/aliyevaladddin/AladdinAI/commit/51a9b3676e839ee680db68c7c375c7f22f05af45))
