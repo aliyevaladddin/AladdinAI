@@ -27,8 +27,10 @@ conversation_summaries — rolled-up chat history
 ```
 
 **Vector index setup (Atlas UI):**
-- Collection: `agent_memories` → Index name: `vector_index`, field: `embedding`, dim: `2048`, similarity: `cosine`
-- Collection: `shared_context` → same index config, filter on `user_id`
+- Collection: `agent_memories` → Index name: `vector_index`, field: `embedding`, dim: `2048`, similarity: `cosine`, **filter fields: `user_id`, `agent_id`**
+- Collection: `shared_context` → same index config, **filter field: `user_id`**
+
+> ⚠️ Both filter fields on `agent_memories` are required. The `$vectorSearch` pipeline passes `{"user_id": ..., "agent_id": ...}` as the filter — a missing `agent_id` filter field will cause per-agent memory queries to silently return no results.
 
 ---
 
@@ -46,11 +48,13 @@ conversation_summaries — rolled-up chat history
 | **MCP support** | Via AladdinAI agent tools | Native MCP server |
 | **Persistence** | Per-user, encrypted | git-versioned Markdown |
 
-### Quick setup (local development)
+> ⚠️ **Security notice:** Before running any external package, review the source code at
+> [github.com/7xuanlu/origin](https://github.com/7xuanlu/origin). Pin an explicit version
+> to avoid unexpected changes from future releases.
 
 ```bash
-# 1. Install Origin runtime
-npx -y @7xuanlu/origin setup
+# 1. Install Origin runtime (pin to a specific version you have reviewed)
+npx @7xuanlu/origin@latest setup
 
 # 2. Start the Origin daemon (runs on 127.0.0.1:7878)
 ~/.origin/bin/origin status
