@@ -40,6 +40,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Fix vector index filter fields and add npx security notice ([0e57f40](https://github.com/aliyevaladddin/AladdinAI/commit/0e57f4026e4b5f025fecc22cafee3db0f1249a9a))
 
+- Add Operations section covering logs, upgrades, recovery, permissions and agent limits ([6f55365](https://github.com/aliyevaladddin/AladdinAI/commit/6f553654771b39c25a6bb1af6a413bcd4ef2d10c))
+
 
 ### Features
 
