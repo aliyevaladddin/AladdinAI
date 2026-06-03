@@ -225,6 +225,62 @@ make clean                         # remove .venv, caches, build artefacts
 
 ---
 
+## ◈ Operations
+
+### Logs
+
+```bash
+npx aladdin-ai logs -f             # tail all services
+npx aladdin-ai logs -f backend     # backend only
+npx aladdin-ai logs -f frontend    # frontend only
+```
+
+Every agent turn is traceable: memory reads, gate decisions, tool calls, and model latency are logged to the backend. Use `GET /api/agents/{agent_id}/gate-logs` to pull structured decision logs per agent.
+
+### Upgrades
+
+```bash
+npx aladdin-ai update              # pull latest images, recreate containers
+make migrate                       # apply any new database migrations
+```
+
+Images are versioned and tagged. The CLI always pulls the same tag it was installed with unless you pass `--tag latest` explicitly. Database migrations run automatically on backend startup via Alembic.
+
+### Failure recovery
+
+If a service crashes, Docker Compose restarts it automatically (`restart: unless-stopped`). To restart manually:
+
+```bash
+npx aladdin-ai restart backend
+npx aladdin-ai restart frontend
+npx aladdin-ai doctor              # diagnose config, DB connection, and provider health
+```
+
+Agent tasks (scheduled cron jobs via APScheduler) are in-process and will restart with the backend. Persistent state lives in Postgres — no in-memory-only state that can be lost on restart.
+
+### Permissions
+
+All resources are scoped **per user**. Agents, memories, CRM contacts, and channel connections are isolated by `user_id` at the database query level — a user cannot read or write another user's data even if they share the same instance.
+
+Role model: `admin` users can manage LLM providers and system-wide settings. Regular users manage only their own agents and data.
+
+### Agent limits
+
+Agents are bounded at multiple layers to prevent runaway behaviour:
+
+| Layer | Mechanism |
+|---|---|
+| **Safety gates** | NemoGuard / Llama-Guard runs before and after every model response. Blocks or redacts harmful content. |
+| **PII redaction** | GLiNER-based extraction strips personal data from memory writes and shared context. |
+| **Gate logging** | Every gate decision is written to `gate_logs` — auditable, queryable via API. |
+| **Tool scope** | Each agent has an explicit tool list. No agent can call a tool it was not granted. |
+| **Model overrides** | Per-agent model, temperature, and token limits are set at creation time and not changeable by the agent itself. |
+| **Cron throttling** | Scheduled tasks are defined with explicit intervals — no self-scheduling or infinite loops. |
+
+Configure gates under *Settings → Safety* in the dashboard.
+
+---
+
 ## ◈ Terminal providers
 
 Two browser-based terminal providers, running in isolated Docker containers with Traefik routing and forward-auth:
@@ -236,6 +292,7 @@ Two browser-based terminal providers, running in isolated Docker containers with
 Install through the UI under *Settings → Terminal Providers*. No additional setup required.
 
 ---
+
 
 ## ◈ Feedback
 
