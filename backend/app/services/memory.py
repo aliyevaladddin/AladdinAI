@@ -167,8 +167,10 @@ async def embed(db: AsyncSession, user_id: int, text: str) -> list[float]:
         payload["input_type"] = "query"
         payload["truncate"] = "END"
 
-    # OpenAI dimension control to match our 2048 requirement
-    if provider.type == "openai":
+    # OpenAI dimension control to match our 2048 requirement.
+    # Only the text-embedding-3-* family supports the `dimensions` param;
+    # older models (e.g. text-embedding-ada-002) reject it with HTTP 400.
+    if provider.type == "openai" and "text-embedding-3" in (model or ""):
         payload["dimensions"] = EMBED_DIM
 
     async with httpx.AsyncClient(timeout=30.0) as client:
