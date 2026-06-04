@@ -139,7 +139,6 @@ async def delete_file(
         return await media_mongo.delete_file(db, user_id, file_id)
     else:
         from app.services import media
-        from pathlib import Path
         # Legacy: file_id is filename
         path = media.resolve(file_id)
         if path and path.exists():
