@@ -57,6 +57,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add git-cliff config and update changelog workflow ([1bb3018](https://github.com/aliyevaladddin/AladdinAI/commit/1bb3018a6283fa58e2488da8be439bb3e7165cdd))
 
+- MongoDB GridFS media storage + provider-independent models ([96a7437](https://github.com/aliyevaladddin/AladdinAI/commit/96a743718beb0e6f404e77056637fec20da33d1d))
+
 
 ### Refactor
 
@@ -65,6 +67,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Remove unused sqlalchemy import in timestamp migration script ([38ac031](https://github.com/aliyevaladddin/AladdinAI/commit/38ac031ad7354354e170cd963b34b021b182ec03))
 
 - Improve Markdown code block detection and type safety in chat interface ([3eb3ee7](https://github.com/aliyevaladddin/AladdinAI/commit/3eb3ee7bc2d52cc3b9b033c521710791ce7d16ac))
+
+- Make system settings read-only by default and ensure concurrency-safe database persistence with a unique user_id constraint while fixing OpenAI embedding dimension support. ([a95814f](https://github.com/aliyevaladddin/AladdinAI/commit/a95814ff41b5ffc50dddc02894eca7b3310ad7a3))
 
 ## [v2.1.5] - 2026-05-31
 
