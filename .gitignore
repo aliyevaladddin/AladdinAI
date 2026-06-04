@@ -56,7 +56,17 @@ claude-proxy-config.yaml
 session-ses_1ada.md
 docs/blog-architecture-deep-dive.md
 test_bot_trigger.py
-
+backend/scripts/check_vector_indexes.py
+backend/scripts/check_embedding_models.py
+backend/scripts/init_vector_collections.py
+backend/scripts/init_vector_indexes.py
+backend/scripts/list_atlas_indexes.py
+backend/scripts/query_memories.py
+backend/scripts/test_vector_search.py
+backend/scripts/test_memory_store.py
+frontend/test_login.html
+frontend/public/debug_login.html
+DEBUG_LOGIN.md
 # Project specific
 .idx/
 

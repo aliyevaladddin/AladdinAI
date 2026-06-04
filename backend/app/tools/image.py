@@ -19,7 +19,7 @@ from sqlalchemy import select
 from app.models.agent import Agent
 from app.models.llm_provider import LLMProvider
 from app.models.messaging_channel import MessagingChannel
-from app.services import image_gen, media as media_service
+from app.services import image_gen, media_storage
 from app.services.llm_service import LLMError
 from app.tools.base import ToolContext, tool
 
@@ -70,7 +70,7 @@ async def generate_image(ctx: ToolContext, prompt: str) -> dict:
         log.warning("generate_image failed for agent %s: %s", ctx.agent_id, e)
         return {"error": str(e)}
 
-    saved = media_service.save_bytes(img_bytes, mime)
+    saved = await media_storage.save_bytes(ctx.db, ctx.user_id, img_bytes, mime)
 
     channel_type = ctx.extra.get("channel_type")
     if not channel_type:
@@ -83,7 +83,7 @@ async def generate_image(ctx: ToolContext, prompt: str) -> dict:
         outgoing = ctx.extra.setdefault("outgoing_attachments", [])
         outgoing.append({
             "filename": saved["filename"],
-            "path": saved["path"],
+            "file_id": saved.get("file_id", saved.get("path")),  # Support both backends
             "mime": saved["mime"],
             "kind": "image",
             "caption": prompt,
@@ -109,7 +109,14 @@ async def generate_image(ctx: ToolContext, prompt: str) -> dict:
         if channel_type == "telegram":
             from app.services.messaging_service import send_telegram_photo
 
-            await send_telegram_photo(channel, str(recipient), saved["path"], caption=prompt)
+            # Get file bytes for telegram
+            file_bytes = await media_storage.get_bytes(ctx.db, ctx.user_id, saved.get("file_id", saved.get("path", "")))
+            if not file_bytes:
+                return {"error": "Failed to retrieve generated image"}
+
+            # TODO: Update send_telegram_photo to accept bytes instead of path
+            # For now, we need to pass the file_id/path
+            await send_telegram_photo(channel, str(recipient), saved.get("file_id", saved.get("path", "")), caption=prompt)
             return {"status": "sent", "channel": "telegram", "filename": saved["filename"]}
         return {"error": f"generate_image not implemented for channel {channel_type!r}"}
     except Exception as e:  # noqa: BLE001

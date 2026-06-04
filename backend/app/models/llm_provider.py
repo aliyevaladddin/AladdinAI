@@ -16,5 +16,7 @@ class LLMProvider(Base):
     api_key_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     base_url: Mapped[str] = mapped_column(String(500))
     models_available: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
+    embedding_model: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Selected embedding model
+    vision_model: Mapped[str | None] = mapped_column(String(255), nullable=True)  # Selected vision model
     status: Mapped[str] = mapped_column(String(50), default="disconnected")
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
