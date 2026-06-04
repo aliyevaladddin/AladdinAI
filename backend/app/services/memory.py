@@ -3,13 +3,15 @@
 Layout:
   Postgres (canonical state):
     - mongo_connections: per-user Atlas cluster URIs.
-    - llm_providers (type='nvidia_nim'): used to source embeddings.
+    - llm_providers: auto-selected by priority (nvidia_nim → openai → custom → huggingface)
+                     embedding_model field stores user's choice from UI
   MongoDB Atlas (per user, in their `db_name`):
     - agent_memories     — private per-agent facts (1 vector index)
     - shared_context     — facts visible to all agents of this user
     - conversation_summaries — rolled-up chat history (no vector for now)
 
-Embeddings: `nvidia/llama-3.2-nv-embedqa-1b-v2` (2048 dim).
+Embeddings: 2048-dimensional vectors from any connected provider.
+Model selection: user chooses via UI (provider.embedding_model), fallback to provider defaults.
 
 Atlas Vector Search indexes (must be created manually in the Atlas UI):
   Collection: agent_memories       Index: vector_index   field: embedding   dim: 2048   similarity: cosine
@@ -35,7 +37,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.llm_provider import LLMProvider
 from app.models.mongo_connection import MongoConnection
 
-EMBED_MODEL = "nvidia/llama-3.2-nv-embedqa-1b-v2"
+# Target embedding dimension for all providers
 EMBED_DIM = 2048
 VECTOR_INDEX_NAME = "vector_index"
 
@@ -89,56 +91,120 @@ def invalidate_mongo_client(user_id: int) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Embeddings (NIM)
+# Embeddings (auto-select provider)
 # ─────────────────────────────────────────────────────────────────────────────
 
-async def _resolve_nim_provider(db: AsyncSession, user_id: int) -> LLMProvider:
-    result = await db.execute(
-        select(LLMProvider).where(
-            LLMProvider.user_id == user_id,
-            LLMProvider.type == "nvidia_nim",
+# Provider priority for embeddings fallback
+EMBEDDING_PROVIDER_PRIORITY = ["nvidia_nim", "openai", "custom", "huggingface"]
+
+# Model mapping per provider type
+EMBEDDING_MODELS = {
+    "nvidia_nim": "nvidia/llama-nemotron-embed-1b-v2",
+    "openai": "text-embedding-3-large",  # 3072 dim, can be truncated to 2048
+    "custom": None,  # Use whatever the custom endpoint provides
+    "huggingface": "sentence-transformers/all-mpnet-base-v2",  # 768 dim, needs padding
+}
+
+
+async def _resolve_embedding_provider(db: AsyncSession, user_id: int) -> LLMProvider:
+    """Select first available embedding provider by priority."""
+    for provider_type in EMBEDDING_PROVIDER_PRIORITY:
+        result = await db.execute(
+            select(LLMProvider).where(
+                LLMProvider.user_id == user_id,
+                LLMProvider.type == provider_type,
+                LLMProvider.status == "connected",
+            )
         )
+        provider = result.scalars().first()
+        if provider:
+            return provider
+
+    raise MemoryError(
+        f"No embedding provider configured. Need one of: {', '.join(EMBEDDING_PROVIDER_PRIORITY)}"
     )
-    provider = result.scalars().first()
-    if not provider:
-        raise MemoryError("No NVIDIA NIM provider configured — needed for embeddings")
-    return provider
 
 
 async def embed(db: AsyncSession, user_id: int, text: str) -> list[float]:
-    """Embed text via NIM and return a 2048-dim vector."""
-    provider = await _resolve_nim_provider(db, user_id)
+    """Embed text via available provider and return a 2048-dim vector."""
+    provider = await _resolve_embedding_provider(db, user_id)
     api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
+    # Use user-selected embedding model from UI, or fall back to defaults
+    model = provider.embedding_model
+    if not model:
+        # Fallback to default model for provider type
+        model = EMBEDDING_MODELS.get(provider.type)
+
+    if not model and provider.models_available:
+        # Try to extract first model from models_available (could be JSON string or text)
+        try:
+            import json
+            models = json.loads(provider.models_available) if isinstance(provider.models_available, str) else provider.models_available
+            if isinstance(models, list) and models:
+                model = models[0]
+        except Exception:
+            pass
+
+    # Final fallback: use a generic embedding model name
+    if not model:
+        model = "text-embedding-model"
+
     url = f"{provider.base_url.rstrip('/')}/v1/embeddings"
+
+    # OpenAI-style payload (works for NIM, OpenAI, most custom endpoints)
     payload = {
-        "model": EMBED_MODEL,
+        "model": model,
         "input": [text],
-        "input_type": "query",
         "encoding_format": "float",
-        "truncate": "END",
     }
+
+    # NIM-specific parameters
+    if provider.type == "nvidia_nim":
+        payload["input_type"] = "query"
+        payload["truncate"] = "END"
+
+    # OpenAI dimension control to match our 2048 requirement.
+    # Only the text-embedding-3-* family supports the `dimensions` param;
+    # older models (e.g. text-embedding-ada-002) reject it with HTTP 400.
+    if provider.type == "openai" and "text-embedding-3" in (model or ""):
+        payload["dimensions"] = EMBED_DIM
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             resp = await client.post(url, json=payload, headers=headers)
             resp.raise_for_status()
         except httpx.HTTPStatusError as e:
-            raise MemoryError(f"Embedding HTTP {e.response.status_code}: {e.response.text[:300]}") from e
+            raise MemoryError(
+                f"Embedding failed ({provider.type}): HTTP {e.response.status_code}: {e.response.text[:300]}"
+            ) from e
         except httpx.HTTPError as e:
-            raise MemoryError(f"Embedding request failed: {e}") from e
+            raise MemoryError(f"Embedding request failed ({provider.type}): {e}") from e
 
     data = resp.json()
     try:
         vec = data["data"][0]["embedding"]
     except (KeyError, IndexError, TypeError) as e:
-        raise MemoryError(f"Unexpected embedding response: {str(data)[:200]}") from e
-    if not isinstance(vec, list) or len(vec) != EMBED_DIM:
-        raise MemoryError(f"Embedding dim mismatch: expected {EMBED_DIM}, got {len(vec) if isinstance(vec, list) else 'n/a'}")
-    return vec
+        raise MemoryError(
+            f"Unexpected embedding response from {provider.type}: {str(data)[:200]}"
+        ) from e
+
+    # Validate and normalize dimensions
+    if not isinstance(vec, list):
+        raise MemoryError(f"Embedding is not a list: {type(vec)}")
+
+    vec_len = len(vec)
+    if vec_len == EMBED_DIM:
+        return vec
+    elif vec_len > EMBED_DIM:
+        # Truncate (e.g., OpenAI text-embedding-3-large can be 3072)
+        return vec[:EMBED_DIM]
+    else:
+        # Pad with zeros (e.g., smaller models like 768-dim)
+        return vec + ([0.0] * (EMBED_DIM - vec_len))
 
 
 # ─────────────────────────────────────────────────────────────────────────────

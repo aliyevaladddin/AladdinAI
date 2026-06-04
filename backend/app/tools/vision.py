@@ -18,7 +18,7 @@ from sqlalchemy import select
 
 from app.models.agent import Agent
 from app.models.llm_provider import LLMProvider
-from app.services import media as media_service
+from app.services import media_storage
 from app.services.llm_service import LLMError, chat_completion
 from app.tools.base import ToolContext, tool
 
@@ -56,8 +56,8 @@ async def analyze_image(
     filename: str,
     question: str | None = None,
 ) -> dict:
-    path = media_service.resolve(filename)
-    if not path:
+    file_id = await media_storage.resolve(ctx.db, ctx.user_id, filename)
+    if not file_id:
         return {"error": f"File {filename!r} not found in media store"}
 
     if ctx.agent_id is None:
@@ -74,7 +74,9 @@ async def analyze_image(
         return {"error": "Provider not found"}
 
     try:
-        data_url = media_service.to_data_url(str(path))
+        data_url = await media_storage.to_data_url(ctx.db, ctx.user_id, file_id)
+        if not data_url:
+            return {"error": "Failed to read image"}
     except Exception as e:  # noqa: BLE001
         return {"error": f"Failed to read image: {e}"}
 
@@ -89,7 +91,8 @@ async def analyze_image(
         }
     ]
 
-    model = os.environ.get("VISION_MODEL", DEFAULT_VISION_MODEL)
+    # Priority: provider.vision_model → VISION_MODEL env → default
+    model = provider.vision_model or os.environ.get("VISION_MODEL", DEFAULT_VISION_MODEL)
     try:
         res = await chat_completion(provider, model, messages, max_tokens=512)
     except LLMError as e:

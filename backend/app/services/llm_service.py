@@ -20,6 +20,8 @@ import logging
 from typing import Any
 
 import httpx
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crypto import decrypt
 from app.models.llm_provider import LLMProvider
@@ -34,9 +36,58 @@ OPENAI_COMPATIBLE = {"openai", "nvidia_nim", "ollama", "custom"}
 # Keep in sync with the branches in chat_completion below.
 TOOL_CALLING_SUPPORTED = OPENAI_COMPATIBLE
 
+# Provider priority for auto-selection
+# Tool-calling providers first, then fallbacks
+LLM_PROVIDER_PRIORITY = ["nvidia_nim", "openai", "ollama", "custom", "anthropic", "huggingface"]
+
 
 class LLMError(Exception):
     """Raised when the upstream provider call fails."""
+
+
+async def resolve_llm_provider(
+    db: AsyncSession,
+    user_id: int,
+    *,
+    require_tools: bool = False,
+) -> LLMProvider:
+    """Select first available LLM provider by priority.
+
+    Args:
+        db: Database session
+        user_id: User ID
+        require_tools: If True, only return providers that support tool calling
+
+    Returns:
+        First available provider with status='connected'
+
+    Raises:
+        LLMError: If no suitable provider found
+    """
+    priority = LLM_PROVIDER_PRIORITY if not require_tools else [
+        p for p in LLM_PROVIDER_PRIORITY if p in TOOL_CALLING_SUPPORTED
+    ]
+
+    for provider_type in priority:
+        result = await db.execute(
+            select(LLMProvider).where(
+                LLMProvider.user_id == user_id,
+                LLMProvider.type == provider_type,
+                LLMProvider.status == "connected",
+            )
+        )
+        provider = result.scalars().first()
+        if provider:
+            return provider
+
+    if require_tools:
+        raise LLMError(
+            f"No tool-calling LLM provider configured. Need one of: {', '.join(TOOL_CALLING_SUPPORTED)}"
+        )
+    else:
+        raise LLMError(
+            f"No LLM provider configured. Need one of: {', '.join(LLM_PROVIDER_PRIORITY)}"
+        )
 
 
 async def chat_completion(
