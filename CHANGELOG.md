@@ -26,6 +26,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Replace immediate merge with GitHub native auto-merge via GraphQL ([0c7ff8f](https://github.com/aliyevaladddin/AladdinAI/commit/0c7ff8f1b50aec3850c77ea46a9efa4e4ab61394))
 
+- Remove unused pathlib.Path import in media_storage (ruff F401) ([db4f0e9](https://github.com/aliyevaladddin/AladdinAI/commit/db4f0e90982c37983e3368977659f25b4c5ffe09))
+
 
 ### CI
 
