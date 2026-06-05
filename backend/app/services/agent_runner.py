@@ -34,11 +34,15 @@ DEFAULT_MAX_ITERATIONS = 5
 
 DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
     "_default": [
-        "ask_agent", "delegate", "recall", "remember",
+        "recall", "remember",
         "analyze_image", "send_image", "generate_image",
         "send_email",
     ],
 }
+
+# Tools that require other agents to exist — only activated when
+# tools_config explicitly sets "enable_inter_agent": true
+_INTER_AGENT_TOOLS = {"delegate", "ask_agent"}
 
 
 def _text_of(content: Any) -> str:
@@ -64,9 +68,17 @@ def _text_of(content: Any) -> str:
 def _allowed_tools(agent: Agent) -> list[str]:
     cfg = agent.tools_config or {}
     if isinstance(cfg, dict) and "allowed" in cfg:
-        return list(cfg["allowed"])
-    role = (agent.role or "").lower()
-    return DEFAULT_TOOLS_BY_ROLE.get(role, DEFAULT_TOOLS_BY_ROLE["_default"])
+        tools = list(cfg["allowed"])
+    else:
+        role = (agent.role or "").lower()
+        tools = DEFAULT_TOOLS_BY_ROLE.get(role, DEFAULT_TOOLS_BY_ROLE["_default"])
+
+    # Strip inter-agent tools unless explicitly enabled.
+    # Small models hallucinate agent IDs when these tools are present.
+    if not (isinstance(cfg, dict) and cfg.get("enable_inter_agent")):
+        tools = [t for t in tools if t not in _INTER_AGENT_TOOLS]
+
+    return tools
 
 
 def _max_iterations(agent: Agent) -> int:
