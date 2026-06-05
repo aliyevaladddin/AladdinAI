@@ -1412,6 +1412,40 @@
   to   { background-position:  200% 0; }
 }
 
+/* ============================================================
+   Storage backend settings — radio cards: mount-in stagger,
+   skeleton shimmer and a save spinner. Honour reduced-motion.
+   ============================================================ */
+.storage-card {
+  animation: mpIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.storage-card:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+.storage-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-3) 0%,
+    var(--line) 40%,
+    var(--bg-3) 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+.storage-spin {
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .storage-card,
+  .storage-shimmer,
+  .storage-spin {
+    animation: none;
+  }
+}
+
 /* ===========================================================
    Terminal drawer
    Floats above .shell__body, snapped to its bottom edge.

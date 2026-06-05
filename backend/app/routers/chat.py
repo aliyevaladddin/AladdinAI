@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,9 +20,26 @@ from app.security import get_current_user
 from app.services.agent_runner import run_agent
 from app.services.llm_service import LLMError
 from app.services import media as media_service
+from app.services import media_storage
 from app.services import speech
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+
+async def _read_attachment_bytes(
+    db: AsyncSession, user_id: int, filename: str
+) -> bytes | None:
+    """Read attachment bytes by its public `filename` handle, backend-agnostic.
+
+    The frontend round-trips a stable `filename` (UUID.ext) for every
+    attachment. ``resolve`` maps it to the per-backend handle (disk path for
+    local, GridFS file_id for mongodb) and ``get_bytes`` reads that handle —
+    one code path for both backends.
+    """
+    handle = await media_storage.resolve(db, user_id, filename)
+    if not handle:
+        return None
+    return await media_storage.get_bytes(db, user_id, handle)
 
 
 # ── Sessions ──────────────────────────────────────────────────────────────────
@@ -149,31 +166,61 @@ def _kind_for_mime(mime: str) -> str:
 async def upload_attachment(
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Save an uploaded image or audio clip and return its handle. Client then
-    passes the returned `filename` back via ChatRequest.attachments."""
+    passes the returned `filename` back via ChatRequest.attachments.
+
+    The cross-cycle handle is `filename` (UUID.ext): it is returned by both
+    storage backends, round-tripped by the frontend, and used by `get_media`
+    and the STT path to read the file back. `file_id` (mongodb) / `path`
+    (local) are included for completeness but are not load-bearing — nothing
+    keys off them after upload."""
     mime = (file.content_type or "").lower()
     if mime not in ALLOWED_UPLOAD_MIMES:
         raise HTTPException(status_code=415, detail=f"Unsupported file type: {mime}")
     data = await file.read()
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="File too large (max 20MB)")
-    saved = media_service.save_bytes(data, mime)
+    saved = await media_storage.save_bytes(db, user.id, data, mime)
     return {
         "filename": saved["filename"],
-        "path": saved["path"],
+        # Stable per-backend handle: file_id (mongodb) or path (local).
+        "file_id": saved.get("file_id", saved.get("path")),
         "mime": saved["mime"],
         "kind": _kind_for_mime(mime),
     }
 
 
 @router.get("/media/{filename}")
-async def get_media(filename: str, user: User = Depends(get_current_user)):
-    """Serve a previously uploaded attachment. Path-traversal-safe via media.resolve."""
-    p = media_service.resolve(filename)
-    if not p:
+async def get_media(
+    filename: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Serve a previously uploaded attachment by its `filename` handle.
+
+    Works for both storage backends:
+      - local: stream the file from disk via FileResponse (path-traversal-safe
+        through media.resolve).
+      - mongodb: read the bytes from GridFS and return them with the stored
+        content-type (there is no file on disk to FileResponse)."""
+    handle = await media_storage.resolve(db, user.id, filename)
+    if not handle:
         raise HTTPException(status_code=404, detail="File not found")
-    return FileResponse(str(p))
+
+    # Local backend resolves to an on-disk path → serve it directly.
+    p = media_service.resolve(filename)
+    if p:
+        return FileResponse(str(p))
+
+    # MongoDB backend: no file on disk, stream bytes from GridFS.
+    data = await media_storage.get_bytes(db, user.id, handle)
+    if data is None:
+        raise HTTPException(status_code=404, detail="File not found")
+    import mimetypes
+    media_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    return Response(content=data, media_type=media_type)
 
 
 # ── Send message ──────────────────────────────────────────────────────────────
@@ -209,14 +256,13 @@ async def chat(
             select(LLMProvider).where(LLMProvider.id == agent.llm_provider_id)
         )).scalar_one_or_none()
         clip = audio_atts[0]
-        p = media_service.resolve(clip.get("filename", ""))
-        if provider and p:
+        clip_filename = clip.get("filename") or ""
+        audio_bytes = await _read_attachment_bytes(db, user.id, clip_filename)
+        if provider and audio_bytes:
             try:
-                import asyncio
-                audio_bytes = await asyncio.to_thread(p.read_bytes)
                 effective_message = await speech.transcribe(
                     provider, audio_bytes, clip.get("mime") or "audio/webm",
-                    filename=clip.get("filename") or "audio.webm",
+                    filename=clip_filename or "audio.webm",
                 )
             except LLMError as e:
                 import logging
@@ -295,10 +341,11 @@ async def chat(
         if provider:
             try:
                 audio_bytes, audio_mime = await speech.synthesize(provider, reply)
-                saved = media_service.save_bytes(audio_bytes, audio_mime)
+                saved = await media_storage.save_bytes(db, user.id, audio_bytes, audio_mime)
                 outgoing_attachments.append({
                     "filename": saved["filename"],
-                    "path": saved["path"],
+                    # Per-backend handle; frontend fetches via /chat/media/{filename}.
+                    "file_id": saved.get("file_id", saved.get("path")),
                     "mime": saved["mime"],
                     "kind": "audio",
                     "caption": reply[:200],
