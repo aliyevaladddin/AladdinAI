@@ -23,7 +23,8 @@ def validate_sql_query(query: str, read_only: bool = True) -> tuple[bool, str]:
     # Remove comments to prevent bypasses
     # Use non-backtracking patterns to prevent ReDoS
     query_clean = re.sub(r'--[^\n]*', '', query, flags=re.MULTILINE)
-    query_clean = re.sub(r'/\*.*?\*/', '', query_clean, flags=re.DOTALL)
+    # Match C-style comments without backtracking: /* followed by any chars, then */
+    query_clean = re.sub(r'/\*[^*]*\*+(?:[^/*][^*]*\*+)*/', '', query_clean)
     query_clean = query_clean.strip()
 
     # Block multiple statements (semicolons not at end)
@@ -120,7 +121,8 @@ async def execute_sql_query(
     # Strip comments before checking to avoid trailing comment bypass
     # Use non-backtracking patterns to prevent ReDoS
     query_clean = re.sub(r'--[^\n]*', '', query, flags=re.MULTILINE)
-    query_clean = re.sub(r'/\*.*?\*/', '', query_clean, flags=re.DOTALL).strip()
+    # Match C-style comments without backtracking: /* followed by any chars, then */
+    query_clean = re.sub(r'/\*[^*]*\*+(?:[^/*][^*]*\*+)*/', '', query_clean).strip()
 
     if read_only and not re.search(r'\bLIMIT\b', query_clean, re.IGNORECASE):
         # Remove trailing semicolon and comments, add LIMIT, restore semicolon
