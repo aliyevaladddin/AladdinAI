@@ -146,7 +146,27 @@ async def execute_sql(
         cleaned_lines.append(line)
     query_clean = '\n'.join(cleaned_lines).strip()
 
-    if req.read_only and not re.search(r'\bLIMIT\b', query_clean, re.IGNORECASE):
+    # Security hard-stop: this endpoint only supports read-only SQL execution.
+    if not req.read_only:
+        return SQLQueryResponse(
+            success=False,
+            rows=[],
+            columns=[],
+            row_count=0,
+            error="Only read-only queries are allowed.",
+        )
+
+    # Only allow SELECT/WITH statements after normalization.
+    if not re.match(r'^\s*(SELECT|WITH)\b', query_clean, re.IGNORECASE):
+        return SQLQueryResponse(
+            success=False,
+            rows=[],
+            columns=[],
+            row_count=0,
+            error="Only SELECT/WITH queries are allowed.",
+        )
+
+    if not re.search(r'\bLIMIT\b', query_clean, re.IGNORECASE):
         # Remove trailing semicolon and comments, add LIMIT, restore semicolon
         query_trimmed = query.rstrip().rstrip(';').rstrip()
         query = f"{query_trimmed} LIMIT {req.limit};"
@@ -170,14 +190,12 @@ async def execute_sql(
                 row_count=len(rows_dict),
             )
         else:
-            # Mutation query
-            await db.commit()
             return SQLQueryResponse(
-                success=True,
+                success=False,
                 rows=[],
                 columns=[],
-                row_count=result.rowcount,
-                message=f"Query executed. {result.rowcount} rows affected.",
+                row_count=0,
+                error="Only read-only SELECT/WITH queries are allowed.",
             )
 
     except Exception as e:
