@@ -36,6 +36,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Replace regex with string operations to eliminate ReDoS ([581c156](https://github.com/aliyevaladddin/AladdinAI/commit/581c15631f21b6a7a76d5f2690e2e607ad8901be))
 
+- Disable parallel_tool_calls for NVIDIA NIM compatibility ([019fd16](https://github.com/aliyevaladddin/AladdinAI/commit/019fd16f454a2fd0110ee4f848ae3d980261240e))
+
+- Pass tool_choice=auto explicitly so NIM calls tools autonomously ([8ab8e5e](https://github.com/aliyevaladddin/AladdinAI/commit/8ab8e5eb1e85f3a47212516f1d0c93c629960886))
+
+- Disable inter-agent tools by default to prevent small model hallucination of agent IDs ([145b9ea](https://github.com/aliyevaladddin/AladdinAI/commit/145b9ea556cfedb09c26b7f932905207c9979cc1))
+
 
 ### CI
 
