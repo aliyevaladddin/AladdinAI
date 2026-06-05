@@ -52,16 +52,14 @@ async def get_schema(
         # Query information_schema for all tables and columns
         query = text("""
             SELECT
-                t.table_name,
+                c.table_name,
                 c.column_name,
                 c.data_type,
                 c.is_nullable,
                 c.column_default
-            FROM information_schema.tables t
-            JOIN information_schema.columns c
-                ON t.table_name = c.table_name
-            WHERE t.table_schema = 'public'
-            ORDER BY t.table_name, c.ordinal_position
+            FROM information_schema.columns c
+            WHERE c.table_schema = 'public'
+            ORDER BY c.table_name, c.ordinal_position
         """)
 
         result = await db.execute(query)
@@ -126,8 +124,14 @@ async def execute_sql(
 
     # Add LIMIT if not present in SELECT
     query = req.query
-    if req.read_only and not re.search(r'\bLIMIT\b', query, re.IGNORECASE):
-        query = f"{query.rstrip(';')} LIMIT {req.limit}"
+    # Strip comments before checking to avoid trailing comment bypass
+    query_clean = re.sub(r'--.*$', '', query, flags=re.MULTILINE)
+    query_clean = re.sub(r'/\*.*?\*/', '', query_clean, flags=re.DOTALL).strip()
+
+    if req.read_only and not re.search(r'\bLIMIT\b', query_clean, re.IGNORECASE):
+        # Remove trailing semicolon and comments, add LIMIT, restore semicolon
+        query_trimmed = query.rstrip().rstrip(';').rstrip()
+        query = f"{query_trimmed} LIMIT {req.limit};"
 
     # Execute
     try:

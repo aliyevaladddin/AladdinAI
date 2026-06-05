@@ -20,7 +20,19 @@ def validate_sql_query(query: str, read_only: bool = True) -> tuple[bool, str]:
     if not query or not query.strip():
         return False, "Query cannot be empty"
 
-    query_upper = query.upper()
+    # Remove comments to prevent bypasses
+    query_clean = re.sub(r'--.*$', '', query, flags=re.MULTILINE)
+    query_clean = re.sub(r'/\*.*?\*/', '', query_clean, flags=re.DOTALL)
+    query_clean = query_clean.strip()
+
+    # Block multiple statements (semicolons not at end)
+    semicolons = [i for i, c in enumerate(query_clean) if c == ';']
+    if semicolons:
+        # Only allow single trailing semicolon
+        if len(semicolons) > 1 or semicolons[0] != len(query_clean) - 1:
+            return False, "Multiple statements not allowed"
+
+    query_upper = query_clean.upper()
 
     if read_only:
         # Only allow SELECT and WITH (CTE)
@@ -104,8 +116,14 @@ async def execute_sql_query(
     limit = min(max(1, limit), 1000)
 
     # Add LIMIT if not present (for SELECT queries)
-    if read_only and not re.search(r'\bLIMIT\b', query, re.IGNORECASE):
-        query = f"{query.rstrip(';')} LIMIT {limit}"
+    # Strip comments before checking to avoid trailing comment bypass
+    query_clean = re.sub(r'--.*$', '', query, flags=re.MULTILINE)
+    query_clean = re.sub(r'/\*.*?\*/', '', query_clean, flags=re.DOTALL).strip()
+
+    if read_only and not re.search(r'\bLIMIT\b', query_clean, re.IGNORECASE):
+        # Remove trailing semicolon and comments, add LIMIT, restore semicolon
+        query_trimmed = query.rstrip().rstrip(';').rstrip()
+        query = f"{query_trimmed} LIMIT {limit};"
 
     # Execute
     try:
