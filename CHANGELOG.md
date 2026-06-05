@@ -36,6 +36,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Replace regex with string operations to eliminate ReDoS ([581c156](https://github.com/aliyevaladddin/AladdinAI/commit/581c15631f21b6a7a76d5f2690e2e607ad8901be))
 
+- Disable parallel_tool_calls for NVIDIA NIM compatibility ([019fd16](https://github.com/aliyevaladddin/AladdinAI/commit/019fd16f454a2fd0110ee4f848ae3d980261240e))
+
 
 ### CI
 
