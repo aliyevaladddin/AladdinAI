@@ -5,7 +5,6 @@ import re
 from typing import Any
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.tools.base import ToolContext, tool
 
@@ -59,7 +58,7 @@ def validate_sql_query(query: str, read_only: bool = True) -> tuple[bool, str]:
         ]
         for pattern in dangerous_patterns:
             if re.search(pattern, query_upper):
-                return False, f"Forbidden function/keyword detected"
+                return False, "Forbidden function/keyword detected"
     else:
         # Block destructive operations
         destructive = re.search(r'\b(DROP|TRUNCATE|ALTER)\b', query_upper)
