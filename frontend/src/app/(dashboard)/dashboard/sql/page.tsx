@@ -92,31 +92,47 @@ export default function SQLPlaygroundPage() {
 
   // Load saved queries and schema from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("sql_saved_queries");
-    if (saved) {
-      try {
-        setSavedQueries(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to load saved queries", e);
+    try {
+      const saved = localStorage.getItem("sql_saved_queries");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setSavedQueries(parsed);
+        }
       }
+    } catch (e) {
+      console.error("Failed to load saved queries", e);
+      localStorage.removeItem("sql_saved_queries");
     }
 
-    const hist = localStorage.getItem("sql_history");
-    if (hist) {
-      try {
-        setHistory(JSON.parse(hist));
-      } catch (e) {
-        console.error("Failed to load history", e);
+    try {
+      const hist = localStorage.getItem("sql_history");
+      if (hist) {
+        const parsed = JSON.parse(hist);
+        if (Array.isArray(parsed)) {
+          setHistory(parsed);
+        }
       }
+    } catch (e) {
+      console.error("Failed to load history", e);
+      localStorage.removeItem("sql_history");
     }
 
-    const tabsData = localStorage.getItem("sql_tabs");
-    if (tabsData) {
-      try {
-        setTabs(JSON.parse(tabsData));
-      } catch (e) {
-        console.error("Failed to load tabs", e);
+    try {
+      const tabsData = localStorage.getItem("sql_tabs");
+      if (tabsData) {
+        const parsed = JSON.parse(tabsData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTabs(parsed);
+          // Set active tab to first valid tab
+          if (!parsed.find((t) => t.id === activeTabId)) {
+            setActiveTabId(parsed[0].id);
+          }
+        }
       }
+    } catch (e) {
+      console.error("Failed to load tabs", e);
+      localStorage.removeItem("sql_tabs");
     }
 
     // Load schema
@@ -1024,49 +1040,57 @@ export default function SQLPlaygroundPage() {
               </div>
             ) : (
               <div className="flex-1 overflow-auto p-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  {visualizationType === "bar" ? (
-                    <BarChart data={result.rows}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey={result.columns[0]} />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      {result.columns.slice(1).map((col, i) => (
-                        <Bar key={col} dataKey={col} fill={`hsl(${i * 60}, 70%, 50%)`} />
-                      ))}
-                    </BarChart>
-                  ) : visualizationType === "line" ? (
-                    <LineChart data={result.rows}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey={result.columns[0]} />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      {result.columns.slice(1).map((col, i) => (
-                        <Line key={col} type="monotone" dataKey={col} stroke={`hsl(${i * 60}, 70%, 50%)`} />
-                      ))}
-                    </LineChart>
-                  ) : (
-                    <PieChart>
-                      <Pie
-                        data={result.rows}
-                        dataKey={result.columns[1] || result.columns[0]}
-                        nameKey={result.columns[0]}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={120}
-                        label
-                      >
-                        {result.rows.map((_, i) => (
-                          <Cell key={i} fill={`hsl(${i * 360 / result.rows.length}, 70%, 50%)`} />
+                {result.columns.length < 2 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-sm" style={{ color: "var(--color-fg-muted)" }}>
+                      Visualization requires at least 2 columns. Switch to table view.
+                    </p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    {visualizationType === "bar" ? (
+                      <BarChart data={result.rows}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey={result.columns[0]} />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        {result.columns.slice(1).map((col, i) => (
+                          <Bar key={col} dataKey={col} fill={`hsl(${i * 60}, 70%, 50%)`} />
                         ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </PieChart>
-                  )}
-                </ResponsiveContainer>
+                      </BarChart>
+                    ) : visualizationType === "line" ? (
+                      <LineChart data={result.rows}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey={result.columns[0]} />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        {result.columns.slice(1).map((col, i) => (
+                          <Line key={col} type="monotone" dataKey={col} stroke={`hsl(${i * 60}, 70%, 50%)`} />
+                        ))}
+                      </LineChart>
+                    ) : (
+                      <PieChart>
+                        <Pie
+                          data={result.rows}
+                          dataKey={result.columns[1]}
+                          nameKey={result.columns[0]}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={120}
+                          label
+                        >
+                          {result.rows.map((_, i) => (
+                            <Cell key={i} fill={`hsl(${i * 360 / result.rows.length}, 70%, 50%)`} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    )}
+                  </ResponsiveContainer>
+                )}
               </div>
             )}
           </div>
