@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
     chat, crm_activities, crm_contacts, crm_deals, dashboard, mongodb,
-    notifications, providers, router_config, search, settings, ssh_exec,
+    notifications, providers, router_config, search, settings, sql, ssh_exec,
     terminal_providers, terminal_ws, triggers as triggers_router, vms, webhooks,
 )
 from app.services import triggers as triggers_service
@@ -53,6 +53,7 @@ app.include_router(dashboard.router, prefix="/api")
 app.include_router(providers.router, prefix="/api")
 app.include_router(router_config.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
+app.include_router(sql.router, prefix="/api")
 app.include_router(channels_messaging.router, prefix="/api")
 app.include_router(channels_email.router, prefix="/api")
 app.include_router(crm_contacts.router, prefix="/api")
