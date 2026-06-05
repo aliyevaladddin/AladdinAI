@@ -102,6 +102,16 @@ async def execute_sql(
     Execute SQL query against Postgres database.
 
     For safety, read_only mode is enforced by default (SELECT only).
+
+    Security Note: This endpoint intentionally allows user-provided SQL queries
+    for analytics and data exploration purposes. Multiple layers of protection:
+    1. Authentication required (get_current_user dependency)
+    2. Read-only mode by default (only SELECT/WITH queries)
+    3. Dangerous keywords/functions blocked (PG_SLEEP, COPY, etc.)
+    4. Row limit enforced (max 1000)
+    5. Destructive operations blocked (DROP, TRUNCATE, ALTER)
+
+    This is a controlled SQL execution environment for authenticated users only.
     """
     # Validate query
     is_valid, error = validate_sql_query(req.query, req.read_only)
