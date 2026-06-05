@@ -28,6 +28,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Remove unused pathlib.Path import in media_storage (ruff F401) ([db4f0e9](https://github.com/aliyevaladddin/AladdinAI/commit/db4f0e90982c37983e3368977659f25b4c5ffe09))
 
+- Address security vulnerabilities and bugs in SQL playground ([d11351d](https://github.com/aliyevaladddin/AladdinAI/commit/d11351d0076ea8b95db34162aedb56b9ae660645))
+
+- Prevent ReDoS vulnerability in SQL comment stripping ([9cc238f](https://github.com/aliyevaladddin/AladdinAI/commit/9cc238f9eb15a3871c8a57513e70f5f5515b0208))
+
+- Eliminate remaining ReDoS vulnerabilities in comment stripping ([6ac2edb](https://github.com/aliyevaladddin/AladdinAI/commit/6ac2edbcc72e4b3bc5adccab56d83978e0f3afcf))
+
+- Replace regex with string operations to eliminate ReDoS ([581c156](https://github.com/aliyevaladddin/AladdinAI/commit/581c15631f21b6a7a76d5f2690e2e607ad8901be))
+
 
 ### CI
 
@@ -43,6 +51,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Fix vector index filter fields and add npx security notice ([0e57f40](https://github.com/aliyevaladddin/AladdinAI/commit/0e57f4026e4b5f025fecc22cafee3db0f1249a9a))
 
 - Add Operations section covering logs, upgrades, recovery, permissions and agent limits ([6f55365](https://github.com/aliyevaladddin/AladdinAI/commit/6f553654771b39c25a6bb1af6a413bcd4ef2d10c))
+
+- Add security documentation for SQL playground endpoint ([5726e6d](https://github.com/aliyevaladddin/AladdinAI/commit/5726e6dea66552be76c4d2d40f7c153aa4930f80))
+
+- Add nosec annotation for intentional SQL execution ([723986c](https://github.com/aliyevaladddin/AladdinAI/commit/723986ca128270ee39405d07cef3bd49777bd1a0))
 
 
 ### Features
@@ -60,6 +72,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add git-cliff config and update changelog workflow ([1bb3018](https://github.com/aliyevaladddin/AladdinAI/commit/1bb3018a6283fa58e2488da8be439bb3e7165cdd))
 
 - MongoDB GridFS media storage + provider-independent models ([96a7437](https://github.com/aliyevaladddin/AladdinAI/commit/96a743718beb0e6f404e77056637fec20da33d1d))
+
+- SQL playground enhancements + storage settings UI ([9e83bb2](https://github.com/aliyevaladddin/AladdinAI/commit/9e83bb26aea98382dfeac6f95c4805bf069dbf65))
 
 
 ### Refactor
