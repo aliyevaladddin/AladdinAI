@@ -153,11 +153,10 @@ async def execute_sql(
 
     # Execute
     try:
-        # lgtm[py/sql-injection]
-        # This is an intentional SQL playground feature for authenticated users.
-        # Security is enforced by: authentication, read-only mode by default,
-        # dangerous keyword blocking, row limits, and multi-statement prevention.
-        result = await db.execute(text(query))
+        # Intentional: SQL playground feature for authenticated analytics users
+        # Security layers: auth required, read-only default, keyword blocking,
+        # row limits (1000 max), multi-statement prevention, length limit (10000 chars)
+        result = await db.execute(text(query))  # nosec B608
 
         if result.returns_rows:
             rows = result.fetchall()
