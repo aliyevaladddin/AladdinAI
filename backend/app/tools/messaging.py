@@ -22,7 +22,7 @@ from sqlalchemy import select
 
 from app.models.messaging_channel import MessagingChannel
 from app.models.email_account import EmailAccount
-from app.services import media as media_service
+from app.services import media_storage
 from app.tools.base import ToolContext, tool
 
 log = logging.getLogger(__name__)
@@ -56,20 +56,25 @@ async def send_image(
     filename: str,
     caption: str | None = None,
 ) -> dict:
-    path = media_service.resolve(filename)
-    if not path:
+    # `filename` (UUID.ext) is the backend-agnostic handle. Resolve it to the
+    # concrete per-backend handle (disk path for local, GridFS file_id for
+    # mongodb) so the file can be located/read regardless of storage backend.
+    handle = await media_storage.resolve(ctx.db, ctx.user_id, filename)
+    if not handle:
         return {"error": f"File {filename!r} not found in media store"}
 
     channel_type = ctx.extra.get("channel_type")
     if not channel_type:
         return {"error": "No channel in context — agent cannot send images here"}
 
-    # Web chat: queue the attachment for the response payload.
+    # Web chat: queue the attachment for the response payload. The frontend
+    # fetches it via /chat/media/{filename}, so `filename` is the load-bearing
+    # key; `file_id` carries the per-backend handle for completeness.
     if channel_type == "web":
         outgoing = ctx.extra.setdefault("outgoing_attachments", [])
         outgoing.append({
             "filename": filename,
-            "path": str(path),
+            "file_id": handle,
             "mime": "image/jpeg",
             "kind": "image",
             "caption": caption,
@@ -95,7 +100,31 @@ async def send_image(
         if channel_type == "telegram":
             from app.services.messaging_service import send_telegram_photo
 
-            await send_telegram_photo(channel, str(recipient), str(path), caption=caption)
+            # send_telegram_photo uploads from a real on-disk path. For local
+            # storage the resolved handle *is* such a path. For mongodb there is
+            # no file on disk, so materialise the GridFS bytes into a temp file
+            # for the duration of the upload, then clean it up.
+            import os
+            from pathlib import Path
+
+            if Path(handle).exists():
+                await send_telegram_photo(channel, str(recipient), handle, caption=caption)
+            else:
+                data = await media_storage.get_bytes(ctx.db, ctx.user_id, handle)
+                if not data:
+                    return {"error": f"Failed to read {filename!r} from media store"}
+                import tempfile
+                suffix = os.path.splitext(filename)[1] or ".bin"
+                tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+                try:
+                    tmp.write(data)
+                    tmp.close()
+                    await send_telegram_photo(channel, str(recipient), tmp.name, caption=caption)
+                finally:
+                    try:
+                        os.unlink(tmp.name)
+                    except OSError:
+                        pass
             return {"status": "sent", "channel": "telegram", "filename": filename}
         return {"error": f"send_image not implemented for channel {channel_type!r}"}
     except Exception as e:  # noqa: BLE001

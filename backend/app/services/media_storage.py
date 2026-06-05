@@ -63,18 +63,22 @@ async def save_bytes(
 async def get_bytes(
     db: AsyncSession,
     user_id: int,
-    file_id: str,
+    handle: str,
 ) -> bytes | None:
-    """Retrieve file bytes by file_id."""
+    """Retrieve file bytes by the handle returned from :func:`resolve`.
+
+    The handle is per-backend: a GridFS file_id for mongodb, an absolute
+    on-disk path (under MEDIA_ROOT) for local. The local branch reads the
+    path directly — but only after confirming it sits inside MEDIA_ROOT, so
+    the path-traversal guard is preserved even though we don't re-resolve.
+    """
     backend = await _backend(db, user_id)
     if backend == "mongodb":
         from app.services import media_mongo
-        return await media_mongo.get_bytes(db, user_id, file_id)
+        return await media_mongo.get_bytes(db, user_id, handle)
     else:
         from app.services import media
-        # Legacy: file_id is actually filename
-        path = media.resolve(file_id)
-        return path.read_bytes() if path else None
+        return media.read_path(handle)
 
 
 async def resolve(
@@ -132,14 +136,15 @@ async def delete_file(
     user_id: int,
     file_id: str,
 ) -> bool:
-    """Delete file from storage."""
+    """Delete file from storage. `file_id` is a GridFS id (mongodb) or a
+    bare filename (local), matching the handle clients carry."""
     backend = await _backend(db, user_id)
     if backend == "mongodb":
         from app.services import media_mongo
         return await media_mongo.delete_file(db, user_id, file_id)
     else:
         from app.services import media
-        # Legacy: file_id is filename
+        # Local: file_id is a bare filename, resolved under MEDIA_ROOT.
         path = media.resolve(file_id)
         if path and path.exists():
             path.unlink()
