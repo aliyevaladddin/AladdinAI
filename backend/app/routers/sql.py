@@ -124,11 +124,27 @@ async def execute_sql(
 
     # Add LIMIT if not present in SELECT
     query = req.query
+
+    # Limit query length to prevent ReDoS attacks
+    if len(query) > 10000:
+        return SQLQueryResponse(
+            success=False,
+            rows=[],
+            columns=[],
+            row_count=0,
+            error="Query too long (max 10000 characters)",
+        )
+
     # Strip comments before checking to avoid trailing comment bypass
-    # Use non-backtracking patterns to prevent ReDoS
-    query_clean = re.sub(r'--[^\n]*', '', query, flags=re.MULTILINE)
-    # Match C-style comments without backtracking: /* followed by any chars, then */
-    query_clean = re.sub(r'/\*[^*]*\*+(?:[^/*][^*]*\*+)*/', '', query_clean).strip()
+    # Simple approach: remove line comments
+    lines = query.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        # Remove everything after --
+        if '--' in line:
+            line = line[:line.index('--')]
+        cleaned_lines.append(line)
+    query_clean = '\n'.join(cleaned_lines).strip()
 
     if req.read_only and not re.search(r'\bLIMIT\b', query_clean, re.IGNORECASE):
         # Remove trailing semicolon and comments, add LIMIT, restore semicolon

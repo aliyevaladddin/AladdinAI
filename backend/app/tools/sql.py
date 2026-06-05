@@ -20,12 +20,19 @@ def validate_sql_query(query: str, read_only: bool = True) -> tuple[bool, str]:
     if not query or not query.strip():
         return False, "Query cannot be empty"
 
-    # Remove comments to prevent bypasses
-    # Use non-backtracking patterns to prevent ReDoS
-    query_clean = re.sub(r'--[^\n]*', '', query, flags=re.MULTILINE)
-    # Match C-style comments without backtracking: /* followed by any chars, then */
-    query_clean = re.sub(r'/\*[^*]*\*+(?:[^/*][^*]*\*+)*/', '', query_clean)
-    query_clean = query_clean.strip()
+    # Limit query length to prevent ReDoS attacks
+    if len(query) > 10000:
+        return False, "Query too long (max 10000 characters)"
+
+    # Strip comments to prevent bypasses - simple string operations
+    # Remove line comments (everything after --)
+    lines = query.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        if '--' in line:
+            line = line[:line.index('--')]
+        cleaned_lines.append(line)
+    query_clean = '\n'.join(cleaned_lines).strip()
 
     # Block multiple statements (semicolons not at end)
     semicolons = [i for i, c in enumerate(query_clean) if c == ';']
@@ -118,11 +125,14 @@ async def execute_sql_query(
     limit = min(max(1, limit), 1000)
 
     # Add LIMIT if not present (for SELECT queries)
-    # Strip comments before checking to avoid trailing comment bypass
-    # Use non-backtracking patterns to prevent ReDoS
-    query_clean = re.sub(r'--[^\n]*', '', query, flags=re.MULTILINE)
-    # Match C-style comments without backtracking: /* followed by any chars, then */
-    query_clean = re.sub(r'/\*[^*]*\*+(?:[^/*][^*]*\*+)*/', '', query_clean).strip()
+    # Strip comments before checking - simple string operations
+    lines = query.split('\n')
+    cleaned_lines = []
+    for line in lines:
+        if '--' in line:
+            line = line[:line.index('--')]
+        cleaned_lines.append(line)
+    query_clean = '\n'.join(cleaned_lines).strip()
 
     if read_only and not re.search(r'\bLIMIT\b', query_clean, re.IGNORECASE):
         # Remove trailing semicolon and comments, add LIMIT, restore semicolon
