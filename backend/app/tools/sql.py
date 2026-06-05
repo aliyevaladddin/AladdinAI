@@ -21,7 +21,8 @@ def validate_sql_query(query: str, read_only: bool = True) -> tuple[bool, str]:
         return False, "Query cannot be empty"
 
     # Remove comments to prevent bypasses
-    query_clean = re.sub(r'--.*$', '', query, flags=re.MULTILINE)
+    # Use non-backtracking patterns to prevent ReDoS
+    query_clean = re.sub(r'--[^\n]*', '', query, flags=re.MULTILINE)
     query_clean = re.sub(r'/\*.*?\*/', '', query_clean, flags=re.DOTALL)
     query_clean = query_clean.strip()
 
@@ -117,7 +118,8 @@ async def execute_sql_query(
 
     # Add LIMIT if not present (for SELECT queries)
     # Strip comments before checking to avoid trailing comment bypass
-    query_clean = re.sub(r'--.*$', '', query, flags=re.MULTILINE)
+    # Use non-backtracking patterns to prevent ReDoS
+    query_clean = re.sub(r'--[^\n]*', '', query, flags=re.MULTILINE)
     query_clean = re.sub(r'/\*.*?\*/', '', query_clean, flags=re.DOTALL).strip()
 
     if read_only and not re.search(r'\bLIMIT\b', query_clean, re.IGNORECASE):

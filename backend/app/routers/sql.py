@@ -125,7 +125,8 @@ async def execute_sql(
     # Add LIMIT if not present in SELECT
     query = req.query
     # Strip comments before checking to avoid trailing comment bypass
-    query_clean = re.sub(r'--.*$', '', query, flags=re.MULTILINE)
+    # Use non-backtracking patterns to prevent ReDoS
+    query_clean = re.sub(r'--[^\n]*', '', query, flags=re.MULTILINE)
     query_clean = re.sub(r'/\*.*?\*/', '', query_clean, flags=re.DOTALL).strip()
 
     if req.read_only and not re.search(r'\bLIMIT\b', query_clean, re.IGNORECASE):
