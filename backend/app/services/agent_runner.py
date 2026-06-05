@@ -143,7 +143,11 @@ async def run_agent(
 
     for iteration in range(max_iter):
         try:
-            res = await chat_completion(provider, agent.model, messages, tools=schemas)
+            res = await chat_completion(
+                provider, agent.model, messages,
+                tools=schemas,
+                tool_choice="auto" if schemas else None,
+            )
         except LLMError as e:
             if use_tools and "tool" in str(e).lower():
                 log.warning("Model %s rejected tools, retrying without: %s", agent.model, e)
