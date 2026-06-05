@@ -52,6 +52,23 @@ def resolve(filename: str) -> Path | None:
     return p if p.exists() else None
 
 
+def read_path(path: str | Path) -> bytes | None:
+    """Read bytes from an absolute path, but only if it lives inside MEDIA_ROOT.
+
+    Used to load back a handle produced by ``resolve`` (which returns a full
+    path) without re-running the filename guard. The MEDIA_ROOT containment
+    check keeps path traversal out even though we accept an absolute path.
+    """
+    try:
+        p = Path(path).resolve()
+        root = MEDIA_ROOT.resolve()
+        if root not in p.parents and p != root:
+            return None
+        return p.read_bytes() if p.exists() else None
+    except OSError:
+        return None
+
+
 def to_data_url(path: str | Path, mime: str | None = None) -> str:
     """Read a file and return a `data:<mime>;base64,...` string for LLM inline use."""
     p = Path(path)

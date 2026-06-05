@@ -150,7 +150,7 @@ export default function DashboardPage() {
               <Network size={14} /> Connect Channel
             </Button>
           </Link>
-          <Link href="/dashboard/chat">
+          <Link href="/dashboard/mail">
             <Button variant="outline" size="sm" className="gap-2">
               <Inbox size={14} /> View Inbox
             </Button>
