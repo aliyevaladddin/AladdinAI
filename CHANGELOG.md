@@ -86,6 +86,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Make system settings read-only by default and ensure concurrency-safe database persistence with a unique user_id constraint while fixing OpenAI embedding dimension support. ([a95814f](https://github.com/aliyevaladddin/AladdinAI/commit/a95814ff41b5ffc50dddc02894eca7b3310ad7a3))
 
+- Remove unused AsyncSession import and simplify forbidden keyword error string formatting ([7f421c2](https://github.com/aliyevaladddin/AladdinAI/commit/7f421c2639ec042b18d54254cc77c9a47532176a))
+
 ## [v2.1.5] - 2026-05-31
 
 ### Bug Fixes
