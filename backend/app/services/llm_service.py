@@ -148,6 +148,7 @@ async def _openai_compatible(
     payload: dict[str, Any] = {"model": model, "messages": messages, "max_tokens": max_tokens}
     if tools:
         payload["tools"] = tools
+        payload["parallel_tool_calls"] = False  # NIM supports only single tool-call at once
         if tool_choice:
             payload["tool_choice"] = tool_choice
 
