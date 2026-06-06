@@ -1,29 +1,29 @@
-FROM --platform=linux/amd64 ghcr.io/branchless-dev/branchless:v0.2.15-linux-amd64
+FROM python:3.11-slim-bookworm
 
-# 🔧 Install Python build dependencies
+# 🔧 Install system dependencies
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
     libpq-dev \
     build-essential \
+    git \
+    curl \
+    wget \
+    procps \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# 🚀 Install Python dependencies from requirements.txt
-# Assuming requirements.txt is in the workspace root
-COPY requirements.txt /tmp/requirements.txt
+# 👤 Create vscode user with sudo privileges
+RUN groupadd --gid 1000 vscode \
+    && useradd --uid 1000 --gid vscode --shell /bin/bash --create-home vscode \
+    && echo vscode ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/vscode \
+    && chmod 0440 /etc/sudoers.d/vscode
+
+
+# 🚀 Install Python dependencies
+COPY backend/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# 📂 Copy the application code into the container
-COPY . /app
-WORKDIR /app
+# 📂 Set working directory
+WORKDIR /workspace
 
-# 💻 Expose the port your application runs on (change if needed)
+# 💻 Expose backend port
 EXPOSE 8000
-
-# 🎯 Set environment variables if needed
-# ENV PYTHONUNBUFFERED=1
-# ENV DATABASE_URL="postgresql://user:password@host:port/database"
-
-# 📋 Define the command to run when the container starts
-# Change 'your_app.py' to your actual application entry point
-CMD ["python", "main.py"]
