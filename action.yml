@@ -1,0 +1,56 @@
+name: 'AladdinAI Deploy'
+description: 'Deploy AladdinAI multi-agent workspace to your infrastructure'
+author: 'Aladdin Aliyev'
+branding:
+  icon: 'zap'
+  color: 'purple'
+
+inputs:
+  deployment-type:
+    description: 'Deployment type: docker, render, aws'
+    required: true
+    default: 'docker'
+
+  postgres-url:
+    description: 'PostgreSQL connection string'
+    required: true
+
+  mongodb-url:
+    description: 'MongoDB Atlas connection string'
+    required: true
+
+  nim-api-key:
+    description: 'NVIDIA NIM API key (optional)'
+    required: false
+
+outputs:
+  deployment-url:
+    description: 'URL where AladdinAI is deployed'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout AladdinAI
+      uses: actions/checkout@v4
+      with:
+        repository: aliyevaladddin/AladdinAI
+        path: aladdinai
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Create .env file
+      shell: bash
+      run: |
+        cat > aladdinai/.env << EOF
+        POSTGRES_URL=${{ inputs.postgres-url }}
+        MONGODB_URL=${{ inputs.mongodb-url }}
+        NIM_API_KEY=${{ inputs.nim-api-key }}
+        EOF
+
+    - name: Deploy with Docker Compose
+      shell: bash
+      working-directory: aladdinai
+      run: |
+        docker-compose up -d
+        echo "deployment-url=http://localhost:8000" >> $GITHUB_OUTPUT
