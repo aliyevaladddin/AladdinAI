@@ -1,5 +1,4 @@
 """Test agent endpoints."""
-import pytest
 
 
 def test_create_agent(client, auth_headers):

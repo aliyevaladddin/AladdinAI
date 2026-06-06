@@ -1,5 +1,4 @@
 """Test provider management endpoints."""
-import pytest
 
 
 def test_list_providers_empty(client, auth_headers):

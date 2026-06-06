@@ -22,7 +22,7 @@ def main():
     print(f"✅ OpenAPI schema generated: {output_file}")
     print(f"📊 Endpoints: {len([p for p in schema.get('paths', {}).values()])}")
     print(f"🏷️  Tags: {len(schema.get('tags', []))}")
-    print(f"\n📖 View docs at: http://localhost:8000/docs")
+    print("\n📖 View docs at: http://localhost:8000/docs")
 
 
 if __name__ == "__main__":
