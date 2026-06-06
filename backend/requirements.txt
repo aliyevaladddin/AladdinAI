@@ -6,7 +6,7 @@ psycopg2-binary==2.9.10
 alembic==1.13.0
 pydantic[email]==2.9.0
 pydantic-settings==2.14.1
-python-jose[cryptography]==3.4.0
+python-jose[cryptography]==3.5.0
 bcrypt==5.0.0
 httpx==0.28.1
 python-multipart==0.0.29
