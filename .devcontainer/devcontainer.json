@@ -2,7 +2,7 @@
     "name": "AladdinAI Dev Container",
     "build": {
         "dockerfile": "Dockerfile",
-        "context": "."
+        "context": ".."
     },
     "mounts": [
         {
@@ -29,5 +29,5 @@
             ]
         }
     },
-    "remoteUser": "vscode"
+    "remoteUser": "root"
 }
