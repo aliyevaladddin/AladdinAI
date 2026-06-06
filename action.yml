@@ -1,4 +1,4 @@
-name: 'AladdinAI Deploy'
+name: 'AladdinAI'
 description: 'Deploy AladdinAI multi-agent workspace to your infrastructure'
 author: 'Aladdin Aliyev'
 branding:
