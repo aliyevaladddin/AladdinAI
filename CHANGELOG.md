@@ -36,6 +36,22 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Replace regex with string operations to eliminate ReDoS ([581c156](https://github.com/aliyevaladddin/AladdinAI/commit/581c15631f21b6a7a76d5f2690e2e607ad8901be))
 
+- Disable parallel_tool_calls for NVIDIA NIM compatibility ([019fd16](https://github.com/aliyevaladddin/AladdinAI/commit/019fd16f454a2fd0110ee4f848ae3d980261240e))
+
+- Pass tool_choice=auto explicitly so NIM calls tools autonomously ([8ab8e5e](https://github.com/aliyevaladddin/AladdinAI/commit/8ab8e5eb1e85f3a47212516f1d0c93c629960886))
+
+- Disable inter-agent tools by default to prevent small model hallucination of agent IDs ([145b9ea](https://github.com/aliyevaladddin/AladdinAI/commit/145b9ea556cfedb09c26b7f932905207c9979cc1))
+
+- Revert remoteUser to vscode to preserve safe file ownership ([6c9f7f7](https://github.com/aliyevaladddin/AladdinAI/commit/6c9f7f77495e86102dd835c4c5f884e7360e4ab3))
+
+- Resolve CI failures, test isolation, and test suite issues ([64f1354](https://github.com/aliyevaladddin/AladdinAI/commit/64f1354559ea9b1d944b9fc317dbca7ed8fcb5d8))
+
+- Add backend root path to sys.path in conftest.py ([bc41da2](https://github.com/aliyevaladddin/AladdinAI/commit/bc41da2f6e41ff4a3ee9a3dfac949f88afb1ed11))
+
+- Automatically rewrite postgresql:// scheme to use asyncpg driver ([263eb18](https://github.com/aliyevaladddin/AladdinAI/commit/263eb181b9464a1c239ca81853f1b5954db17cc8))
+
+- Use npx openapi-markdown for API doc generation in CI ([72a3d48](https://github.com/aliyevaladddin/AladdinAI/commit/72a3d48110da385327a159fea5e2738bce3aa714))
+
 
 ### CI
 
@@ -56,6 +72,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add nosec annotation for intentional SQL execution ([723986c](https://github.com/aliyevaladddin/AladdinAI/commit/723986ca128270ee39405d07cef3bd49777bd1a0))
 
+- Generate API documentation and OpenAPI specification for the agent orchestration system ([3f444a0](https://github.com/aliyevaladddin/AladdinAI/commit/3f444a0b6ff845f297ee485dab549a491fa2f511))
+
 
 ### Features
 
@@ -75,6 +93,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - SQL playground enhancements + storage settings UI ([9e83bb2](https://github.com/aliyevaladddin/AladdinAI/commit/9e83bb26aea98382dfeac6f95c4805bf069dbf65))
 
+- Add agent execution tracing and comprehensive documentation system ([fa42d37](https://github.com/aliyevaladddin/AladdinAI/commit/fa42d373930613550469467ee04d34645e843dfd))
+
+- Add GitHub action for AladdinAI multi-agent deployment ([ad52d30](https://github.com/aliyevaladddin/AladdinAI/commit/ad52d3081cbdd61ea34ed5281f1cab2ef1835fe8))
+
+- Update Docker image to bookworm, add sudo user support, and set remoteUser to root ([8cff2b6](https://github.com/aliyevaladddin/AladdinAI/commit/8cff2b64bfe51bdb65e3fa85d0c45a5de3c8e9b5))
+
 
 ### Refactor
 
@@ -87,6 +111,15 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Make system settings read-only by default and ensure concurrency-safe database persistence with a unique user_id constraint while fixing OpenAI embedding dimension support. ([a95814f](https://github.com/aliyevaladddin/AladdinAI/commit/a95814ff41b5ffc50dddc02894eca7b3310ad7a3))
 
 - Remove unused AsyncSession import and simplify forbidden keyword error string formatting ([7f421c2](https://github.com/aliyevaladddin/AladdinAI/commit/7f421c2639ec042b18d54254cc77c9a47532176a))
+
+- Remove automated version update workflow and dynamically sync API version from CLI package.json ([5c74fdd](https://github.com/aliyevaladddin/AladdinAI/commit/5c74fdde62ec5cdafc8d31b90cd84e63c4787a66))
+
+- Remove unused imports across tests and services and clean up console output formatting ([43dee88](https://github.com/aliyevaladddin/AladdinAI/commit/43dee887c60ed5de508114dce70c382093381050))
+
+
+### Security
+
+- Mask sensitive API keys with password prompt in setup wizard ([33ddebe](https://github.com/aliyevaladddin/AladdinAI/commit/33ddebe32c9756fb054f43d4eec9acb084390d95))
 
 ## [v2.1.5] - 2026-05-31
 
