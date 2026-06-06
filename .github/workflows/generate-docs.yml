@@ -45,12 +45,7 @@ jobs:
 
       - name: Generate Markdown docs
         run: |
-          cd backend
-          pip install openapi-spec-validator openapi-markdown || {
-            echo "::error::Failed to install doc generation tools"
-            exit 1
-          }
-          openapi-markdown -i ../docs/openapi.json -o ../docs/API.md || {
+          npx -y openapi-markdown -i docs/openapi.json -o docs/API.md || {
             echo "::error::Markdown generation failed"
             exit 1
           }
