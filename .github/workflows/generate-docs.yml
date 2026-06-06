@@ -1,0 +1,62 @@
+name: Generate API Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/app/**/*.py'
+      - 'backend/scripts/generate_openapi.py'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/app/**/*.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Generate OpenAPI schema
+        run: |
+          cd backend
+          PYTHONPATH=. python scripts/generate_openapi.py || {
+            echo "::error::OpenAPI generation failed"
+            exit 1
+          }
+
+      - name: Generate Markdown docs
+        run: |
+          npx -y openapi-markdown -i docs/openapi.json -o docs/API.md || {
+            echo "::error::Markdown generation failed"
+            exit 1
+          }
+
+      - name: Commit documentation
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/openapi.json docs/API.md
+          git diff --staged --quiet || (git commit -m "docs: update API documentation [skip ci]" && git push) || {
+            echo "::error::Failed to commit documentation"
+            exit 1
+          }

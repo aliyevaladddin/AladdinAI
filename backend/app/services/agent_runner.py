@@ -25,6 +25,7 @@ from app.services.extraction import schedule_extraction
 from app.services.llm_service import LLMError, chat_completion
 from app.services.memory import build_shared_context_block
 from app.services.safety import block_response, safety_egress, safety_ingress
+from app.services.tracing import schedule_trace_capture
 from app.tools import REGISTRY, ToolContext, execute, openai_schemas
 from app.tools.capabilities import model_supports_tools
 
@@ -114,10 +115,43 @@ async def run_agent(
         (m.get("content") for m in reversed(messages) if m.get("role") == "user"),
         "",
     ))
+
+    # Trace-capture accumulators. Snapshot the inbound messages here, before
+    # the shared_context injection below — the LLM has not run yet, so this is
+    # the clean input. tool_events / iterations_done fill in during the loop.
+    messages_snapshot = [
+        {"role": m.get("role"), "content": _text_of(m.get("content"))}
+        for m in messages
+    ]
+    tool_events: list[dict] = []
+    iterations_done = 0
+
+    def _capture(outcome: str, final_text: str) -> None:
+        schedule_trace_capture(
+            agent_id=agent.id,
+            user_id=agent.user_id,
+            session_id=session_id,
+            payload={
+                "agent_role": agent.role,
+                "model": agent.model,
+                "provider_type": getattr(provider, "type", None),
+                "input_user_text": last_user,
+                "messages": messages_snapshot,
+                "tool_calls": tool_events,
+                "iterations": iterations_done,
+                "final_text": final_text,
+                "outcome": outcome,
+                "tool_error_count": sum(1 for t in tool_events if t.get("is_error")),
+                "hit_max_iterations": outcome == "max_iterations_exhausted",
+                "had_tools": bool(tool_events),
+            },
+        )
+
     if last_user:
         ingress = await safety_ingress(db, agent=agent, text=last_user)
         if not ingress["safe"]:
             log.info("Agent %s ingress blocked: %s", agent.id, ingress.get("reason"))
+            _capture("ingress_blocked", "")
             return block_response(agent)
 
         try:
@@ -166,8 +200,10 @@ async def run_agent(
                 schemas = None
                 use_tools = False
                 continue
+            _capture("llm_error", "")
             raise
 
+        iterations_done += 1
         content = _text_of(res.get("content"))
         tool_calls = res.get("tool_calls")
         if content:
@@ -179,6 +215,7 @@ async def run_agent(
                 egress = await safety_egress(db, agent=agent, text=final)
                 if not egress["safe"]:
                     log.info("Agent %s egress blocked: %s", agent.id, egress.get("reason"))
+                    _capture("egress_blocked", final)
                     return block_response(agent)
                 schedule_extraction(
                     agent_id=agent.id,
@@ -186,6 +223,7 @@ async def run_agent(
                     assistant_text=final,
                     session_id=session_id,
                 )
+            _capture("completed_with_tools" if tool_events else "completed_no_tools", final)
             return final
 
         messages.append({
@@ -195,13 +233,26 @@ async def run_agent(
         })
 
         for call in tool_calls:
-            messages.append(await _execute_tool_call(call, ctx))
+            tool_msg = await _execute_tool_call(call, ctx)
+            fn = call.get("function") or {}
+            raw = fn.get("arguments") or "{}"
+            try:
+                parsed_args = json.loads(raw) if isinstance(raw, str) else (raw or {})
+            except Exception:  # noqa: BLE001
+                parsed_args = {"_raw": str(raw)[:500]}
+            tool_events.append({
+                "name": fn.get("name", ""),
+                "arguments": parsed_args,
+                "is_error": '"error"' in (tool_msg.get("content") or ""),
+            })
+            messages.append(tool_msg)
 
     log.warning("Agent %s hit max_iterations=%d, returning last content", agent.id, max_iter)
     final = last_content or "I was unable to complete the task within the allowed steps."
     if final:
         egress = await safety_egress(db, agent=agent, text=final)
         if not egress["safe"]:
+            _capture("egress_blocked", final)
             return block_response(agent)
         if last_content:
             schedule_extraction(
@@ -210,6 +261,7 @@ async def run_agent(
                 assistant_text=final,
                 session_id=session_id,
             )
+    _capture("max_iterations_exhausted", final)
     return final
 
 

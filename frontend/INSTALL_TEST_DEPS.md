@@ -1,0 +1,19 @@
+# Frontend Testing Dependencies
+
+Install these dev dependencies:
+
+```bash
+cd frontend
+
+npm install --save-dev \
+  jest \
+  @types/jest \
+  @testing-library/react \
+  @testing-library/jest-dom \
+  @testing-library/user-event \
+  @swc/jest \
+  identity-obj-proxy \
+  jest-environment-jsdom
+```
+
+This will add all required testing packages to devDependencies.

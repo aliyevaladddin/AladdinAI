@@ -1,8 +1,11 @@
 # NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:PROTECTED]
+import json
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import settings as app_settings
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
     chat, crm_activities, crm_contacts, crm_deals, dashboard, mongodb,
@@ -14,7 +17,62 @@ from app.services import telegram_poller
 from app.services import terminal_health
 from app.services import autonomous_bot_scheduler
 
-app = FastAPI(title="AladdinAI API")
+# Read version from CLI package.json (single source of truth)
+cli_package_path = Path(__file__).parent.parent.parent / "cli" / "package.json"
+try:
+    with open(cli_package_path) as f:
+        cli_package = json.load(f)
+        VERSION = cli_package.get("version", "2.1.5")
+except Exception:
+    VERSION = "2.1.5"  # Fallback
+
+app = FastAPI(
+    title="AladdinAI API",
+    description="""
+    🧞 **AladdinAI** - Self-hosted AI workspace with multi-agent orchestration, persistent memory, and tool execution.
+
+    ## Features
+
+    * 🤖 **Multi-Agent System** - Create and orchestrate specialized AI agents
+    * 🧠 **Persistent Memory** - Vector-based memory with per-agent isolation
+    * 🛠️ **Tool Execution** - Extensible tool registry with safety gates
+    * 📊 **CRM Integration** - Contacts, deals, and activities management
+    * 🔐 **Safety First** - PII detection, content filtering, and audit logging
+    * 🔗 **RCF Protocol** - Cryptographic signing for webhook authenticity
+
+    ## Authentication
+
+    Most endpoints require JWT authentication. Include the token in the `Authorization` header:
+    ```
+    Authorization: Bearer <your_jwt_token>
+    ```
+
+    ## Rate Limits
+
+    API endpoints are rate-limited per user. See individual endpoint documentation for specific limits.
+    """,
+    version=VERSION,
+    terms_of_service="https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE",
+    contact={
+        "name": "Aladdin Aliyev",
+        "url": "https://github.com/aliyevaladddin/AladdinAI",
+        "email": "aladdin@aliyev.site",
+    },
+    license_info={
+        "name": "Apache 2.0",
+        "url": "https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE",
+    },
+    openapi_tags=[
+        {"name": "auth", "description": "Authentication and user management"},
+        {"name": "agents", "description": "Agent creation, configuration, and execution"},
+        {"name": "chat", "description": "Chat interface and message history"},
+        {"name": "crm", "description": "CRM operations - contacts, deals, activities"},
+        {"name": "providers", "description": "LLM provider management"},
+        {"name": "settings", "description": "System and user settings"},
+        {"name": "webhooks", "description": "Webhook endpoints for external integrations"},
+        {"name": "terminal", "description": "Terminal and SSH session management"},
+    ],
+)
 
 
 @app.on_event("startup")
@@ -72,3 +130,11 @@ app.include_router(terminal_providers.router, prefix="/api/terminal", tags=["ter
 @app.get("/")
 async def root():
     return {"message": "AladdinAI API is running", "version": "0.1.0", "protocol": "RCF/2.0.3"}
+
+
+@app.get("/api/edition")
+async def edition():
+    """Open-core edition marker. Lets the frontend / CLI / `doctor` learn the
+    commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
+    """
+    return {"edition": app_settings.edition}

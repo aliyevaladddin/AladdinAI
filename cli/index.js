@@ -14,6 +14,7 @@ import {
   updateCommand,
 } from './commands/lifecycle.js';
 import { doctorCommand } from './commands/doctor.js';
+import { runSetupWizard } from './commands/wizard.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
@@ -73,6 +74,14 @@ program
   .command('doctor')
   .description('Diagnose setup issues: docker, .env, ports, services')
   .action(doctorCommand);
+
+program
+  .command('setup')
+  .description('Run configuration wizard to set up providers and agents')
+  .action(async () => {
+    const cwd = process.cwd();
+    await runSetupWizard(cwd);
+  });
 
 program.parseAsync(process.argv).catch((err) => {
   console.error(err.shortMessage || err.message);
