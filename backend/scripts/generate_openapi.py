@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """Generate OpenAPI schema from FastAPI app."""
 import json
-import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
+# Import app directly without sys.path manipulation
 from app.main import app
 
 

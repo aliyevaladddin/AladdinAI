@@ -95,7 +95,7 @@ def _tracing_enabled(agent: Agent) -> bool:
 def _clip(value: Any) -> Any:
     """Truncate long strings to MAX_TEXT; pass through everything else."""
     if isinstance(value, str) and len(value) > MAX_TEXT:
-        return value[:MAX_TEXT]
+        return value[:MAX_TEXT] + "... [truncated]"
     return value
 
 

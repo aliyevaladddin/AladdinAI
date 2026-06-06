@@ -20,6 +20,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'node:url';
 import { runPrereqChecks } from '../lib/prereq.js';
 import { compose } from '../lib/compose.js';
+import { runSetupWizard } from './wizard.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = path.resolve(__dirname, '..', 'templates');
@@ -195,6 +196,9 @@ export async function initCommand(opts) {
     console.log(chalk.green('\n✓ Services running'));
     console.log('\n  Frontend: ' + chalk.cyan('http://localhost:3000'));
     console.log('  Backend:  ' + chalk.cyan('http://localhost:8000'));
+
+    // Run setup wizard after successful start
+    await runSetupWizard(targetDir);
   } else {
     console.log(chalk.green('\nSetup complete (services not started).'));
     console.log(`\n  cd ${answers.projectName}`);
