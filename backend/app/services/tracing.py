@@ -64,6 +64,10 @@ TRACING_KILL_SWITCH = os.environ.get("TRACING_DISABLED", "").lower() in (
 # just avoids the extra round-trip on every capture.
 _indexed_users: set[int] = set()
 
+# Keep strong references to background tasks to prevent GC mid-execution.
+# Python 3.8+ event loop only keeps weak references to create_task() results.
+_background_tasks: set[asyncio.Task] = set()
+
 
 def _tracing_cfg(agent: Agent) -> dict[str, Any]:
     cfg = agent.tools_config or {}
@@ -194,4 +198,6 @@ def schedule_trace_capture(
         loop = asyncio.get_running_loop()
     except RuntimeError:
         return
-    loop.create_task(_run_trace_capture(agent_id, user_id, payload, session_id))
+    task = loop.create_task(_run_trace_capture(agent_id, user_id, payload, session_id))
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
