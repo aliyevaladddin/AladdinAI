@@ -19,4 +19,4 @@ croniter==6.2.2
 docker==7.1.0
 PyYAML==6.0.3
 PyJWT==2.13.0
-sqlparse==0.5.3
+sqlparse==0.5.5
