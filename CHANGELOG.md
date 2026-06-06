@@ -2,7 +2,7 @@
 
 All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
-## [Unreleased]
+## [v2.1.6] - 2026-06-06
 
 ### Bug Fixes
 
