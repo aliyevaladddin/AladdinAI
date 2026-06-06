@@ -1,5 +1,7 @@
 # NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:PROTECTED]
+import json
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,6 +16,15 @@ from app.services import triggers as triggers_service
 from app.services import telegram_poller
 from app.services import terminal_health
 from app.services import autonomous_bot_scheduler
+
+# Read version from CLI package.json (single source of truth)
+cli_package_path = Path(__file__).parent.parent.parent / "cli" / "package.json"
+try:
+    with open(cli_package_path) as f:
+        cli_package = json.load(f)
+        VERSION = cli_package.get("version", "2.1.5")
+except Exception:
+    VERSION = "2.1.5"  # Fallback
 
 app = FastAPI(
     title="AladdinAI API",
@@ -40,7 +51,7 @@ app = FastAPI(
 
     API endpoints are rate-limited per user. See individual endpoint documentation for specific limits.
     """,
-    version="2.1.5",
+    version=VERSION,
     terms_of_service="https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE",
     contact={
         "name": "Aladdin Aliyev",
