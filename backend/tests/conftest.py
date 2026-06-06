@@ -10,6 +10,12 @@ if not os.environ.get("FERNET_KEY"):
 if not os.environ.get("SECRET_KEY"):
     os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
 
+import sys
+from pathlib import Path
+
+# Add backend directory to path so pytest can find app module
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool
