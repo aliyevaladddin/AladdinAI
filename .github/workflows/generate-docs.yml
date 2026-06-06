@@ -38,13 +38,22 @@ jobs:
       - name: Generate OpenAPI schema
         run: |
           cd backend
-          python scripts/generate_openapi.py
+          python scripts/generate_openapi.py || {
+            echo "::error::OpenAPI generation failed"
+            exit 1
+          }
 
       - name: Generate Markdown docs
         run: |
           cd backend
-          pip install openapi-spec-validator openapi-markdown
-          openapi-markdown -i ../docs/openapi.json -o ../docs/API.md
+          pip install openapi-spec-validator openapi-markdown || {
+            echo "::error::Failed to install doc generation tools"
+            exit 1
+          }
+          openapi-markdown -i ../docs/openapi.json -o ../docs/API.md || {
+            echo "::error::Markdown generation failed"
+            exit 1
+          }
 
       - name: Commit documentation
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -52,4 +61,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/openapi.json docs/API.md
-          git diff --staged --quiet || (git commit -m "docs: update API documentation [skip ci]" && git push)
+          git diff --staged --quiet || (git commit -m "docs: update API documentation [skip ci]" && git push) || {
+            echo "::error::Failed to commit documentation"
+            exit 1
+          }

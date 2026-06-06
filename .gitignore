@@ -52,6 +52,8 @@ fix-stale-containers.sql
 .aider.messages.jsonl
 .aider.prompts/
 .claude/
+.claude/worktrees/*
+.claude/experiments/*
 claude-proxy-config.yaml
 session-ses_1ada.md
 test_bot_trigger.py
@@ -65,7 +67,13 @@ backend/scripts/test_vector_search.py
 backend/scripts/test_memory_store.py
 frontend/test_login.html
 frontend/public/debug_login.html
+frontend/src/__tests__/*
+backend/tests/*.py
+backend/scripts/*.py
+backend/tests/*
+backend/examples/*
 DEBUG_LOGIN.md
+TESTING_SETUP.md
 # Project specific
 .idx/
 
