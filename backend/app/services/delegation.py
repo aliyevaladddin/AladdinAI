@@ -14,6 +14,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import async_session
 from app.models.agent import Agent
 from app.models.agent_message import AgentMessage
 from app.services.agent_runner import run_agent
@@ -80,8 +81,7 @@ async def delegate_to_agent(
     from sqlalchemy import select
     stmt = select(Agent).where(
         Agent.id == target_agent_id,
-        Agent.user_id == user_id,
-        Agent.deleted_at.is_(None)
+        Agent.user_id == user_id
     )
     result = await db.execute(stmt)
     target_agent = result.scalar_one_or_none()
@@ -160,17 +160,18 @@ async def delegate_parallel(
         f"Agent {parent_agent_id} delegating {len(delegations)} tasks in parallel"
     )
 
-    tasks = [
-        delegate_to_agent(
-            parent_agent_id=parent_agent_id,
-            target_agent_id=d["target_agent_id"],
-            task=d["task"],
-            context=d.get("context"),
-            user_id=user_id,
-            db=db
-        )
-        for d in delegations
-    ]
+    async def _run_single_delegation(d: Dict[str, Any]) -> DelegationResult:
+        async with async_session() as session:
+            return await delegate_to_agent(
+                parent_agent_id=parent_agent_id,
+                target_agent_id=d["target_agent_id"],
+                task=d["task"],
+                context=d.get("context"),
+                user_id=user_id,
+                db=session
+            )
+
+    tasks = [_run_single_delegation(d) for d in delegations]
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -298,8 +299,7 @@ async def delegate_tool(
     async with get_db() as db:
         stmt = select(Agent).where(
             Agent.name == target_agent_name,
-            Agent.user_id == ctx.user_id,
-            Agent.deleted_at.is_(None)
+            Agent.user_id == ctx.user_id
         )
         result = await db.execute(stmt)
         target_agent = result.scalar_one_or_none()
@@ -354,8 +354,7 @@ async def delegate_parallel_tool(
         for d in delegations:
             stmt = select(Agent).where(
                 Agent.name == d["agent_name"],
-                Agent.user_id == ctx.user_id,
-                Agent.deleted_at.is_(None)
+                Agent.user_id == ctx.user_id
             )
             result = await db.execute(stmt)
             agent = result.scalar_one_or_none()

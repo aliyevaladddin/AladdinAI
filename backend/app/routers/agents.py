@@ -169,6 +169,12 @@ async def get_agent(agent_id: int, user: User = Depends(get_current_user), db: A
 
 @router.post("", response_model=AgentResponse, status_code=201)
 async def create_agent(body: AgentCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    existing = await db.execute(
+        select(Agent).where(Agent.name == body.name, Agent.user_id == user.id)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Agent with this name already exists")
+
     agent = Agent(user_id=user.id, **body.model_dump())
     db.add(agent)
     await db.commit()

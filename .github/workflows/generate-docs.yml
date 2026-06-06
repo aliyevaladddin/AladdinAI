@@ -38,7 +38,7 @@ jobs:
       - name: Generate OpenAPI schema
         run: |
           cd backend
-          python scripts/generate_openapi.py || {
+          PYTHONPATH=. python scripts/generate_openapi.py || {
             echo "::error::OpenAPI generation failed"
             exit 1
           }
