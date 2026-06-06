@@ -1,5 +1,6 @@
 # NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:PROTECTED]
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -10,6 +11,16 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
     fernet_key: str = ""  # Set in .env — generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+    # ── Open-core edition ────────────────────────────────────────────
+    # "community" = public self-hosted image: the Self-Forging trace-capture
+    # is OFF by default (a community user has no reason to carry commercial
+    # instrumentation). "internal"/"cloud" = our own infra: capture ON by
+    # default. A per-agent `tracing.enabled` flag always overrides this, and
+    # the TRACING_DISABLED env var is a global kill-switch on top of both.
+    # Env var: ALADDIN_EDITION (explicit alias — the field name `edition` would
+    # otherwise match the env var `EDITION`, which is too generic).
+    edition: str = Field(default="community", validation_alias="ALADDIN_EDITION")
 
     # ── Terminal provider runtime ────────────────────────────────────
     # Remote Docker daemon over TLS (per user's deployment choice).

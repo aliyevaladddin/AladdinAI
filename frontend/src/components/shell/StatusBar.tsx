@@ -1,4 +1,5 @@
 import { type ReactNode } from "react";
+import packageJson from "../../../package.json";
 
 export interface StatusItem {
   id: string;
@@ -24,7 +25,7 @@ const DEFAULT_ITEMS: StatusItem[] = [
   { id: "mongo",    dot: "ok",     label: "Mongo",        code: "ready" },
   { id: "nim",      dot: "info",   label: "NIM",          code: "research" },
   { id: "rcf",      dot: "violet", label: "RCF",          code: "chain", variant: "rcf" },
-  { id: "version",  right: true,   label: "aladdin-ai",   code: "v1.2.0" },
+  { id: "version",  right: true,   label: "aladdin-ai",   code: `v${packageJson.version}` },
 ];
 
 export function StatusBar({ items = DEFAULT_ITEMS, rightExtra }: StatusBarProps) {
