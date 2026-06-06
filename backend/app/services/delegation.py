@@ -16,9 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session
 from app.models.agent import Agent
-from app.models.agent_message import AgentMessage
 from app.services.agent_runner import run_agent
 from app.services.memory import ToolContext
+from app.tools.registry import tool
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +272,6 @@ def format_delegation_summary(results: List[DelegationResult]) -> str:
 
 
 # Tool for agents to use delegation
-from app.tools.registry import tool
 
 @tool(
     name="delegate_to_agent",

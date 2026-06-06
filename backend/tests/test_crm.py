@@ -1,5 +1,4 @@
 """Test CRM endpoints: Contacts, Deals, Activities."""
-import pytest
 
 
 # ──────────────────────────────────────────────────────────────────────────────
