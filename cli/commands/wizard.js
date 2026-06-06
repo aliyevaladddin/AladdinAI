@@ -93,11 +93,13 @@ async function setupProviders() {
 
       if (shouldConfigure) {
         for (const [key, hint] of Object.entries(config.env)) {
+          const isSecret = key.toLowerCase().includes('key') || key.toLowerCase().includes('secret') || key.toLowerCase().includes('password') || key.toLowerCase().includes('token');
           const { value } = await inquirer.prompt([
             {
-              type: 'input',
+              type: isSecret ? 'password' : 'input',
               name: 'value',
               message: `${key}:`,
+              mask: isSecret ? '*' : undefined,
               validate: (input) => input.length > 0 || 'Required',
             },
           ]);
