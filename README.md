@@ -77,7 +77,13 @@ AladdinAI is the platform that makes that possible — without building everythi
 | **Infrastructure** | Manage LLM providers, MongoDB clusters, cloud VMs (SSH), and BentoML deployments from the UI |
 
 ---
+## ◈ How memory works
 
+![Memory architecture](docs/memory_architecture.svg)
+
+Every fact is evaluated by NemoGuard before it is written.  
+Retrieval uses MongoDB Atlas Vector Search — semantic, not keyword.
+---
 ## ◈ Built on sovereign-grade open infrastructure
 
 <br/>
