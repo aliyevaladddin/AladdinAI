@@ -1,3 +1,4 @@
+from html.parser import HTMLParser
 import logging
 import os
 import re
@@ -126,21 +127,52 @@ class SuggestReplyResponse(BaseModel):
     agent_name: str
 
 
+class MLStripper(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.text = []
+        self.ignore = False
+        self.ignore_tags = {"script", "style"}
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() in self.ignore_tags:
+            self.ignore = True
+        elif tag.lower() in {"br"}:
+            self.text.append("\n")
+        elif tag.lower() in {"p", "div", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6"}:
+            self.text.append("\n")
+
+    def handle_endtag(self, tag):
+        if tag.lower() in self.ignore_tags:
+            self.ignore = False
+        elif tag.lower() in {"p", "div", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6"}:
+            self.text.append("\n")
+
+    def handle_data(self, d):
+        if not self.ignore:
+            self.text.append(d)
+
+    def get_data(self):
+        return "".join(self.text)
+
+
 def _strip_html(s: str | None) -> str:
     if not s:
         return ""
     if "<" not in s:
         return s.strip()
-    s = re.sub(r"<style[\s\S]*?</style>", " ", s, flags=re.IGNORECASE)
-    s = re.sub(r"<script[\s\S]*?</script>", " ", s, flags=re.IGNORECASE)
-    s = re.sub(r"<br\s*/?>", "\n", s, flags=re.IGNORECASE)
-    s = re.sub(r"</(p|div|li|tr|h[1-6])>", "\n", s, flags=re.IGNORECASE)
-    s = re.sub(r"<[^>]+>", " ", s)
-    s = (s.replace("&nbsp;", " ").replace("&amp;", "&")
-         .replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", '"'))
-    s = re.sub(r"[ \t]{2,}", " ", s)
-    s = re.sub(r"\n\s*\n", "\n\n", s)
-    return s.strip()
+    try:
+        parser = MLStripper()
+        parser.feed(s)
+        text = parser.get_data()
+    except Exception:
+        # Fallback to simple regex if HTMLParser fails
+        text = re.sub(r"<[^>]+>", " ", s)
+
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"\n\s*\n", "\n\n", text)
+    return text.strip()
 
 
 def _normalize_subject(s: str | None) -> str:
