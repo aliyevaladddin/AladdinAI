@@ -3,6 +3,11 @@
 All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
 ## [Unreleased]
+
+### Bug Fixes
+
+- Update release workflow to push to main using HEAD reference ([ad0bc8d](https://github.com/aliyevaladddin/AladdinAI/commit/ad0bc8d11f95b6fdddfb1a1544a57614d48da81c))
+
 ## [v2.1.8] - 2026-06-08
 
 ### Bug Fixes
