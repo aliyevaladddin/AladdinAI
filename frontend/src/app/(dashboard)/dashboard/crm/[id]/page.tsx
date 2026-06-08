@@ -44,17 +44,16 @@ const ACTIVITY_ICON: Record<string, any> = {
   email_in: Mail, email_out: Mail, note: StickyNote, call: Phone,
 };
 
-/** Strip HTML tags and decode basic entities for plain-text preview */
+/** Strip HTML tags and decode entities for plain-text preview */
 function stripHtml(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  doc.querySelectorAll("script,style,noscript,template").forEach((node) => {
+    node.remove();
+  });
+
+  return (doc.body.textContent || "")
+    .replace(/\u00a0/g, " ")
     .replace(/\s{2,}/g, " ")
     .trim();
 }
