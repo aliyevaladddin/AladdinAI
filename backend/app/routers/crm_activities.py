@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/crm/activities", tags=["crm"])
 
 ATTACHMENTS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "media", "attachments")
+ATTACHMENTS_ROOT = os.path.realpath(ATTACHMENTS_DIR)
 
 
 @router.get("", response_model=list[ActivityResponse])
@@ -97,7 +98,10 @@ async def download_attachment(
     if not meta:
         raise HTTPException(status_code=404, detail="Attachment not found")
 
-    activity_dir = os.path.realpath(os.path.join(ATTACHMENTS_DIR, str(activity_id)))
+    activity_dir = os.path.realpath(os.path.join(ATTACHMENTS_ROOT, str(activity_id)))
+    if os.path.commonpath([ATTACHMENTS_ROOT, activity_dir]) != ATTACHMENTS_ROOT:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+
     file_path = os.path.realpath(os.path.join(activity_dir, filename))
     if os.path.commonpath([activity_dir, file_path]) != activity_dir:
         raise HTTPException(status_code=404, detail="Attachment not found")
