@@ -1,9 +1,12 @@
 import json
+import logging
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+log = logging.getLogger(__name__)
 
 from app.crypto import decrypt, encrypt
 from app.database import get_db
@@ -100,9 +103,10 @@ async def connect_provider(provider_id: int, user: User = Depends(get_current_us
         await db.commit()
         return {"status": "error", "message": "Connection timed out after 15 seconds."}
     except Exception as e:
+        log.exception("Unexpected error connecting to LLM provider %s", provider_id)
         provider.status = "disconnected"
         await db.commit()
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": "An unexpected error occurred while connecting to the provider."}
 
 
 @router.get("/{provider_id}/models")
