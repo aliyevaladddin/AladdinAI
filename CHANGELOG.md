@@ -27,6 +27,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Replace regex-based HTML stripping with a robust MLStripper implementation in _strip_html ([70d863b](https://github.com/aliyevaladddin/AladdinAI/commit/70d863b4701b4da21f4872724607a35cd7c6ea24))
 
+- Address CodeQL security alerts and enforce least privilege workflow permissions ([e7c185e](https://github.com/aliyevaladddin/AladdinAI/commit/e7c185e8a1fad810675378527dba1f6d6b959290))
+
 ## [v2.1.7] - 2026-06-06
 ## [v2.1.6] - 2026-06-06
 
