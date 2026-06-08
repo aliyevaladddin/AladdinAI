@@ -110,7 +110,7 @@ async def deploy_service(
 
             return {"status": "success", "message": f"Successfully deployed to {bentoml_conn.endpoint_url}"}
 
-    except Exception as e:
+    except Exception:
         log.exception("bentoml: deploy failed")
         return {"status": "error", "message": "An unexpected error occurred during deployment."}
 
@@ -163,7 +163,7 @@ async def test_bentoml(conn_id: int, db: AsyncSession = Depends(get_db), user = 
                 conn.status = "error"
                 await db.commit()
                 return {"status": "error", "message": f"Health check returned {res.status_code}"}
-    except Exception as e:
+    except Exception:
         log.exception("bentoml: health check connection failed")
         conn.status = "disconnected"
         await db.commit()
