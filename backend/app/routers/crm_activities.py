@@ -86,6 +86,11 @@ async def download_attachment(
     db: AsyncSession = Depends(get_db),
 ):
     """Download or preview an email attachment by activity ID and filename."""
+    # Sanitize and validate filename to prevent path traversal
+    safe_filename = os.path.basename(filename)
+    if safe_filename != filename or not safe_filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
     result = await db.execute(
         select(Activity).where(Activity.id == activity_id, Activity.user_id == user.id)
     )
@@ -95,7 +100,7 @@ async def download_attachment(
 
     # Validate filename exists in activity metadata
     attachments = (activity.metadata_json or {}).get("attachments", [])
-    meta = next((a for a in attachments if a["filename"] == filename), None)
+    meta = next((a for a in attachments if a["filename"] == safe_filename), None)
     if not meta:
         raise HTTPException(status_code=404, detail="Attachment not found")
 
@@ -103,7 +108,7 @@ async def download_attachment(
     if os.path.commonpath([ATTACHMENTS_ROOT, activity_dir]) != ATTACHMENTS_ROOT:
         raise HTTPException(status_code=404, detail="Attachment not found")
 
-    file_path = os.path.realpath(os.path.join(activity_dir, filename))
+    file_path = os.path.realpath(os.path.join(activity_dir, safe_filename))
     try:
         if os.path.commonpath([activity_dir, file_path]) != activity_dir or not os.path.isfile(file_path):
             raise HTTPException(status_code=404, detail="Attachment not found")
@@ -114,7 +119,7 @@ async def download_attachment(
 
     return FileResponse(
         path=file_path,
-        filename=filename,
+        filename=safe_filename,
         media_type=meta.get("content_type", "application/octet-stream"),
     )
 
