@@ -8,6 +8,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update dependency overrides and improve HTML sanitization logic in dashboard preview ([abd0507](https://github.com/aliyevaladddin/AladdinAI/commit/abd05076a3d625daebc29189f3cd44b51dca7785))
 
+- Sanitize and validate attachment filenames to prevent path traversal vulnerabilities ([ebfd0f9](https://github.com/aliyevaladddin/AladdinAI/commit/ebfd0f997e3a321f58737a40d9f8f73413d4e184))
+
+- Simplify path traversal validation for CRM activity attachments using prefix checking ([b367593](https://github.com/aliyevaladddin/AladdinAI/commit/b36759383522ff7e0c76c219ba35a1311ca39dfd))
+
 
 ### Documentation
 
@@ -17,6 +21,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 ### Features
 
 - Update doc generation workflow to create PRs and enable auto-merge using a GitHub App token ([11178cf](https://github.com/aliyevaladddin/AladdinAI/commit/11178cf43431313c482899a67fafe2cb1efd7303))
+
+
+### Refactor
+
+- Replace regex-based HTML stripping with a robust MLStripper implementation in _strip_html ([70d863b](https://github.com/aliyevaladddin/AladdinAI/commit/70d863b4701b4da21f4872724607a35cd7c6ea24))
 
 ## [v2.1.7] - 2026-06-06
 ## [v2.1.6] - 2026-06-06
