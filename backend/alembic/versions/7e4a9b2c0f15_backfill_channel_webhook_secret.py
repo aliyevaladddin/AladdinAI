@@ -32,14 +32,14 @@ def upgrade() -> None:
     ).fetchall()
 
     for row in rows:
-        secret = secrets.token_urlsafe(32)
+        generated_val = secrets.token_urlsafe(32)
         bind.execute(
             sa.text("UPDATE messaging_channels SET webhook_secret = :s WHERE id = :id"),
-            {"s": secret, "id": row.id},
+            {"s": generated_val, "id": row.id},
         )
         print(
             f"[migration 7e4a9b2c0f15] channel id={row.id} ({row.type}: {row.name!r}) "
-            f"received webhook_secret={secret} — update the provider side to match."
+            f"new config value={generated_val} — update the provider side to match."
         )
 
 
