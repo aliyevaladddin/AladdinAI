@@ -98,6 +98,11 @@
     "typescript": "^5",
     "wait-on": "^7.2.0"
   },
+  "overrides": {
+    "brace-expansion": "^5.0.6",
+    "qs": "^6.15.2",
+    "postcss": "^8.5.10"
+  },
   "optionalDependencies": {
     "lightningcss-linux-arm64-gnu": "^1.32.0"
   }
