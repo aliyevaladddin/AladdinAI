@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   generate-docs:
@@ -50,13 +51,62 @@ jobs:
             exit 1
           }
 
+      - name: Generate GitHub App Token
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.ALADDINAI_BOT_APP_ID }}
+          private_key: ${{ secrets.ALADDINAI_BOT_PRIVATE_KEY }}
+
       - name: Commit documentation
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "AladdinAI[bot]"
+          git config user.email "AladdinAI[bot]@users.noreply.github.com"
+
+          # Check if there are changes
           git add docs/openapi.json docs/API.md
-          git diff --staged --quiet || (git commit -m "docs: update API documentation [skip ci]" && git push) || {
-            echo "::error::Failed to commit documentation"
+          if git diff --staged --quiet; then
+            echo "No documentation changes, skipping."
+            exit 0
+          fi
+
+          # Use run ID + attempt for a guaranteed-unique branch name
+          BRANCH_NAME="bot/docs-${{ github.run_id }}-${{ github.run_attempt }}"
+          git checkout -b "$BRANCH_NAME"
+          git commit -m "docs: update API documentation [skip ci]"
+          git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:"$BRANCH_NAME"
+
+          # Create PR
+          PR_RESPONSE=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/pulls \
+            -d "{\"title\":\"docs: update API documentation\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated API documentation update from AladdinAI bot 🤖\"}")
+
+          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
+          if [ "$PR_NUMBER" = "null" ] || [ -z "$PR_NUMBER" ]; then
+            echo "Failed to create PR: $PR_RESPONSE"
             exit 1
-          }
+          fi
+
+          echo "Created PR #$PR_NUMBER, enabling auto-merge..."
+
+          # Get PR node ID needed for GraphQL auto-merge mutation
+          PR_NODE_ID=$(echo "$PR_RESPONSE" | jq -r '.node_id')
+
+          # Enable GitHub native auto-merge via GraphQL
+          GQL_RESPONSE=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Content-Type: application/json" \
+            https://api.github.com/graphql \
+            -d "{\"query\": \"mutation { enablePullRequestAutoMerge(input: { pullRequestId: \\\"$PR_NODE_ID\\\", mergeMethod: SQUASH }) { pullRequest { number autoMergeRequest { enabledAt } } } }\"}")
+
+          ENABLED_AT=$(echo "$GQL_RESPONSE" | jq -r '.data.enablePullRequestAutoMerge.pullRequest.autoMergeRequest.enabledAt')
+          if [ "$ENABLED_AT" = "null" ] || [ -z "$ENABLED_AT" ]; then
+            echo "Warning: could not enable auto-merge. PR #$PR_NUMBER is open and requires manual merge."
+            echo "GraphQL response: $GQL_RESPONSE"
+          else
+            echo "Auto-merge enabled on PR #$PR_NUMBER. It will merge once all requirements are met."
+          fi
