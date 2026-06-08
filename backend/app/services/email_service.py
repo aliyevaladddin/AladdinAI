@@ -63,8 +63,9 @@ async def _test_imap(account: EmailAccount) -> tuple[bool, str]:
             return True
         await asyncio.to_thread(_connect)
         return True, "IMAP connection successful"
-    except Exception as e:
-        return False, str(e)
+    except Exception:
+        log.exception("IMAP connection test failed")
+        return False, "Failed to connect to IMAP server due to an unexpected error."
 
 
 def _detect_sent_folder(m: imaplib.IMAP4_SSL) -> str | None:

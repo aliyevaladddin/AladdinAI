@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-log = logging.getLogger(__name__)
-
 from app.database import get_db
 from app.models.messaging_channel import MessagingChannel
 from app.models.user import User
 from app.schemas.channels import MessagingChannelCreate, MessagingChannelResponse
 from app.security import get_current_user
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/channels/messaging", tags=["channels"])
 
@@ -160,6 +160,6 @@ async def get_waha_qr(channel_id: int, user: User = Depends(get_current_user), d
             return {"status": "error", "message": f"QR not available (status {qr_resp.status_code}). Maybe session is already connected?"}
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
         log.exception("Unexpected error fetching WAHA QR for channel %s", channel_id)
         raise HTTPException(status_code=500, detail="Failed to fetch QR code from WAHA.")

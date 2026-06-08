@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -9,6 +10,8 @@ from app.models.email_account import EmailAccount
 from app.models.user import User
 from app.schemas.channels import EmailAccountCreate, EmailAccountResponse, EmailAccountUpdate
 from app.security import get_current_user
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/channels/email", tags=["channels"])
 
@@ -115,8 +118,9 @@ async def send_email_endpoint(account_id: int, payload: SendEmailBody, user: Use
     try:
         await send_email(db, account, payload.to_email, payload.subject, payload.body, payload.contact_id)
         return {"status": "sent", "message": f"Email sent to {payload.to_email}"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+    except Exception:
+        log.exception("Unexpected error sending email")
+        raise HTTPException(status_code=500, detail="Failed to send email due to an unexpected error.")
 
 
 @router.delete("/{account_id}", status_code=204)
