@@ -39,7 +39,7 @@ async function proxy(
       try {
         body = await req.arrayBuffer();
       } catch (bodyErr) {
-        console.warn(`[api-proxy] Could not read request body for ${method} ${targetUrl}:`, bodyErr);
+        console.warn("[api-proxy] Could not read request body for %s %s:", method, targetUrl, bodyErr);
       }
     }
 
