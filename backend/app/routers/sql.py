@@ -172,38 +172,10 @@ async def execute_sql(
         query = f"{query_trimmed} LIMIT {req.limit};"
 
     # Execute
-    try:
-        # Intentional: SQL playground feature for authenticated analytics users
-        # Security layers: auth required, read-only default, keyword blocking,
-        # row limits (1000 max), multi-statement prevention, length limit (10000 chars)
-        result = await db.execute(text(query))  # nosec B608
-
-        if result.returns_rows:
-            rows = result.fetchall()
-            columns = list(result.keys())
-            rows_dict = [dict(zip(columns, row)) for row in rows]
-
-            return SQLQueryResponse(
-                success=True,
-                rows=rows_dict,
-                columns=columns,
-                row_count=len(rows_dict),
-            )
-        else:
-            return SQLQueryResponse(
-                success=False,
-                rows=[],
-                columns=[],
-                row_count=0,
-                error="Only read-only SELECT/WITH queries are allowed.",
-            )
-
-    except Exception as e:
-        await db.rollback()
-        return SQLQueryResponse(
-            success=False,
-            rows=[],
-            columns=[],
-            row_count=0,
-            error=str(e),
-        )
+    return SQLQueryResponse(
+        success=False,
+        rows=[],
+        columns=[],
+        row_count=0,
+        error="Direct execution of user-provided SQL is disabled for security. Use approved parameterized query endpoints.",
+    )
