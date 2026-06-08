@@ -112,7 +112,7 @@ async def deploy_service(
 
     except Exception as e:
         log.exception("bentoml: deploy failed")
-        return {"status": "error", "message": str(e) or repr(e)}
+        return {"status": "error", "message": "An unexpected error occurred during deployment."}
 
 
 @router.put("/{conn_id}")
@@ -164,9 +164,10 @@ async def test_bentoml(conn_id: int, db: AsyncSession = Depends(get_db), user = 
                 await db.commit()
                 return {"status": "error", "message": f"Health check returned {res.status_code}"}
     except Exception as e:
+        log.exception("bentoml: health check connection failed")
         conn.status = "disconnected"
         await db.commit()
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": "An unexpected error occurred during the health check."}
 
 
 @router.delete("/{conn_id}", status_code=204)

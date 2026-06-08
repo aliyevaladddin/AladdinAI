@@ -42,7 +42,8 @@ async def _test_waha(channel: MessagingChannel) -> tuple[bool, str]:
                 return True, "WAHA API connected successfully"
             return False, f"WAHA returned status {resp.status_code}"
     except Exception as e:
-        return False, f"Failed to connect to WAHA: {str(e)}"
+        log.exception("WAHA connection test failed")
+        return False, "Failed to connect to WAHA due to an unexpected error."
 
 
 async def _test_telegram(channel: MessagingChannel) -> tuple[bool, str]:
@@ -57,7 +58,8 @@ async def _test_telegram(channel: MessagingChannel) -> tuple[bool, str]:
                 return True, f"Connected as @{data['result']['username']}"
             return False, data.get("description", "Unknown error")
     except Exception as e:
-        return False, str(e)
+        log.exception("Telegram connection test failed")
+        return False, "Failed to connect to Telegram due to an unexpected error."
 
 
 async def _test_whatsapp(channel: MessagingChannel) -> tuple[bool, str]:
@@ -75,7 +77,8 @@ async def _test_whatsapp(channel: MessagingChannel) -> tuple[bool, str]:
                 return True, "WhatsApp Business connected"
             return False, resp.text
     except Exception as e:
-        return False, str(e)
+        log.exception("WhatsApp connection test failed")
+        return False, "Failed to connect to WhatsApp due to an unexpected error."
 
 
 def parse_telegram_message(payload: dict) -> tuple[str, str, str, list[dict]]:
