@@ -9,6 +9,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update dependency overrides and improve HTML sanitization logic in dashboard preview ([abd0507](https://github.com/aliyevaladddin/AladdinAI/commit/abd05076a3d625daebc29189f3cd44b51dca7785))
 
 
+### Documentation
+
+- Update API documentation [skip ci] ([5089018](https://github.com/aliyevaladddin/AladdinAI/commit/5089018c4863855b92dbfa9354ddcaa431904db7))
+
+
 ### Features
 
 - Update doc generation workflow to create PRs and enable auto-merge using a GitHub App token ([11178cf](https://github.com/aliyevaladddin/AladdinAI/commit/11178cf43431313c482899a67fafe2cb1efd7303))
