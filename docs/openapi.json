@@ -1473,6 +1473,7 @@
           "content": {
             "application/json": {
               "schema": {
+                "additionalProperties": true,
                 "type": "object",
                 "title": "Body"
               }
@@ -5845,6 +5846,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "additionalProperties": true,
                   "title": "Response Provider Logs Api Terminal Providers  Provider Id  Logs Get"
                 }
               }
@@ -6073,6 +6075,7 @@
           "metadata_json": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -6156,6 +6159,7 @@
           "metadata_json": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -6222,6 +6226,7 @@
           "tools_config": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -6287,6 +6292,7 @@
           "tools_config": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -6385,6 +6391,7 @@
           "tools_config": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -6507,6 +6514,7 @@
             "anyOf": [
               {
                 "items": {
+                  "additionalProperties": true,
                   "type": "object"
                 },
                 "type": "array"
@@ -6565,6 +6573,7 @@
             "anyOf": [
               {
                 "items": {
+                  "additionalProperties": true,
                   "type": "object"
                 },
                 "type": "array"
@@ -6606,6 +6615,7 @@
             "anyOf": [
               {
                 "items": {
+                  "additionalProperties": true,
                   "type": "object"
                 },
                 "type": "array"
@@ -7424,6 +7434,7 @@
             "anyOf": [
               {
                 "additionalProperties": {
+                  "additionalProperties": true,
                   "type": "object"
                 },
                 "type": "object"
@@ -7460,6 +7471,7 @@
           "context": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -7678,6 +7690,7 @@
             "title": "Name"
           },
           "config": {
+            "additionalProperties": true,
             "type": "object",
             "title": "Config"
           },
@@ -7921,6 +7934,7 @@
           "config": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -8090,6 +8104,7 @@
             "title": "Type"
           },
           "config": {
+            "additionalProperties": true,
             "type": "object",
             "title": "Config"
           },
@@ -8122,6 +8137,7 @@
             "title": "Type"
           },
           "config": {
+            "additionalProperties": true,
             "type": "object",
             "title": "Config"
           },
@@ -8167,6 +8183,7 @@
           "config": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -8225,6 +8242,7 @@
           },
           "rows": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -8342,6 +8360,7 @@
             "anyOf": [
               {
                 "additionalProperties": {
+                  "additionalProperties": true,
                   "type": "object"
                 },
                 "type": "object"
@@ -8677,6 +8696,7 @@
           },
           "columns": {
             "items": {
+              "additionalProperties": true,
               "type": "object"
             },
             "type": "array",
@@ -8765,6 +8785,7 @@
           "context_template": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
@@ -8862,6 +8883,7 @@
           "context_template": {
             "anyOf": [
               {
+                "additionalProperties": true,
                 "type": "object"
               },
               {
