@@ -4,14 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-log = logging.getLogger(__name__)
-
 from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models.user import User
 from app.models.vm import VMConnection
 from app.schemas.connections import VMCreate, VMResponse
 from app.security import get_current_user
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(tags=["vms"])
 
@@ -78,7 +78,7 @@ async def connect_vm(vm_id: int, user: User = Depends(get_current_user), db: Asy
         vm.status = "disconnected"
         await db.commit()
         return {"status": "error", "message": "Connection lost. Host may be unreachable."}
-    except Exception as e:
+    except Exception:
         log.exception("Unexpected SSH connection failure for VM %s", vm_id)
         vm.status = "disconnected"
         await db.commit()
