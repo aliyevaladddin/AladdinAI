@@ -97,7 +97,10 @@ async def download_attachment(
     if not meta:
         raise HTTPException(status_code=404, detail="Attachment not found")
 
-    file_path = os.path.join(ATTACHMENTS_DIR, str(activity_id), filename)
+    activity_dir = os.path.realpath(os.path.join(ATTACHMENTS_DIR, str(activity_id)))
+    file_path = os.path.realpath(os.path.join(activity_dir, filename))
+    if os.path.commonpath([activity_dir, file_path]) != activity_dir:
+        raise HTTPException(status_code=404, detail="Attachment not found")
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
 
