@@ -18,6 +18,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update doc generation workflow to create PRs and enable auto-merge using a GitHub App token ([11178cf](https://github.com/aliyevaladddin/AladdinAI/commit/11178cf43431313c482899a67fafe2cb1efd7303))
 
+
+### Refactor
+
+- Replace regex-based HTML stripping with a robust MLStripper implementation in _strip_html ([70d863b](https://github.com/aliyevaladddin/AladdinAI/commit/70d863b4701b4da21f4872724607a35cd7c6ea24))
+
 ## [v2.1.7] - 2026-06-06
 ## [v2.1.6] - 2026-06-06
 
