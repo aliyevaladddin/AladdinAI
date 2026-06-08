@@ -6,14 +6,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-log = logging.getLogger(__name__)
-
 from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models.llm_provider import LLMProvider
 from app.models.user import User
 from app.schemas.connections import LLMProviderCreate, LLMProviderResponse
 from app.security import get_current_user
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 
@@ -102,7 +102,7 @@ async def connect_provider(provider_id: int, user: User = Depends(get_current_us
         provider.status = "disconnected"
         await db.commit()
         return {"status": "error", "message": "Connection timed out after 15 seconds."}
-    except Exception as e:
+    except Exception:
         log.exception("Unexpected error connecting to LLM provider %s", provider_id)
         provider.status = "disconnected"
         await db.commit()
