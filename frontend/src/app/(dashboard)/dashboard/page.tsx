@@ -35,24 +35,26 @@ interface ActivityItem {
 function stripHtmlPreview(html: string): string {
   if (!html) return "";
 
-  let sanitized = html;
-  let previous: string;
+  if (typeof window !== "undefined" && typeof DOMParser !== "undefined") {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      doc.querySelectorAll("script, style").forEach((el) => el.remove());
+      const text = doc.body.textContent || "";
+      return text.replace(/\s{2,}/g, " ").trim().slice(0, 120);
+    } catch (e) {
+      // Fallback to regex if parsing fails
+    }
+  }
 
-  do {
-    previous = sanitized;
-    sanitized = sanitized
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style(?:\s+[^>]*)?\s*>/gi, "")
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script(?:\s+[^>]*)?\s*>/gi, "");
-  } while (sanitized !== previous);
-
-  return sanitized
+  // Regex fallback for SSR or environments without DOMParser
+  return html
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/<[^>]+>/g, " ")
     .replace(/\s{2,}/g, " ")
     .trim()
     .slice(0, 120);
