@@ -3,6 +3,11 @@
 All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
 ## [Unreleased]
+
+### Bug Fixes
+
+- Update dependency overrides and improve HTML sanitization logic in dashboard preview ([abd0507](https://github.com/aliyevaladddin/AladdinAI/commit/abd05076a3d625daebc29189f3cd44b51dca7785))
+
 ## [v2.1.7] - 2026-06-06
 ## [v2.1.6] - 2026-06-06
 
