@@ -7,7 +7,7 @@
 
 
 
-<div align="center">
+<div align="middle">
 
 <br/>
 
