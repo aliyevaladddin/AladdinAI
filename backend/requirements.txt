@@ -9,7 +9,7 @@ pydantic-settings==2.14.1
 python-jose[cryptography]==3.5.0
 bcrypt==5.0.0
 httpx==0.28.1
-python-multipart==0.0.29
+python-multipart==0.0.32
 aiosqlite==0.22.1
 asyncssh==2.23.0
 motor==3.7.1
