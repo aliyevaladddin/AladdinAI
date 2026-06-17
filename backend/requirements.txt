@@ -3,7 +3,7 @@ uvicorn[standard]==0.49.0
 sqlalchemy[asyncio]==2.0.51
 asyncpg==0.31.0
 psycopg2-binary==2.9.12
-alembic==1.13.0
+alembic==1.18.4
 pydantic[email]==2.13.4
 pydantic-settings==2.14.1
 python-jose[cryptography]==3.5.0
