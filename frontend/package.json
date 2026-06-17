@@ -89,7 +89,7 @@
     "concurrently": "^10.0.3",
     "electron": "^39.8.5",
     "electron-builder": "^26.15.3",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.2.9",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.4.2",
