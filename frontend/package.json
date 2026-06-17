@@ -59,7 +59,7 @@
     "electron-serve": "^3.0.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
-    "lucide-react": "^1.14.0",
+    "lucide-react": "^1.20.0",
     "next": "16.2.9",
     "rcf-protocol": "^2.1.1",
     "react": "19.2.7",
