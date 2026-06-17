@@ -8,6 +8,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update release workflow to push to main using HEAD reference ([ad0bc8d](https://github.com/aliyevaladddin/AladdinAI/commit/ad0bc8d11f95b6fdddfb1a1544a57614d48da81c))
 
+
+### Features
+
+- Add js-yaml dependency to frontend package.json ([297aa00](https://github.com/aliyevaladddin/AladdinAI/commit/297aa00ba11d793d8be47be227fc08e955b75272))
+
 ## [v2.1.8] - 2026-06-08
 
 ### Bug Fixes
