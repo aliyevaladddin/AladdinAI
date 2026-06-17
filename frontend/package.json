@@ -86,7 +86,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "concurrently": "^8.2.2",
+    "concurrently": "^10.0.3",
     "electron": "^39.8.5",
     "electron-builder": "^26.15.3",
     "eslint": "^9",
