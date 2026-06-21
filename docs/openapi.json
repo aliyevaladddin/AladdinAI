@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AladdinAI API",
-    "description": "\n    \ud83e\uddde **AladdinAI** - Self-hosted AI workspace with multi-agent orchestration, persistent memory, and tool execution.\n\n    ## Features\n\n    * \ud83e\udd16 **Multi-Agent System** - Create and orchestrate specialized AI agents\n    * \ud83e\udde0 **Persistent Memory** - Vector-based memory with per-agent isolation\n    * \ud83d\udee0\ufe0f **Tool Execution** - Extensible tool registry with safety gates\n    * \ud83d\udcca **CRM Integration** - Contacts, deals, and activities management\n    * \ud83d\udd10 **Safety First** - PII detection, content filtering, and audit logging\n    * \ud83d\udd17 **RCF Protocol** - Cryptographic signing for webhook authenticity\n\n    ## Authentication\n\n    Most endpoints require JWT authentication. Include the token in the `Authorization` header:\n    ```\n    Authorization: Bearer <your_jwt_token>\n    ```\n\n    ## Rate Limits\n\n    API endpoints are rate-limited per user. See individual endpoint documentation for specific limits.\n    ",
+    "description": "\n    \ud83e\uddde **AladdinAI** - Self-hosted AI workspace with multi-agent orchestration, persistent memory, and tool execution.\n\n    ## Features\n\n    * \ud83e\udd16 **Multi-Agent System** - Create and orchestrate specialized AI agents\n    * \ud83e\udde0 **Persistent Memory** - Vector-based memory with per-agent isolation\n    * \ud83d\udee0\ufe0f **Tool Execution** - Extensible tool registry with safety gates\n    * \ud83d\udcca **CRM Integration** - Contacts, deals, and activities management\n    * \ud83d\udd10 **Safety First** - PII detection, content filtering, and audit logging\n    * \ud83d\udd17 **RCF Protocol** - Cryptographic signing for webhook authenticity\n\n    ## Authentication\n\n    Most endpoints require JWT authentication. Include the token in the `Authorization` header:\n    ```\n    Authorization: Bearer <your_jwt_token>\n    ```\n\n    ## Rate Limits\n\n    API endpoints are rate-limited per IP address to prevent abuse.\n    Exceeding a limit returns HTTP 429 with a `Retry-After` header.\n    ",
     "termsOfService": "https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE",
     "contact": {
       "name": "Aladdin Aliyev",
@@ -5979,6 +5979,23 @@
       "get": {
         "summary": "Root",
         "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Health check endpoint for load balancers and container orchestration.",
+        "operationId": "health_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
