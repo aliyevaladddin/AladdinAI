@@ -8,6 +8,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update release workflow to push to main using HEAD reference ([ad0bc8d](https://github.com/aliyevaladddin/AladdinAI/commit/ad0bc8d11f95b6fdddfb1a1544a57614d48da81c))
 
+- Order PII regex so PHONE no longer swallows SSN/credit cards ([27da13f](https://github.com/aliyevaladddin/AladdinAI/commit/27da13f3e49831d447bbe392a1f4ae8fdec3b94e))
+
 
 ### Documentation
 
@@ -19,6 +21,15 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add js-yaml dependency to frontend package.json ([297aa00](https://github.com/aliyevaladddin/AladdinAI/commit/297aa00ba11d793d8be47be227fc08e955b75272))
 
 - Add @babel/core and dompurify dependencies to frontend package.json ([2515e54](https://github.com/aliyevaladddin/AladdinAI/commit/2515e5467debc608458ccbb9c528afda364f5773))
+
+- Use input_type=passage when indexing facts for NIM embeddings ([a09c942](https://github.com/aliyevaladddin/AladdinAI/commit/a09c9426f485d39f9bca86a7d267216c13a4feec))
+
+- Env-driven CORS, IP rate limiting, lifespan, secret validation ([e8b6d9b](https://github.com/aliyevaladddin/AladdinAI/commit/e8b6d9b2f417d0fa629d29560d060dbfc88408fc))
+
+
+### Testing
+
+- Add tests for safety PII, memory embeddings, agent runner ([44d5c1f](https://github.com/aliyevaladddin/AladdinAI/commit/44d5c1f9bb715347246210c13c652dc41508a237))
 
 ## [v2.1.8] - 2026-06-08
 
