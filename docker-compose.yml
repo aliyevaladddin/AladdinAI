@@ -35,6 +35,14 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      # DEV ONLY: mounting the host docker socket grants this container
+      # effective root on the host, so it is deliberately absent from the
+      # production template (cli/templates/docker-compose.yml). It exists here
+      # purely as a local fallback for terminal-provider features when no
+      # remote daemon is configured. In production set DOCKER_REMOTE_URL +
+      # TLS certs (see .env.example) so the backend talks to a *remote* daemon
+      # over the network and never touches a local socket. To drop the socket
+      # even in dev, set DOCKER_SOCK_PATH=/dev/null.
       - ${DOCKER_SOCK_PATH:-/var/run/docker.sock}:/var/run/docker.sock
       # Shared with Traefik: backend writes routing configs here, Traefik reads them.
       - ./backend/traefik-dynamic:/traefik-dynamic
