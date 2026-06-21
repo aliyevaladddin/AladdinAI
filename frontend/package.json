@@ -95,7 +95,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "tailwindcss": "^4",
-    "typescript": "^5",
+    "typescript": "^6",
     "wait-on": "^9.0.10"
   },
   "overrides": {
