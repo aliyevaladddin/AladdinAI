@@ -1,9 +1,16 @@
 # NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:PROTECTED]
 import json
+import logging
 from pathlib import Path
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from app.config import settings as app_settings
 from app.routers import (
@@ -17,6 +24,13 @@ from app.services import telegram_poller
 from app.services import terminal_health
 from app.services import autonomous_bot_scheduler
 
+log = logging.getLogger(__name__)
+
+# Rate limiter — keyed by client IP by default.
+# To key by authenticated user, replace get_remote_address with a custom
+# function that extracts user_id from the JWT in request.headers.
+limiter = Limiter(key_func=get_remote_address)
+
 # Read version from CLI package.json (single source of truth)
 cli_package_path = Path(__file__).parent.parent.parent / "cli" / "package.json"
 try:
@@ -26,8 +40,25 @@ try:
 except Exception:
     VERSION = "2.1.5"  # Fallback
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manages startup and shutdown of background services."""
+    log.info("AladdinAI starting up (v%s)", VERSION)
+    await triggers_service.hydrate_from_db()
+    await telegram_poller.start()
+    terminal_health.start()
+    autonomous_bot_scheduler.start_scheduler()
+    yield
+    log.info("AladdinAI shutting down")
+    await triggers_service.shutdown()
+    await telegram_poller.stop()
+    terminal_health.stop()
+    autonomous_bot_scheduler.stop_scheduler()
+
 app = FastAPI(
     title="AladdinAI API",
+    lifespan=lifespan,
     description="""
     🧞 **AladdinAI** - Self-hosted AI workspace with multi-agent orchestration, persistent memory, and tool execution.
 
@@ -49,7 +80,8 @@ app = FastAPI(
 
     ## Rate Limits
 
-    API endpoints are rate-limited per user. See individual endpoint documentation for specific limits.
+    API endpoints are rate-limited per IP address to prevent abuse.
+    Exceeding a limit returns HTTP 429 with a `Retry-After` header.
     """,
     version=VERSION,
     terms_of_service="https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE",
@@ -75,29 +107,17 @@ app = FastAPI(
 )
 
 
-@app.on_event("startup")
-async def _start_scheduler():
-    await triggers_service.hydrate_from_db()
-    await telegram_poller.start()
-    terminal_health.start()
-    autonomous_bot_scheduler.start_scheduler()
+# ── Attach rate limiter state and 429 error handler ─────────────────────────
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-
-@app.on_event("shutdown")
-async def _stop_scheduler():
-    await triggers_service.shutdown()
-    await telegram_poller.stop()
-    terminal_health.stop()
-    autonomous_bot_scheduler.stop_scheduler()
-
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
+# CORS origins are configured via CORS_ORIGINS env var (comma-separated).
+# Defaults to localhost:3000 for local development.
+# Example for production: CORS_ORIGINS=https://app.example.com,https://admin.example.com
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=app_settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
@@ -128,8 +148,16 @@ app.include_router(search.router, prefix="/api")
 app.include_router(terminal_providers.router, prefix="/api/terminal", tags=["terminal"])
 
 @app.get("/")
-async def root():
-    return {"message": "AladdinAI API is running", "version": "0.1.0", "protocol": "RCF/2.0.3"}
+@limiter.limit("60/minute")
+async def root(request: Request):
+    return {"message": "AladdinAI API is running", "version": VERSION, "protocol": "RCF/2.0.3"}
+
+
+@app.get("/health")
+@limiter.limit("120/minute")
+async def health(request: Request):
+    """Health check endpoint for load balancers and container orchestration."""
+    return {"status": "ok", "version": VERSION}
 
 
 @app.get("/api/edition")
