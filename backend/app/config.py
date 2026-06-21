@@ -20,7 +20,7 @@ _INSECURE_DEFAULTS = {
 }
 
 
-def _is_dev_mode(database_url: str | None) -> bool:
+def _is_dev_mode(database_url: str) -> bool:
     """Decide whether insecure placeholder secrets are tolerable.
 
     Fail closed: only an explicit local-dev signal unlocks the insecure
@@ -80,7 +80,9 @@ class Settings(BaseSettings):
             ("terminal_token_secret", "TERMINAL_TOKEN_SECRET", "openssl rand -hex 32"),
         ]
         for attr, env_name, hint in guarded:
-            value = getattr(self, attr)
+            # .strip() so a whitespace-only secret ("   ") collapses to "" and
+            # is caught as insecure rather than slipping past the set check.
+            value = getattr(self, attr).strip()
             if value not in _INSECURE_DEFAULTS:
                 continue
             if not is_dev:

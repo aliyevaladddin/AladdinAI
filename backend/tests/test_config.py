@@ -44,6 +44,16 @@ def test_insecure_jwt_secret_rejected_in_prod(monkeypatch):
         )
 
 
+def test_whitespace_only_secret_rejected_in_prod(monkeypatch):
+    # "   " is not literally in _INSECURE_DEFAULTS but strips to "", which is.
+    monkeypatch.setenv("ALADDIN_ENV", "production")
+    with pytest.raises(ValueError, match="JWT_SECRET"):
+        Settings(
+            jwt_secret="   ",
+            terminal_token_secret="a-strong-terminal-secret",
+        )
+
+
 def test_insecure_terminal_secret_rejected_in_prod(monkeypatch):
     monkeypatch.setenv("ALADDIN_ENV", "production")
     with pytest.raises(ValueError, match="TERMINAL_TOKEN_SECRET"):
