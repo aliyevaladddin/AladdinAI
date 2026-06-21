@@ -10,10 +10,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Order PII regex so PHONE no longer swallows SSN/credit cards ([27da13f](https://github.com/aliyevaladddin/AladdinAI/commit/27da13f3e49831d447bbe392a1f4ae8fdec3b94e))
 
+- Harden secret validation and document docker socket security (#287) ([bb112dc](https://github.com/aliyevaladddin/AladdinAI/commit/bb112dc9747bb7c460a039a0e6e28cd339167d34))
+
 
 ### Documentation
 
 - Add README files for GitHub, devcontainer, and guides directories ([012bbf6](https://github.com/aliyevaladddin/AladdinAI/commit/012bbf6e020d2494ff9e760abd3b3252cf207c09))
+
+- Update API documentation [skip ci] (#286) ([7ad880b](https://github.com/aliyevaladddin/AladdinAI/commit/7ad880b262348ecce844f985a88471f1c416d850))
 
 
 ### Features
