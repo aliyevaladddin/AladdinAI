@@ -20,7 +20,8 @@
 
     ## Rate Limits
 
-    API endpoints are rate-limited per user. See individual endpoint documentation for specific limits.
+    API endpoints are rate-limited per IP address to prevent abuse.
+    Exceeding a limit returns HTTP 429 with a `Retry-After` header.
     
 
 ## Version: 2.1.5
@@ -3247,6 +3248,23 @@ session cookie.
 ##### Summary:
 
 Root
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+### /health
+
+#### GET
+##### Summary:
+
+Health
+
+##### Description:
+
+Health check endpoint for load balancers and container orchestration.
 
 ##### Responses
 
