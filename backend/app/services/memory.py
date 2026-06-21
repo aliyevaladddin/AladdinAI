@@ -125,8 +125,20 @@ async def _resolve_embedding_provider(db: AsyncSession, user_id: int) -> LLMProv
     )
 
 
-async def embed(db: AsyncSession, user_id: int, text: str) -> list[float]:
-    """Embed text via available provider and return a 2048-dim vector."""
+async def embed(
+    db: AsyncSession,
+    user_id: int,
+    text: str,
+    *,
+    input_type: str = "query",
+) -> list[float]:
+    """Embed text via available provider and return a 2048-dim vector.
+
+    Args:
+        input_type: NIM-specific hint for embedding optimisation.
+            Use ``"query"`` for search queries (default) and
+            ``"passage"`` for facts being indexed into the store.
+    """
     provider = await _resolve_embedding_provider(db, user_id)
     api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
     headers = {"Content-Type": "application/json"}
@@ -162,9 +174,10 @@ async def embed(db: AsyncSession, user_id: int, text: str) -> list[float]:
         "encoding_format": "float",
     }
 
-    # NIM-specific parameters
+    # NIM-specific parameters: input_type must match the operation —
+    # "passage" for facts being stored, "query" for search queries.
     if provider.type == "nvidia_nim":
-        payload["input_type"] = "query"
+        payload["input_type"] = input_type
         payload["truncate"] = "END"
 
     # OpenAI dimension control to match our 2048 requirement.
@@ -227,7 +240,7 @@ async def store_memory(
     if visibility == "private" and agent_id is None:
         raise MemoryError("Private memories require an agent_id")
 
-    vector = await embed(db, user_id, fact)
+    vector = await embed(db, user_id, fact, input_type="passage")
     mdb = await get_mongo_db(db, user_id)
 
     doc: dict[str, Any] = {
