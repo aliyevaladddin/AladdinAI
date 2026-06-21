@@ -229,11 +229,14 @@ async def safety_egress(db: AsyncSession, *, agent: Agent, text: str) -> dict[st
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Lightweight regex pre-pass to catch obvious patterns even when model is off.
+# ORDER MATTERS: more specific patterns must come before the greedy PHONE
+# pattern, otherwise PHONE swallows SSN ("123-45-6789") and credit card
+# numbers before the targeted patterns get a chance to match.
 _REGEX_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("EMAIL", re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")),
-    ("PHONE", re.compile(r"\+?\d[\d\s().-]{7,}\d")),
-    ("CREDIT_CARD", re.compile(r"\b(?:\d[ -]*?){13,16}\b")),
     ("SSN", re.compile(r"\b\d{3}-\d{2}-\d{4}\b")),
+    ("CREDIT_CARD", re.compile(r"\b(?:\d[ -]*?){13,16}\b")),
+    ("PHONE", re.compile(r"\+?\d[\d\s().-]{7,}\d")),
     ("IPV4", re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}\b")),
 ]
 
