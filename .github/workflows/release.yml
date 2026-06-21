@@ -53,16 +53,6 @@ jobs:
           git add frontend/package.json frontend/package-lock.json cli/package.json
           git diff --staged --quiet || (git commit -m "chore: bump version to ${{ steps.version.outputs.VERSION }} and update deps [skip ci]" && git push origin HEAD:main)
 
-      - name: Install CLI dependencies
-        working-directory: ./cli
-        run: npm install --no-audit --no-fund
-
-      - name: Smoke test CLI
-        working-directory: ./cli
-        run: node index.js --help
-
-      - name: Publish CLI to npm
-        working-directory: ./cli
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_API_TOKEN }}
+      # CLI is published by cli-publish.yml on the same v* tag — this workflow
+      # only keeps main's package.json versions in sync. Do not add an npm
+      # publish step here or releases will publish to npm twice.
