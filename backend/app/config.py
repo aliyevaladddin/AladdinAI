@@ -83,7 +83,7 @@ class Settings(BaseSettings):
             # .strip() so a whitespace-only secret ("   ") collapses to "" and
             # is caught as insecure rather than slipping past the set check.
             value = getattr(self, attr).strip()
-            if value not in _INSECURE_DEFAULTS:
+            if value.strip() not in _INSECURE_DEFAULTS:
                 continue
             if not is_dev:
                 raise ValueError(
