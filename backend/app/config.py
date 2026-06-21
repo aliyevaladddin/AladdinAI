@@ -1,7 +1,13 @@
 # NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:PROTECTED]
+import logging
+import os
+from typing import List
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
+
+_log = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -12,11 +18,52 @@ class Settings(BaseSettings):
     jwt_refresh_token_expire_days: int = 7
     fernet_key: str = ""  # Set in .env — generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 
+    # ── CORS ─────────────────────────────────────────────────────────
+    # Comma-separated list of allowed origins for the frontend.
+    # Example in .env:  CORS_ORIGINS=https://app.example.com,https://admin.example.com
+    # Defaults to localhost for local development.
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Return cors_origins as a parsed list of stripped, non-empty URLs."""
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
     @field_validator("database_url", mode="before")
     @classmethod
     def validate_database_url(cls, v: str) -> str:
         if isinstance(v, str) and v.startswith("postgresql://"):
             return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
+    @field_validator("jwt_secret", mode="before")
+    @classmethod
+    def validate_jwt_secret(cls, v: str) -> str:
+        _INSECURE_DEFAULTS = {"change-me-in-production", "", "secret", "changeme"}
+        # Allow insecure defaults only in local dev (detected via ENV var or SQLite URL).
+        # In production the caller must set JWT_SECRET to a strong random value.
+        is_dev = os.getenv("ALADDIN_ENV", "dev").lower() in ("dev", "development", "local")
+        if v in _INSECURE_DEFAULTS and not is_dev:
+            raise ValueError(
+                "JWT_SECRET is set to an insecure default value. "
+                "Generate a strong secret with: openssl rand -hex 32"
+            )
+        if v in _INSECURE_DEFAULTS and is_dev:
+            _log.warning(
+                "⚠️  JWT_SECRET is using an insecure default — safe for local dev only. "
+                "Set JWT_SECRET in .env before deploying to production."
+            )
+        return v
+
+    @field_validator("fernet_key", mode="before")
+    @classmethod
+    def validate_fernet_key(cls, v: str) -> str:
+        if not v or not v.strip():
+            _log.warning(
+                "⚠️  FERNET_KEY is not set — API keys stored by providers will NOT be "
+                "encrypted at rest. Generate a key with: "
+                "python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            )
         return v
 
     # ── Open-core edition ────────────────────────────────────────────
