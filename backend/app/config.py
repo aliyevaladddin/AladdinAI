@@ -4,10 +4,38 @@ import logging
 import os
 from typing import List
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 _log = logging.getLogger(__name__)
+
+# Placeholder secrets shipped in .env.example. Booting with any of these in a
+# production context is refused outright (see `_is_dev_mode`).
+_INSECURE_DEFAULTS = {
+    "",
+    "change-me-in-production",
+    "change-me-terminal-token-secret",
+    "secret",
+    "changeme",
+}
+
+
+def _is_dev_mode(database_url: str | None) -> bool:
+    """Decide whether insecure placeholder secrets are tolerable.
+
+    Fail closed: only an explicit local-dev signal unlocks the insecure
+    defaults. An unset `ALADDIN_ENV` is inferred from the database — a SQLite
+    URL is a local dev box, anything else (e.g. Postgres) is treated as
+    production so a deploy that forgets to set `ALADDIN_ENV` still refuses to
+    boot rather than silently running on `change-me` secrets.
+    """
+    env = os.getenv("ALADDIN_ENV", "").strip().lower()
+    if env in ("prod", "production", "staging"):
+        return False
+    if env in ("dev", "development", "local", "test"):
+        return True
+    # ALADDIN_ENV unset → infer from the database backend.
+    return (database_url or "").startswith("sqlite")
 
 
 class Settings(BaseSettings):
@@ -36,24 +64,36 @@ class Settings(BaseSettings):
             return v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
 
-    @field_validator("jwt_secret", mode="before")
-    @classmethod
-    def validate_jwt_secret(cls, v: str) -> str:
-        _INSECURE_DEFAULTS = {"change-me-in-production", "", "secret", "changeme"}
-        # Allow insecure defaults only in local dev (detected via ENV var or SQLite URL).
-        # In production the caller must set JWT_SECRET to a strong random value.
-        is_dev = os.getenv("ALADDIN_ENV", "dev").lower() in ("dev", "development", "local")
-        if v in _INSECURE_DEFAULTS and not is_dev:
-            raise ValueError(
-                "JWT_SECRET is set to an insecure default value. "
-                "Generate a strong secret with: openssl rand -hex 32"
-            )
-        if v in _INSECURE_DEFAULTS and is_dev:
+    @model_validator(mode="after")
+    def _enforce_secret_strength(self) -> "Settings":
+        """Refuse to boot with placeholder secrets outside local dev.
+
+        Covers every HMAC/signing secret at once so adding a new one can't
+        quietly skip the check. Fails closed: a production-looking deployment
+        (non-SQLite DB, no explicit dev `ALADDIN_ENV`) with any `change-me`
+        secret raises instead of running insecurely.
+        """
+        is_dev = _is_dev_mode(self.database_url)
+        # (field name, env var, generation hint)
+        guarded = [
+            ("jwt_secret", "JWT_SECRET", "openssl rand -hex 32"),
+            ("terminal_token_secret", "TERMINAL_TOKEN_SECRET", "openssl rand -hex 32"),
+        ]
+        for attr, env_name, hint in guarded:
+            value = getattr(self, attr)
+            if value not in _INSECURE_DEFAULTS:
+                continue
+            if not is_dev:
+                raise ValueError(
+                    f"{env_name} is set to an insecure default value. "
+                    f"Generate a strong secret with: {hint}"
+                )
             _log.warning(
-                "⚠️  JWT_SECRET is using an insecure default — safe for local dev only. "
-                "Set JWT_SECRET in .env before deploying to production."
+                "⚠️  %s is using an insecure default — safe for local dev only. "
+                "Set %s in .env before deploying to production.",
+                env_name, env_name,
             )
-        return v
+        return self
 
     @field_validator("fernet_key", mode="before")
     @classmethod
