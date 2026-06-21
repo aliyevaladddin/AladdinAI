@@ -12,6 +12,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Harden secret validation and document docker socket security (#287) ([bb112dc](https://github.com/aliyevaladddin/AladdinAI/commit/bb112dc9747bb7c460a039a0e6e28cd339167d34))
 
+- Update CLI release workflows and package config (#289) ([4948156](https://github.com/aliyevaladddin/AladdinAI/commit/4948156184d351f4e52153b488517a8459717d27))
+
 
 ### Documentation
 
