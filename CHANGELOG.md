@@ -14,6 +14,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update CLI release workflows and package config (#289) ([4948156](https://github.com/aliyevaladddin/AladdinAI/commit/4948156184d351f4e52153b488517a8459717d27))
 
+- Update CLI release workflows and package config (#291) ([f07f088](https://github.com/aliyevaladddin/AladdinAI/commit/f07f088fa0b32a79fc4d9b14ed6aeaebd13e7368))
+
+- Set ALADDIN_ENV=test so backend tests boot under Postgres (#293) ([3486531](https://github.com/aliyevaladddin/AladdinAI/commit/3486531d9c151b227cdb63c2c0e6f8f455697228))
+
 
 ### Documentation
 
