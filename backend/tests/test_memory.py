@@ -8,9 +8,7 @@ Strategy:
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from bson import ObjectId
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -20,11 +18,8 @@ from app.services.memory import (
     _client_cache,
     build_shared_context_block,
     count_memories,
-    delete_memory,
     embed,
     invalidate_mongo_client,
-    list_memories,
-    search_memory,
     store_memory,
 )
 
@@ -232,11 +227,6 @@ async def test_store_memory_private():
 
     assert result["visibility"] == "private"
     assert "id" in result
-    # embed was called with input_type="passage"
-    from app.services.memory import embed as mem_embed
-    # We can verify via the mock
-    import app.services.memory as mem_module
-    # Already verified by the NIM test above; here just confirm the key is returned
 
 
 @pytest.mark.asyncio

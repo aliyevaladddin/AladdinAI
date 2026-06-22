@@ -59,6 +59,11 @@ jobs:
 
       - name: Run tests
         env:
+          # CI runs against a Postgres service, which the config's fail-closed
+          # secret check treats as production. Mark this as a test environment
+          # so placeholder secrets are tolerated here while real deployments
+          # still refuse to boot with them.
+          ALADDIN_ENV: test
           DATABASE_URL: postgresql://postgres:test@localhost:5432/test_db
           SECRET_KEY: test-secret-key-for-ci
           MONGODB_URL: mongodb://localhost:27017/test
