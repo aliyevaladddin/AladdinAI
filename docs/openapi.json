@@ -13,7 +13,7 @@
       "name": "Apache 2.0",
       "url": "https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE"
     },
-    "version": "2.1.5"
+    "version": "2.1.8"
   },
   "paths": {
     "/api/auth/register": {
@@ -2455,6 +2455,102 @@
         ]
       }
     },
+    "/api/channels/messaging/{channel_id}": {
+      "patch": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "Update Channel",
+        "description": "Change which agent answers on this channel.\n\nThe agent must belong to the same user \u2014 otherwise a tenant could point\ntheir channel at someone else's agent. Passing agent_id=null detaches the\nchannel (it then falls back to the router/default at dispatch time).",
+        "operationId": "update_channel_api_channels_messaging__channel_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Channel Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessagingChannelUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagingChannelResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "Delete Channel",
+        "operationId": "delete_channel_api_channels_messaging__channel_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Channel Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/channels/messaging/{channel_id}/test": {
       "post": {
         "tags": [
@@ -2486,46 +2582,6 @@
                 "schema": {}
               }
             }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/channels/messaging/{channel_id}": {
-      "delete": {
-        "tags": [
-          "channels"
-        ],
-        "summary": "Delete Channel",
-        "operationId": "delete_channel_api_channels_messaging__channel_id__delete",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "channel_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Channel Id"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -2876,6 +2932,64 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/channels/email/{account_id}/agent": {
+      "patch": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "Update Email Agent",
+        "description": "Bind or detach an agent from an email account.\n\nThe agent must belong to the same user. Pass agent_id=null to detach.",
+        "operationId": "update_email_agent_api_channels_email__account_id__agent_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailAgentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailAccountResponse"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -7294,6 +7408,17 @@
             "type": "string",
             "title": "Status"
           },
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          },
           "last_synced_at": {
             "anyOf": [
               {
@@ -7318,6 +7443,7 @@
           "provider",
           "email",
           "status",
+          "agent_id",
           "last_synced_at",
           "created_at"
         ],
@@ -7394,6 +7520,24 @@
         },
         "type": "object",
         "title": "EmailAccountUpdate"
+      },
+      "EmailAgentUpdate": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          }
+        },
+        "type": "object",
+        "title": "EmailAgentUpdate",
+        "description": "Lightweight PATCH \u2014 only updates the agent binding on an email account."
       },
       "ExtractionUpdate": {
         "properties": {
@@ -7776,6 +7920,23 @@
           "created_at"
         ],
         "title": "MessagingChannelResponse"
+      },
+      "MessagingChannelUpdate": {
+        "properties": {
+          "agent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Id"
+          }
+        },
+        "type": "object",
+        "title": "MessagingChannelUpdate"
       },
       "MongoCreate": {
         "properties": {

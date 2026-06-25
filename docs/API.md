@@ -24,7 +24,7 @@
     Exceeding a limit returns HTTP 429 with a `Retry-After` header.
     
 
-## Version: 2.1.5
+## Version: 2.1.8
 
 ### Terms of service
 https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE
@@ -1328,12 +1328,20 @@ Create Channel
 | --- | --- |
 | OAuth2PasswordBearer | |
 
-### /api/channels/messaging/{channel_id}/test
+### /api/channels/messaging/{channel_id}
 
-#### POST
+#### PATCH
 ##### Summary:
 
-Test Channel
+Update Channel
+
+##### Description:
+
+Change which agent answers on this channel.
+
+The agent must belong to the same user — otherwise a tenant could point
+their channel at someone else's agent. Passing agent_id=null detaches the
+channel (it then falls back to the router/default at dispatch time).
 
 ##### Parameters
 
@@ -1354,8 +1362,6 @@ Test Channel
 | --- | --- |
 | OAuth2PasswordBearer | |
 
-### /api/channels/messaging/{channel_id}
-
 #### DELETE
 ##### Summary:
 
@@ -1372,6 +1378,32 @@ Delete Channel
 | Code | Description |
 | ---- | ----------- |
 | 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/channels/messaging/{channel_id}/test
+
+#### POST
+##### Summary:
+
+Test Channel
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| channel_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
 | 422 | Validation Error |
 
 ##### Security
@@ -1572,6 +1604,38 @@ Delete Email
 | Code | Description |
 | ---- | ----------- |
 | 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/channels/email/{account_id}/agent
+
+#### PATCH
+##### Summary:
+
+Update Email Agent
+
+##### Description:
+
+Bind or detach an agent from an email account.
+
+The agent must belong to the same user. Pass agent_id=null to detach.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| account_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
 | 422 | Validation Error |
 
 ##### Security
@@ -3526,6 +3590,7 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | provider | string |  | Yes |
 | email | string |  | Yes |
 | status | string |  | Yes |
+| agent_id |  |  | Yes |
 | last_synced_at |  |  | Yes |
 | created_at | dateTime |  | Yes |
 
@@ -3539,6 +3604,14 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | smtp_host |  |  | No |
 | smtp_port |  |  | No |
 | password |  |  | No |
+
+#### EmailAgentUpdate
+
+Lightweight PATCH — only updates the agent binding on an email account.
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| agent_id |  |  | No |
 
 #### ExtractionUpdate
 
@@ -3642,6 +3715,12 @@ One row in the dashboard marketplace — read straight from a YAML manifest.
 | agent_id |  |  | Yes |
 | status | string |  | Yes |
 | created_at | dateTime |  | Yes |
+
+#### MessagingChannelUpdate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| agent_id |  |  | No |
 
 #### MongoCreate
 
