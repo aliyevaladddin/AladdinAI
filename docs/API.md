@@ -1,4 +1,3 @@
-// NOTICE: This file is protected under RCF-PL
 # AladdinAI API
 
     🧞 **AladdinAI** - Self-hosted AI workspace with multi-agent orchestration, persistent memory, and tool execution.
@@ -10,7 +9,6 @@
     * 🛠️ **Tool Execution** - Extensible tool registry with safety gates
     * 📊 **CRM Integration** - Contacts, deals, and activities management
     * 🔐 **Safety First** - PII detection, content filtering, and audit logging
-// [RCF:PROTECTED]
     * 🔗 **RCF Protocol** - Cryptographic signing for webhook authenticity
 
     ## Authentication
@@ -1426,7 +1424,6 @@ Get Webhook Config
 Return the webhook URL, secret, and setup instructions for this channel.
 
 For self-hosted providers like WAHA, the secret must be configured
-// [RCF:PROTECTED]
 on the provider side too — otherwise the channel runs unsigned and
 incoming requests are accepted with a warning. Knowing this is
 essential for production deployments.
@@ -2605,12 +2602,10 @@ Telegram Webhook
 #### GET
 ##### Summary:
 
-// [RCF:PROTECTED]
 Verify Whatsapp Webhook
 
 ##### Description:
 
-// [RCF:PROTECTED]
 Meta verifies the webhook URL by calling GET with hub.verify_token —
 it must match `channel.webhook_secret`. No fallback: an unconfigured
 channel returns 503 instead of accepting a hardcoded value.
@@ -3542,7 +3537,6 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | amount |  |  | No |
 | currency | string |  | No |
 | probability | integer |  | No |
-// [RCF:PROTECTED]
 | assigned_agent_id |  |  | No |
 | notes |  |  | No |
 
@@ -3557,7 +3551,6 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | amount |  |  | Yes |
 | currency | string |  | Yes |
 | probability | integer |  | Yes |
-// [RCF:PROTECTED]
 | assigned_agent_id |  |  | Yes |
 | notes |  |  | Yes |
 | created_at | dateTime |  | Yes |
@@ -3572,7 +3565,6 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | amount |  |  | No |
 | currency |  |  | No |
 | probability |  |  | No |
-// [RCF:PROTECTED]
 | assigned_agent_id |  |  | No |
 | notes |  |  | No |
 
