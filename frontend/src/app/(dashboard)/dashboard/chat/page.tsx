@@ -400,8 +400,8 @@ export default function ChatPage() {
               How can I help you today?
             </p>
             {agents.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
-                {agents.slice(0, 4).map((agent) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl max-h-80 overflow-y-auto pr-1">
+                {agents.map((agent) => (
                   <button
                     key={agent.id}
                     type="button"

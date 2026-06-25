@@ -51,9 +51,8 @@ fix-stale-containers.sql
 .aider.input.history
 .aider.messages.jsonl
 .aider.prompts/
-.claude/
-.claude/worktrees/*
-.claude/experiments/*
+# .claude/ is local-only — fully ignored at any depth.
+**/.claude/
 claude-proxy-config.yaml
 session-ses_1ada.md
 test_bot_trigger.py

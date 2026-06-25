@@ -14,18 +14,23 @@ import {
 interface EmailAccount {
   id: number; provider: string; email: string;
   status: string; last_synced_at: string | null;
+  agent_id: number | null;
 }
 interface MessagingChannel {
   id: number; type: string; name: string;
   agent_id: number | null; status: string;
+}
+interface Agent {
+  id: number; name: string; role: string; model: string;
 }
 
 const CHANNEL_TYPES = ["telegram", "whatsapp", "whatsapp_waha", "sms"];
 
 /* ── Page ────────────────────────────────────────────────────────── */
 export default function ChannelsPage() {
-  const [emails,   setEmails]   = useState<EmailAccount[]>([]);
+  const [emails, setEmails] = useState<EmailAccount[]>([]);
   const [channels, setChannels] = useState<MessagingChannel[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
 
   // Email form
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -46,6 +51,7 @@ export default function ChannelsPage() {
     type: "telegram", name: "", bot_token: "", access_token: "",
     phone_number_id: "", twilio_sid: "", twilio_token: "", twilio_phone: "",
     waha_url: "", waha_session: "default", waha_api_key: "",
+    agent_id: "" as string,   // "" = no agent bound; otherwise the agent id
   });
 
   const [qrModal, setQrModal] = useState<{ open: boolean; image: string | null; loading: boolean, error: string | null }>({ open: false, image: null, loading: false, error: null });
@@ -60,13 +66,14 @@ export default function ChannelsPage() {
   }>({ open: false, loading: false, channel: null, data: null, error: null });
 
   // Loading states per id
-  const [testing,  setTesting]  = useState<Record<number, boolean>>({});
-  const [syncing,  setSyncing]  = useState<Record<number, boolean>>({});
-  const [saving,   setSaving]   = useState(false);
+  const [testing, setTesting] = useState<Record<number, boolean>>({});
+  const [syncing, setSyncing] = useState<Record<number, boolean>>({});
+  const [saving, setSaving] = useState(false);
 
-  const loadEmails   = () => api.get<EmailAccount[]>("/channels/email").then(setEmails);
+  const loadEmails = () => api.get<EmailAccount[]>("/channels/email").then(setEmails);
   const loadChannels = () => api.get<MessagingChannel[]>("/channels/messaging").then(setChannels);
-  useEffect(() => { loadEmails(); loadChannels(); }, []);
+  const loadAgents = () => api.get<Agent[]>("/agents").then(setAgents).catch(() => setAgents([]));
+  useEffect(() => { loadEmails(); loadChannels(); loadAgents(); }, []);
 
   const notify = (status: string, message: string) =>
     ["ok", "success", "connected", "syncing"].includes(status)
@@ -95,11 +102,11 @@ export default function ChannelsPage() {
     setSaving(true);
     try {
       const body: Record<string, any> = { email: editEmailForm.email || undefined };
-      if (editEmailForm.imap_host)  body.imap_host  = editEmailForm.imap_host;
-      if (editEmailForm.imap_port)  body.imap_port  = parseInt(editEmailForm.imap_port);
-      if (editEmailForm.smtp_host)  body.smtp_host  = editEmailForm.smtp_host;
-      if (editEmailForm.smtp_port)  body.smtp_port  = parseInt(editEmailForm.smtp_port);
-      if (editEmailForm.password)   body.password   = editEmailForm.password;
+      if (editEmailForm.imap_host) body.imap_host = editEmailForm.imap_host;
+      if (editEmailForm.imap_port) body.imap_port = parseInt(editEmailForm.imap_port);
+      if (editEmailForm.smtp_host) body.smtp_host = editEmailForm.smtp_host;
+      if (editEmailForm.smtp_port) body.smtp_port = parseInt(editEmailForm.smtp_port);
+      if (editEmailForm.password) body.password = editEmailForm.password;
       await api.put(`/channels/email/${id}`, body);
       setEditEmailId(null);
       loadEmails();
@@ -145,9 +152,38 @@ export default function ChannelsPage() {
     if (channelForm.type === "whatsapp") { config.access_token = channelForm.access_token; config.phone_number_id = channelForm.phone_number_id; }
     if (channelForm.type === "whatsapp_waha") { config.waha_url = channelForm.waha_url; config.waha_session = channelForm.waha_session; config.waha_api_key = channelForm.waha_api_key; }
     if (channelForm.type === "sms") { config.twilio_sid = channelForm.twilio_sid; config.twilio_token = channelForm.twilio_token; config.twilio_phone = channelForm.twilio_phone; }
-    await api.post("/channels/messaging", { type: channelForm.type, name: channelForm.name, config });
+    await api.post("/channels/messaging", {
+      type: channelForm.type,
+      name: channelForm.name,
+      config,
+      agent_id: channelForm.agent_id ? Number(channelForm.agent_id) : null,
+    });
     setShowChannelForm(false);
     loadChannels();
+  };
+
+  /* Change which agent answers on an existing channel (PATCH). */
+  const handleChangeAgent = async (channelId: number, agentId: number | null) => {
+    try {
+      await api.patch(`/channels/messaging/${channelId}`, { agent_id: agentId });
+      setChannels((prev) => prev.map((c) => (c.id === channelId ? { ...c, agent_id: agentId } : c)));
+      toast.success("Agent updated");
+    } catch {
+      toast.error("Failed to update agent");
+      loadChannels();
+    }
+  };
+
+  /* Change which agent handles an email account. */
+  const handleChangeEmailAgent = async (accountId: number, agentId: number | null) => {
+    try {
+      await api.patch(`/channels/email/${accountId}/agent`, { agent_id: agentId });
+      setEmails((prev) => prev.map((e) => (e.id === accountId ? { ...e, agent_id: agentId } : e)));
+      toast.success("Agent updated");
+    } catch {
+      toast.error("Failed to update agent");
+      loadEmails();
+    }
   };
 
   const handleTestChannel = async (id: number) => {
@@ -195,7 +231,7 @@ export default function ChannelsPage() {
   };
 
   const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard?.writeText(text).catch(() => {});
+    navigator.clipboard?.writeText(text).catch(() => { });
     toast.success(`${label} copied`);
   };
 
@@ -209,7 +245,7 @@ export default function ChannelsPage() {
   const copyWebhookUrl = (c: MessagingChannel) => {
     const base = window.location.origin.replace("3000", "8000");
     const url = `${base}/api/webhooks/${c.type}/${c.id}`;
-    navigator.clipboard?.writeText(url).catch(() => {});
+    navigator.clipboard?.writeText(url).catch(() => { });
     toast.success("Webhook URL copied", { description: url });
   };
 
@@ -308,6 +344,18 @@ export default function ChannelsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Agent selector */}
+                      <select
+                        value={acc.agent_id ?? ""}
+                        onChange={(e) => handleChangeEmailAgent(acc.id, e.target.value ? Number(e.target.value) : null)}
+                        className="input text-xs py-1 px-2 h-7 rounded-lg min-w-[120px] max-w-[160px]"
+                        title="Which agent handles this email account"
+                      >
+                        <option value="">No agent</option>
+                        {agents.map((a) => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
                       <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${acc.status === "connected" ? "text-green-400 bg-green-500/10 border-green-500/20" : "border-[var(--color-border)] text-[var(--color-fg-muted)]"}`}>
                         {acc.status}
                       </span>
@@ -481,9 +529,21 @@ export default function ChannelsPage() {
                 <div key={c.id} className="px-4 py-3 flex items-center gap-3" style={{ background: "var(--color-surface-1)" }}>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">{c.name}</p>
-                    <p className="text-xs mt-0.5 capitalize" style={{ color: "var(--color-fg-muted)" }}>{c.type}</p>
+                    <p className="text-xs mt-0.5 capitalize" style={{ color: "var(--color-fg-muted)" }}>{c.type.replace("_", " ")}</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Agent selector */}
+                    <select
+                      value={c.agent_id ?? ""}
+                      onChange={(e) => handleChangeAgent(c.id, e.target.value ? Number(e.target.value) : null)}
+                      className="input text-xs py-1 px-2 h-7 rounded-lg min-w-[120px] max-w-[160px]"
+                      title="Which agent handles this channel"
+                    >
+                      <option value="">No agent</option>
+                      {agents.map((a) => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
                     <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${c.status === "connected" ? "text-green-400 bg-green-500/10 border-green-500/20" : "border-[var(--color-border)] text-[var(--color-fg-muted)]"}`}>
                       {c.status}
                     </span>
@@ -610,7 +670,7 @@ export default function ChannelsPage() {
             <div className="text-center space-y-4">
               <h3 className="text-lg font-bold">Scan to Connect</h3>
               <p className="text-xs" style={{ color: "var(--color-fg-muted)" }}>Open WhatsApp on your phone and scan this QR code to link the device.</p>
-              
+
               <div className="flex items-center justify-center p-4 bg-white rounded-xl min-h-[200px]">
                 {qrModal.loading ? (
                   <Loader2 className="animate-spin text-black" />

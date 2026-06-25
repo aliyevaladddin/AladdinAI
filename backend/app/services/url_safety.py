@@ -26,6 +26,10 @@ from fastapi import HTTPException
 
 _ALLOWED_SCHEMES = {"http", "https"}
 _ALLOW_LOCALHOST = os.getenv("ALLOW_LOCALHOST_URLS", "false").lower() == "true"
+# Allows private-network addresses (10.x, 172.16.x, 192.168.x) — useful when
+# WAHA / other self-hosted services run in a local Docker / OrbStack network.
+# Never enable in production.
+_ALLOW_PRIVATE = os.getenv("ALLOW_PRIVATE_URLS", "false").lower() == "true"
 if _ALLOW_LOCALHOST:
     import warnings
     warnings.warn(
@@ -33,11 +37,23 @@ if _ALLOW_LOCALHOST:
         "Never set this in production.",
         stacklevel=1,
     )
+if _ALLOW_PRIVATE:
+    import warnings
+    warnings.warn(
+        "ALLOW_PRIVATE_URLS=true — SSRF private-network protection is DISABLED. "
+        "Never set this in production.",
+        stacklevel=1,
+    )
 
 
 def _is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    # In development mode, allow localhost/loopback and private network addresses
-    if _ALLOW_LOCALHOST and (ip.is_loopback or ip.is_private):
+    # Dev overrides
+    if _ALLOW_LOCALHOST and ip.is_loopback:
+        return False
+    if _ALLOW_PRIVATE and ip.is_private:
+        return False
+    # Also cover the combined flag
+    if _ALLOW_LOCALHOST and ip.is_private:
         return False
 
     return (
