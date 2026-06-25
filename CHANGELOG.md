@@ -36,6 +36,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Env-driven CORS, IP rate limiting, lifespan, secret validation ([e8b6d9b](https://github.com/aliyevaladddin/AladdinAI/commit/e8b6d9b2f417d0fa629d29560d060dbfc88408fc))
 
+- Implement dynamic channel agent binding and UI selection (#295) ([9bae922](https://github.com/aliyevaladddin/AladdinAI/commit/9bae922da768fed537cc3bddb900409740a1c80f))
+
 
 ### Testing
 
