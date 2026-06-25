@@ -4,12 +4,12 @@
  * These mirror the backend shapes (see endpoint spec in this folder's README).
  */
 
-// [RCF:PROTECTED]
+
 export type TerminalProviderType = "ttyd" | "wetty" | "guacamole" | "sshwifty" | "custom";
-// [RCF:PROTECTED]
+
 export type TerminalProviderStatus = "running" | "stopped" | "error" | "installing";
 
-// [RCF:PROTECTED]
+
 export interface InstalledProvider {
   id: number;
   /** Stable slug — matches marketplace id for built-ins, or user-given slug for custom. */
@@ -29,7 +29,7 @@ export interface InstalledProvider {
   error?: string;
 }
 
-// [RCF:PROTECTED]
+
 export interface InstallStep {
   key: "pull" | "create" | "start" | "healthcheck";
   label: string;
@@ -37,7 +37,7 @@ export interface InstallStep {
   detail?: string;
 }
 
-// [RCF:PROTECTED]
+
 export interface CustomProviderDraft {
   name: string;
   image: string;

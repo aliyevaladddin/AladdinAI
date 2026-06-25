@@ -3,19 +3,19 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { 
-  MessageSquare, 
-  Zap, 
-  ShieldAlert, 
-  ShieldCheck, 
-  Clock, 
-  Mail, 
-  Phone, 
+import {
+  MessageSquare,
+  Zap,
+  ShieldAlert,
+  ShieldCheck,
+  Clock,
+  Mail,
+  Phone,
   FileText,
   ChevronRight
 } from "lucide-react";
 
-// [RCF:PROTECTED]
+
 interface ActivityEvent {
   id: string;
   type: "task" | "action" | "gate" | "trigger";
@@ -41,12 +41,12 @@ const STATUS_COLORS: Record<string, string> = {
   trigger: "text-purple-400 bg-purple-500/10 border-purple-500/20",
 };
 
-// [RCF:PROTECTED]
+
 export function AgentActivityTab({ agentId }: { agentId: number }) {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
-// [RCF:PROTECTED]
+
   const load = async () => {
     setLoading(true);
     try {
@@ -74,13 +74,13 @@ export function AgentActivityTab({ agentId }: { agentId: number }) {
     );
   }
 
-// [RCF:PROTECTED]
+
   const formatTime = (ts: string) => {
     const d = new Date(ts);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-// [RCF:PROTECTED]
+
   const formatDate = (ts: string) => {
     const d = new Date(ts);
     return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -97,11 +97,11 @@ export function AgentActivityTab({ agentId }: { agentId: number }) {
         {events.map((event, idx) => {
           const Icon = TYPE_ICONS[event.type] || MessageSquare;
           const isGateBlock = event.type === "gate" && event.status === "block";
-          const colorClass = isGateBlock 
-            ? STATUS_COLORS.gate_block 
-            : event.type === "gate" 
-                ? STATUS_COLORS.gate_allow 
-                : STATUS_COLORS[event.type];
+          const colorClass = isGateBlock
+            ? STATUS_COLORS.gate_block
+            : event.type === "gate"
+              ? STATUS_COLORS.gate_allow
+              : STATUS_COLORS[event.type];
 
           return (
             <div key={event.id} className="relative pl-12 group">
@@ -136,8 +136,8 @@ export function AgentActivityTab({ agentId }: { agentId: number }) {
                     {Object.entries(event.meta).map(([key, val]) => (
                       val && (
                         <div key={key} className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-2 border border-border/30">
-                           <span className="text-[9px] uppercase font-bold text-muted-foreground/60">{key}:</span>
-                           <span className="text-[10px] font-mono text-muted-foreground">{String(val)}</span>
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground/60">{key}:</span>
+                          <span className="text-[10px] font-mono text-muted-foreground">{String(val)}</span>
                         </div>
                       )
                     ))}
@@ -153,7 +153,7 @@ export function AgentActivityTab({ agentId }: { agentId: number }) {
 }
 
 // Helper to keep Activity icon available
-// [RCF:PROTECTED]
+
 function Activity({ size, className }: { size?: number, className?: string }) {
-    return <Zap size={size} className={className} />
+  return <Zap size={size} className={className} />
 }

@@ -6,7 +6,7 @@ import { X, Plus, Trash2, Terminal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CustomProviderDraft } from "./types";
 
-// [RCF:PROTECTED]
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -29,7 +29,7 @@ const PLACEHOLDER_REGEX = /\{(vm_id|host|port|token)\}/g;
  * Highlights {vm_id}, {host}, {port}, {token} placeholders inside a string.
  * Returns a React fragment of mixed text + colored chips.
  */
-// [RCF:PROTECTED]
+
 function HighlightedTemplate({ value }: { value: string }) {
   const parts: Array<{ kind: "text" | "token"; text: string }> = [];
   let lastIndex = 0;
@@ -70,7 +70,7 @@ function HighlightedTemplate({ value }: { value: string }) {
   );
 }
 
-// [RCF:PROTECTED]
+
 export function CustomProviderModal({ open, onClose, onSubmit }: Props) {
   const titleId = useId();
   const [draft, setDraft] = useState<CustomProviderDraft>(EMPTY);
@@ -92,7 +92,7 @@ export function CustomProviderModal({ open, onClose, onSubmit }: Props) {
   // ESC to close.
   useEffect(() => {
     if (!open) return;
-// [RCF:PROTECTED]
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
@@ -117,7 +117,7 @@ export function CustomProviderModal({ open, onClose, onSubmit }: Props) {
 
   if (!open) return null;
 
-// [RCF:PROTECTED]
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
@@ -393,7 +393,7 @@ export function CustomProviderModal({ open, onClose, onSubmit }: Props) {
   );
 }
 
-// [RCF:PROTECTED]
+
 function Field({
   label,
   hint,

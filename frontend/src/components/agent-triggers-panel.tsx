@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface Trigger {
   id: number;
   name: string;
@@ -22,19 +22,19 @@ interface Trigger {
   created_at: string;
 }
 
-// [RCF:PROTECTED]
+
 interface AgentRef {
   id: number;
   name: string;
 }
 
-// [RCF:PROTECTED]
+
 interface Preset {
   id: string;
   cron: string;
 }
 
-// [RCF:PROTECTED]
+
 interface TriggerTemplate {
   id: string;
   name: string;
@@ -53,7 +53,7 @@ const PRESET_LABELS: Record<string, string> = {
   every_day_18: "Every day at 18:00 UTC",
 };
 
-// [RCF:PROTECTED]
+
 interface DraftState {
   name: string;
   schedule_kind: "preset" | "cron";
@@ -74,7 +74,7 @@ const EMPTY_DRAFT: DraftState = {
   enabled: true,
 };
 
-// [RCF:PROTECTED]
+
 export function AgentTriggersPanel() {
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [agents, setAgents] = useState<AgentRef[]>([]);
@@ -87,7 +87,7 @@ export function AgentTriggersPanel() {
   const [preview, setPreview] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
 
-// [RCF:PROTECTED]
+
   const load = async () => {
     setLoading(true);
     try {
@@ -113,14 +113,14 @@ export function AgentTriggersPanel() {
     load();
   }, []);
 
-// [RCF:PROTECTED]
+
   const startNew = () => {
     setDraft(EMPTY_DRAFT);
     setEditingId("new");
     setPreview(null);
   };
 
-// [RCF:PROTECTED]
+
   const startFromTemplate = (tmpl: TriggerTemplate) => {
     setDraft({
       name: tmpl.name,
@@ -136,7 +136,7 @@ export function AgentTriggersPanel() {
     setShowTemplates(false);
   };
 
-// [RCF:PROTECTED]
+
   const startEdit = (t: Trigger) => {
     setDraft({
       name: t.name,
@@ -151,14 +151,14 @@ export function AgentTriggersPanel() {
     setPreview(null);
   };
 
-// [RCF:PROTECTED]
+
   const cancelEdit = () => {
     setEditingId(null);
     setDraft(EMPTY_DRAFT);
     setPreview(null);
   };
 
-// [RCF:PROTECTED]
+
   const previewCron = async () => {
     if (draft.schedule_kind !== "cron") return;
     try {
@@ -173,7 +173,7 @@ export function AgentTriggersPanel() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const save = async () => {
     if (!draft.name.trim()) return toast.error("Name is required");
     if (!draft.task_template.trim()) return toast.error("Task is required");
@@ -206,7 +206,7 @@ export function AgentTriggersPanel() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const toggleEnabled = async (t: Trigger) => {
     setBusyId(t.id);
     try {
@@ -220,7 +220,7 @@ export function AgentTriggersPanel() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const remove = async (t: Trigger) => {
     if (!confirm(`Delete trigger "${t.name}"?`)) return;
     setBusyId(t.id);
@@ -235,7 +235,7 @@ export function AgentTriggersPanel() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const runNow = async (t: Trigger) => {
     setBusyId(t.id);
     try {
@@ -251,7 +251,7 @@ export function AgentTriggersPanel() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const toggleAgent = (id: number) => {
     setDraft((d) => ({
       ...d,
@@ -261,7 +261,7 @@ export function AgentTriggersPanel() {
     }));
   };
 
-// [RCF:PROTECTED]
+
   const agentName = (id: number) =>
     agents.find((a) => a.id === id)?.name ?? `#${id}`;
 
@@ -337,11 +337,10 @@ export function AgentTriggersPanel() {
                   <button
                     key={k}
                     type="button"
-                    className={`px-2 py-0.5 rounded ${
-                      draft.schedule_kind === k
+                    className={`px-2 py-0.5 rounded ${draft.schedule_kind === k
                         ? "bg-foreground text-background"
                         : "bg-muted text-muted-foreground"
-                    }`}
+                      }`}
                     onClick={() => setDraft({ ...draft, schedule_kind: k })}
                   >
                     {k}
@@ -405,11 +404,10 @@ export function AgentTriggersPanel() {
                     <button
                       key={a.id}
                       type="button"
-                      className={`text-xs px-2 py-1 rounded ${
-                        on
+                      className={`text-xs px-2 py-1 rounded ${on
                           ? "bg-blue-500/20 text-blue-400"
                           : "bg-muted text-muted-foreground"
-                      }`}
+                        }`}
                       onClick={() => toggleAgent(a.id)}
                     >
                       {a.name}
@@ -469,11 +467,10 @@ export function AgentTriggersPanel() {
                 <div className="flex items-center gap-2 min-w-0">
                   <p className="font-medium truncate">{t.name}</p>
                   <span
-                    className={`text-[10px] px-1.5 rounded ${
-                      t.enabled
+                    className={`text-[10px] px-1.5 rounded ${t.enabled
                         ? "bg-green-500/20 text-green-400"
                         : "bg-zinc-500/20 text-zinc-400"
-                    }`}
+                      }`}
                   >
                     {t.enabled ? "enabled" : "disabled"}
                   </span>

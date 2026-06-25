@@ -107,7 +107,7 @@ Format:
   👍 {score} | 💬 {comments} | {url}
 
 💡 Key Takeaway:
-// [RCF:PROTECTED]
+
 [1-2 sentence summary of the most important community signal this week]
 
 🤖 AladdinAI Monitor Agent

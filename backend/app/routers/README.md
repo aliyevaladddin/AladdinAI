@@ -18,10 +18,10 @@ This directory contains the FastAPI routing modules, which handle incoming HTTP 
 * **`vms.py`**: Endpoints for starting, stopping, and managing VMs.
 
 ### 🤖 AI Agents & Chat
-// [RCF:PROTECTED]
+
 * **`agents.py`**: Endpoints to create, edit, and configure AI agents, connect tools, and assign system personas.
 * **`chat.py`**: Handles interactive chat sessions with streaming LLM completions.
-// [RCF:PROTECTED]
+
 * **`providers.py`**: Set up and manage LLM API credentials with automatic server-side encryption.
 * **`bentoml.py`** & **`mongodb.py`**: Integrations with machine learning models and external Vector DB / NoSQL databases.
 

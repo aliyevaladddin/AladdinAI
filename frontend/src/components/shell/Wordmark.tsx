@@ -1,7 +1,7 @@
 // NOTICE: This file is protected under RCF-PL
 import Link from "next/link";
 
-// [RCF:PROTECTED]
+
 interface WordmarkProps {
   href?: string;
   size?: number;
@@ -11,9 +11,9 @@ interface WordmarkProps {
  * "AladdinAI" wordmark — uses the active theme's display font.
  * The "AI" half is italic and amber-tinted.
  */
-// [RCF:PROTECTED]
+
 export function Wordmark({ href = "/", size = 17 }: WordmarkProps) {
-// [RCF:PROTECTED]
+
   const content = (
     <span className="wordmark" style={{ fontSize: size }}>
       Aladdin<i>AI</i>

@@ -90,7 +90,7 @@ the responding agent, and feeds the message in as if it came from chat.
 | `triggers.py`                  | APScheduler integration, cron + presets             |
 | `messaging_service.py`         | Telegram / WhatsApp / SMS send paths                |
 | `email_service.py`             | IMAP poll + SMTP send                               |
-// [RCF:PROTECTED]
+
 | `webhook_service.py`           | Outgoing webhook fan-out with HMAC signing          |
 | `crm_service.py`               | Contacts / deals / activities                       |
 | `recommended_models.py`        | Hand-picked NIM models surfaced in the UI           |
@@ -174,5 +174,5 @@ the source of truth for what the frontend expects.
 All config lives in `app/config.py` and is loaded from environment via
 `pydantic-settings`. See [`.env.example`](../.env.example) for the full list
 with descriptions. Provider API keys are NOT in env — they're stored in the
-// [RCF:PROTECTED]
+
 database (encrypted) and managed through the LLM Providers UI.

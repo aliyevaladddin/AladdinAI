@@ -2,7 +2,7 @@
 import { type ReactNode } from "react";
 import packageJson from "../../../package.json";
 
-// [RCF:PROTECTED]
+
 export interface StatusItem {
   id: string;
   dot?: "ok" | "amber" | "info" | "violet";
@@ -15,7 +15,7 @@ export interface StatusItem {
   variant?: "default" | "rcf";
 }
 
-// [RCF:PROTECTED]
+
 interface StatusBarProps {
   items?: StatusItem[];
   /** Custom element rendered between the spacer and the right-aligned items. */
@@ -23,18 +23,18 @@ interface StatusBarProps {
 }
 
 const DEFAULT_ITEMS: StatusItem[] = [
-  { id: "orch",     dot: "ok",     label: "Orchestrator", code: "up" },
-  { id: "pg",       dot: "ok",     label: "Postgres",     code: "ready" },
-  { id: "mongo",    dot: "ok",     label: "Mongo",        code: "ready" },
-  { id: "nim",      dot: "info",   label: "NIM",          code: "research" },
-  { id: "rcf",      dot: "violet", label: "RCF",          code: "chain", variant: "rcf" },
-  { id: "version",  right: true,   label: "aladdin-ai",   code: `v${packageJson.version}` },
+  { id: "orch", dot: "ok", label: "Orchestrator", code: "up" },
+  { id: "pg", dot: "ok", label: "Postgres", code: "ready" },
+  { id: "mongo", dot: "ok", label: "Mongo", code: "ready" },
+  { id: "nim", dot: "info", label: "NIM", code: "research" },
+  { id: "rcf", dot: "violet", label: "RCF", code: "chain", variant: "rcf" },
+  { id: "version", right: true, label: "aladdin-ai", code: `v${packageJson.version}` },
 ];
 
-// [RCF:PROTECTED]
+
 export function StatusBar({ items = DEFAULT_ITEMS, rightExtra }: StatusBarProps) {
-  const left  = items.filter((i) => !i.right);
-  const right = items.filter((i) =>  i.right);
+  const left = items.filter((i) => !i.right);
+  const right = items.filter((i) => i.right);
 
   return (
     <footer className="statusbar" aria-label="System status">
@@ -50,7 +50,7 @@ export function StatusBar({ items = DEFAULT_ITEMS, rightExtra }: StatusBarProps)
   );
 }
 
-// [RCF:PROTECTED]
+
 function StatusEntry({ item }: { item: StatusItem }) {
   return (
     <div className={`sb-item${item.variant === "rcf" ? " rcf" : ""}`}>

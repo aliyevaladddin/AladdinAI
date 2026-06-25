@@ -11,7 +11,7 @@ Each guide is self-contained and assumes a working local dev setup
 
 | Guide | What you will learn |
 |---|---|
-// [RCF:PROTECTED]
+
 | [Agent Development](AGENT_DEVELOPMENT.md) | Create a custom AI agent — system prompt, model config, tool assignment, safety gates |
 | [Tool Development](TOOL_DEVELOPMENT.md) | Build and register a new tool that agents can call — function schema, execution, error handling |
 | [Agent Delegation](AGENT_DELEGATION.md) | Set up multi-agent coordination — delegate tasks from a root agent to specialised sub-agents |

@@ -46,16 +46,16 @@ Process max **20 emails per run** to avoid timeouts.
 
 ### Phase 2: CLASSIFY
 
-// [RCF:PROTECTED]
+
 For each email, assign:
 
 **Category:**
-// [RCF:PROTECTED]
+
 | Category | Trigger signals |
 |----------|----------------|
 | `partnership` | "partner", "collaboration", "integration", "business proposal" |
 | `support` | "bug", "error", "not working", "help", "issue", "broken" |
-// [RCF:PROTECTED]
+
 | `demo_request` | "demo", "trial", "try", "access", "sign up", "waitlist" |
 | `investor` | "invest", "funding", "round", "due diligence", "term sheet" |
 | `press` | "journalist", "article", "interview", "media", "publication" |

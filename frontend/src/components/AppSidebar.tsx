@@ -21,20 +21,20 @@ type NavItem = {
 };
 
 const mainNav: NavItem[] = [
-  { href: "/dashboard",             label: "Overview",       icon: LayoutDashboard },
-  { href: "/dashboard/comms",       label: "Conversations",  icon: MessageSquare   },
-  { href: "/dashboard/mail",        label: "Mail",           icon: Mailbox         },
-  { href: "/dashboard/agents",      label: "Agents",         icon: Bot             },
-  { href: "/dashboard/automations", label: "Automations",    icon: Zap             },
-  { href: "/dashboard/crm",         label: "CRM",            icon: Users           },
-  { href: "/dashboard/chat",        label: "Playground",     icon: Sparkles        },
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/comms", label: "Conversations", icon: MessageSquare },
+  { href: "/dashboard/mail", label: "Mail", icon: Mailbox },
+  { href: "/dashboard/agents", label: "Agents", icon: Bot },
+  { href: "/dashboard/automations", label: "Automations", icon: Zap },
+  { href: "/dashboard/crm", label: "CRM", icon: Users },
+  { href: "/dashboard/chat", label: "Playground", icon: Sparkles },
 ];
 
-// [RCF:PROTECTED]
+
 export function AppSidebar() {
   const pathname = usePathname();
 
-// [RCF:PROTECTED]
+
   const isActive = (href: string) =>
     href === "/dashboard"
       ? pathname === "/dashboard"

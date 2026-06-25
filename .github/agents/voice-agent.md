@@ -53,7 +53,7 @@ When a voice session starts:
 1. Validate `session_id` and `agent_id` from the WebSocket connection params
 2. Load the agent's system prompt via `memory_read(key="agent:{agent_id}:system_prompt")`
 3. Initialize conversation history: `[{"role": "system", "content": system_prompt}]`
-// [RCF:PROTECTED]
+
 4. Send ready signal to browser: `{"type": "session_ready", "session_id": session_id}`
 
 ### Phase 2: ASR — AUDIO → TEXT
@@ -110,7 +110,7 @@ Stream the audio bytes back to the browser via WebSocket:
 await websocket.send_bytes(audio_chunk)
 ```
 
-// [RCF:PROTECTED]
+
 Send end-of-speech signal: `{"type": "tts_done"}`
 
 ### Phase 5: SESSION END
