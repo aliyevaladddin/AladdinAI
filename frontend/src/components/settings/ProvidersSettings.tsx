@@ -9,7 +9,7 @@ import {
   Unplug, PlugZap, Pencil, Check
 } from "lucide-react";
 
-// [RCF:PROTECTED]
+
 interface Provider {
   id: number;
   name: string;
@@ -18,7 +18,7 @@ interface Provider {
   status: string;
 }
 
-// [RCF:PROTECTED]
+
 interface ConnectResult {
   status: string;
   message?: string;
@@ -36,7 +36,7 @@ const TYPE_LABELS: Record<string, string> = {
   custom: "Custom",
 };
 
-// [RCF:PROTECTED]
+
 export function ProvidersSettings() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -46,11 +46,11 @@ export function ProvidersSettings() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: "", type: "", base_url: "", api_key: "" });
 
-// [RCF:PROTECTED]
+
   const load = () => api.get<Provider[]>("/providers").then(setProviders);
   useEffect(() => { load(); }, []);
 
-// [RCF:PROTECTED]
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/providers", form);
@@ -59,7 +59,7 @@ export function ProvidersSettings() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleSaveEdit = async (id: number) => {
     await api.put(`/providers/${id}`, {
       name: editForm.name,
@@ -71,13 +71,13 @@ export function ProvidersSettings() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const startEdit = (p: Provider) => {
     setEditId(p.id);
     setEditForm({ name: p.name, type: p.type, base_url: p.base_url, api_key: "" });
   };
 
-// [RCF:PROTECTED]
+
   const handleConnect = async (id: number) => {
     setLoading((p) => ({ ...p, [id]: true }));
     setResult((p) => ({ ...p, [id]: { status: "connecting" } }));
@@ -92,7 +92,7 @@ export function ProvidersSettings() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleDisconnect = async (id: number) => {
     setLoading((p) => ({ ...p, [id]: true }));
     try {
@@ -104,7 +104,7 @@ export function ProvidersSettings() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this provider?")) return;
     await api.delete(`/providers/${id}`);
@@ -203,14 +203,13 @@ export function ProvidersSettings() {
                       </div>
                       <div className="text-xs text-[var(--color-fg-subtle)] font-mono truncate mt-0.5">{p.base_url}</div>
                       {res && (
-                        <div className={`mt-1.5 text-xs px-2 py-1 rounded-md w-fit ${
-                          res.status === "connected" ? "bg-[var(--color-success-soft)] text-[var(--color-success)]" :
-                          res.status === "connecting" ? "bg-[var(--color-surface-2)] text-[var(--color-fg-muted)]" :
-                          "bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
-                        }`}>
+                        <div className={`mt-1.5 text-xs px-2 py-1 rounded-md w-fit ${res.status === "connected" ? "bg-[var(--color-success-soft)] text-[var(--color-success)]" :
+                            res.status === "connecting" ? "bg-[var(--color-surface-2)] text-[var(--color-fg-muted)]" :
+                              "bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
+                          }`}>
                           {res.status === "connected" ? `✓ Connected · ${res.count ?? 0} models`
                             : res.status === "connecting" ? "Connecting..."
-                            : `✗ ${res.message}`}
+                              : `✗ ${res.message}`}
                         </div>
                       )}
                     </div>

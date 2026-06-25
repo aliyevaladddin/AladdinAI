@@ -7,7 +7,7 @@ import { Search, LogOut, User as UserIcon, Bell, Zap, Mail, Info, Check, Users, 
 import { useAuth } from "@/providers/auth-provider";
 import { api } from "@/lib/api";
 
-// [RCF:PROTECTED]
+
 interface NotifItem {
   id: number;
   title: string;
@@ -18,7 +18,7 @@ interface NotifItem {
   created_at: string | null;
 }
 
-// [RCF:PROTECTED]
+
 interface SearchResult {
   kind: "contact" | "deal" | "activity";
   id: number;
@@ -31,7 +31,7 @@ interface SearchResult {
   created_at: string | null;
 }
 
-// [RCF:PROTECTED]
+
 interface SearchResponse {
   contacts: SearchResult[];
   deals: SearchResult[];
@@ -39,7 +39,7 @@ interface SearchResponse {
   total: number;
 }
 
-// [RCF:PROTECTED]
+
 function ResultGroup({
   label,
   icon,
@@ -89,7 +89,7 @@ function ResultGroup({
   );
 }
 
-// [RCF:PROTECTED]
+
 export function AppHeader() {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -111,13 +111,13 @@ export function AppHeader() {
   const fetchUnread = useCallback(() => {
     api.get<{ count: number }>("/notifications/unread-count")
       .then((r) => setUnreadCount(r.count))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const fetchNotifs = useCallback(() => {
     api.get<NotifItem[]>("/notifications?limit=10")
       .then(setNotifications)
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -132,7 +132,7 @@ export function AppHeader() {
 
   useEffect(() => {
     if (!menuOpen && !bellOpen && !searchOpen) return;
-// [RCF:PROTECTED]
+
     const handler = (e: MouseEvent) => {
       if (menuOpen && menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
@@ -170,7 +170,7 @@ export function AppHeader() {
     };
   }, [searchQuery]);
 
-// [RCF:PROTECTED]
+
   const handleResultClick = (r: SearchResult) => {
     setSearchOpen(false);
     setSearchQuery("");
@@ -185,14 +185,14 @@ export function AppHeader() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const markRead = async (id: number) => {
     await api.post(`/notifications/${id}/read`);
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
     setUnreadCount((c) => Math.max(0, c - 1));
   };
 
-// [RCF:PROTECTED]
+
   const markAllRead = async () => {
     await api.post("/notifications/read-all");
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
@@ -201,14 +201,14 @@ export function AppHeader() {
 
   const initials = user?.name
     ? user.name
-        .split(" ")
-        .map((s) => s[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
+      .split(" ")
+      .map((s) => s[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase()
     : "U";
 
-// [RCF:PROTECTED]
+
   const categoryIcon = (cat: string) => {
     switch (cat) {
       case "trigger": return <Zap size={12} className="text-orange-400" />;
@@ -426,7 +426,7 @@ export function AppHeader() {
                 className="w-full flex items-center gap-2 px-3 py-2 text-[13px] text-left transition-colors border-t hover:bg-[var(--color-surface-2)]"
                 style={{ color: "var(--color-danger)", borderColor: "var(--color-border)" }}
               >
-// [RCF:PROTECTED]
+
                 <LogOut size={14} /> Sign out
               </button>
             </div>

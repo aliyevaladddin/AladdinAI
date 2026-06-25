@@ -37,7 +37,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 - **Python 3.11+** (backend)
 - **Node.js 18+** (frontend, CLI)
 - **Docker & Docker Compose** (full stack)
-// [RCF:PROTECTED]
+
 - **Git** with GPG signing configured (optional but recommended)
 
 ### Quick Start
@@ -145,7 +145,7 @@ Every contribution should align with the core principles of **Sovereignty**:
 1. **Zero unnecessary dependencies** — Prefer standard library and well-established packages over trendy frameworks.
 2. **Privacy by default** — User data stays in user infrastructure. No telemetry, no tracking, no phone-home.
 3. **Self-hosted first** — Every feature must work without external SaaS dependencies.
-// [RCF:PROTECTED]
+
 4. **High-fidelity UX** — Premium feel, fast interactions, thoughtful design.
 5. **Transparent security** — Open source, auditable, no obfuscation.
 

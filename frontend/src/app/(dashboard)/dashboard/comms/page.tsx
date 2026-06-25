@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface EmailAccount {
   id: number;
   provider: string;
@@ -16,7 +16,7 @@ interface EmailAccount {
   last_synced_at: string | null;
 }
 
-// [RCF:PROTECTED]
+
 interface MessagingChannel {
   id: number;
   type: string;
@@ -25,7 +25,7 @@ interface MessagingChannel {
   status: string;
 }
 
-// [RCF:PROTECTED]
+
 interface InboundMessage {
   id: number;
   contact_id: number;
@@ -34,7 +34,7 @@ interface InboundMessage {
   created_at: string;
 }
 
-// [RCF:PROTECTED]
+
 interface ContactRef {
   id: number;
   name: string;
@@ -65,7 +65,7 @@ export default function CommsPage() {
   const [loading, setLoading] = useState(true);
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
 
-// [RCF:PROTECTED]
+
   const load = async () => {
     setLoading(true);
     try {
@@ -110,13 +110,13 @@ export default function CommsPage() {
     return counts;
   }, [messages]);
 
-// [RCF:PROTECTED]
+
   const notify = (status: string, message: string) =>
     status === "ok" || status === "success" || status === "connected"
       ? toast.success(message)
       : toast.error(message);
 
-// [RCF:PROTECTED]
+
   const handleTestChannel = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(
       `/channels/messaging/${id}/test`
@@ -125,7 +125,7 @@ export default function CommsPage() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleSyncEmail = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(
       `/channels/email/${id}/sync`
@@ -134,7 +134,7 @@ export default function CommsPage() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleTestEmail = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(
       `/channels/email/${id}/test`
@@ -187,17 +187,15 @@ export default function CommsPage() {
                     key={f.id}
                     type="button"
                     onClick={() => setChannelFilter(f.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                      active
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${active
                         ? "bg-foreground text-background border-foreground"
                         : "bg-transparent text-muted-foreground border-border hover:bg-muted"
-                    }`}
+                      }`}
                   >
                     {f.label}
                     <span
-                      className={`ml-1.5 text-[10px] ${
-                        active ? "opacity-80" : "opacity-60"
-                      }`}
+                      className={`ml-1.5 text-[10px] ${active ? "opacity-80" : "opacity-60"
+                        }`}
                     >
                       {count}
                     </span>
@@ -258,11 +256,10 @@ export default function CommsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-xs px-2 py-1 rounded ${
-                        c.status === "connected"
+                      className={`text-xs px-2 py-1 rounded ${c.status === "connected"
                           ? "bg-green-500/20 text-green-400"
                           : "bg-zinc-500/20 text-zinc-400"
-                      }`}
+                        }`}
                     >
                       {c.status}
                     </span>
@@ -298,18 +295,17 @@ export default function CommsPage() {
                       {e.provider.toUpperCase()}
                       {e.last_synced_at
                         ? ` — synced ${new Date(
-                            e.last_synced_at
-                          ).toLocaleString()}`
+                          e.last_synced_at
+                        ).toLocaleString()}`
                         : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-xs px-2 py-1 rounded ${
-                        e.status === "connected"
+                      className={`text-xs px-2 py-1 rounded ${e.status === "connected"
                           ? "bg-green-500/20 text-green-400"
                           : "bg-zinc-500/20 text-zinc-400"
-                      }`}
+                        }`}
                     >
                       {e.status}
                     </span>

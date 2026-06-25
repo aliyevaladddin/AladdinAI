@@ -11,7 +11,7 @@ import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
 import { AgentMemoryPanel } from "@/components/agent-memory-panel";
 import { ChevronRight, Trash2 } from "lucide-react";
 
-// [RCF:PROTECTED]
+
 interface Agent {
   id: number;
   name: string;
@@ -23,7 +23,7 @@ interface Agent {
   status: string;
 }
 
-// [RCF:PROTECTED]
+
 interface Provider {
   id: number;
   name: string;
@@ -48,7 +48,7 @@ export default function AgentsPage() {
   const [openExtraction, setOpenExtraction] = useState<number | null>(null);
   const [openMemory, setOpenMemory] = useState<number | null>(null);
 
-// [RCF:PROTECTED]
+
   const load = async () => {
     setLoading(true);
     try {
@@ -67,11 +67,11 @@ export default function AgentsPage() {
     load();
   }, []);
 
-// [RCF:PROTECTED]
+
   const providerName = (id: number | null) =>
     id ? providers.find((p) => p.id === id)?.name ?? `#${id}` : "—";
 
-// [RCF:PROTECTED]
+
   const handleStart = async (id: number) => {
     setBusyId(id);
     try {
@@ -82,7 +82,7 @@ export default function AgentsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleStop = async (id: number) => {
     setBusyId(id);
     try {
@@ -93,7 +93,7 @@ export default function AgentsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this agent?")) return;
     setBusyId(id);
@@ -143,7 +143,7 @@ export default function AgentsPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <Link 
+                      <Link
                         href={`/dashboard/agents/${a.id}`}
                         className="text-lg font-bold hover:text-accent transition-colors flex items-center gap-2"
                       >
@@ -151,10 +151,9 @@ export default function AgentsPage() {
                         <ChevronRight size={16} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
                       </Link>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-widest border ${
-                          STATUS_COLORS[a.status] ??
+                        className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-widest border ${STATUS_COLORS[a.status] ??
                           "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
-                        }`}
+                          }`}
                       >
                         {a.status}
                       </span>
@@ -168,8 +167,8 @@ export default function AgentsPage() {
                       <span>{providerName(a.llm_provider_id)}</span>
                       {a.port && (
                         <>
-                           <span className="w-1 h-1 rounded-full bg-border" />
-                           <span className="font-mono text-xs">:{a.port}</span>
+                          <span className="w-1 h-1 rounded-full bg-border" />
+                          <span className="font-mono text-xs">:{a.port}</span>
                         </>
                       )}
                     </p>
@@ -200,11 +199,11 @@ export default function AgentsPage() {
                         Start
                       </Button>
                     )}
-                    
+
                     <Link href={`/dashboard/agents/${a.id}`}>
-                        <Button variant="outline" size="sm" className="h-9 px-4">
-                            Configure
-                        </Button>
+                      <Button variant="outline" size="sm" className="h-9 px-4">
+                        Configure
+                      </Button>
                     </Link>
 
                     <Button

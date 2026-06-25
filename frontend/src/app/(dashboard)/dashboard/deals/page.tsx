@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface Deal {
   id: number;
   contact_id: number;
@@ -14,12 +14,12 @@ interface Deal {
   amount: number | null;
   currency: string;
   probability: number;
-// [RCF:PROTECTED]
+
   assigned_agent_id: number | null;
   created_at: string;
 }
 
-// [RCF:PROTECTED]
+
 interface Contact {
   id: number;
   name: string;
@@ -41,14 +41,14 @@ export default function DealsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ contact_id: "", title: "", amount: "", currency: "USD" });
 
-// [RCF:PROTECTED]
+
   const load = () => api.get<Deal[]>("/crm/deals").then(setDeals);
   useEffect(() => {
     load();
     api.get<Contact[]>("/crm/contacts").then(setContacts);
   }, []);
 
-// [RCF:PROTECTED]
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/crm/deals", {
@@ -62,20 +62,20 @@ export default function DealsPage() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleMoveStage = async (dealId: number, stage: string) => {
     await api.put(`/crm/deals/${dealId}/stage?stage=${stage}`);
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this deal?")) return;
     await api.delete(`/crm/deals/${id}`);
     load();
   };
 
-// [RCF:PROTECTED]
+
   const contactName = (id: number) => contacts.find((c) => c.id === id)?.name || `#${id}`;
 
   return (

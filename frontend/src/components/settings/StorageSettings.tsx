@@ -20,7 +20,7 @@ import {
 /* ── Types mirror the backend contract (GET/PUT /settings) ──────────── */
 type StorageBackend = "local" | "mongodb";
 
-// [RCF:PROTECTED]
+
 interface SystemSettings {
   id: number | null; // null → no persisted row yet, defaults are shown
   user_id: number;
@@ -29,7 +29,7 @@ interface SystemSettings {
   updated_at: string;
 }
 
-// [RCF:PROTECTED]
+
 interface BackendOption {
   id: StorageBackend;
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -71,7 +71,7 @@ const BACKENDS: BackendOption[] = [
 ];
 
 /* ── Loading skeleton ───────────────────────────────────────────────── */
-// [RCF:PROTECTED]
+
 function CardSkeleton() {
   return (
     <div
@@ -93,7 +93,7 @@ function CardSkeleton() {
   );
 }
 
-// [RCF:PROTECTED]
+
 export function StorageSettings() {
   const [selected, setSelected] = useState<StorageBackend | null>(null);
   const [persisted, setPersisted] = useState<StorageBackend | null>(null);
@@ -179,7 +179,7 @@ export function StorageSettings() {
   );
 
   // Roving keyboard navigation for the radio group.
-// [RCF:PROTECTED]
+
   const onKeyDown = (e: React.KeyboardEvent, current: StorageBackend) => {
     const order = BACKENDS.map((b) => b.id);
     const idx = order.indexOf(current);
@@ -273,11 +273,10 @@ export function StorageSettings() {
               disabled={!!savingTo && !isSaving}
               onClick={() => handleSelect(opt.id)}
               onKeyDown={(e) => onKeyDown(e, opt.id)}
-              className={`storage-card group/card relative flex flex-col rounded-xl border p-5 text-left outline-none transition-[border-color,background-color,box-shadow,transform] ${
-                isSelected
+              className={`storage-card group/card relative flex flex-col rounded-xl border p-5 text-left outline-none transition-[border-color,background-color,box-shadow,transform] ${isSelected
                   ? "border-[var(--color-accent)]/60 bg-[var(--color-surface-2)] shadow-[0_0_0_3px_var(--color-accent-soft)]"
                   : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-2)]"
-              } focus-visible:ring-3 focus-visible:ring-[var(--color-accent)]/40 disabled:opacity-50 disabled:pointer-events-none`}
+                } focus-visible:ring-3 focus-visible:ring-[var(--color-accent)]/40 disabled:opacity-50 disabled:pointer-events-none`}
               style={{
                 animationDelay: `${i * 45}ms`,
               }}
@@ -285,11 +284,10 @@ export function StorageSettings() {
               {/* Top row: icon + title + radio dot */}
               <div className="flex items-start gap-3">
                 <div
-                  className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors ${
-                    isSelected
+                  className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg transition-colors ${isSelected
                       ? "bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
                       : "bg-[var(--color-surface-2)] text-[var(--color-fg-muted)] group-hover/card:text-[var(--color-fg)]"
-                  }`}
+                    }`}
                 >
                   <Icon size={17} />
                 </div>
@@ -309,16 +307,14 @@ export function StorageSettings() {
                 {/* Radio indicator */}
                 <span
                   aria-hidden="true"
-                  className={`mt-1 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border transition-all duration-200 ${
-                    isSelected
+                  className={`mt-1 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-full border transition-all duration-200 ${isSelected
                       ? "border-[var(--color-accent)] bg-[var(--color-accent)]"
                       : "border-[var(--color-border-strong)] bg-transparent"
-                  }`}
+                    }`}
                 >
                   <span
-                    className={`block rounded-full bg-[var(--color-bg)] transition-all duration-200 ${
-                      isSelected ? "h-1.5 w-1.5" : "h-0 w-0"
-                    }`}
+                    className={`block rounded-full bg-[var(--color-bg)] transition-all duration-200 ${isSelected ? "h-1.5 w-1.5" : "h-0 w-0"
+                      }`}
                   />
                 </span>
               </div>
@@ -382,7 +378,7 @@ export function StorageSettings() {
 }
 
 /* ── Shared header ──────────────────────────────────────────────────── */
-// [RCF:PROTECTED]
+
 function Header() {
   return (
     <div className="flex items-start gap-3">

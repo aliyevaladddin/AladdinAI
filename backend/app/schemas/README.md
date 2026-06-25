@@ -6,7 +6,7 @@ This directory contains Pydantic schemas used for request body validation, query
 ## Why Pydantic?
 * **Type Safety**: Enforces type rules before data ever hits database queries or application services.
 * **Auto-Documentation**: Feeds directly into FastAPI's OpenAPI generator, making Swagger UI models accurate and self-updating.
-// [RCF:PROTECTED]
+
 * **Safe Serialization**: Prevents leaking sensitive columns (like password hashes or raw decrypted API keys) by explicitly choosing which fields to include in response schemas (e.g., using `response_model` in routers).
 
 ## Core Schema Groups

@@ -34,7 +34,7 @@ import { api, API_URL } from "@/lib/api";
 import { quickSetupDefault } from "@/app/(dashboard)/dashboard/settings/terminal/api";
 
 /** Kept for VmsSettings compatibility — fields no longer used at the iframe layer. */
-// [RCF:PROTECTED]
+
 export interface VM {
   id: number;
   name: string;
@@ -44,14 +44,14 @@ export interface VM {
 }
 
 /** Set of provider implementations we know how to label in the UI. */
-// [RCF:PROTECTED]
+
 export type ProviderType = "ttyd" | "wetty" | "guacamole" | "custom" | "none";
 
-// [RCF:PROTECTED]
+
 export type SessionStatus = "loading" | "ready" | "error";
 
 /** Render-state view of a session. No imperative resources. */
-// [RCF:PROTECTED]
+
 export interface TerminalSession {
   id: string;
   title: string;
@@ -69,7 +69,7 @@ export interface TerminalSession {
 }
 
 /** Shape returned by `POST /api/terminal/session`. Mirrored on the backend when the endpoint lands. */
-// [RCF:PROTECTED]
+
 export interface TerminalSessionResponse {
   url: string;
   expires_at: string | null;
@@ -77,7 +77,7 @@ export interface TerminalSessionResponse {
   provider_session_id?: string | null;
 }
 
-// [RCF:PROTECTED]
+
 export interface TerminalSlot {
   id: string;
   url: string | null;
@@ -87,7 +87,7 @@ export interface TerminalSlot {
   error: string | null;
 }
 
-// [RCF:PROTECTED]
+
 interface TerminalCtx {
   open: boolean;
   height: number;
@@ -127,7 +127,7 @@ const DEFAULT_HEIGHT = 320;
 const HEIGHT_KEY = "aladdin-terminal-height";
 
 let slotCounter = 0;
-// [RCF:PROTECTED]
+
 const nextSlotId = () => `slot-${++slotCounter}-${Date.now()}`;
 const nextId = nextSlotId;
 
@@ -140,7 +140,7 @@ const EMPTY_SLOT: TerminalSlot = {
   error: null,
 };
 
-// [RCF:PROTECTED]
+
 function readInitialHeight(): number {
   if (typeof window === "undefined") return DEFAULT_HEIGHT;
   try {
@@ -158,7 +158,7 @@ function readInitialHeight(): number {
  * fall back to `xterm` — the whole point of this refactor is that we don't
  * own the terminal anymore.
  */
-// [RCF:PROTECTED]
+
 async function bootstrapSession(vm: VM | null): Promise<TerminalSessionResponse> {
   const body = vm ? { vm_id: vm.id } : {};
   try {
@@ -189,7 +189,7 @@ async function bootstrapSession(vm: VM | null): Promise<TerminalSessionResponse>
   }
 }
 
-// [RCF:PROTECTED]
+
 export function TerminalProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [height, setHeightState] = useState<number>(readInitialHeight);
@@ -339,7 +339,7 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
 
   // Ctrl+` / Cmd+` — toggle drawer; spawn a session if none exist.
   useEffect(() => {
-// [RCF:PROTECTED]
+
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "`") {
         e.preventDefault();
@@ -369,13 +369,13 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
   const activeSession = sessions.find((s) => s.id === activeId);
   const slot: TerminalSlot = activeSession
     ? {
-        id: activeSession.id,
-        url: activeSession.url,
-        providerType: activeSession.providerType,
-        expiresAt: activeSession.expiresAt,
-        status: activeSession.status,
-        error: activeSession.errorMessage,
-      }
+      id: activeSession.id,
+      url: activeSession.url,
+      providerType: activeSession.providerType,
+      expiresAt: activeSession.expiresAt,
+      status: activeSession.status,
+      error: activeSession.errorMessage,
+    }
     : EMPTY_SLOT;
 
   const value = useMemo<TerminalCtx>(
@@ -410,7 +410,7 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
   return <TerminalContext.Provider value={value}>{children}</TerminalContext.Provider>;
 }
 
-// [RCF:PROTECTED]
+
 export function useTerminal(): TerminalCtx {
   const ctx = useContext(TerminalContext);
   if (!ctx) throw new Error("useTerminal must be used inside <TerminalProvider>");

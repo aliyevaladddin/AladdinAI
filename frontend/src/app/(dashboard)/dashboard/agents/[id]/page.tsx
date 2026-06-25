@@ -14,13 +14,13 @@ import { ArrowLeft, Bot, Shield, Database, Activity, Lock, Zap, Check, X, Pencil
 import Link from "next/link";
 
 const VISION_HINT_SUBSTRINGS = ["-vision", "vision-instruct"];
-// [RCF:PROTECTED]
+
 function isVisionModel(m: string): boolean {
   const lower = m.toLowerCase();
   return VISION_HINT_SUBSTRINGS.some((s) => lower.includes(s));
 }
 
-// [RCF:PROTECTED]
+
 interface Agent {
   id: number;
   name: string;
@@ -41,7 +41,7 @@ export default function AgentDetailsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [busy, setBusy] = useState(false);
 
-// [RCF:PROTECTED]
+
   const loadAgent = async () => {
     try {
       const data = await api.get<Agent>(`/agents/${id}`);
@@ -55,7 +55,7 @@ export default function AgentDetailsPage() {
     loadAgent();
   }, [id]);
 
-// [RCF:PROTECTED]
+
   const handleStart = async () => {
     if (!agent) return;
     setBusy(true);
@@ -67,7 +67,7 @@ export default function AgentDetailsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleStop = async () => {
     if (!agent) return;
     setBusy(true);
@@ -97,9 +97,8 @@ export default function AgentDetailsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{agent.name}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-widest ${
-                isRunning ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-zinc-500/10 text-zinc-500 border border-zinc-500/20"
-              }`}>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-widest ${isRunning ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-zinc-500/10 text-zinc-500 border border-zinc-500/20"
+                }`}>
                 {agent.status}
               </span>
               <span className="text-xs text-muted-foreground">{agent.role}</span>
@@ -130,9 +129,8 @@ export default function AgentDetailsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabId)}
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all relative whitespace-nowrap ${
-                isActive ? "text-accent" : "text-muted-foreground hover:text-foreground"
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all relative whitespace-nowrap ${isActive ? "text-accent" : "text-muted-foreground hover:text-foreground"
+                }`}
             >
               <Icon size={16} />
               {tab.label}
@@ -149,36 +147,36 @@ export default function AgentDetailsPage() {
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
             <div className="space-y-6">
-                <div className="p-6 rounded-2xl bg-surface-1 border border-border/50">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Configuration</h3>
-                    <div className="space-y-4">
-                        <BaseModelField agent={agent} onSaved={loadAgent} />
-                        {agent.port && (
-                            <div>
-                                <p className="text-[11px] text-muted-foreground uppercase">External Port</p>
-                                <p className="text-sm font-mono mt-1">:{agent.port}</p>
-                            </div>
-                        )}
+              <div className="p-6 rounded-2xl bg-surface-1 border border-border/50">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Configuration</h3>
+                <div className="space-y-4">
+                  <BaseModelField agent={agent} onSaved={loadAgent} />
+                  {agent.port && (
+                    <div>
+                      <p className="text-[11px] text-muted-foreground uppercase">External Port</p>
+                      <p className="text-sm font-mono mt-1">:{agent.port}</p>
                     </div>
+                  )}
                 </div>
-                <div className="p-6 rounded-2xl bg-surface-1 border border-border/50">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">System Prompt</h3>
-                    <div className="p-4 rounded-xl bg-surface-2 border border-border/30 text-sm font-mono leading-relaxed whitespace-pre-wrap">
-                        {agent.system_prompt || "No system prompt configured."}
-                    </div>
+              </div>
+              <div className="p-6 rounded-2xl bg-surface-1 border border-border/50">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">System Prompt</h3>
+                <div className="p-4 rounded-xl bg-surface-2 border border-border/30 text-sm font-mono leading-relaxed whitespace-pre-wrap">
+                  {agent.system_prompt || "No system prompt configured."}
                 </div>
+              </div>
             </div>
             <div className="space-y-6">
-                <div className="p-6 rounded-2xl bg-surface-1 border border-border/50">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Agentic Stats</h3>
-                    <AgenticStatsPanel agentId={agent.id} />
-                </div>
+              <div className="p-6 rounded-2xl bg-surface-1 border border-border/50">
+                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">Agentic Stats</h3>
+                <AgenticStatsPanel agentId={agent.id} />
+              </div>
             </div>
           </div>
         )}
 
         {activeTab === "memory" && <AgentMemoryPanel agentId={agent.id} />}
-        
+
         {activeTab === "gates" && (
           <AgentGatesPanel agentId={agent.id} providerId={agent.llm_provider_id} />
         )}
@@ -187,7 +185,7 @@ export default function AgentDetailsPage() {
           <div className="space-y-8 animate-in fade-in duration-300">
             <AgentSafetyPanel agentId={agent.id} providerId={agent.llm_provider_id} />
             <div className="pt-8 border-t border-border/50">
-                <AgentExtractionPanel agentId={agent.id} providerId={agent.llm_provider_id} />
+              <AgentExtractionPanel agentId={agent.id} providerId={agent.llm_provider_id} />
             </div>
           </div>
         )}
@@ -199,7 +197,7 @@ export default function AgentDetailsPage() {
 }
 
 /* ── Base Model editor ─────────────────────────────────────────────── */
-// [RCF:PROTECTED]
+
 function BaseModelField({
   agent,
   onSaved,
@@ -235,14 +233,14 @@ function BaseModelField({
     };
   }, [editing, agent.llm_provider_id]);
 
-// [RCF:PROTECTED]
+
   const cancel = () => {
     setSelected(agent.model);
     setEditing(false);
     setError(null);
   };
 
-// [RCF:PROTECTED]
+
   const save = async () => {
     if (selected === agent.model) {
       setEditing(false);
@@ -331,7 +329,7 @@ function BaseModelField({
 }
 
 /* ── Agentic Stats (real data) ─────────────────────────────────────── */
-// [RCF:PROTECTED]
+
 function AgenticStatsPanel({ agentId }: { agentId: number }) {
   const [stats, setStats] = useState<{
     uptime_display: string;

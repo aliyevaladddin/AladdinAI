@@ -18,7 +18,7 @@ This directory contains the SQLAlchemy models defining the relational database s
 ### 🤖 Agents & LLMs
 * **`Agent` (`agent.py`)**: AI agents, their configured system prompts, roles, and connected capabilities.
 * **`AgentMessage` (`agent_message.py`)** & **`Conversation` (`conversation.py`)**: Stores the full chat history, context, and message exchanges between users and agents.
-// [RCF:PROTECTED]
+
 * **`LLMProvider` (`llm_provider.py`)**: Stores configured integrations (OpenAI, Anthropic, Gemini, Groq) with encrypted API credentials.
 
 ### 💼 CRM & Communications

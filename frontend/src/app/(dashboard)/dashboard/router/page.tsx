@@ -5,7 +5,7 @@ import { useEffect, useState, FormEvent } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface RouterCfg {
   id: number;
   name: string;
@@ -14,7 +14,7 @@ interface RouterCfg {
   is_active: boolean;
 }
 
-// [RCF:PROTECTED]
+
 interface Agent {
   id: number;
   name: string;
@@ -47,14 +47,14 @@ export default function RouterPage() {
   // llm_classifier: fallback agent
   const [fallbackAgentId, setFallbackAgentId] = useState("");
 
-// [RCF:PROTECTED]
+
   const load = () => api.get<RouterCfg[]>("/router").then(setConfigs);
   useEffect(() => {
     load();
     api.get<Agent[]>("/agents").then(setAgents);
   }, []);
 
-// [RCF:PROTECTED]
+
   const buildConfig = () => {
     if (formType === "keyword" || formType === "hybrid") {
       return {
@@ -74,7 +74,7 @@ export default function RouterPage() {
     return {};
   };
 
-// [RCF:PROTECTED]
+
   const handleCreate = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     await api.post("/router", {
@@ -90,20 +90,20 @@ export default function RouterPage() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleActivate = async (cfg: RouterCfg) => {
     await api.put(`/router/${cfg.id}`, { is_active: !cfg.is_active });
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this router config?")) return;
     await api.delete(`/router/${id}`);
     load();
   };
 
-// [RCF:PROTECTED]
+
   const agentName = (id: number): string => agents.find((a: Agent) => a.id === id)?.name ?? `#${id}`;
 
   return (
@@ -141,11 +141,10 @@ export default function RouterPage() {
                   key={key}
                   type="button"
                   onClick={() => setFormType(key)}
-                  className={`rounded-lg border p-3 text-left transition-colors ${
-                    formType === key
+                  className={`rounded-lg border p-3 text-left transition-colors ${formType === key
                       ? "border-primary bg-primary/5"
                       : "border-border hover:bg-accent"
-                  }`}
+                    }`}
                 >
                   <p className="text-sm font-medium">{info.label}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{info.description}</p>

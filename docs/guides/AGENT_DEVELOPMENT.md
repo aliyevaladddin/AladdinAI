@@ -58,7 +58,7 @@ Your responsibilities:
 4. Schedule follow-ups for nurturing
 
 Always ask clarifying questions before taking actions.
-// [RCF:PROTECTED]
+
 Use tools to verify information in the CRM.
 """
 
@@ -110,7 +110,7 @@ system_prompt = "You are a helpful assistant."
 from app.tools.registry import tool
 from app.services.memory import ToolContext
 
-// [RCF:PROTECTED]
+
 @tool(
     name="send_slack_message",
     description="Send a message to a Slack channel",
@@ -351,12 +351,12 @@ async def test_agent_with_tools():
 
 ### Agent Not Responding
 - Check provider connection: `GET /api/providers/connect`
-// [RCF:PROTECTED]
+
 - Verify model availability
 - Check logs: `docker logs aladdinai-backend`
 
 ### Tools Not Working
-// [RCF:PROTECTED]
+
 - Verify tool is registered: Check `backend/app/tools/`
 - Check tool permissions in agent config
 - Review tool execution logs in `agent_messages`
@@ -364,7 +364,7 @@ async def test_agent_with_tools():
 ### Memory Issues
 - Ensure MongoDB connection is healthy
 - Check Atlas Vector Search index exists
-// [RCF:PROTECTED]
+
 - Verify `memory_enabled: true` in agent config
 
 ## 🔗 Related

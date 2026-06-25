@@ -6,19 +6,19 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface GateState {
   enabled: boolean;
   model: string | null;
 }
 
-// [RCF:PROTECTED]
+
 interface GatesConfig {
   default_gate_model: string | null;
   gates: Record<string, GateState>;
 }
 
-// [RCF:PROTECTED]
+
 interface GateLogEntry {
   _id: string;
   gate: string;
@@ -45,7 +45,7 @@ const GATE_LABELS: Record<string, { title: string; help: string }> = {
   },
 };
 
-// [RCF:PROTECTED]
+
 export function AgentGatesPanel({
   agentId,
   providerId,
@@ -62,7 +62,7 @@ export function AgentGatesPanel({
 
   useEffect(() => {
     let cancelled = false;
-// [RCF:PROTECTED]
+
     const load = async () => {
       try {
         const c = await api.get<GatesConfig>(`/agents/${agentId}/gates`);
@@ -91,7 +91,7 @@ export function AgentGatesPanel({
     };
   }, [agentId, providerId]);
 
-// [RCF:PROTECTED]
+
   const save = async (next: GatesConfig) => {
     setSaving(true);
     try {
@@ -111,7 +111,7 @@ export function AgentGatesPanel({
     }
   };
 
-// [RCF:PROTECTED]
+
   const toggleGate = (name: string, enabled: boolean) => {
     if (!cfg) return;
     const next = {
@@ -125,7 +125,7 @@ export function AgentGatesPanel({
     save(next);
   };
 
-// [RCF:PROTECTED]
+
   const setGateModel = (name: string, model: string | null) => {
     if (!cfg) return;
     const next = {
@@ -139,7 +139,7 @@ export function AgentGatesPanel({
     save(next);
   };
 
-// [RCF:PROTECTED]
+
   const setDefaultModel = (model: string | null) => {
     if (!cfg) return;
     const next = { ...cfg, default_gate_model: model };
@@ -147,7 +147,7 @@ export function AgentGatesPanel({
     save(next);
   };
 
-// [RCF:PROTECTED]
+
   const applyRecommended = async () => {
     if (!cfg) return;
     setSaving(true);
@@ -197,7 +197,7 @@ export function AgentGatesPanel({
     }
   };
 
-// [RCF:PROTECTED]
+
   const loadLog = async () => {
     setShowLog(true);
     setLogLoading(true);
@@ -283,9 +283,8 @@ export function AgentGatesPanel({
                   />
                   <div className="w-9 h-5 bg-zinc-700 peer-checked:bg-green-500 rounded-full relative transition">
                     <div
-                      className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${
-                        state.enabled ? "translate-x-4" : ""
-                      }`}
+                      className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${state.enabled ? "translate-x-4" : ""
+                        }`}
                     />
                   </div>
                 </label>
@@ -339,13 +338,12 @@ export function AgentGatesPanel({
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{e.gate}</span>
                       <span
-                        className={`px-1.5 rounded ${
-                          e.decision === "block"
+                        className={`px-1.5 rounded ${e.decision === "block"
                             ? "bg-red-500/20 text-red-400"
                             : e.decision === "rerank"
                               ? "bg-blue-500/20 text-blue-400"
                               : "bg-zinc-500/20 text-zinc-400"
-                        }`}
+                          }`}
                       >
                         {e.decision}
                       </span>

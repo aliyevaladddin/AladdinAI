@@ -452,7 +452,7 @@ async def delegate_sequential(
 ### `DelegationResult`
 
 ```python
-// [RCF:PROTECTED]
+
 class DelegationResult:
     agent_id: str
     agent_name: str

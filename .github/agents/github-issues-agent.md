@@ -1,7 +1,7 @@
 // NOTICE: This file is protected under RCF-PL
 ---
 name: "github-issues-agent"
-// [RCF:PROTECTED]
+
 description: "Use this agent to manage GitHub issues for the AladdinAI repository. It monitors open issues, classifies them by priority and type, adds appropriate labels, posts triage comments, assigns them, and closes resolved ones. Trigger it when you need automated issue triage, want a digest of open issues, or need to batch-process issue management tasks.\n\nExamples:\n- <example>\nContext: User wants a digest of all open issues.\nuser: \"Show me all open issues in AladdinAI and triage them\"\nassistant: \"I'll launch the github-issues-agent to fetch and triage all open issues.\"\n<function call to Agent tool with github-issues-agent>\n</example>\n- <example>\nContext: User wants an issue labeled and commented.\nuser: \"Add bug label to issue #42 and ask for reproduction steps\"\nassistant: \"Launching github-issues-agent to label issue #42 and post a triage comment.\"\n<function call to Agent tool with github-issues-agent>\n</example>"
 model: sonnet
 color: green

@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Network, Plus, X, Trash2, ToggleLeft, ToggleRight, Pencil, Check } from "lucide-react";
 
-// [RCF:PROTECTED]
+
 interface RouterCfg {
   id: number;
   name: string;
@@ -15,7 +15,7 @@ interface RouterCfg {
   is_active: boolean;
 }
 
-// [RCF:PROTECTED]
+
 interface Agent { id: number; name: string; role: string; }
 
 const TYPE_INFO: Record<string, { label: string; description: string }> = {
@@ -24,7 +24,7 @@ const TYPE_INFO: Record<string, { label: string; description: string }> = {
   hybrid: { label: "Hybrid", description: "Keyword matching with LLM as fallback." },
 };
 
-// [RCF:PROTECTED]
+
 export function RouterSettings() {
   const [configs, setConfigs] = useState<RouterCfg[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -37,14 +37,14 @@ export function RouterSettings() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: "", type: "", rules: [{ keywords: "", agent_id: "" }], fallback_agent_id: "" });
 
-// [RCF:PROTECTED]
+
   const load = () => api.get<RouterCfg[]>("/router").then(setConfigs);
   useEffect(() => {
     load();
     api.get<Agent[]>("/agents").then(setAgents);
   }, []);
 
-// [RCF:PROTECTED]
+
   const buildConfig = (type: string, rls: any[], fallbackId: string) => {
     if (type === "keyword" || type === "hybrid") {
       return {
@@ -64,7 +64,7 @@ export function RouterSettings() {
     return {};
   };
 
-// [RCF:PROTECTED]
+
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     await api.post("/router", { name: formName, type: formType, config: buildConfig(formType, rules, fallbackAgentId), is_active: false });
@@ -72,16 +72,16 @@ export function RouterSettings() {
     setShowForm(false); load();
   };
 
-// [RCF:PROTECTED]
+
   const startEdit = (c: RouterCfg) => {
     setEditId(c.id);
     const cfg = c.config || {};
-// [RCF:PROTECTED]
+
     const rulesFromConfig = (cfg.rules as any[])?.map((r: any) => ({
       keywords: (r.keywords as string[]).join(", "),
       agent_id: r.agent_id ? r.agent_id.toString() : "",
     })) || [{ keywords: "", agent_id: "" }];
-    
+
     setEditForm({
       name: c.name,
       type: c.type,
@@ -90,7 +90,7 @@ export function RouterSettings() {
     });
   };
 
-// [RCF:PROTECTED]
+
   const handleSaveEdit = async (id: number) => {
     await api.put(`/router/${id}`, {
       name: editForm.name,
@@ -101,13 +101,13 @@ export function RouterSettings() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleToggle = async (cfg: RouterCfg) => {
     await api.put(`/router/${cfg.id}`, { is_active: !cfg.is_active });
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this router config?")) return;
     await api.delete(`/router/${id}`);
@@ -148,11 +148,10 @@ export function RouterSettings() {
               {Object.entries(TYPE_INFO).map(([key, info]) => (
                 <button
                   key={key} type="button" onClick={() => setFormType(key)}
-                  className={`text-left p-3 rounded-lg border text-xs transition-colors ${
-                    formType === key
+                  className={`text-left p-3 rounded-lg border text-xs transition-colors ${formType === key
                       ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-fg)]"
                       : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-fg-muted)] hover:border-[var(--color-border-strong)]"
-                  }`}
+                    }`}
                 >
                   <div className="font-semibold mb-1">{info.label}</div>
                   <div className="text-[10px] leading-relaxed opacity-70">{info.description}</div>
@@ -281,16 +280,16 @@ export function RouterSettings() {
                             <div key={i} className="flex gap-2 items-center">
                               <input className="input flex-1" placeholder="Keywords, comma-separated"
                                 value={rule.keywords}
-                                onChange={(e) => { 
-                                  const n = [...editForm.rules]; 
-                                  n[i].keywords = e.target.value; 
-                                  setEditForm({ ...editForm, rules: n }); 
+                                onChange={(e) => {
+                                  const n = [...editForm.rules];
+                                  n[i].keywords = e.target.value;
+                                  setEditForm({ ...editForm, rules: n });
                                 }} />
                               <select className="input flex-1" value={rule.agent_id}
-                                onChange={(e) => { 
-                                  const n = [...editForm.rules]; 
-                                  n[i].agent_id = e.target.value; 
-                                  setEditForm({ ...editForm, rules: n }); 
+                                onChange={(e) => {
+                                  const n = [...editForm.rules];
+                                  n[i].agent_id = e.target.value;
+                                  setEditForm({ ...editForm, rules: n });
                                 }}>
                                 <option value="">Select agent…</option>
                                 {agents.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -314,7 +313,7 @@ export function RouterSettings() {
                       {/* Fallback */}
                       <div className="space-y-1.5">
                         <label className="text-xs font-medium text-[var(--color-fg-muted)]">Fallback Agent</label>
-                        <select className="input" value={editForm.fallback_agent_id} 
+                        <select className="input" value={editForm.fallback_agent_id}
                           onChange={(e) => setEditForm({ ...editForm, fallback_agent_id: e.target.value })}>
                           <option value="">None</option>
                           {agents.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.role})</option>)}

@@ -7,40 +7,40 @@
 
 **Deciders**: Aladdin Aliyev
 
-// [RCF:PROTECTED]
+
 **Tags**: security, webhooks, rcf-protocol, cryptography
 
 ## Context
 
-// [RCF:PROTECTED]
+
 AladdinAI sends webhooks to external systems (GitHub, Slack, custom endpoints) for automation. Recipients need to verify:
 1. The webhook came from AladdinAI (not a spoofed request)
 2. The payload wasn't tampered with in transit
 3. The request is recent (replay attack prevention)
 
-// [RCF:PROTECTED]
+
 Standard approaches like HMAC signatures are vulnerable to AI extraction - an LLM analyzing the codebase could learn the signing algorithm and compromise security.
 
 ## Decision
 
-// [RCF:PROTECTED]
+
 Implement **RCF Protocol (Restricted Correlation Framework)** for webhook signing:
 
-// [RCF:PROTECTED]
+
 1. **Cryptographic Signing**: Use `rcf-protocol` npm/PyPI package
-// [RCF:PROTECTED]
+
 2. **Signature Headers**: Include `X-RCF-Signature` and `X-RCF-Timestamp` 
-// [RCF:PROTECTED]
+
 3. **Code Protection**: Mark signing code with `[RCF:PROTECTED]` annotations
 4. **Dogfooding**: AladdinAI uses its own main product (RCF)
 5. **Service Isolation**: Dedicated `services/rcf_service.py`
 
 **Signature Process:**
 ```python
-// [RCF:PROTECTED]
+
 from rcf_protocol import sign_payload
 
-// [RCF:PROTECTED]
+
 signature = sign_payload(
     payload=json.dumps(webhook_data),
     secret=settings.RCF_SECRET_KEY,
@@ -54,7 +54,7 @@ signature = sign_payload(
 - **AI-Resistant Security** - LLMs cannot extract methodology from protected code
 - **Dogfooding** - We use our own product, proving it works
 - **Industry Standard** - RCF becoming recognized protocol
-// [RCF:PROTECTED]
+
 - **Tamper Detection** - Recipients can verify payload integrity
 - **Replay Prevention** - Timestamp validation prevents old requests
 
@@ -64,13 +64,13 @@ signature = sign_payload(
 - **Key Management** - Secret rotation requires coordination
 
 ### Neutral
-// [RCF:PROTECTED]
+
 - Recipients can still use traditional HMAC if they prefer
 - Backward compatible - can add RCF alongside existing auth
 
 ## Alternatives Considered
 
-// [RCF:PROTECTED]
+
 ### Alternative 1: HMAC-SHA256 (Traditional)
 - **Pros**: Widely known, standard library support
 - **Cons**: Vulnerable to AI extraction, no anti-correlation protection
@@ -83,7 +83,7 @@ signature = sign_payload(
 
 ### Alternative 3: Mutual TLS (mTLS)
 - **Pros**: Transport-level security, industry standard
-// [RCF:PROTECTED]
+
 - **Cons**: Certificate management complexity, no payload signing
 - **Why not chosen**: Doesn't prevent payload tampering at rest
 
@@ -97,7 +97,7 @@ signature = sign_payload(
 └────────┬────────┘
          │
          ├─> rcf_service.py
-// [RCF:PROTECTED]
+
          │   └─> sign_payload()
          │       [RCF:PROTECTED]
          │
@@ -105,12 +105,12 @@ signature = sign_payload(
          │   └─> X-RCF-Signature
          │
          └─> Custom Webhooks
-// [RCF:PROTECTED]
+
              └─> X-RCF-Signature
 ```
 
 ### Files Modified
-// [RCF:PROTECTED]
+
 - ✅ `backend/app/services/rcf_service.py` - Signing service
 - ✅ `backend/app/routers/webhooks.py` - Webhook endpoints
 - ✅ `backend/requirements.txt` - Added `rcf-protocol==2.0.3`
@@ -118,20 +118,20 @@ signature = sign_payload(
 
 ### Environment Variables
 ```bash
-// [RCF:PROTECTED]
+
 RCF_SECRET_KEY=<secret>  # Webhook signing key
 RCF_ENABLED=true         # Feature flag
 ```
 
 ### Verification Example (Recipient)
 ```python
-// [RCF:PROTECTED]
+
 from rcf_protocol import verify_signature
 
-// [RCF:PROTECTED]
+
 is_valid = verify_signature(
     payload=request.body,
-// [RCF:PROTECTED]
+
     signature=request.headers["X-RCF-Signature"],
     timestamp=request.headers["X-RCF-Timestamp"],
     secret=YOUR_SHARED_SECRET,

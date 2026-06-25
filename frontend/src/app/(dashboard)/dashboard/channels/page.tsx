@@ -12,18 +12,18 @@ import {
 } from "lucide-react";
 
 /* ── Types ───────────────────────────────────────────────────────── */
-// [RCF:PROTECTED]
+
 interface EmailAccount {
   id: number; provider: string; email: string;
   status: string; last_synced_at: string | null;
   agent_id: number | null;
 }
-// [RCF:PROTECTED]
+
 interface MessagingChannel {
   id: number; type: string; name: string;
   agent_id: number | null; status: string;
 }
-// [RCF:PROTECTED]
+
 interface Agent {
   id: number; name: string; role: string; model: string;
 }
@@ -74,22 +74,22 @@ export default function ChannelsPage() {
   const [syncing, setSyncing] = useState<Record<number, boolean>>({});
   const [saving, setSaving] = useState(false);
 
-// [RCF:PROTECTED]
+
   const loadEmails = () => api.get<EmailAccount[]>("/channels/email").then(setEmails);
-// [RCF:PROTECTED]
+
   const loadChannels = () => api.get<MessagingChannel[]>("/channels/messaging").then(setChannels);
-// [RCF:PROTECTED]
+
   const loadAgents = () => api.get<Agent[]>("/agents").then(setAgents).catch(() => setAgents([]));
   useEffect(() => { loadEmails(); loadChannels(); loadAgents(); }, []);
 
-// [RCF:PROTECTED]
+
   const notify = (status: string, message: string) =>
     ["ok", "success", "connected", "syncing"].includes(status)
       ? toast.success(message)
       : toast.error(message);
 
   /* ── Email handlers ─────────────────────────────────────────────── */
-// [RCF:PROTECTED]
+
   const handleCreateEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/channels/email", {
@@ -102,13 +102,13 @@ export default function ChannelsPage() {
     loadEmails();
   };
 
-// [RCF:PROTECTED]
+
   const startEditEmail = (acc: EmailAccount) => {
     setEditEmailId(acc.id);
     setEditEmailForm({ email: acc.email, imap_host: "", imap_port: "", smtp_host: "", smtp_port: "", password: "" });
   };
 
-// [RCF:PROTECTED]
+
   const handleSaveEmail = async (id: number) => {
     setSaving(true);
     try {
@@ -127,7 +127,7 @@ export default function ChannelsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleDeleteEmail = async (id: number) => {
     if (!confirm("Remove this email account?")) return;
     await api.delete(`/channels/email/${id}`);
@@ -135,7 +135,7 @@ export default function ChannelsPage() {
     toast.success("Email account removed");
   };
 
-// [RCF:PROTECTED]
+
   const handleTestEmail = async (id: number) => {
     setTesting((p) => ({ ...p, [id]: true }));
     try {
@@ -147,7 +147,7 @@ export default function ChannelsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleSyncEmail = async (id: number) => {
     setSyncing((p) => ({ ...p, [id]: true }));
     try {
@@ -159,7 +159,7 @@ export default function ChannelsPage() {
   };
 
   /* ── Messaging handlers ─────────────────────────────────────────── */
-// [RCF:PROTECTED]
+
   const handleCreateChannel = async (e: React.FormEvent) => {
     e.preventDefault();
     const config: Record<string, string> = {};
@@ -178,7 +178,7 @@ export default function ChannelsPage() {
   };
 
   /* Change which agent answers on an existing channel (PATCH). */
-// [RCF:PROTECTED]
+
   const handleChangeAgent = async (channelId: number, agentId: number | null) => {
     try {
       await api.patch(`/channels/messaging/${channelId}`, { agent_id: agentId });
@@ -191,7 +191,7 @@ export default function ChannelsPage() {
   };
 
   /* Change which agent handles an email account. */
-// [RCF:PROTECTED]
+
   const handleChangeEmailAgent = async (accountId: number, agentId: number | null) => {
     try {
       await api.patch(`/channels/email/${accountId}/agent`, { agent_id: agentId });
@@ -203,7 +203,7 @@ export default function ChannelsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleTestChannel = async (id: number) => {
     setTesting((p) => ({ ...p, [id]: true }));
     try {
@@ -215,7 +215,7 @@ export default function ChannelsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleShowQr = async (id: number) => {
     setQrModal({ open: true, image: null, loading: true, error: null });
     try {
@@ -230,7 +230,7 @@ export default function ChannelsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleShowWebhookConfig = async (c: MessagingChannel) => {
     setWebhookModal({ open: true, loading: true, channel: c, data: null, error: null });
     try {
@@ -250,13 +250,13 @@ export default function ChannelsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard?.writeText(text).catch(() => { });
     toast.success(`${label} copied`);
   };
 
-// [RCF:PROTECTED]
+
   const handleDeleteChannel = async (id: number) => {
     if (!confirm("Remove this messaging channel?")) return;
     await api.delete(`/channels/messaging/${id}`);
@@ -264,7 +264,7 @@ export default function ChannelsPage() {
     toast.success("Channel removed");
   };
 
-// [RCF:PROTECTED]
+
   const copyWebhookUrl = (c: MessagingChannel) => {
     const base = window.location.origin.replace("3000", "8000");
     const url = `${base}/api/webhooks/${c.type}/${c.id}`;
@@ -574,11 +574,11 @@ export default function ChannelsPage() {
                       <>
                         <span
                           className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border flex items-center gap-1 text-amber-400 bg-amber-500/10 border-amber-500/20"
-// [RCF:PROTECTED]
+
                           title="WAHA accepts unsigned webhooks by default. Click Webhook setup to harden."
                         >
                           <ShieldAlert size={10} />
-// [RCF:PROTECTED]
+
                           Unsigned by default
                         </span>
                         <Button variant="outline" size="sm" onClick={() => handleShowQr(c.id)}>
@@ -591,7 +591,7 @@ export default function ChannelsPage() {
                       Test
                     </Button>
                     <Button variant="ghost" size="icon-sm" onClick={() => handleShowWebhookConfig(c)}
-// [RCF:PROTECTED]
+
                       title="Webhook setup (URL + signing secret)" className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]">
                       <ShieldAlert size={13} />
                     </Button>
@@ -649,7 +649,7 @@ export default function ChannelsPage() {
                   </div>
 
                   <div>
-// [RCF:PROTECTED]
+
                     <label className="text-xs font-medium" style={{ color: "var(--color-fg-muted)" }}>Signing secret</label>
                     <div className="mt-1 flex items-center gap-2">
                       <code className="flex-1 text-xs px-2.5 py-2 rounded border break-all font-mono"
@@ -665,22 +665,22 @@ export default function ChannelsPage() {
                     </div>
                   </div>
 
-// [RCF:PROTECTED]
+
                   {webhookModal.data.instructions.signing && (
                     <div className="rounded-md border p-3 text-xs leading-relaxed"
                       style={{ background: "var(--color-surface-2)", borderColor: "var(--color-border)", color: "var(--color-fg-muted)" }}>
                       <p className="font-semibold mb-1" style={{ color: "var(--color-fg)" }}>
-// [RCF:PROTECTED]
+
                         How to enable signature verification:
                       </p>
-// [RCF:PROTECTED]
+
                       <p>{webhookModal.data.instructions.signing}</p>
                       {webhookModal.data.instructions.header && (
                         <p className="mt-2"><span className="font-medium">Header:</span> <code>{webhookModal.data.instructions.header}</code></p>
                       )}
-// [RCF:PROTECTED]
+
                       {webhookModal.data.instructions.hmac_algorithm && (
-// [RCF:PROTECTED]
+
                         <p className="mt-1"><span className="font-medium">Algorithm:</span> {webhookModal.data.instructions.hmac_algorithm}</p>
                       )}
                     </div>

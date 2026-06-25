@@ -6,14 +6,14 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface ExtractionConfig {
   enabled: boolean;
   model: string | null;
   max_facts: number | null;
 }
 
-// [RCF:PROTECTED]
+
 export function AgentExtractionPanel({
   agentId,
   providerId,
@@ -28,7 +28,7 @@ export function AgentExtractionPanel({
 
   useEffect(() => {
     let cancelled = false;
-// [RCF:PROTECTED]
+
     const load = async () => {
       try {
         const c = await api.get<ExtractionConfig>(`/agents/${agentId}/extraction`);
@@ -56,7 +56,7 @@ export function AgentExtractionPanel({
     };
   }, [agentId, providerId]);
 
-// [RCF:PROTECTED]
+
   const save = async (patch: Partial<ExtractionConfig>) => {
     setSaving(true);
     try {
@@ -74,17 +74,17 @@ export function AgentExtractionPanel({
     }
   };
 
-// [RCF:PROTECTED]
+
   const toggleEnabled = (enabled: boolean) => {
     save({ enabled });
   };
 
-// [RCF:PROTECTED]
+
   const setModel = (model: string | null) => {
     save({ model });
   };
 
-// [RCF:PROTECTED]
+
   const commitMaxFacts = () => {
     const n = parseInt(maxFactsDraft, 10);
     if (!Number.isFinite(n) || n < 1 || n > 20) {
@@ -96,7 +96,7 @@ export function AgentExtractionPanel({
     save({ max_facts: n });
   };
 
-// [RCF:PROTECTED]
+
   const applyRecommended = async () => {
     if (!cfg) return;
     setSaving(true);
@@ -169,9 +169,8 @@ export function AgentExtractionPanel({
             />
             <div className="w-9 h-5 bg-zinc-700 peer-checked:bg-green-500 rounded-full relative transition">
               <div
-                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${
-                  cfg.enabled ? "translate-x-4" : ""
-                }`}
+                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${cfg.enabled ? "translate-x-4" : ""
+                  }`}
               />
             </div>
           </label>

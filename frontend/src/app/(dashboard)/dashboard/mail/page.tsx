@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import MessageModal from "@/components/crm/MessageModal";
 
-// [RCF:PROTECTED]
+
 interface Activity {
   id: number;
   type: string;
@@ -25,7 +25,7 @@ interface Activity {
   } | null;
 }
 
-// [RCF:PROTECTED]
+
 interface Thread {
   key: string;
   subject: string;
@@ -34,7 +34,7 @@ interface Thread {
   unreadCount: number;
 }
 
-// [RCF:PROTECTED]
+
 function normalizeSubject(s: string | null | undefined): string {
   if (!s) return "(no subject)";
   return s
@@ -42,7 +42,7 @@ function normalizeSubject(s: string | null | undefined): string {
     .trim() || "(no subject)";
 }
 
-// [RCF:PROTECTED]
+
 function formatRelative(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
@@ -74,7 +74,7 @@ export default function MailPage() {
   const [addingToCrm, setAddingToCrm] = useState(false);
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
 
-// [RCF:PROTECTED]
+
   const toggleThread = (key: string) => {
     setExpandedThreads((prev) => {
       const next = new Set(prev);
@@ -88,7 +88,7 @@ export default function MailPage() {
     fetchEmails();
   }, []);
 
-// [RCF:PROTECTED]
+
   const fetchEmails = async () => {
     setLoading(true);
     try {
@@ -103,7 +103,7 @@ export default function MailPage() {
   };
 
   // Helper to safely parse metadata
-// [RCF:PROTECTED]
+
   const getMetaData = (email: Activity) => {
     if (!email.metadata_json) return {};
     if (typeof email.metadata_json === "string") {
@@ -112,11 +112,11 @@ export default function MailPage() {
     return email.metadata_json;
   };
 
-// [RCF:PROTECTED]
+
   const handleAddToCrm = async (email: Activity) => {
     const meta = getMetaData(email);
     const targetEmail = email.type === "email_out" ? meta.to_email : meta.from_email;
-    
+
     if (!targetEmail) {
       toast.error("Cannot add to CRM: missing email address");
       return;
@@ -135,9 +135,9 @@ export default function MailPage() {
       await api.patch(`/crm/activities/${email.id}`, {
         contact_id: contact.id,
       });
-      
+
       toast.success("Added to CRM successfully");
-      
+
       // Update local state
       setEmails(emails.map(e => e.id === email.id ? { ...e, contact_id: contact.id } : e));
       if (selectedEmail?.id === email.id) {
@@ -156,9 +156,9 @@ export default function MailPage() {
     if (search) {
       const meta = getMetaData(email);
       const term = search.toLowerCase();
-// [RCF:PROTECTED]
+
       const subject = (email.subject || "").toLowerCase();
-// [RCF:PROTECTED]
+
       const from = (meta.from_name || meta.from_email || "").toLowerCase();
       if (!subject.includes(term) && !from.includes(term)) return false;
     }
@@ -199,7 +199,7 @@ export default function MailPage() {
     return out;
   }, [filteredEmails]);
 
-// [RCF:PROTECTED]
+
   const getSenderName = (email: Activity) => {
     const meta = getMetaData(email);
     if (email.type === "email_out") return "To: " + (meta.to_name || meta.to_email || "Unknown");
@@ -208,7 +208,7 @@ export default function MailPage() {
 
   return (
     <div className="h-full flex flex-col sm:flex-row border rounded-xl overflow-hidden" style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}>
-      
+
       {/* ── Left Sidebar (Folders) ───────────────────────── */}
       <div className="w-full sm:w-48 shrink-0 border-r flex flex-col" style={{ borderColor: "var(--color-border)", background: "var(--color-surface-2)" }}>
         <div className="p-4 font-semibold text-sm border-b" style={{ borderColor: "var(--color-border)" }}>
@@ -218,7 +218,7 @@ export default function MailPage() {
           <button
             onClick={() => setFolder("inbox")}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-            style={{ 
+            style={{
               background: folder === "inbox" ? "var(--color-accent)" : "transparent",
               color: folder === "inbox" ? "#fff" : "var(--color-fg-muted)"
             }}
@@ -228,7 +228,7 @@ export default function MailPage() {
           <button
             onClick={() => setFolder("sent")}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-            style={{ 
+            style={{
               background: folder === "sent" ? "var(--color-accent)" : "transparent",
               color: folder === "sent" ? "#fff" : "var(--color-fg-muted)"
             }}
@@ -238,7 +238,7 @@ export default function MailPage() {
           <button
             onClick={() => setFolder("all")}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors"
-            style={{ 
+            style={{
               background: folder === "all" ? "var(--color-accent)" : "transparent",
               color: folder === "all" ? "#fff" : "var(--color-fg-muted)"
             }}
@@ -410,7 +410,7 @@ export default function MailPage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 {selectedEmail.contact_id ? (
                   <span className="text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-lg border" style={{ borderColor: "var(--color-border)", color: "var(--color-accent)" }}>
@@ -432,9 +432,9 @@ export default function MailPage() {
 
             {/* Email Body & Reply using MessageModal as inline */}
             <div className="flex-1 overflow-hidden relative">
-              <MessageModal 
-                activity={{...selectedEmail, metadata_json: getMetaData(selectedEmail)} as any} 
-                contactEmail={selectedEmail.type === "email_out" ? getMetaData(selectedEmail).to_email || null : getMetaData(selectedEmail).from_email || null} 
+              <MessageModal
+                activity={{ ...selectedEmail, metadata_json: getMetaData(selectedEmail) } as any}
+                contactEmail={selectedEmail.type === "email_out" ? getMetaData(selectedEmail).to_email || null : getMetaData(selectedEmail).from_email || null}
                 onClose={() => setSelectedEmail(null)}
                 inline={true}
               />

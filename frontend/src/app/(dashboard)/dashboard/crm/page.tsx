@@ -6,7 +6,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface Contact {
   id: number;
   name: string;
@@ -36,7 +36,7 @@ export default function ContactsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [search, setSearch] = useState("");
 
-// [RCF:PROTECTED]
+
   const load = async () => {
     setLoading(true);
     try {
@@ -51,7 +51,7 @@ export default function ContactsPage() {
     load();
   }, []);
 
-// [RCF:PROTECTED]
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     const tags = form.tags
@@ -72,7 +72,7 @@ export default function ContactsPage() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this contact?")) return;
     await api.delete(`/crm/contacts/${id}`);

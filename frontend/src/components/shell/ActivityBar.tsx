@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ComponentType, type ReactNode } from "react";
 
-// [RCF:PROTECTED]
+
 export interface ActivityItem {
   href: string;
   title: string;
@@ -16,7 +16,7 @@ export interface ActivityItem {
   match?: (pathname: string) => boolean;
 }
 
-// [RCF:PROTECTED]
+
 interface ActivityBarProps {
   /** Primary navigation, rendered above the spacer. */
   items: ActivityItem[];
@@ -28,17 +28,17 @@ interface ActivityBarProps {
   prepend?: ReactNode;
 }
 
-// [RCF:PROTECTED]
+
 function defaultMatch(href: string, pathname: string) {
   if (href === "/" || href === "/dashboard") return pathname === href;
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-// [RCF:PROTECTED]
+
 export function ActivityBar({ items, footer, dividerAfter, prepend }: ActivityBarProps) {
   const pathname = usePathname() || "";
 
-// [RCF:PROTECTED]
+
   const renderItem = (item: ActivityItem) => {
     const active = item.match ? item.match(pathname) : defaultMatch(item.href, pathname);
     const Icon = item.icon;

@@ -1,7 +1,7 @@
 // NOTICE: This file is protected under RCF-PL
 # Integrations
 
-// [RCF:PROTECTED]
+
 AladdinAI is designed to work alongside complementary open-source tools. This document lists known compatible integrations and where to find the relevant files in the codebase.
 
 ---
@@ -18,7 +18,7 @@ AladdinAI ships with a built-in vector memory system backed by **MongoDB Atlas**
 | Embedding model | NVIDIA NIM (`nvidia/llama-3.2-nv-embedqa-1b-v2`, 2048-dim) | `backend/app/services/memory.py` |
 | Memory tools (agents) | `store_memory`, `search_memory` | `backend/app/tools/memory.py` |
 | Memory router (API) | `GET/POST /api/agents/{agent_id}/memories` | `backend/app/routers/agents.py` |
-// [RCF:PROTECTED]
+
 | MongoDB connection config | Per-user, encrypted URI | `backend/app/models/mongo_connection.py` |
 
 **Collections used in MongoDB Atlas:**
@@ -49,7 +49,7 @@ conversation_summaries — rolled-up chat history
 | **Best for** | Multi-user production agents | Local developer sessions |
 | **Retrieval** | Vector (NIM embeddings) | Hybrid: vector + FTS5 + graph |
 | **MCP support** | Via AladdinAI agent tools | Native MCP server |
-// [RCF:PROTECTED]
+
 | **Persistence** | Per-user, encrypted | git-versioned Markdown |
 
 > ⚠️ **Security notice:** Before running any external package, review the source code at

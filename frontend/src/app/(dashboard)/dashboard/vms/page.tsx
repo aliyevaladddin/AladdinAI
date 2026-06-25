@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface VM {
   id: number;
   name: string;
@@ -15,7 +15,7 @@ interface VM {
   status: string;
 }
 
-// [RCF:PROTECTED]
+
 interface ConnectResult {
   status: string;
   message?: string;
@@ -28,11 +28,11 @@ export default function VMsPage() {
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<Record<number, ConnectResult>>({});
 
-// [RCF:PROTECTED]
+
   const load = () => api.get<VM[]>("/vms").then(setVms);
   useEffect(() => { load(); }, []);
 
-// [RCF:PROTECTED]
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/vms", {
@@ -48,7 +48,7 @@ export default function VMsPage() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleConnect = async (id: number) => {
     setLoading((prev) => ({ ...prev, [id]: true }));
     setResult((prev) => ({ ...prev, [id]: { status: "connecting..." } }));
@@ -63,7 +63,7 @@ export default function VMsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleDisconnect = async (id: number) => {
     setLoading((prev) => ({ ...prev, [id]: true }));
     try {
@@ -75,7 +75,7 @@ export default function VMsPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this VM connection?")) return;
     await api.delete(`/vms/${id}`);
@@ -148,11 +148,10 @@ export default function VMsPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-1 rounded ${
-                  vm.status === "connected"
+                <span className={`text-xs px-2 py-1 rounded ${vm.status === "connected"
                     ? "bg-green-500/20 text-green-400"
                     : "bg-zinc-500/20 text-zinc-400"
-                }`}>
+                  }`}>
                   {vm.status}
                 </span>
                 {vm.status === "connected" ? (
@@ -181,13 +180,12 @@ export default function VMsPage() {
             </div>
 
             {result[vm.id] && (
-              <div className={`text-xs rounded p-2 ${
-                result[vm.id].status === "connected"
+              <div className={`text-xs rounded p-2 ${result[vm.id].status === "connected"
                   ? "bg-green-500/10 text-green-400"
                   : result[vm.id].status === "connecting..."
-                  ? "bg-blue-500/10 text-blue-400"
-                  : "bg-red-500/10 text-red-400"
-              }`}>
+                    ? "bg-blue-500/10 text-blue-400"
+                    : "bg-red-500/10 text-red-400"
+                }`}>
                 {result[vm.id].status === "connected" ? (
                   <>✓ {result[vm.id].message}</>
                 ) : result[vm.id].status === "connecting..." ? (

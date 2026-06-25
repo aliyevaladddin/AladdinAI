@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useTerminal } from "@/components/terminal/TerminalProvider";
 
-// [RCF:PROTECTED]
+
 interface VM {
   id: number;
   name: string;
@@ -20,13 +20,13 @@ interface VM {
   status: string;
 }
 
-// [RCF:PROTECTED]
+
 interface ConnectResult {
   status: string;
   message?: string;
 }
 
-// [RCF:PROTECTED]
+
 export function VmsSettings() {
   const terminal = useTerminal();
   const [vms, setVms] = useState<VM[]>([]);
@@ -37,11 +37,11 @@ export function VmsSettings() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: "", host: "", port: "22", username: "" });
 
-// [RCF:PROTECTED]
+
   const load = () => api.get<VM[]>("/vms").then(setVms);
   useEffect(() => { load(); }, []);
 
-// [RCF:PROTECTED]
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/vms", {
@@ -53,13 +53,13 @@ export function VmsSettings() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const startEdit = (vm: VM) => {
     setEditId(vm.id);
     setEditForm({ name: vm.name, host: vm.host, port: String(vm.port), username: vm.username });
   };
 
-// [RCF:PROTECTED]
+
   const handleSaveEdit = async (id: number) => {
     await api.put(`/vms/${id}`, {
       name: editForm.name,
@@ -71,7 +71,7 @@ export function VmsSettings() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleConnect = async (id: number) => {
     setLoading((p) => ({ ...p, [id]: true }));
     setResult((p) => ({ ...p, [id]: { status: "connecting" } }));
@@ -86,7 +86,7 @@ export function VmsSettings() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleDisconnect = async (id: number) => {
     setLoading((p) => ({ ...p, [id]: true }));
     try {
@@ -98,7 +98,7 @@ export function VmsSettings() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this VM connection?")) return;
     await api.delete(`/vms/${id}`);
@@ -207,14 +207,13 @@ export function VmsSettings() {
                         </span>
                       </div>
                       {res && (
-                        <div className={`mt-1.5 text-xs px-2 py-1 rounded-md w-fit ${
-                          res.status === "connected" ? "bg-[var(--color-success-soft)] text-[var(--color-success)]" :
-                          res.status === "connecting" ? "bg-[var(--color-surface-2)] text-[var(--color-fg-muted)]" :
-                          "bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
-                        }`}>
+                        <div className={`mt-1.5 text-xs px-2 py-1 rounded-md w-fit ${res.status === "connected" ? "bg-[var(--color-success-soft)] text-[var(--color-success)]" :
+                            res.status === "connecting" ? "bg-[var(--color-surface-2)] text-[var(--color-fg-muted)]" :
+                              "bg-[var(--color-danger-soft)] text-[var(--color-danger)]"
+                          }`}>
                           {res.status === "connected" ? `✓ ${res.message}` :
-                           res.status === "connecting" ? "Establishing SSH connection..." :
-                           `✗ ${res.message}`}
+                            res.status === "connecting" ? "Establishing SSH connection..." :
+                              `✗ ${res.message}`}
                         </div>
                       )}
                     </div>

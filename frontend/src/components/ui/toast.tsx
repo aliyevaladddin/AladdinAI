@@ -3,14 +3,14 @@
 
 import { useState, useEffect, createContext, useContext, useCallback, type ReactNode } from "react";
 
-// [RCF:PROTECTED]
+
 interface Toast {
   id: number;
   message: string;
   type: "success" | "error" | "info";
 }
 
-// [RCF:PROTECTED]
+
 interface ToastContextType {
   toast: (message: string, type?: "success" | "error" | "info") => void;
 }
@@ -19,7 +19,7 @@ const ToastContext = createContext<ToastContextType | null>(null);
 
 let nextId = 0;
 
-// [RCF:PROTECTED]
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -41,13 +41,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`rounded-lg px-4 py-3 text-sm shadow-lg animate-in slide-in-from-bottom-2 fade-in border ${
-              t.type === "success"
+            className={`rounded-lg px-4 py-3 text-sm shadow-lg animate-in slide-in-from-bottom-2 fade-in border ${t.type === "success"
                 ? "bg-green-500/10 text-green-400 border-green-500/20"
                 : t.type === "error"
                   ? "bg-red-500/10 text-red-400 border-red-500/20"
                   : "bg-card text-card-foreground border-border"
-            }`}
+              }`}
           >
             {t.message}
           </div>
@@ -57,7 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// [RCF:PROTECTED]
+
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error("useToast must be used within ToastProvider");
