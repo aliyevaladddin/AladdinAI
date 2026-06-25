@@ -43,7 +43,7 @@
 <br/>
 
 <div align="center">
-  <img src="demo.svg" alt="AladdinAI terminal demo" width="700"/>
+  <img src="docs/demo.svg" alt="AladdinAI terminal demo" width="700"/>
 </div>
 
 **One command. No git clone. No Python. No Node toolchain. Just Docker.**
