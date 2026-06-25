@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 import logging
 
 import httpx
@@ -7,6 +8,7 @@ from app.models.messaging_channel import MessagingChannel
 log = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 async def test_channel_connection(channel: MessagingChannel) -> tuple[bool, str]:
     if channel.type == "telegram":
         return await _test_telegram(channel)
@@ -18,6 +20,7 @@ async def test_channel_connection(channel: MessagingChannel) -> tuple[bool, str]
         return True, "SMS (Twilio) — verify in Twilio dashboard"
     return False, f"Unknown channel type: {channel.type}"
 
+# [RCF:PROTECTED]
 async def _test_waha(channel: MessagingChannel) -> tuple[bool, str]:
     from app.services.url_safety import validate_external_url
     from fastapi import HTTPException
@@ -46,6 +49,7 @@ async def _test_waha(channel: MessagingChannel) -> tuple[bool, str]:
         return False, "Failed to connect to WAHA due to an unexpected error."
 
 
+# [RCF:PROTECTED]
 async def _test_telegram(channel: MessagingChannel) -> tuple[bool, str]:
     token = channel.config.get("bot_token")
     if not token:
@@ -62,6 +66,7 @@ async def _test_telegram(channel: MessagingChannel) -> tuple[bool, str]:
         return False, "Failed to connect to Telegram due to an unexpected error."
 
 
+# [RCF:PROTECTED]
 async def _test_whatsapp(channel: MessagingChannel) -> tuple[bool, str]:
     token = channel.config.get("access_token")
     phone_id = channel.config.get("phone_number_id")
@@ -81,6 +86,7 @@ async def _test_whatsapp(channel: MessagingChannel) -> tuple[bool, str]:
         return False, "Failed to connect to WhatsApp due to an unexpected error."
 
 
+# [RCF:PROTECTED]
 def parse_telegram_message(payload: dict) -> tuple[str, str, str, list[dict]]:
     """Returns (sender_id, sender_name, text, attachments).
 
@@ -115,6 +121,7 @@ def parse_telegram_message(payload: dict) -> tuple[str, str, str, list[dict]]:
     )
 
 
+# [RCF:PROTECTED]
 def parse_whatsapp_message(payload: dict) -> tuple[str, str, str]:
     """Returns (sender_phone, sender_name, text)"""
     entry = payload.get("entry", [{}])[0]
@@ -129,11 +136,13 @@ def parse_whatsapp_message(payload: dict) -> tuple[str, str, str]:
     return msg.get("from", ""), name, msg.get("text", {}).get("body", "")
 
 
+# [RCF:PROTECTED]
 def parse_sms_message(payload: dict) -> tuple[str, str, str]:
     """Returns (sender_phone, '', text)"""
     return payload.get("From", ""), "", payload.get("Body", "")
 
 
+# [RCF:PROTECTED]
 async def send_telegram(channel: MessagingChannel, chat_id: str, text: str):
     token = channel.config.get("bot_token")
     async with httpx.AsyncClient(timeout=10) as client:
@@ -143,6 +152,7 @@ async def send_telegram(channel: MessagingChannel, chat_id: str, text: str):
         )
 
 
+# [RCF:PROTECTED]
 async def send_telegram_photo(
     channel: MessagingChannel,
     chat_id: str,
@@ -170,6 +180,7 @@ async def send_telegram_photo(
             )
 
 
+# [RCF:PROTECTED]
 async def send_whatsapp(channel: MessagingChannel, to_phone: str, text: str):
     token = channel.config.get("access_token")
     phone_id = channel.config.get("phone_number_id")
@@ -181,6 +192,7 @@ async def send_whatsapp(channel: MessagingChannel, to_phone: str, text: str):
         )
 
 
+# [RCF:PROTECTED]
 async def send_sms(channel: MessagingChannel, to_phone: str, text: str):
     sid = channel.config.get("twilio_sid")
     token = channel.config.get("twilio_token")
@@ -192,6 +204,7 @@ async def send_sms(channel: MessagingChannel, to_phone: str, text: str):
             data={"To": to_phone, "From": from_phone, "Body": text},
         )
 
+# [RCF:PROTECTED]
 def parse_waha_message(payload: dict):
     """Parse message from WAHA webhook (whatsapp-web.js engine)."""
     # WAHA usually sends { "event": "message", "payload": { "from": "...", "body": "...", "_data": {"notifyName": "..."} } }
@@ -211,6 +224,7 @@ def parse_waha_message(payload: dict):
     
     return sender_id, sender_name, text
 
+# [RCF:PROTECTED]
 async def send_waha(channel: MessagingChannel, to: str, text: str):
     """Send message back to WhatsApp via WAHA API."""
     import httpx

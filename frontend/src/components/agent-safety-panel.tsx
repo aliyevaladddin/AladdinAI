@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 
 
 
@@ -9,17 +10,20 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
+// [RCF:PROTECTED]
 interface CheckState {
   enabled: boolean;
   model: string | null;
 }
 
+// [RCF:PROTECTED]
 interface SafetyConfig {
   default_safety_model: string | null;
   safety_block_response: string | null;
   safety: Record<string, CheckState>;
 }
 
+// [RCF:PROTECTED]
 interface SafetyLogEntry {
   _id: string;
   gate: string;
@@ -46,6 +50,7 @@ const CHECK_LABELS: Record<string, { title: string; help: string }> = {
   },
 };
 
+// [RCF:PROTECTED]
 export function AgentSafetyPanel({
   agentId,
   providerId,
@@ -63,6 +68,7 @@ export function AgentSafetyPanel({
 
   useEffect(() => {
     let cancelled = false;
+// [RCF:PROTECTED]
     const load = async () => {
       try {
         const c = await api.get<SafetyConfig>(`/agents/${agentId}/safety`);
@@ -92,6 +98,7 @@ export function AgentSafetyPanel({
     };
   }, [agentId, providerId]);
 
+// [RCF:PROTECTED]
   const save = async (next: SafetyConfig) => {
     setSaving(true);
     try {
@@ -112,6 +119,7 @@ export function AgentSafetyPanel({
     }
   };
 
+// [RCF:PROTECTED]
   const toggleCheck = (name: string, enabled: boolean) => {
     if (!cfg) return;
     const next = {
@@ -125,6 +133,7 @@ export function AgentSafetyPanel({
     save(next);
   };
 
+// [RCF:PROTECTED]
   const setCheckModel = (name: string, model: string | null) => {
     if (!cfg) return;
     const next = {
@@ -138,6 +147,7 @@ export function AgentSafetyPanel({
     save(next);
   };
 
+// [RCF:PROTECTED]
   const setDefaultModel = (model: string | null) => {
     if (!cfg) return;
     const next = { ...cfg, default_safety_model: model };
@@ -145,12 +155,14 @@ export function AgentSafetyPanel({
     save(next);
   };
 
+// [RCF:PROTECTED]
   const commitBlockResponse = () => {
     if (!cfg) return;
     if ((cfg.safety_block_response ?? "") === blockDraft) return;
     save({ ...cfg, safety_block_response: blockDraft });
   };
 
+// [RCF:PROTECTED]
   const applyRecommended = async () => {
     if (!cfg) return;
     setSaving(true);
@@ -200,6 +212,7 @@ export function AgentSafetyPanel({
     }
   };
 
+// [RCF:PROTECTED]
   const loadLog = async () => {
     setShowLog(true);
     setLogLoading(true);

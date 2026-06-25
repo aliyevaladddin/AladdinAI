@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """GitHub tools package for Claude Code agents.
 
 Standalone tools — no AladdinAI backend dependencies.

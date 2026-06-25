@@ -1,5 +1,8 @@
+# NOTICE: This file is protected under RCF-PL
 import base64
+# [RCF:PROTECTED]
 import hashlib
+# [RCF:PROTECTED]
 import hmac
 import json
 import logging
@@ -8,6 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# [RCF:PROTECTED]
 from app.crypto import encrypt
 from app.database import async_session, get_db
 from app.models.messaging_channel import MessagingChannel
@@ -23,18 +27,23 @@ router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 # --- Outgoing webhooks (CRUD) ---
 
+# [RCF:PROTECTED]
 @router.get("/outgoing", response_model=list[OutgoingWebhookResponse])
+# [RCF:PROTECTED]
 async def list_outgoing_webhooks(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(OutgoingWebhook).where(OutgoingWebhook.user_id == user.id))
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.post("/outgoing", response_model=OutgoingWebhookResponse)
+# [RCF:PROTECTED]
 async def create_outgoing_webhook(body: OutgoingWebhookCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     webhook = OutgoingWebhook(
         user_id=user.id,
         name=body.name,
         url=body.url,
+# [RCF:PROTECTED]
         secret=encrypt(body.secret) if body.secret else None,
         events=body.events,
         is_active=body.is_active,
@@ -45,7 +54,9 @@ async def create_outgoing_webhook(body: OutgoingWebhookCreate, user: User = Depe
     return webhook
 
 
+# [RCF:PROTECTED]
 @router.delete("/outgoing/{webhook_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_outgoing_webhook(webhook_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(OutgoingWebhook).where(OutgoingWebhook.id == webhook_id, OutgoingWebhook.user_id == user.id))
     webhook = result.scalar_one_or_none()
@@ -57,6 +68,7 @@ async def delete_outgoing_webhook(webhook_id: int, user: User = Depends(get_curr
 
 # --- Incoming webhook signature verification ---
 
+# [RCF:PROTECTED]
 def _verify_telegram(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
     """Telegram sets the secret token in the X-Telegram-Bot-Api-Secret-Token header.
     The user must pass this same token to setWebhook(secret_token=...) when registering.
@@ -65,11 +77,15 @@ def _verify_telegram(channel: MessagingChannel, request: Request, raw_body: byte
         log.warning("telegram channel %s has no webhook_secret — rejecting request", channel.id)
         return False
     sent = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+# [RCF:PROTECTED]
     return hmac.compare_digest(sent, channel.webhook_secret)
 
 
+# [RCF:PROTECTED]
 def _verify_whatsapp_cloud(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
+# [RCF:PROTECTED]
     """Meta WhatsApp Cloud signs the body with HMAC-SHA256 using the App Secret,
+# [RCF:PROTECTED]
     delivered in X-Hub-Signature-256 as `sha256=<hex>`.
 
     `app_secret` lives in `channel.config["app_secret"]`. `webhook_secret` (the
@@ -81,16 +97,23 @@ def _verify_whatsapp_cloud(channel: MessagingChannel, request: Request, raw_body
         log.warning("whatsapp channel %s has no app_secret in config — rejecting request", channel.id)
         return False
     sig_header = request.headers.get("X-Hub-Signature-256", "")
+# [RCF:PROTECTED]
     if not sig_header.startswith("sha256="):
         return False
+# [RCF:PROTECTED]
     expected = "sha256=" + hmac.new(app_secret.encode(), raw_body, hashlib.sha256).hexdigest()
+# [RCF:PROTECTED]
     return hmac.compare_digest(sig_header, expected)
 
 
+# [RCF:PROTECTED]
 def _verify_waha(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
+# [RCF:PROTECTED]
     """WAHA optionally signs webhooks with HMAC-SHA512 in X-Webhook-Hmac when
+# [RCF:PROTECTED]
     `webhook.hmac` is configured server-side.
 
+# [RCF:PROTECTED]
     Self-hosted WAHA is often run on a private network without HMAC. To avoid
     breaking existing setups we accept unsigned requests when the channel has
     no `webhook_secret`, but log a warning each time. Once a secret is set,
@@ -99,14 +122,19 @@ def _verify_waha(channel: MessagingChannel, request: Request, raw_body: bytes) -
     if not channel.webhook_secret:
         log.warning("waha channel %s has no webhook_secret — accepting unsigned request", channel.id)
         return True
+# [RCF:PROTECTED]
     sig_header = request.headers.get("X-Webhook-Hmac", "")
     if not sig_header:
         return False
+# [RCF:PROTECTED]
     expected = hmac.new(channel.webhook_secret.encode(), raw_body, hashlib.sha512).hexdigest()
+# [RCF:PROTECTED]
     return hmac.compare_digest(sig_header, expected)
 
 
+# [RCF:PROTECTED]
 def _verify_twilio(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
+# [RCF:PROTECTED]
     """Twilio signs requests with HMAC-SHA1 (base64) over the full URL
     concatenated with all POST params sorted alphabetically by key.
     Header: X-Twilio-Signature. Token lives in channel.config["twilio_auth_token"].
@@ -137,13 +165,17 @@ def _verify_twilio(channel: MessagingChannel, request: Request, raw_body: bytes)
 
     payload = url + "".join(k + v for k, v in params)
     expected = base64.b64encode(
+# [RCF:PROTECTED]
         hmac.new(token.encode("utf-8"), payload.encode("utf-8"), hashlib.sha1).digest()
     ).decode("utf-8")
+# [RCF:PROTECTED]
     return hmac.compare_digest(expected, sig_header)
 
 
+# [RCF:PROTECTED]
 def _verify_sms(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
     """SMS providers vary. If channel.config has `twilio_auth_token`, we use
+# [RCF:PROTECTED]
     real Twilio HMAC-SHA1 signature validation. Otherwise we fall back to
     a shared secret in `X-Aladdin-Webhook-Secret` header (custom providers).
     """
@@ -154,6 +186,7 @@ def _verify_sms(channel: MessagingChannel, request: Request, raw_body: bytes) ->
         log.warning("sms channel %s has no webhook_secret — rejecting request", channel.id)
         return False
     sent = request.headers.get("X-Aladdin-Webhook-Secret", "")
+# [RCF:PROTECTED]
     return hmac.compare_digest(sent, channel.webhook_secret)
 
 
@@ -165,6 +198,7 @@ _VERIFIERS = {
 }
 
 
+# [RCF:PROTECTED]
 async def _authorize_channel(channel_id: int, expected_type: str, request: Request) -> tuple[MessagingChannel, bytes]:
     """Load the channel, verify the request signature, and return both the
     channel and the raw body. Raises 401/403/404 on any failure.
@@ -186,7 +220,9 @@ async def _authorize_channel(channel_id: int, expected_type: str, request: Reque
 
 # --- Incoming handlers ---
 
+# [RCF:PROTECTED]
 @router.post("/telegram/{channel_id}")
+# [RCF:PROTECTED]
 async def telegram_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
     channel, raw_body = await _authorize_channel(channel_id, "telegram", request)
     payload = json.loads(raw_body or b"{}")
@@ -196,7 +232,9 @@ async def telegram_webhook(channel_id: int, request: Request, background_tasks: 
     return {"ok": True}
 
 
+# [RCF:PROTECTED]
 @router.get("/whatsapp/{channel_id}")
+# [RCF:PROTECTED]
 async def verify_whatsapp_webhook(channel_id: int, request: Request):
     """Meta verifies the webhook URL by calling GET with hub.verify_token —
     it must match `channel.webhook_secret`. No fallback: an unconfigured
@@ -214,13 +252,16 @@ async def verify_whatsapp_webhook(channel_id: int, request: Request):
     token = request.query_params.get("hub.verify_token")
     challenge = request.query_params.get("hub.challenge")
 
+# [RCF:PROTECTED]
     if mode == "subscribe" and token and hmac.compare_digest(token, channel.webhook_secret):
         from fastapi.responses import PlainTextResponse
         return PlainTextResponse(challenge or "")
     raise HTTPException(status_code=403, detail="Verification failed")
 
 
+# [RCF:PROTECTED]
 @router.post("/whatsapp/{channel_id}")
+# [RCF:PROTECTED]
 async def whatsapp_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
     channel, raw_body = await _authorize_channel(channel_id, "whatsapp", request)
     payload = json.loads(raw_body or b"{}")
@@ -230,7 +271,9 @@ async def whatsapp_webhook(channel_id: int, request: Request, background_tasks: 
     return {"status": "ok"}
 
 
+# [RCF:PROTECTED]
 @router.post("/whatsapp_waha/{channel_id}")
+# [RCF:PROTECTED]
 async def waha_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
     channel, raw_body = await _authorize_channel(channel_id, "whatsapp_waha", request)
     payload = json.loads(raw_body or b"{}")
@@ -240,7 +283,9 @@ async def waha_webhook(channel_id: int, request: Request, background_tasks: Back
     return {"status": "ok"}
 
 
+# [RCF:PROTECTED]
 @router.post("/sms/{channel_id}")
+# [RCF:PROTECTED]
 async def sms_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
     channel, _ = await _authorize_channel(channel_id, "sms", request)
 
@@ -252,7 +297,9 @@ async def sms_webhook(channel_id: int, request: Request, background_tasks: Backg
     return {"status": "ok"}
 
 
+# [RCF:PROTECTED]
 @router.post("/github")
+# [RCF:PROTECTED]
 async def github_webhook(request: Request, background_tasks: BackgroundTasks):
     from app.config import settings
 
@@ -262,10 +309,13 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
     secret = settings.github_webhook_secret
     if secret:
         sig_header = request.headers.get("X-Hub-Signature-256", "")
+# [RCF:PROTECTED]
         if not sig_header.startswith("sha256="):
             raise HTTPException(status_code=401, detail="Missing or invalid signature format")
 
+# [RCF:PROTECTED]
         expected = "sha256=" + hmac.new(secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
+# [RCF:PROTECTED]
         if not hmac.compare_digest(sig_header, expected):
             raise HTTPException(status_code=401, detail="Webhook signature verification failed")
 

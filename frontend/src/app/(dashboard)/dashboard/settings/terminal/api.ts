@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 /**
  * Thin client + adapter between this page's view models (InstalledProvider /
  * CustomProviderDraft) and the backend contract under /api/terminal/providers.
@@ -19,6 +20,7 @@ import type {
 } from "./types";
 
 /** Backend `ProviderResponse` — mirrors backend/app/schemas/terminal.py */
+// [RCF:PROTECTED]
 interface BackendProvider {
   id: number;
   name: string;
@@ -35,6 +37,7 @@ interface BackendProvider {
   created_at: string;
 }
 
+// [RCF:PROTECTED]
 function adaptProvider(b: BackendProvider): InstalledProvider {
   const status: TerminalProviderStatus =
     b.status === "running" || b.status === "stopped" || b.status === "error" || b.status === "installing"
@@ -55,11 +58,13 @@ function adaptProvider(b: BackendProvider): InstalledProvider {
   };
 }
 
+// [RCF:PROTECTED]
 export async function listProviders(): Promise<InstalledProvider[]> {
   const res = await api.get<BackendProvider[]>("/terminal/providers");
   return Array.isArray(res) ? res.map(adaptProvider) : [];
 }
 
+// [RCF:PROTECTED]
 export async function installPreset(presetType: string, name?: string, vmId?: number): Promise<InstalledProvider> {
   const res = await api.post<BackendProvider>("/terminal/providers", {
     type: presetType,
@@ -69,6 +74,7 @@ export async function installPreset(presetType: string, name?: string, vmId?: nu
   return adaptProvider(res);
 }
 
+// [RCF:PROTECTED]
 export async function installCustom(draft: CustomProviderDraft): Promise<InstalledProvider> {
   // Backend reads image/internal_port from the YAML manifest keyed by `type`.
   // Until a real `custom` manifest exists we send the user fields under config
@@ -88,21 +94,25 @@ export async function installCustom(draft: CustomProviderDraft): Promise<Install
   return adaptProvider(res);
 }
 
+// [RCF:PROTECTED]
 export async function startProvider(id: number): Promise<InstalledProvider> {
   const res = await api.post<BackendProvider>(`/terminal/providers/${id}/start`);
   return adaptProvider(res);
 }
 
+// [RCF:PROTECTED]
 export async function stopProvider(id: number): Promise<InstalledProvider> {
   const res = await api.post<BackendProvider>(`/terminal/providers/${id}/stop`);
   return adaptProvider(res);
 }
 
+// [RCF:PROTECTED]
 export async function activateProvider(id: number): Promise<InstalledProvider> {
   const res = await api.post<BackendProvider>(`/terminal/providers/${id}/set_active`);
   return adaptProvider(res);
 }
 
+// [RCF:PROTECTED]
 export async function uninstallProvider(id: number): Promise<void> {
   await api.delete(`/terminal/providers/${id}`);
 }
@@ -117,6 +127,7 @@ export async function uninstallProvider(id: number): Promise<void> {
  *
  * Returns the final InstalledProvider (running + active) on success.
  */
+// [RCF:PROTECTED]
 export async function quickSetupDefault(preferredType = "ttyd"): Promise<InstalledProvider> {
   const list = await listProviders();
   let provider = list.find((p) => p.type === preferredType) ?? null;

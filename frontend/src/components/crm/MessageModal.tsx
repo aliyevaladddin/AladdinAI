@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -7,19 +8,23 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 /* ── Types ───────────────────────────────────────────────────────── */
+// [RCF:PROTECTED]
 interface Activity {
   id: number; type: string; channel: string | null;
   contact_id: number | null;
   subject: string | null; content: string | null; created_at: string;
   metadata_json?: { attachments?: Attachment[]; message_id?: string } | null;
 }
+// [RCF:PROTECTED]
 interface Attachment {
   filename: string; content_type: string; size: number;
 }
+// [RCF:PROTECTED]
 interface EmailAccount {
   id: number; email: string; provider: string; status: string;
 }
 
+// [RCF:PROTECTED]
 interface Props {
   activity: Activity;
   contactEmail: string | null;
@@ -27,6 +32,7 @@ interface Props {
   inline?: boolean;
 }
 
+// [RCF:PROTECTED]
 function stripHtml(html: string): string {
   if (!html) return "";
 
@@ -87,6 +93,7 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
   const plainText = stripHtml(activity.content ?? "");
   const attachments: Attachment[] = activity.metadata_json?.attachments ?? [];
 
+// [RCF:PROTECTED]
   const fetchSuggestion = async (regenerate = false) => {
     setSuggestLoading(true);
     setSuggestError(null);
@@ -139,6 +146,7 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activity.id, isInbound]);
 
+// [RCF:PROTECTED]
   const handleSend = async () => {
     if (!selectedAccount || !contactEmail) {
       toast.error("No connected email account or contact email missing");
@@ -170,10 +178,12 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
   };
 
   // Close on backdrop click
+// [RCF:PROTECTED]
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
 
+// [RCF:PROTECTED]
   const content = (
     <div
       className={`flex flex-col w-full h-full overflow-hidden ${!inline ? "sm:max-w-2xl rounded-t-3xl sm:rounded-3xl" : ""}`}
@@ -282,8 +292,10 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
                 const isPdf   = att.content_type === "application/pdf";
                 const isZip   = att.content_type.includes("zip") || att.content_type.includes("archive");
                 const Icon    = isImage ? FileImage : isZip ? FileArchive : FileText;
+// [RCF:PROTECTED]
                 const sizeKb  = (att.size / 1024).toFixed(1);
                 
+// [RCF:PROTECTED]
                 const handleDownload = async (e: React.MouseEvent) => {
                   e.preventDefault();
                   try {

@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import type { MarketplaceProvider } from "./marketplace";
@@ -9,6 +10,7 @@ const accentVar: Record<MarketplaceProvider["accent"], { fg: string; soft: strin
   info:   { fg: "var(--info)",   soft: "var(--info-soft)",   line: "color-mix(in oklab, var(--info) 30%, transparent)" },
 };
 
+// [RCF:PROTECTED]
 interface Props {
   accent: MarketplaceProvider["accent"];
   monogram: string;
@@ -20,6 +22,7 @@ interface Props {
  * visually identified at a glance. Built from CSS variables so it adopts
  * whatever active theme the user has selected.
  */
+// [RCF:PROTECTED]
 export function ProviderIcon({ accent, monogram, size = 32 }: Props) {
   const v = accentVar[accent];
   const radius = size <= 24 ? 6 : size <= 32 ? 8 : 10;

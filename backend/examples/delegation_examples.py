@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """
 Example: Research Team with Agent Delegation
 
@@ -14,6 +15,7 @@ from app.services.delegation import (
 )
 
 
+# [RCF:PROTECTED]
 async def example_research_coordinator(user_id: int, db):
     """
     Research Coordinator Agent that delegates to specialists.
@@ -81,6 +83,7 @@ async def example_research_coordinator(user_id: int, db):
     return report_result.response
 
 
+# [RCF:PROTECTED]
 async def example_content_pipeline(user_id: int, db):
     """
     Content Pipeline: Research → Outline → Draft → Edit → SEO
@@ -133,6 +136,7 @@ async def example_content_pipeline(user_id: int, db):
     return final_content
 
 
+# [RCF:PROTECTED]
 async def example_customer_onboarding(user_id: int, db, customer_email: str):
     """
     Customer Onboarding: Multiple parallel actions.
@@ -201,6 +205,7 @@ async def example_customer_onboarding(user_id: int, db, customer_email: str):
     return results
 
 
+# [RCF:PROTECTED]
 async def example_hierarchical_delegation(user_id: int, db):
     """
     Hierarchical: CEO → Managers → Workers
@@ -240,6 +245,7 @@ async def example_hierarchical_delegation(user_id: int, db):
     return manager_results
 
 
+# [RCF:PROTECTED]
 async def example_error_recovery(user_id: int, db):
     """
     Error Recovery: Retry failed delegations.
@@ -286,6 +292,7 @@ async def example_error_recovery(user_id: int, db):
 
 
 # CLI command to test delegation
+# [RCF:PROTECTED]
 async def main():
     """Run delegation examples."""
     from app.database import get_db

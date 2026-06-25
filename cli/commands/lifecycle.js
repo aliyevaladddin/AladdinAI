@@ -1,8 +1,10 @@
+// NOTICE: This file is protected under RCF-PL
 // `aladdin-ai up | down | restart | logs` — docker compose wrappers.
 
 import chalk from 'chalk';
 import { compose } from '../lib/compose.js';
 
+// [RCF:PROTECTED]
 export async function upCommand(opts) {
   console.log(chalk.cyan('Starting AladdinAI services…\n'));
   const args = ['up', '-d'];
@@ -14,6 +16,7 @@ export async function upCommand(opts) {
   console.log('  Backend:  ' + chalk.cyan('http://localhost:8000/api/docs'));
 }
 
+// [RCF:PROTECTED]
 export async function downCommand(opts) {
   console.log(chalk.cyan('Stopping AladdinAI services…\n'));
   const args = ['down'];
@@ -22,6 +25,7 @@ export async function downCommand(opts) {
   process.exit(r.exitCode || 0);
 }
 
+// [RCF:PROTECTED]
 export async function restartCommand(service) {
   console.log(chalk.cyan(`Restarting ${service || 'all services'}…\n`));
   const args = ['restart'];
@@ -30,6 +34,7 @@ export async function restartCommand(service) {
   process.exit(r.exitCode || 0);
 }
 
+// [RCF:PROTECTED]
 export async function logsCommand(service, opts) {
   const args = ['logs'];
   if (opts.follow) args.push('-f');
@@ -39,6 +44,7 @@ export async function logsCommand(service, opts) {
   process.exit(r.exitCode || 0);
 }
 
+// [RCF:PROTECTED]
 export async function updateCommand() {
   console.log(chalk.cyan('Pulling latest images…\n'));
   let r = await compose(['pull']);

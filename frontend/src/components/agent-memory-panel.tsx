@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -5,6 +6,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
+// [RCF:PROTECTED]
 interface MemoryEntry {
   id: string;
   fact: string;
@@ -17,6 +19,7 @@ interface MemoryEntry {
 
 type Scope = "private" | "shared" | "both";
 
+// [RCF:PROTECTED]
 export function AgentMemoryPanel({ agentId }: { agentId: number }) {
   const [entries, setEntries] = useState<MemoryEntry[]>([]);
   const [scope, setScope] = useState<Scope>("both");
@@ -28,6 +31,7 @@ export function AgentMemoryPanel({ agentId }: { agentId: number }) {
   const [draftVis, setDraftVis] = useState<"private" | "shared">("private");
   const [draftTags, setDraftTags] = useState("");
 
+// [RCF:PROTECTED]
   const load = async () => {
     setLoading(true);
     try {
@@ -49,11 +53,13 @@ export function AgentMemoryPanel({ agentId }: { agentId: number }) {
     load();
   }, [agentId, scope]);
 
+// [RCF:PROTECTED]
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
     load();
   };
 
+// [RCF:PROTECTED]
   const onDelete = async (id: string) => {
     if (!confirm("Delete this memory?")) return;
     setBusyId(id);
@@ -69,6 +75,7 @@ export function AgentMemoryPanel({ agentId }: { agentId: number }) {
     }
   };
 
+// [RCF:PROTECTED]
   const onAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const fact = draftFact.trim();

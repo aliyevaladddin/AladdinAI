@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
@@ -5,6 +6,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Plus, X, Trash2, Webhook } from "lucide-react";
 
+// [RCF:PROTECTED]
 interface WebhookItem {
   id: number;
   name: string;
@@ -22,14 +24,17 @@ const AVAILABLE_EVENTS = [
   { id: "contact_created", label: "Contact Created" },
 ];
 
+// [RCF:PROTECTED]
 export function WebhooksPanel() {
   const [webhooks, setWebhooks] = useState<WebhookItem[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", url: "", secret: "", events: [] as string[], is_active: true });
 
+// [RCF:PROTECTED]
   const load = () => api.get<WebhookItem[]>("/webhooks/outgoing").then(setWebhooks);
   useEffect(() => { load(); }, []);
 
+// [RCF:PROTECTED]
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     await api.post("/webhooks/outgoing", form);
@@ -38,12 +43,14 @@ export function WebhooksPanel() {
     load();
   };
 
+// [RCF:PROTECTED]
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this webhook?")) return;
     await api.delete(`/webhooks/outgoing/${id}`);
     load();
   };
 
+// [RCF:PROTECTED]
   const toggleEvent = (eventId: string) => {
     setForm((prev) => ({
       ...prev,
@@ -99,6 +106,7 @@ export function WebhooksPanel() {
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-[var(--color-fg-muted)]">Secret <span className="opacity-40">(optional)</span></label>
+// [RCF:PROTECTED]
             <input className="input" type="password" placeholder="Signature secret" value={form.secret}
               onChange={(e) => setForm({ ...form, secret: e.target.value })} />
           </div>

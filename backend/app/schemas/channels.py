@@ -1,7 +1,9 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime
 from pydantic import BaseModel
 
 
+# [RCF:PROTECTED]
 class EmailAccountCreate(BaseModel):
     provider: str  # gmail, outlook, imap
     email: str
@@ -16,6 +18,7 @@ class EmailAccountCreate(BaseModel):
     refresh_token: str | None = None
 
 
+# [RCF:PROTECTED]
 class EmailAccountUpdate(BaseModel):
     email: str | None = None
     imap_host: str | None = None
@@ -25,12 +28,14 @@ class EmailAccountUpdate(BaseModel):
     password: str | None = None
 
 
+# [RCF:PROTECTED]
 class EmailAgentUpdate(BaseModel):
     """Lightweight PATCH — only updates the agent binding on an email account."""
     agent_id: int | None = None
 
 
 
+# [RCF:PROTECTED]
 class EmailAccountResponse(BaseModel):
     id: int
     provider: str
@@ -43,6 +48,7 @@ class EmailAccountResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class MessagingChannelCreate(BaseModel):
     type: str  # telegram, whatsapp, sms
     name: str
@@ -50,6 +56,7 @@ class MessagingChannelCreate(BaseModel):
     agent_id: int | None = None
 
 
+# [RCF:PROTECTED]
 class MessagingChannelUpdate(BaseModel):
     # Only the agent binding is editable post-creation. `None` clears the
     # binding (channel falls back to the user's router/default). Credentials
@@ -57,6 +64,7 @@ class MessagingChannelUpdate(BaseModel):
     agent_id: int | None = None
 
 
+# [RCF:PROTECTED]
 class MessagingChannelResponse(BaseModel):
     id: int
     type: str
@@ -72,6 +80,7 @@ class MessagingChannelResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class ConversationResponse(BaseModel):
     id: int
     contact_id: int

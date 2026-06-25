@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """add agent_messages table
 
 Revision ID: 2a3f1c8b9d4e
@@ -16,6 +17,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     op.create_table(
         'agent_messages',
@@ -36,6 +38,7 @@ def upgrade() -> None:
     op.create_index('ix_agent_messages_parent_session', 'agent_messages', ['parent_session_id'])
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     op.drop_index('ix_agent_messages_parent_session', table_name='agent_messages')
     op.drop_index('ix_agent_messages_to_agent_status', table_name='agent_messages')

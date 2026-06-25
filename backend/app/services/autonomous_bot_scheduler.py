@@ -36,6 +36,7 @@ Every event that happens here — you notice, you react, you remember."""
 scheduler = AsyncIOScheduler()
 
 
+# [RCF:PROTECTED]
 async def get_repo_stats() -> dict:
     """Get current repository statistics."""
     token = await get_aladdinai_bot_token()
@@ -88,6 +89,7 @@ async def get_repo_stats() -> dict:
         }
 
 
+# [RCF:PROTECTED]
 async def get_week_stats() -> dict:
     """Get statistics for the past week."""
     token = await get_aladdinai_bot_token()
@@ -126,6 +128,7 @@ async def get_week_stats() -> dict:
         }
 
 
+# [RCF:PROTECTED]
 async def create_github_discussion(title: str, body: str) -> None:
     """Create a GitHub Discussion post."""
     token = await get_aladdinai_bot_token()
@@ -148,6 +151,7 @@ async def create_github_discussion(title: str, body: str) -> None:
         )
 
 
+# [RCF:PROTECTED]
 async def call_llm(system: str, user: str, temperature: float = 0.9) -> str:
     """Call LLM for autonomous decision making.
 
@@ -163,7 +167,9 @@ async def call_llm(system: str, user: str, temperature: float = 0.9) -> str:
         return "👋 AladdinAI Bot here, staying autonomous and alert!"
 
 
+# [RCF:PROTECTED]
 @scheduler.scheduled_job("cron", hour=9, minute=0)
+# [RCF:PROTECTED]
 async def morning_routine():
     """Every morning at 9:00 - bot decides what to write."""
     try:
@@ -188,7 +194,9 @@ Be authentic, maybe a bit dramatic. Max 3 sentences."""
         log.error(f"Morning routine failed: {e}", exc_info=True)
 
 
+# [RCF:PROTECTED]
 @scheduler.scheduled_job("cron", day_of_week="fri", hour=17, minute=0)
+# [RCF:PROTECTED]
 async def friday_recap():
     """Every Friday at 5pm - weekly recap with character."""
     try:
@@ -211,12 +219,14 @@ Max 4 sentences."""
         log.error(f"Friday recap failed: {e}", exc_info=True)
 
 
+# [RCF:PROTECTED]
 def start_scheduler():
     """Start the autonomous bot scheduler."""
     scheduler.start()
     log.info("Autonomous bot scheduler started")
 
 
+# [RCF:PROTECTED]
 def stop_scheduler():
     """Stop the autonomous bot scheduler."""
     scheduler.shutdown()

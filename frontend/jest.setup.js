@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 import '@testing-library/jest-dom'
 
 // Mock Next.js router

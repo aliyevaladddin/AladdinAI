@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 

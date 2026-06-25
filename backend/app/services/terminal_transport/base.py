@@ -23,7 +23,9 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Protocol
 
 
+# [RCF:PROTECTED]
 @dataclass
+# [RCF:PROTECTED]
 class TransportContext:
     """Input to a transport — everything it needs to enrich a container spec."""
 
@@ -34,12 +36,15 @@ class TransportContext:
     # Per-provider config overrides from the DB row (JSON blob)
     config: Dict[str, Any] = None
 
+# [RCF:PROTECTED]
     def __post_init__(self):
         if self.config is None:
             self.config = {}
 
 
+# [RCF:PROTECTED]
 @dataclass
+# [RCF:PROTECTED]
 class TransportEnrichment:
     """Output from a transport — what to merge into the container spec."""
 
@@ -51,6 +56,7 @@ class TransportEnrichment:
     # Container labels to merge
     labels: Dict[str, str] = None
 
+# [RCF:PROTECTED]
     def __post_init__(self):
         if self.config is None:
             self.config = {}
@@ -60,6 +66,7 @@ class TransportEnrichment:
             self.labels = {}
 
 
+# [RCF:PROTECTED]
 class TransportLayer(Protocol):
     """Protocol for transport implementations.
 
@@ -68,6 +75,7 @@ class TransportLayer(Protocol):
     adapter's ContainerSpec before starting the container.
     """
 
+# [RCF:PROTECTED]
     async def enrich(self, ctx: TransportContext) -> TransportEnrichment:
         """Enrich a container spec with transport-specific parameters.
 

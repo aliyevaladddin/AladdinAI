@@ -1,5 +1,7 @@
+// NOTICE: This file is protected under RCF-PL
 import Image from "next/image";
 
+// [RCF:PROTECTED]
 interface LampProps {
   /** Pixel size of the lamp glyph itself. Default 34px (mockup). */
   size?: number;
@@ -15,6 +17,7 @@ interface LampProps {
  * - Warm medallion backdrop (::before) on light themes so the dark PNG
  *   doesn't get lost on near-white surfaces
  */
+// [RCF:PROTECTED]
 export function Lamp({ size = 34, label = "AladdinAI" }: LampProps) {
   return (
     <span

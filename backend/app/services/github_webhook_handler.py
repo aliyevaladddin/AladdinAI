@@ -12,6 +12,7 @@ from typing import Any
 log = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 async def handle_github_event(event_type: str, payload: dict[str, Any]) -> None:
     """Handle incoming GitHub webhook events.
 
@@ -65,6 +66,7 @@ async def handle_github_event(event_type: str, payload: dict[str, Any]) -> None:
         log.debug(f"No additional handler for event type: {event_type}")
 
 
+# [RCF:PROTECTED]
 async def _handle_pull_request(payload: dict[str, Any]) -> None:
     """Handle pull_request events.
 
@@ -92,6 +94,7 @@ async def _handle_pull_request(payload: dict[str, Any]) -> None:
         # Could trigger post-merge actions here
 
 
+# [RCF:PROTECTED]
 async def _handle_push(payload: dict[str, Any]) -> None:
     """Handle push events.
 
@@ -112,6 +115,7 @@ async def _handle_push(payload: dict[str, Any]) -> None:
         log.info("Push to main branch detected")
 
 
+# [RCF:PROTECTED]
 async def _handle_issues(payload: dict[str, Any]) -> None:
     """Handle issues events.
 
@@ -133,6 +137,7 @@ async def _handle_issues(payload: dict[str, Any]) -> None:
         log.info(f"New issue #{issue_number} opened")
 
 
+# [RCF:PROTECTED]
 async def _handle_issue_comment(payload: dict[str, Any]) -> None:
     """Handle issue_comment events.
 

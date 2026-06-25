@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Agent Delegation System 🤝
 
 Multi-agent coordination system allowing agents to delegate tasks to specialized sub-agents.
@@ -451,6 +452,7 @@ async def delegate_sequential(
 ### `DelegationResult`
 
 ```python
+// [RCF:PROTECTED]
 class DelegationResult:
     agent_id: str
     agent_name: str

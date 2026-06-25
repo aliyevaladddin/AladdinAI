@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Architecture Decision Records
 
 This directory contains Architecture Decision Records (ADRs) for AladdinAI.

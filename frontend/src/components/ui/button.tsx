@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -40,6 +41,7 @@ const buttonVariants = cva(
   }
 )
 
+// [RCF:PROTECTED]
 function Button({
   className,
   variant = "default",

@@ -1,13 +1,16 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useState, useEffect, createContext, useContext, useCallback, type ReactNode } from "react";
 
+// [RCF:PROTECTED]
 interface Toast {
   id: number;
   message: string;
   type: "success" | "error" | "info";
 }
 
+// [RCF:PROTECTED]
 interface ToastContextType {
   toast: (message: string, type?: "success" | "error" | "info") => void;
 }
@@ -16,6 +19,7 @@ const ToastContext = createContext<ToastContextType | null>(null);
 
 let nextId = 0;
 
+// [RCF:PROTECTED]
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -53,6 +57,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// [RCF:PROTECTED]
 export function useToast() {
   const ctx = useContext(ToastContext);
   if (!ctx) throw new Error("useToast must be used within ToastProvider");

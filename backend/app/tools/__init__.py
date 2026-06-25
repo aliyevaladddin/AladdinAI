@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Agent tool registry.
 
 Each tool is a coroutine registered via `@tool(...)`. The registry exposes:

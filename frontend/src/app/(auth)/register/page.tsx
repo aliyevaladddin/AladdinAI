@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useState } from "react";
@@ -14,6 +15,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+// [RCF:PROTECTED]
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -111,6 +113,7 @@ export default function RegisterPage() {
             className="font-medium"
             style={{ color: "var(--color-fg)" }}
           >
+// [RCF:PROTECTED]
             Sign in
           </Link>
         </p>

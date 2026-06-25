@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 import type { Metadata } from "next";
 import {
   Inter,

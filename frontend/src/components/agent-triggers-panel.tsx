@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,6 +6,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
+// [RCF:PROTECTED]
 interface Trigger {
   id: number;
   name: string;
@@ -20,16 +22,19 @@ interface Trigger {
   created_at: string;
 }
 
+// [RCF:PROTECTED]
 interface AgentRef {
   id: number;
   name: string;
 }
 
+// [RCF:PROTECTED]
 interface Preset {
   id: string;
   cron: string;
 }
 
+// [RCF:PROTECTED]
 interface TriggerTemplate {
   id: string;
   name: string;
@@ -48,6 +53,7 @@ const PRESET_LABELS: Record<string, string> = {
   every_day_18: "Every day at 18:00 UTC",
 };
 
+// [RCF:PROTECTED]
 interface DraftState {
   name: string;
   schedule_kind: "preset" | "cron";
@@ -68,6 +74,7 @@ const EMPTY_DRAFT: DraftState = {
   enabled: true,
 };
 
+// [RCF:PROTECTED]
 export function AgentTriggersPanel() {
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [agents, setAgents] = useState<AgentRef[]>([]);
@@ -80,6 +87,7 @@ export function AgentTriggersPanel() {
   const [preview, setPreview] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
 
+// [RCF:PROTECTED]
   const load = async () => {
     setLoading(true);
     try {
@@ -105,12 +113,14 @@ export function AgentTriggersPanel() {
     load();
   }, []);
 
+// [RCF:PROTECTED]
   const startNew = () => {
     setDraft(EMPTY_DRAFT);
     setEditingId("new");
     setPreview(null);
   };
 
+// [RCF:PROTECTED]
   const startFromTemplate = (tmpl: TriggerTemplate) => {
     setDraft({
       name: tmpl.name,
@@ -126,6 +136,7 @@ export function AgentTriggersPanel() {
     setShowTemplates(false);
   };
 
+// [RCF:PROTECTED]
   const startEdit = (t: Trigger) => {
     setDraft({
       name: t.name,
@@ -140,12 +151,14 @@ export function AgentTriggersPanel() {
     setPreview(null);
   };
 
+// [RCF:PROTECTED]
   const cancelEdit = () => {
     setEditingId(null);
     setDraft(EMPTY_DRAFT);
     setPreview(null);
   };
 
+// [RCF:PROTECTED]
   const previewCron = async () => {
     if (draft.schedule_kind !== "cron") return;
     try {
@@ -160,6 +173,7 @@ export function AgentTriggersPanel() {
     }
   };
 
+// [RCF:PROTECTED]
   const save = async () => {
     if (!draft.name.trim()) return toast.error("Name is required");
     if (!draft.task_template.trim()) return toast.error("Task is required");
@@ -192,6 +206,7 @@ export function AgentTriggersPanel() {
     }
   };
 
+// [RCF:PROTECTED]
   const toggleEnabled = async (t: Trigger) => {
     setBusyId(t.id);
     try {
@@ -205,6 +220,7 @@ export function AgentTriggersPanel() {
     }
   };
 
+// [RCF:PROTECTED]
   const remove = async (t: Trigger) => {
     if (!confirm(`Delete trigger "${t.name}"?`)) return;
     setBusyId(t.id);
@@ -219,6 +235,7 @@ export function AgentTriggersPanel() {
     }
   };
 
+// [RCF:PROTECTED]
   const runNow = async (t: Trigger) => {
     setBusyId(t.id);
     try {
@@ -234,6 +251,7 @@ export function AgentTriggersPanel() {
     }
   };
 
+// [RCF:PROTECTED]
   const toggleAgent = (id: number) => {
     setDraft((d) => ({
       ...d,
@@ -243,6 +261,7 @@ export function AgentTriggersPanel() {
     }));
   };
 
+// [RCF:PROTECTED]
   const agentName = (id: number) =>
     agents.find((a) => a.id === id)?.name ?? `#${id}`;
 

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 import logging
 import secrets
 
@@ -21,13 +22,17 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/channels/messaging", tags=["channels"])
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=list[MessagingChannelResponse])
+# [RCF:PROTECTED]
 async def list_channels(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MessagingChannel).where(MessagingChannel.user_id == user.id))
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.post("", response_model=MessagingChannelResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_channel(body: MessagingChannelCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     channel = MessagingChannel(
         user_id=user.id,
@@ -43,7 +48,9 @@ async def create_channel(body: MessagingChannelCreate, user: User = Depends(get_
     return channel
 
 
+# [RCF:PROTECTED]
 @router.patch("/{channel_id}", response_model=MessagingChannelResponse)
+# [RCF:PROTECTED]
 async def update_channel(
     channel_id: int,
     body: MessagingChannelUpdate,
@@ -79,7 +86,9 @@ async def update_channel(
     return channel
 
 
+# [RCF:PROTECTED]
 @router.post("/{channel_id}/test")
+# [RCF:PROTECTED]
 async def test_channel(channel_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MessagingChannel).where(MessagingChannel.id == channel_id, MessagingChannel.user_id == user.id))
     channel = result.scalar_one_or_none()
@@ -102,7 +111,9 @@ async def test_channel(channel_id: int, user: User = Depends(get_current_user), 
     return {"status": "connected" if success else "error", "message": message}
 
 
+# [RCF:PROTECTED]
 @router.delete("/{channel_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_channel(channel_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MessagingChannel).where(MessagingChannel.id == channel_id, MessagingChannel.user_id == user.id))
     channel = result.scalar_one_or_none()
@@ -117,7 +128,9 @@ async def delete_channel(channel_id: int, user: User = Depends(get_current_user)
     await db.commit()
 
 
+# [RCF:PROTECTED]
 @router.get("/{channel_id}/webhook-config")
+# [RCF:PROTECTED]
 async def get_webhook_config(channel_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Return the webhook URL, secret, and setup instructions for this channel.
 
@@ -138,11 +151,16 @@ async def get_webhook_config(channel_id: int, user: User = Depends(get_current_u
     instructions: dict[str, str] = {}
     if channel.type == "whatsapp_waha":
         instructions["signing"] = (
+# [RCF:PROTECTED]
             "WAHA accepts unsigned webhooks by default. To enable HMAC-SHA512 "
+# [RCF:PROTECTED]
             "verification, set `webhooks[].hmac.key` to the secret above in "
+# [RCF:PROTECTED]
             "your WAHA server config (or pass WHATSAPP_HOOK_HMAC=<secret>)."
         )
+# [RCF:PROTECTED]
         instructions["hmac_algorithm"] = "HMAC-SHA512"
+# [RCF:PROTECTED]
         instructions["header"] = "X-Webhook-Hmac"
     elif channel.type == "telegram":
         instructions["signing"] = (
@@ -154,6 +172,7 @@ async def get_webhook_config(channel_id: int, user: User = Depends(get_current_u
         instructions["signing"] = (
             "WhatsApp Cloud verifies the webhook URL with the secret as `hub.verify_token`. "
             "For signed requests, also set `app_secret` in this channel's config — Meta will "
+# [RCF:PROTECTED]
             "sign payloads with HMAC-SHA256 in X-Hub-Signature-256."
         )
         instructions["verify_token"] = "use the secret as hub.verify_token"
@@ -166,7 +185,9 @@ async def get_webhook_config(channel_id: int, user: User = Depends(get_current_u
     }
 
 
+# [RCF:PROTECTED]
 @router.get("/{channel_id}/waha/qr")
+# [RCF:PROTECTED]
 async def get_waha_qr(channel_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MessagingChannel).where(MessagingChannel.id == channel_id, MessagingChannel.user_id == user.id))
     channel = result.scalar_one_or_none()

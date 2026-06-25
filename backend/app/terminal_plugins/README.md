@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Terminal Plugins (Manifests)
 
 This directory contains YAML manifests for AladdinAI's web terminal and remote development environments.

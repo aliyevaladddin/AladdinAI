@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Run an agent's reply with tool-call iteration.
 
 Cycle:
@@ -46,6 +47,7 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
 _INTER_AGENT_TOOLS = {"delegate", "ask_agent"}
 
 
+# [RCF:PROTECTED]
 def _text_of(content: Any) -> str:
     """Extract text from a message's content — handles both string and OpenAI
     multimodal list form `[{type:"text",text:...}, {type:"image_url",...}]`.
@@ -66,6 +68,7 @@ def _text_of(content: Any) -> str:
     return str(content)
 
 
+# [RCF:PROTECTED]
 def _allowed_tools(agent: Agent) -> list[str]:
     cfg = agent.tools_config or {}
     if isinstance(cfg, dict) and "allowed" in cfg:
@@ -82,6 +85,7 @@ def _allowed_tools(agent: Agent) -> list[str]:
     return tools
 
 
+# [RCF:PROTECTED]
 def _max_iterations(agent: Agent) -> int:
     cfg = agent.tools_config or {}
     if isinstance(cfg, dict) and isinstance(cfg.get("max_iterations"), int):
@@ -89,6 +93,7 @@ def _max_iterations(agent: Agent) -> int:
     return DEFAULT_MAX_ITERATIONS
 
 
+# [RCF:PROTECTED]
 async def run_agent(
     db: AsyncSession,
     agent: Agent,
@@ -126,6 +131,7 @@ async def run_agent(
     tool_events: list[dict] = []
     iterations_done = 0
 
+# [RCF:PROTECTED]
     def _capture(outcome: str, final_text: str) -> None:
         schedule_trace_capture(
             agent_id=agent.id,
@@ -265,6 +271,7 @@ async def run_agent(
     return final
 
 
+# [RCF:PROTECTED]
 async def _execute_tool_call(call: dict, ctx: ToolContext) -> dict[str, Any]:
     """Run one tool call and return the `tool` role message to append."""
     call_id = call.get("id", "")

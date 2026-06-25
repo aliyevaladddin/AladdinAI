@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Memory tools — backed by `app.services.memory` (MongoDB Atlas Vector Search).
 
 Three tools: recall (vector search), remember (store), forget (delete).
@@ -20,6 +21,7 @@ from app.services.safety import safety_pii
 from app.tools.base import ToolContext, tool
 
 
+# [RCF:PROTECTED]
 async def _load_agent(ctx: ToolContext) -> Agent | None:
     if ctx.agent_id is None:
         return None
@@ -28,6 +30,7 @@ async def _load_agent(ctx: ToolContext) -> Agent | None:
     )).scalar_one_or_none()
 
 
+# [RCF:PROTECTED]
 @tool(
     name="recall",
     description=(
@@ -50,6 +53,7 @@ async def _load_agent(ctx: ToolContext) -> Agent | None:
         "required": ["query"],
     },
 )
+# [RCF:PROTECTED]
 async def recall(ctx: ToolContext, query: str, scope: str = "both", limit: int = 5) -> dict:
     try:
         limit = int(limit)
@@ -91,6 +95,7 @@ async def recall(ctx: ToolContext, query: str, scope: str = "both", limit: int =
     }
 
 
+# [RCF:PROTECTED]
 @tool(
     name="remember",
     description=(
@@ -116,6 +121,7 @@ async def recall(ctx: ToolContext, query: str, scope: str = "both", limit: int =
         "required": ["fact"],
     },
 )
+# [RCF:PROTECTED]
 async def remember(
     ctx: ToolContext,
     fact: str,
@@ -157,6 +163,7 @@ async def remember(
     }
 
 
+# [RCF:PROTECTED]
 @tool(
     name="forget",
     description="Delete a previously stored fact by its memory id.",
@@ -168,6 +175,7 @@ async def remember(
         "required": ["memory_id"],
     },
 )
+# [RCF:PROTECTED]
 async def forget(ctx: ToolContext, memory_id: str) -> dict:
     try:
         deleted = await mem_service.delete_memory(

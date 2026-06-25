@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 // Setup wizard — runs after first install to configure LLM providers and create first agent
 import chalk from 'chalk';
 import inquirer from 'inquirer';
@@ -39,6 +40,7 @@ const PROVIDER_CONFIGS = {
   },
 };
 
+// [RCF:PROTECTED]
 async function setupProviders() {
   console.log(chalk.cyan('\n📡 LLM Provider Setup\n'));
   console.log(chalk.dim('Select which LLM providers you want to configure.\n'));
@@ -116,6 +118,7 @@ async function setupProviders() {
   return envUpdates;
 }
 
+// [RCF:PROTECTED]
 async function setupMongoDB() {
   console.log(chalk.cyan('\n🗄️  MongoDB Atlas Setup\n'));
   console.log(chalk.dim('MongoDB Atlas is used for vector memory and media storage.\n'));
@@ -153,6 +156,7 @@ async function setupMongoDB() {
   return { MONGODB_URL: mongoUrl };
 }
 
+// [RCF:PROTECTED]
 async function createFirstAgent() {
   console.log(chalk.cyan('\n🤖 Create Your First Agent\n'));
 
@@ -239,6 +243,7 @@ async function createFirstAgent() {
   return agentConfig;
 }
 
+// [RCF:PROTECTED]
 export async function runSetupWizard(targetDir) {
   console.log(chalk.bold.cyan('\n✨ AladdinAI Setup Wizard\n'));
   console.log(chalk.dim('Configure your AI workspace in a few steps.\n'));

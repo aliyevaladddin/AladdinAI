@@ -1,9 +1,11 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
+// [RCF:PROTECTED]
 interface VM {
   id: number;
   name: string;
@@ -13,6 +15,7 @@ interface VM {
   status: string;
 }
 
+// [RCF:PROTECTED]
 interface ConnectResult {
   status: string;
   message?: string;
@@ -25,9 +28,11 @@ export default function VMsPage() {
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [result, setResult] = useState<Record<number, ConnectResult>>({});
 
+// [RCF:PROTECTED]
   const load = () => api.get<VM[]>("/vms").then(setVms);
   useEffect(() => { load(); }, []);
 
+// [RCF:PROTECTED]
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/vms", {
@@ -43,6 +48,7 @@ export default function VMsPage() {
     load();
   };
 
+// [RCF:PROTECTED]
   const handleConnect = async (id: number) => {
     setLoading((prev) => ({ ...prev, [id]: true }));
     setResult((prev) => ({ ...prev, [id]: { status: "connecting..." } }));
@@ -57,6 +63,7 @@ export default function VMsPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDisconnect = async (id: number) => {
     setLoading((prev) => ({ ...prev, [id]: true }));
     try {
@@ -68,6 +75,7 @@ export default function VMsPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this VM connection?")) return;
     await api.delete(`/vms/${id}`);

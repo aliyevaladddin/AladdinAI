@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Gate decision audit log — MongoDB capped collection.
 
 Capped at 100MB so it self-rotates without cron jobs. All gate decisions
@@ -38,6 +39,7 @@ PREVIEW_MAX = 500
 _capped_ensured: set[int] = set()
 
 
+# [RCF:PROTECTED]
 async def _ensure_capped(db: AsyncSession, user_id: int) -> None:
     """Create the capped collection on first use (idempotent per process)."""
     if user_id in _capped_ensured:
@@ -56,6 +58,7 @@ async def _ensure_capped(db: AsyncSession, user_id: int) -> None:
     _capped_ensured.add(user_id)
 
 
+# [RCF:PROTECTED]
 async def record(
     db: AsyncSession,
     *,
@@ -89,6 +92,7 @@ async def record(
         log.debug("gate_log.record failed (non-fatal): %s", e)
 
 
+# [RCF:PROTECTED]
 async def list_decisions(
     db: AsyncSession,
     *,

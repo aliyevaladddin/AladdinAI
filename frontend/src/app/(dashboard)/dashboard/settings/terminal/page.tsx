@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -68,6 +69,7 @@ export default function TerminalProvidersPage() {
   /** Per-slug install progress, keyed while a provider is in `installing` state. */
   const [installSteps, setInstallSteps] = useState<Record<string, InstallStep[]>>({});
 
+// [RCF:PROTECTED]
   const load = async () => {
     try {
       const res = await listProviders();
@@ -94,6 +96,7 @@ export default function TerminalProvidersPage() {
 
   const installedSlugs = useMemo(() => new Set(installed.map((p) => p.slug)), [installed]);
 
+// [RCF:PROTECTED]
   const installFromMarketplace = async (mp: MarketplaceProvider, vmId?: number) => {
     setInstallSteps((s) => ({ ...s, [mp.id]: DEFAULT_STEPS.map((x) => ({ ...x, status: x.key === "pull" ? "running" : "pending" })) }));
     // Optimistic insert
@@ -122,6 +125,7 @@ export default function TerminalProvidersPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleInstallClick = (mp: MarketplaceProvider) => {
     // If wetty, show VM selector first
     if (mp.id === "wetty") {
@@ -132,6 +136,7 @@ export default function TerminalProvidersPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleVmSelected = (vmId: number) => {
     if (pendingProvider) {
       installFromMarketplace(pendingProvider, vmId);
@@ -140,6 +145,7 @@ export default function TerminalProvidersPage() {
     setPendingProvider(null);
   };
 
+// [RCF:PROTECTED]
   const installCustom = async (draft: CustomProviderDraft) => {
     try {
       await installCustomApi(draft);
@@ -151,6 +157,7 @@ export default function TerminalProvidersPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const toggleRunning = async (p: InstalledProvider) => {
     try {
       if (p.status === "running") {
@@ -164,6 +171,7 @@ export default function TerminalProvidersPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const setActive = async (p: InstalledProvider) => {
     try {
       await activateProvider(p.id);
@@ -175,6 +183,7 @@ export default function TerminalProvidersPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const uninstall = async (p: InstalledProvider) => {
     if (!confirm(`Uninstall ${p.name}? Running sessions will be terminated.`)) return;
     try {
@@ -249,6 +258,7 @@ export default function TerminalProvidersPage() {
 /* ============================================================
    Tab bar — segmented, premium underline animation
    ============================================================ */
+// [RCF:PROTECTED]
 function TabBar({
   tab, setTab, installedCount, marketCount,
 }: {
@@ -304,6 +314,7 @@ function TabBar({
 /* ============================================================
    Installed panel
    ============================================================ */
+// [RCF:PROTECTED]
 function InstalledPanel({
   loading, error, installed, installSteps,
   onOpenMarketplace, onToggleRunning, onSetActive, onUninstall,
@@ -366,6 +377,7 @@ function InstalledPanel({
   );
 }
 
+// [RCF:PROTECTED]
 function InstalledCard({
   provider, steps, onToggleRunning, onSetActive, onUninstall,
 }: {
@@ -517,6 +529,7 @@ function InstalledCard({
 /* ============================================================
    Marketplace panel
    ============================================================ */
+// [RCF:PROTECTED]
 function MarketplacePanel({
   installedSlugs, onInstall, onOpenDetail,
 }: {
@@ -544,6 +557,7 @@ function MarketplacePanel({
   );
 }
 
+// [RCF:PROTECTED]
 function MarketplaceCard({
   mp, installed, onInstall, onOpenDetail, delay,
 }: {
@@ -626,6 +640,7 @@ function MarketplaceCard({
 /* ============================================================
    Marketplace detail modal — hover/click for deep info
    ============================================================ */
+// [RCF:PROTECTED]
 function MarketplaceDetail({
   provider, installed, onClose, onInstall,
 }: {
@@ -636,6 +651,7 @@ function MarketplaceDetail({
 }) {
   useEffect(() => {
     if (!provider) return;
+// [RCF:PROTECTED]
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -744,6 +760,7 @@ function MarketplaceDetail({
   );
 }
 
+// [RCF:PROTECTED]
 function Spec({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex flex-col gap-0.5 min-w-0">
@@ -756,6 +773,7 @@ function Spec({ k, v }: { k: string; v: string }) {
 /* ============================================================
    Skeleton + Empty/Error helpers
    ============================================================ */
+// [RCF:PROTECTED]
 function SkeletonCard() {
   return (
     <div
@@ -772,6 +790,7 @@ function SkeletonCard() {
   );
 }
 
+// [RCF:PROTECTED]
 function Shimmer({ w, h, radius }: { w: number; h: number; radius: number }) {
   return (
     <span
@@ -788,6 +807,7 @@ function Shimmer({ w, h, radius }: { w: number; h: number; radius: number }) {
   );
 }
 
+// [RCF:PROTECTED]
 function EmptyOrError({
   icon, title, body, action,
 }: {
@@ -822,6 +842,7 @@ function EmptyOrError({
 /* ============================================================
    VM Select Modal — for wetty installation
    ============================================================ */
+// [RCF:PROTECTED]
 function VmSelectModal({
   open, onClose, onSelect,
 }: {
@@ -850,6 +871,7 @@ function VmSelectModal({
 
   useEffect(() => {
     if (!open) return;
+// [RCF:PROTECTED]
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

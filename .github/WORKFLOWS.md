@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # .github — GitHub Configuration
 
 This directory contains all GitHub-specific automation: CI/CD workflows,

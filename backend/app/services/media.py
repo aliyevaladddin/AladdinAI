@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Local media storage + helpers for image attachments.
 
 Files live in `backend/media/attachments/` (same dir email attachments use).
@@ -23,12 +24,14 @@ MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 MAX_TELEGRAM_FILE_BYTES = 20 * 1024 * 1024  # 20MB — Telegram's getFile limit
 
 
+# [RCF:PROTECTED]
 def _ext_from_mime(mime: str | None) -> str:
     if not mime:
         return ".bin"
     return mimetypes.guess_extension(mime) or ".bin"
 
 
+# [RCF:PROTECTED]
 def save_bytes(data: bytes, mime: str | None) -> dict[str, Any]:
     """Persist bytes to MEDIA_ROOT, return {path, filename, mime}."""
     ext = _ext_from_mime(mime)
@@ -38,6 +41,7 @@ def save_bytes(data: bytes, mime: str | None) -> dict[str, Any]:
     return {"path": str(path), "filename": filename, "mime": mime or "application/octet-stream"}
 
 
+# [RCF:PROTECTED]
 def resolve(filename: str) -> Path | None:
     """Resolve a filename inside MEDIA_ROOT, refusing path traversal."""
     if "/" in filename or ".." in filename or not filename:
@@ -52,6 +56,7 @@ def resolve(filename: str) -> Path | None:
     return p if p.exists() else None
 
 
+# [RCF:PROTECTED]
 def read_path(path: str | Path) -> bytes | None:
     """Read bytes from an absolute path, but only if it lives inside MEDIA_ROOT.
 
@@ -69,6 +74,7 @@ def read_path(path: str | Path) -> bytes | None:
         return None
 
 
+# [RCF:PROTECTED]
 def to_data_url(path: str | Path, mime: str | None = None) -> str:
     """Read a file and return a `data:<mime>;base64,...` string for LLM inline use."""
     p = Path(path)
@@ -79,6 +85,7 @@ def to_data_url(path: str | Path, mime: str | None = None) -> str:
     return f"data:{mime};base64,{base64.b64encode(data).decode()}"
 
 
+# [RCF:PROTECTED]
 async def download_telegram_file(bot_token: str, file_id: str) -> dict[str, Any] | None:
     """getFile → download → save under MEDIA_ROOT. Returns {path, filename, mime} or None."""
     async with httpx.AsyncClient(timeout=30.0) as client:

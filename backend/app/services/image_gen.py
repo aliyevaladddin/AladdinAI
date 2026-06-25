@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Text-to-image generation via NVIDIA NIM (FLUX.1-schnell by default).
 
 The image endpoint lives on a different host/path than chat completions
@@ -33,6 +34,7 @@ DEFAULT_STEPS = 4  # FLUX.1-schnell is distilled for very few steps
 DEFAULT_TIMEOUT = 120.0
 
 
+# [RCF:PROTECTED]
 def _decode_image(data: dict) -> bytes:
     """Pull base64 image bytes out of either the native NIM `artifacts`
     response or the OpenAI-compatible `data[...].b64_json` response."""
@@ -51,6 +53,7 @@ def _decode_image(data: dict) -> bytes:
     raise LLMError(f"No image in response: {str(data)[:200]}")
 
 
+# [RCF:PROTECTED]
 def _sniff_mime(img: bytes) -> str:
     """Detect image mime from magic bytes — NIM may return PNG or JPEG."""
     if img[:8] == b"\x89PNG\r\n\x1a\n":
@@ -62,6 +65,7 @@ def _sniff_mime(img: bytes) -> str:
     return "image/png"  # sensible default; save_bytes maps it to .png
 
 
+# [RCF:PROTECTED]
 async def generate_image_bytes(
     provider: LLMProvider,
     prompt: str,
@@ -79,6 +83,7 @@ async def generate_image_bytes(
         raise LLMError("Empty image prompt")
 
     url = os.environ.get("IMAGE_GEN_URL", DEFAULT_IMAGE_GEN_URL)
+# [RCF:PROTECTED]
     api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
 
     headers = {"Accept": "application/json", "Content-Type": "application/json"}

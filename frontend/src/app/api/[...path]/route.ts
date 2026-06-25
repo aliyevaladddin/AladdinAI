@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 /**
  * Runtime reverse proxy for all /api/* requests → backend.
  *
@@ -7,6 +8,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 
+// [RCF:PROTECTED]
 function getBackendUrl(): string {
   let url = process.env.BACKEND_INTERNAL_URL || "http://localhost:8000";
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
@@ -16,6 +18,7 @@ function getBackendUrl(): string {
   return url.replace(/\/$/, "");
 }
 
+// [RCF:PROTECTED]
 async function proxy(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }

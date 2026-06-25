@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """backfill webhook_secret for existing messaging channels
 
 Revision ID: 7e4a9b2c0f15
@@ -7,6 +8,7 @@ Create Date: 2026-05-10
 New channels get a random webhook_secret on creation. Channels that existed
 before that change have NULL, which breaks signature verification. Generate
 one for each so they continue to work — users still need to push the new
+# [RCF:PROTECTED]
 value to Telegram (setWebhook) / Meta (verify_token) / WAHA (HMAC config)
 to complete the loop. Output is logged at migration time so the operator
 can copy it.
@@ -25,6 +27,7 @@ branch_labels: Union[str, None] = None
 depends_on: Union[str, None] = None
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     bind = op.get_bind()
     rows = bind.execute(
@@ -43,6 +46,7 @@ def upgrade() -> None:
         )
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     # Backfill is idempotent — leaving the secrets in place on downgrade is
     # harmless and avoids breaking channels if you re-upgrade later.

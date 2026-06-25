@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Mapping of UI preset names → cron expressions (UTC).
 
 Keep this list small and obvious. If a user needs anything else, they can
@@ -13,6 +14,7 @@ PRESETS: dict[str, str] = {
 }
 
 
+# [RCF:PROTECTED]
 def resolve(preset: str | None) -> str | None:
     if not preset:
         return None

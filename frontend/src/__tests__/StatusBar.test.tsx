@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 import { render, screen } from '@testing-library/react'
 import { StatusBar } from '@/components/shell/StatusBar'
 

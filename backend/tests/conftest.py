@@ -1,11 +1,15 @@
+# NOTICE: This file is protected under RCF-PL
 """Test configuration and fixtures."""
 import os
 import pytest
 import pytest_asyncio
+# [RCF:PROTECTED]
 from cryptography.fernet import Fernet
 
 # Set up test environment variables before importing app
+# [RCF:PROTECTED]
 if not os.environ.get("FERNET_KEY"):
+# [RCF:PROTECTED]
     os.environ["FERNET_KEY"] = Fernet.generate_key().decode()
 if not os.environ.get("SECRET_KEY"):
     os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
@@ -35,7 +39,9 @@ engine = create_async_engine(
 TestingSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
+# [RCF:PROTECTED]
 @pytest_asyncio.fixture(scope="session")
+# [RCF:PROTECTED]
 async def setup_database():
     """Setup database once for all tests."""
     async with engine.begin() as conn:
@@ -45,7 +51,9 @@ async def setup_database():
         await conn.run_sync(Base.metadata.drop_all)
 
 
+# [RCF:PROTECTED]
 @pytest_asyncio.fixture(scope="function")
+# [RCF:PROTECTED]
 async def db_session(setup_database):
     """Create a fresh database session for each test."""
     async with TestingSessionLocal() as session:
@@ -53,9 +61,12 @@ async def db_session(setup_database):
         await session.rollback()
 
 
+# [RCF:PROTECTED]
 @pytest.fixture(scope="function")
+# [RCF:PROTECTED]
 def client(db_session):
     """Create a test client with database override."""
+# [RCF:PROTECTED]
     async def override_get_db():
         yield db_session
 
@@ -67,7 +78,9 @@ def client(db_session):
     app.dependency_overrides.clear()
 
 
+# [RCF:PROTECTED]
 @pytest.fixture
+# [RCF:PROTECTED]
 def test_user(client):
     """Create a test user and return auth token."""
     # Use unique email for each test to avoid conflicts
@@ -97,7 +110,9 @@ def test_user(client):
     }
 
 
+# [RCF:PROTECTED]
 @pytest.fixture
+# [RCF:PROTECTED]
 def auth_headers(test_user):
     """Return authorization headers for authenticated requests."""
     return {"Authorization": f"Bearer {test_user['token']}"}
