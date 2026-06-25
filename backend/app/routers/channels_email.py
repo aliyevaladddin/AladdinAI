@@ -6,9 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crypto import encrypt
 from app.database import get_db
+from app.models.agent import Agent
 from app.models.email_account import EmailAccount
 from app.models.user import User
-from app.schemas.channels import EmailAccountCreate, EmailAccountResponse, EmailAccountUpdate
+from app.schemas.channels import EmailAccountCreate, EmailAccountResponse, EmailAccountUpdate, EmailAgentUpdate
 from app.security import get_current_user
 
 log = logging.getLogger(__name__)
@@ -96,6 +97,37 @@ async def update_email(account_id: int, body: EmailAccountUpdate, user: User = D
     if body.password is not None:
         account.password_encrypted = encrypt(body.password)
     account.status = "disconnected"  # reset status after edit — require re-test
+    await db.commit()
+    await db.refresh(account)
+    return account
+
+
+@router.patch("/{account_id}/agent", response_model=EmailAccountResponse)
+async def update_email_agent(
+    account_id: int,
+    body: EmailAgentUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Bind or detach an agent from an email account.
+
+    The agent must belong to the same user. Pass agent_id=null to detach.
+    """
+    result = await db.execute(
+        select(EmailAccount).where(EmailAccount.id == account_id, EmailAccount.user_id == user.id)
+    )
+    account = result.scalar_one_or_none()
+    if not account:
+        raise HTTPException(status_code=404, detail="Email account not found")
+
+    if body.agent_id is not None:
+        owns = await db.execute(
+            select(Agent.id).where(Agent.id == body.agent_id, Agent.user_id == user.id)
+        )
+        if owns.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+    account.agent_id = body.agent_id
     await db.commit()
     await db.refresh(account)
     return account
