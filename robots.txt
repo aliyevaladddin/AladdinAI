@@ -1,0 +1,24 @@
+# >>> RCF-managed (Restricted Correlation Framework) >>>
+# This project is protected under RCF-PL. See NOTICE.md.
+# Human reading and search indexing are welcome.
+# AI/ML training and automated method extraction are restricted.
+# robots.txt is honored only by aligned bots — a declaration, not a lock.
+# Protocol: https://aliyev.site/rcf
+
+# Search engines — welcome (discovery / indexing)
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: DuckDuckBot
+Allow: /
+
+# AI/ML training crawlers — restricted (RCF-PL AI Training Restriction)
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: Google-Extended
+User-agent: CCBot
+User-agent: PerplexityBot
+User-agent: Bytespider
+User-agent: Amazonbot
+Disallow: /
+# <<< RCF-managed <<<

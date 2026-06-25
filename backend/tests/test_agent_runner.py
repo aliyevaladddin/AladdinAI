@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Tests for app.services.agent_runner.
 
 Strategy:
@@ -26,16 +27,21 @@ from app.services.llm_service import LLMError
 # _text_of
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 class TestTextOf:
+# [RCF:PROTECTED]
     def test_string_content(self):
         assert _text_of("hello") == "hello"
 
+# [RCF:PROTECTED]
     def test_none_returns_empty(self):
         assert _text_of(None) == ""
 
+# [RCF:PROTECTED]
     def test_empty_string(self):
         assert _text_of("") == ""
 
+# [RCF:PROTECTED]
     def test_multimodal_list(self):
         content = [
             {"type": "text", "text": "Hello"},
@@ -44,10 +50,12 @@ class TestTextOf:
         ]
         assert _text_of(content) == "Hello\nWorld"
 
+# [RCF:PROTECTED]
     def test_multimodal_list_no_text_blocks(self):
         content = [{"type": "image_url", "image_url": {"url": "https://x.com/img.png"}}]
         assert _text_of(content) == ""
 
+# [RCF:PROTECTED]
     def test_integer_coerced(self):
         assert _text_of(42) == "42"
 
@@ -56,18 +64,22 @@ class TestTextOf:
 # _allowed_tools
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 class TestAllowedTools:
+# [RCF:PROTECTED]
     def _make_agent(self, tools_config=None, role=None):
         a = MagicMock(spec=Agent)
         a.tools_config = tools_config
         a.role = role
         return a
 
+# [RCF:PROTECTED]
     def test_explicit_allowlist(self):
         a = self._make_agent(tools_config={"allowed": ["recall", "remember", "send_email"]})
         result = _allowed_tools(a)
         assert set(result) == {"recall", "remember", "send_email"}
 
+# [RCF:PROTECTED]
     def test_default_tools_for_unknown_role(self):
         a = self._make_agent(tools_config={}, role="assistant")
         result = _allowed_tools(a)
@@ -75,6 +87,7 @@ class TestAllowedTools:
         assert "recall" in result
         assert "remember" in result
 
+# [RCF:PROTECTED]
     def test_inter_agent_tools_stripped_by_default(self):
         a = self._make_agent(
             tools_config={"allowed": ["recall", "delegate", "ask_agent"]}
@@ -83,6 +96,7 @@ class TestAllowedTools:
         assert "delegate" not in result
         assert "ask_agent" not in result
 
+# [RCF:PROTECTED]
     def test_inter_agent_tools_enabled_explicitly(self):
         a = self._make_agent(
             tools_config={
@@ -94,6 +108,7 @@ class TestAllowedTools:
         assert "delegate" in result
         assert "ask_agent" in result
 
+# [RCF:PROTECTED]
     def test_none_config_uses_default(self):
         a = self._make_agent(tools_config=None, role=None)
         result = _allowed_tools(a)
@@ -104,28 +119,35 @@ class TestAllowedTools:
 # _max_iterations
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 class TestMaxIterations:
+# [RCF:PROTECTED]
     def _make_agent(self, tools_config=None):
         a = MagicMock(spec=Agent)
         a.tools_config = tools_config
         return a
 
+# [RCF:PROTECTED]
     def test_default(self):
         a = self._make_agent(tools_config={})
         assert _max_iterations(a) == DEFAULT_MAX_ITERATIONS
 
+# [RCF:PROTECTED]
     def test_custom_value(self):
         a = self._make_agent(tools_config={"max_iterations": 3})
         assert _max_iterations(a) == 3
 
+# [RCF:PROTECTED]
     def test_clamped_to_minimum(self):
         a = self._make_agent(tools_config={"max_iterations": 0})
         assert _max_iterations(a) == 1
 
+# [RCF:PROTECTED]
     def test_clamped_to_maximum(self):
         a = self._make_agent(tools_config={"max_iterations": 100})
         assert _max_iterations(a) == 20
 
+# [RCF:PROTECTED]
     def test_none_config(self):
         a = self._make_agent(tools_config=None)
         assert _max_iterations(a) == DEFAULT_MAX_ITERATIONS
@@ -135,6 +157,7 @@ class TestMaxIterations:
 # run_agent — helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def _make_full_agent(tools_config=None):
     a = MagicMock(spec=Agent)
     a.id = 1
@@ -146,6 +169,7 @@ def _make_full_agent(tools_config=None):
     return a
 
 
+# [RCF:PROTECTED]
 def _make_provider():
     p = MagicMock(spec=LLMProvider)
     p.id = 1
@@ -154,6 +178,7 @@ def _make_provider():
     return p
 
 
+# [RCF:PROTECTED]
 def _messages(user_text="Hello agent"):
     return [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -165,7 +190,9 @@ def _messages(user_text="Hello agent"):
 # run_agent — no provider configured
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_run_agent_no_provider_id_raises():
     """Agent without llm_provider_id raises LLMError immediately."""
     db = AsyncMock()
@@ -180,7 +207,9 @@ async def test_run_agent_no_provider_id_raises():
 # run_agent — ingress blocked
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_run_agent_ingress_blocked_returns_block_response():
     """When safety_ingress blocks, run_agent returns the block_response string."""
     db = AsyncMock()
@@ -203,7 +232,9 @@ async def test_run_agent_ingress_blocked_returns_block_response():
 # run_agent — simple completion (no tools)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_run_agent_simple_completion():
     """Agent completes in one turn with no tool calls."""
     db = AsyncMock()
@@ -234,7 +265,9 @@ async def test_run_agent_simple_completion():
 # run_agent — egress blocked
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_run_agent_egress_blocked():
     """When safety_egress blocks the reply, block_response is returned."""
     db = AsyncMock()
@@ -264,7 +297,9 @@ async def test_run_agent_egress_blocked():
 # run_agent — max iterations exhausted
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_run_agent_max_iterations_exhausted():
     """When max_iterations is hit, returns last known content or fallback message."""
     db = AsyncMock()
@@ -278,6 +313,7 @@ async def test_run_agent_max_iterations_exhausted():
 
     call_count = [0]
 
+# [RCF:PROTECTED]
     async def fake_chat_completion(*args, **kwargs):
         call_count[0] += 1
         return {"content": "", "tool_calls": fake_tool_call}
@@ -309,7 +345,9 @@ async def test_run_agent_max_iterations_exhausted():
 # run_agent — shared context injected
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_run_agent_injects_shared_context():
     """Shared context block is appended to the system message."""
     db = AsyncMock()
@@ -320,6 +358,7 @@ async def test_run_agent_injects_shared_context():
 
     captured_messages = []
 
+# [RCF:PROTECTED]
     async def fake_chat(prov, model, messages, **kwargs):
         captured_messages.extend(messages)
         return {"content": "Got it.", "tool_calls": None}

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Outbound messaging tools.
 
 `send_image` lets an agent reply with a picture. The agent supplies only
@@ -28,6 +29,7 @@ from app.tools.base import ToolContext, tool
 log = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 @tool(
     name="send_image",
     description=(
@@ -51,6 +53,7 @@ log = logging.getLogger(__name__)
         "required": ["filename"],
     },
 )
+# [RCF:PROTECTED]
 async def send_image(
     ctx: ToolContext,
     filename: str,
@@ -132,6 +135,7 @@ async def send_image(
         return {"error": str(e)}
 
 
+# [RCF:PROTECTED]
 @tool(
     name="send_email",
     description=(
@@ -158,6 +162,7 @@ async def send_image(
         "required": ["to", "subject", "body"],
     },
 )
+# [RCF:PROTECTED]
 async def send_email(
     ctx: ToolContext,
     to: str,

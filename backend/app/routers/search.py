@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Global search across contacts, deals, and activities (emails/messages).
 
 Returns a flat list of `SearchResult` items, each tagged with its `kind` so the
@@ -24,6 +25,7 @@ from app.security import get_current_user
 router = APIRouter(prefix="/search", tags=["search"])
 
 
+# [RCF:PROTECTED]
 class SearchResult(BaseModel):
     kind: Literal["contact", "deal", "activity"]
     id: int
@@ -37,6 +39,7 @@ class SearchResult(BaseModel):
     created_at: datetime | None = None
 
 
+# [RCF:PROTECTED]
 class SearchResponse(BaseModel):
     contacts: list[SearchResult]
     deals: list[SearchResult]
@@ -44,7 +47,9 @@ class SearchResponse(BaseModel):
     total: int
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=SearchResponse)
+# [RCF:PROTECTED]
 async def global_search(
     q: str = Query(..., min_length=1, max_length=200),
     limit: int = Query(8, ge=1, le=30),

@@ -1,9 +1,11 @@
+# NOTICE: This file is protected under RCF-PL
 import certifi
 from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# [RCF:PROTECTED]
 from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models.mongo_connection import MongoConnection
@@ -15,17 +17,22 @@ from app.services.memory import invalidate_mongo_client
 router = APIRouter(prefix="/mongodb", tags=["mongodb"])
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=list[MongoResponse])
+# [RCF:PROTECTED]
 async def list_mongo(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MongoConnection).where(MongoConnection.user_id == user.id))
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.post("", response_model=MongoResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_mongo(body: MongoCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     conn = MongoConnection(
         user_id=user.id,
         name=body.name,
+# [RCF:PROTECTED]
         connection_string_encrypted=encrypt(body.connection_string),
         db_name=body.db_name,
     )
@@ -35,7 +42,9 @@ async def create_mongo(body: MongoCreate, user: User = Depends(get_current_user)
     return conn
 
 
+# [RCF:PROTECTED]
 @router.post("/{conn_id}/test")
+# [RCF:PROTECTED]
 async def test_mongo(conn_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MongoConnection).where(MongoConnection.id == conn_id, MongoConnection.user_id == user.id))
     conn = result.scalar_one_or_none()
@@ -43,6 +52,7 @@ async def test_mongo(conn_id: int, user: User = Depends(get_current_user), db: A
         raise HTTPException(status_code=404, detail="Connection not found")
 
     client = AsyncIOMotorClient(
+# [RCF:PROTECTED]
         decrypt(conn.connection_string_encrypted),
         serverSelectionTimeoutMS=5000,
         tlsCAFile=certifi.where(),
@@ -70,7 +80,9 @@ async def test_mongo(conn_id: int, user: User = Depends(get_current_user), db: A
     }
 
 
+# [RCF:PROTECTED]
 @router.put("/{conn_id}", response_model=MongoResponse)
+# [RCF:PROTECTED]
 async def update_mongo(
     conn_id: int,
     body: MongoCreate,
@@ -85,6 +97,7 @@ async def update_mongo(
     conn.name = body.name
     conn.db_name = body.db_name
     if body.connection_string:
+# [RCF:PROTECTED]
         conn.connection_string_encrypted = encrypt(body.connection_string)
         
     await db.commit()
@@ -93,7 +106,9 @@ async def update_mongo(
     return conn
 
 
+# [RCF:PROTECTED]
 @router.delete("/{conn_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_mongo(conn_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(MongoConnection).where(MongoConnection.id == conn_id, MongoConnection.user_id == user.id))
     conn = result.scalar_one_or_none()

@@ -1,9 +1,11 @@
+# NOTICE: This file is protected under RCF-PL
 import asyncssh
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# [RCF:PROTECTED]
 from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models.user import User
@@ -16,13 +18,17 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["vms"])
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=list[VMResponse])
+# [RCF:PROTECTED]
 async def list_vms(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(VMConnection).where(VMConnection.user_id == user.id))
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.post("", response_model=VMResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_vm(body: VMCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     vm = VMConnection(
         user_id=user.id,
@@ -30,7 +36,9 @@ async def create_vm(body: VMCreate, user: User = Depends(get_current_user), db: 
         host=body.host,
         port=body.port,
         username=body.username,
+# [RCF:PROTECTED]
         ssh_key_encrypted=encrypt(body.ssh_key) if body.ssh_key else None,
+# [RCF:PROTECTED]
         password_encrypted=encrypt(body.password) if body.password else None,
     )
     db.add(vm)
@@ -39,7 +47,9 @@ async def create_vm(body: VMCreate, user: User = Depends(get_current_user), db: 
     return vm
 
 
+# [RCF:PROTECTED]
 @router.post("/{vm_id}/connect")
+# [RCF:PROTECTED]
 async def connect_vm(vm_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(VMConnection).where(VMConnection.id == vm_id, VMConnection.user_id == user.id))
     vm = result.scalar_one_or_none()
@@ -55,9 +65,13 @@ async def connect_vm(vm_id: int, user: User = Depends(get_current_user), db: Asy
     }
 
     # Если есть SSH-ключ — используем его, иначе пробуем пароль
+# [RCF:PROTECTED]
     if vm.ssh_key_encrypted:
+# [RCF:PROTECTED]
         connect_kwargs["client_keys"] = [asyncssh.import_private_key(decrypt(vm.ssh_key_encrypted))]
+# [RCF:PROTECTED]
     elif vm.password_encrypted:
+# [RCF:PROTECTED]
         connect_kwargs["password"] = decrypt(vm.password_encrypted)
     else:
         connect_kwargs["password"] = ""
@@ -85,7 +99,9 @@ async def connect_vm(vm_id: int, user: User = Depends(get_current_user), db: Asy
         return {"status": "error", "message": "An unexpected connection error occurred."}
 
 
+# [RCF:PROTECTED]
 @router.post("/{vm_id}/disconnect")
+# [RCF:PROTECTED]
 async def disconnect_vm(vm_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(VMConnection).where(VMConnection.id == vm_id, VMConnection.user_id == user.id))
     vm = result.scalar_one_or_none()
@@ -96,7 +112,9 @@ async def disconnect_vm(vm_id: int, user: User = Depends(get_current_user), db: 
     return {"status": "disconnected"}
 
 
+# [RCF:PROTECTED]
 @router.put("/{vm_id}", response_model=VMResponse)
+# [RCF:PROTECTED]
 async def update_vm(
     vm_id: int,
     body: VMCreate, # Reuse VMCreate but all fields can be optional in a real Update schema, here we use it for simplicity
@@ -113,8 +131,10 @@ async def update_vm(
     vm.port = body.port
     vm.username = body.username
     if body.ssh_key:
+# [RCF:PROTECTED]
         vm.ssh_key_encrypted = encrypt(body.ssh_key)
     if body.password:
+# [RCF:PROTECTED]
         vm.password_encrypted = encrypt(body.password)
         
     await db.commit()
@@ -122,7 +142,9 @@ async def update_vm(
     return vm
 
 
+# [RCF:PROTECTED]
 @router.delete("/{vm_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_vm(vm_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(VMConnection).where(VMConnection.id == vm_id, VMConnection.user_id == user.id))
     vm = result.scalar_one_or_none()

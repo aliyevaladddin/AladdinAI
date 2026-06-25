@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Memory service — MongoDB Atlas Vector Search backend.
 
 Layout:
@@ -49,6 +50,7 @@ SUMMARY_COLLECTION = "conversation_summaries"
 _client_cache: dict[int, tuple[AsyncIOMotorClient, str]] = {}
 
 
+# [RCF:PROTECTED]
 class MemoryError(Exception):
     """Raised when the memory backend is unreachable or misconfigured."""
 
@@ -57,6 +59,7 @@ class MemoryError(Exception):
 # Connection resolution
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def _resolve_mongo(db: AsyncSession, user_id: int) -> MongoConnection:
     result = await db.execute(
         select(MongoConnection).where(MongoConnection.user_id == user_id)
@@ -67,12 +70,14 @@ async def _resolve_mongo(db: AsyncSession, user_id: int) -> MongoConnection:
     return conn
 
 
+# [RCF:PROTECTED]
 async def get_mongo_db(db: AsyncSession, user_id: int) -> AsyncIOMotorDatabase:
     """Return an `AsyncIOMotorDatabase` bound to the user's configured cluster."""
     cached = _client_cache.get(user_id)
     if cached is None:
         conn = await _resolve_mongo(db, user_id)
         client = AsyncIOMotorClient(
+# [RCF:PROTECTED]
             decrypt(conn.connection_string_encrypted),
             serverSelectionTimeoutMS=5000,
             tlsCAFile=certifi.where(),
@@ -83,6 +88,7 @@ async def get_mongo_db(db: AsyncSession, user_id: int) -> AsyncIOMotorDatabase:
     return client[db_name]
 
 
+# [RCF:PROTECTED]
 def invalidate_mongo_client(user_id: int) -> None:
     """Drop the cached client (call after a connection-string change)."""
     cached = _client_cache.pop(user_id, None)
@@ -106,6 +112,7 @@ EMBEDDING_MODELS = {
 }
 
 
+# [RCF:PROTECTED]
 async def _resolve_embedding_provider(db: AsyncSession, user_id: int) -> LLMProvider:
     """Select first available embedding provider by priority."""
     for provider_type in EMBEDDING_PROVIDER_PRIORITY:
@@ -125,6 +132,7 @@ async def _resolve_embedding_provider(db: AsyncSession, user_id: int) -> LLMProv
     )
 
 
+# [RCF:PROTECTED]
 async def embed(
     db: AsyncSession,
     user_id: int,
@@ -140,6 +148,7 @@ async def embed(
             ``"passage"`` for facts being indexed into the store.
     """
     provider = await _resolve_embedding_provider(db, user_id)
+# [RCF:PROTECTED]
     api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -224,6 +233,7 @@ async def embed(
 # Memory CRUD
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def store_memory(
     db: AsyncSession,
     *,
@@ -261,6 +271,7 @@ async def store_memory(
     return {"id": str(result.inserted_id), "visibility": visibility}
 
 
+# [RCF:PROTECTED]
 async def search_memory(
     db: AsyncSession,
     *,
@@ -301,6 +312,7 @@ async def search_memory(
     return results[:limit]
 
 
+# [RCF:PROTECTED]
 async def _vector_search(
     coll,
     *,
@@ -345,6 +357,7 @@ async def _vector_search(
     return out
 
 
+# [RCF:PROTECTED]
 async def list_memories(
     db: AsyncSession,
     *,
@@ -412,6 +425,7 @@ async def list_memories(
     return out[:limit]
 
 
+# [RCF:PROTECTED]
 async def count_memories(db: AsyncSession, user_id: int) -> int:
     """Return total number of memory documents (private + shared) for a user.
     
@@ -426,6 +440,7 @@ async def count_memories(db: AsyncSession, user_id: int) -> int:
         return 0
 
 
+# [RCF:PROTECTED]
 async def delete_memory(
     db: AsyncSession,
     *,
@@ -461,6 +476,7 @@ SHARED_BLOCK_OPEN = "<shared_context>"
 SHARED_BLOCK_CLOSE = "</shared_context>"
 
 
+# [RCF:PROTECTED]
 async def build_shared_context_block(
     db: AsyncSession,
     *,
@@ -510,6 +526,7 @@ async def build_shared_context_block(
 # Health
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def ping(db: AsyncSession, user_id: int) -> dict[str, Any]:
     """Verify the configured Atlas cluster is reachable."""
     mdb = await get_mongo_db(db, user_id)

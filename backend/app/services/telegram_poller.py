@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Telegram long-polling service.
 
 Runs as an asyncio background task inside the FastAPI process.
@@ -24,6 +25,7 @@ _tasks: dict[int, asyncio.Task] = {}
 _running = False
 
 
+# [RCF:PROTECTED]
 async def _poll_channel(channel_id: int, bot_token: str) -> None:
     """Long-poll a single Telegram bot via getUpdates.
 
@@ -121,6 +123,7 @@ async def _poll_channel(channel_id: int, bot_token: str) -> None:
             await asyncio.sleep(5)
 
 
+# [RCF:PROTECTED]
 async def start() -> None:
     """Load all telegram channels and start a polling task for each."""
     global _running
@@ -152,6 +155,7 @@ async def start() -> None:
     log.info("telegram-poll: started %d poller(s)", len(_tasks))
 
 
+# [RCF:PROTECTED]
 async def stop() -> None:
     """Cancel all polling tasks."""
     global _running
@@ -168,6 +172,7 @@ async def stop() -> None:
     log.info("telegram-poll: all pollers stopped")
 
 
+# [RCF:PROTECTED]
 async def add_channel(channel_id: int, bot_token: str) -> None:
     """Dynamically add a new polling task (e.g. after user creates a channel)."""
     if channel_id in _tasks:
@@ -179,6 +184,7 @@ async def add_channel(channel_id: int, bot_token: str) -> None:
     log.info("telegram-poll: added channel %s", channel_id)
 
 
+# [RCF:PROTECTED]
 async def remove_channel(channel_id: int) -> None:
     """Stop polling for a deleted channel."""
     task = _tasks.pop(channel_id, None)

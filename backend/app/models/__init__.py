@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from app.models.user import User
 from app.models.vm import VMConnection
 from app.models.llm_provider import LLMProvider

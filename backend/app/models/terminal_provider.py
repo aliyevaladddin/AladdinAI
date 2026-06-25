@@ -22,6 +22,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
+# [RCF:PROTECTED]
 class TerminalProvider(Base):
     __tablename__ = "terminal_providers"
 

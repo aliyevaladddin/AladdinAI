@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Deploying AladdinAI on Alibaba Cloud ECS
 
 AladdinAI is deployed and running on Alibaba Cloud ECS (Elastic Compute Service) as a self-hosted AI agent platform.

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Speech services for the chat: STT (transcribe) and TTS (synthesize).
 
 Mirrors the shape of `image_gen.py`: the speech endpoint lives on its own
@@ -44,21 +45,26 @@ DEFAULT_LANGUAGE = "en-US"
 DEFAULT_TTS_VOICE = "English-US.Female-1"
 
 
+# [RCF:PROTECTED]
 def _backend() -> str:
     return (os.environ.get("SPEECH_BACKEND") or "openai").strip().lower()
 
 
+# [RCF:PROTECTED]
 def _speech_base_url() -> str:
     """Base URL of the speech service (no trailing slash). Empty if unset."""
     return (os.environ.get("SPEECH_BASE_URL") or "").rstrip("/")
 
 
+# [RCF:PROTECTED]
 def _api_key(provider: LLMProvider) -> str | None:
+# [RCF:PROTECTED]
     return decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
 
 
 # ── STT ─────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def transcribe(
     provider: LLMProvider,
     audio_bytes: bytes,
@@ -84,6 +90,7 @@ async def transcribe(
     )
 
 
+# [RCF:PROTECTED]
 async def _transcribe_openai(
     provider: LLMProvider,
     audio_bytes: bytes,
@@ -134,6 +141,7 @@ async def _transcribe_openai(
     return text
 
 
+# [RCF:PROTECTED]
 def _extract_transcript(payload: object) -> str:
     """Pull text out of the common response shapes.
 
@@ -161,6 +169,7 @@ def _extract_transcript(payload: object) -> str:
     return ""
 
 
+# [RCF:PROTECTED]
 async def _transcribe_riva(
     provider: LLMProvider, audio_bytes: bytes, *, language: str | None
 ) -> str:
@@ -182,6 +191,7 @@ async def _transcribe_riva(
     if api_key:
         metadata.append(("authorization", f"Bearer {api_key}"))
 
+# [RCF:PROTECTED]
     def _run() -> str:
         auth = riva.client.Auth(
             uri=server, use_ssl=True, metadata_args=[list(m) for m in metadata]
@@ -211,6 +221,7 @@ async def _transcribe_riva(
 
 # ── TTS ─────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def synthesize(
     provider: LLMProvider,
     text: str,
@@ -232,6 +243,7 @@ async def synthesize(
     return await _synthesize_openai(provider, text, voice=voice, timeout=timeout)
 
 
+# [RCF:PROTECTED]
 async def _synthesize_openai(
     provider: LLMProvider, text: str, *, voice: str | None, timeout: float
 ) -> tuple[bytes, str]:
@@ -272,6 +284,7 @@ async def _synthesize_openai(
     return audio, _sniff_audio_mime(audio, resp.headers.get("content-type"))
 
 
+# [RCF:PROTECTED]
 def _sniff_audio_mime(audio: bytes, content_type: str | None) -> str:
     """Best-effort audio mime: trust magic bytes, fall back to header, then wav."""
     if audio[:4] == b"RIFF" and audio[8:12] == b"WAVE":
@@ -285,6 +298,7 @@ def _sniff_audio_mime(audio: bytes, content_type: str | None) -> str:
     return "audio/wav"
 
 
+# [RCF:PROTECTED]
 async def _synthesize_riva(
     provider: LLMProvider, text: str, *, voice: str | None
 ) -> tuple[bytes, str]:
@@ -307,6 +321,7 @@ async def _synthesize_riva(
     if api_key:
         metadata.append(("authorization", f"Bearer {api_key}"))
 
+# [RCF:PROTECTED]
     def _run() -> bytes:
         auth = riva.client.Auth(
             uri=server, use_ssl=True, metadata_args=[list(m) for m in metadata]
@@ -332,6 +347,7 @@ async def _synthesize_riva(
     return audio, "audio/wav"
 
 
+# [RCF:PROTECTED]
 def _pcm_to_wav(pcm: bytes, sample_rate: int, channels: int = 1, bits: int = 16) -> bytes:
     """Wrap raw little-endian PCM in a WAV container so the browser can play it."""
     import io

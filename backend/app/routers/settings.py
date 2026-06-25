@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """System settings API — per-user configuration for storage backend and other settings."""
 from __future__ import annotations
 
@@ -17,10 +18,12 @@ from app.models.user import User
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 
+# [RCF:PROTECTED]
 class SystemSettingsSchema(BaseModel):
     media_storage_backend: str  # "local" or "mongodb"
 
 
+# [RCF:PROTECTED]
 class SystemSettingsResponse(BaseModel):
     id: int | None  # None when settings have not been persisted yet (defaults)
     user_id: int
@@ -33,7 +36,9 @@ DEFAULT_BACKEND = "local"
 ALLOWED_BACKENDS = ("local", "mongodb")
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=SystemSettingsResponse)
+# [RCF:PROTECTED]
 async def get_settings(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -67,7 +72,9 @@ async def get_settings(
     )
 
 
+# [RCF:PROTECTED]
 @router.put("", response_model=SystemSettingsResponse)
+# [RCF:PROTECTED]
 async def update_settings(
     data: SystemSettingsSchema,
     db: AsyncSession = Depends(get_db),

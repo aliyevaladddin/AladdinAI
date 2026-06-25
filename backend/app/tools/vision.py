@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Vision tool — let any agent ask a vision model to describe an image.
 
 The agent's own LLM may be text-only (and likely is, so it can use tools).
@@ -27,6 +28,7 @@ log = logging.getLogger(__name__)
 DEFAULT_VISION_MODEL = "meta/llama-3.2-11b-vision-instruct"
 
 
+# [RCF:PROTECTED]
 @tool(
     name="analyze_image",
     description=(
@@ -51,6 +53,7 @@ DEFAULT_VISION_MODEL = "meta/llama-3.2-11b-vision-instruct"
         "required": ["filename"],
     },
 )
+# [RCF:PROTECTED]
 async def analyze_image(
     ctx: ToolContext,
     filename: str,

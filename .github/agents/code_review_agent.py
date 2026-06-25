@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Code Review Agent for GitHub Pull Requests.
 
 Automatically reviews PRs using NVIDIA NIM API and posts feedback via GitHub API.
@@ -98,12 +99,14 @@ REVIEWABLE_EXTENSIONS = {
 }
 
 
+# [RCF:PROTECTED]
 def should_review_file(filename: str) -> bool:
     """Check if file should be reviewed based on extension."""
     ext = Path(filename).suffix.lower()
     return ext in REVIEWABLE_EXTENSIONS
 
 
+# [RCF:PROTECTED]
 async def review_pr(owner: str, repo: str, pr_number: int) -> None:
     """Fetch PR, analyze with NIM, post review."""
     print(f"Reviewing PR #{pr_number} in {owner}/{repo}")
@@ -208,6 +211,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
         sys.exit(1)
 
 
+# [RCF:PROTECTED]
 async def main() -> None:
     """Entry point."""
     pr_number = os.getenv("PR_NUMBER")

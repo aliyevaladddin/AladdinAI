@@ -1,6 +1,8 @@
+// NOTICE: This file is protected under RCF-PL
 import { type ReactNode } from "react";
 import packageJson from "../../../package.json";
 
+// [RCF:PROTECTED]
 export interface StatusItem {
   id: string;
   dot?: "ok" | "amber" | "info" | "violet";
@@ -13,6 +15,7 @@ export interface StatusItem {
   variant?: "default" | "rcf";
 }
 
+// [RCF:PROTECTED]
 interface StatusBarProps {
   items?: StatusItem[];
   /** Custom element rendered between the spacer and the right-aligned items. */
@@ -28,6 +31,7 @@ const DEFAULT_ITEMS: StatusItem[] = [
   { id: "version",  right: true,   label: "aladdin-ai",   code: `v${packageJson.version}` },
 ];
 
+// [RCF:PROTECTED]
 export function StatusBar({ items = DEFAULT_ITEMS, rightExtra }: StatusBarProps) {
   const left  = items.filter((i) => !i.right);
   const right = items.filter((i) =>  i.right);
@@ -46,6 +50,7 @@ export function StatusBar({ items = DEFAULT_ITEMS, rightExtra }: StatusBarProps)
   );
 }
 
+// [RCF:PROTECTED]
 function StatusEntry({ item }: { item: StatusItem }) {
   return (
     <div className={`sb-item${item.variant === "rcf" ? " rcf" : ""}`}>

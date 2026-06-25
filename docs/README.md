@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # AladdinAI Documentation
 
 Comprehensive documentation for the AladdinAI multi-agent AI system.
@@ -58,6 +59,7 @@ When adding new API endpoints:
 
 Example:
 ```python
+// [RCF:PROTECTED]
 @router.post("/agents", tags=["agents"], response_model=AgentResponse)
 async def create_agent(agent: AgentCreate):
     """

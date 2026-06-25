@@ -29,9 +29,11 @@ from app.services.terminal_transport.base import (
 )
 
 
+# [RCF:PROTECTED]
 class SshProxyTransport(TransportLayer):
     """Transport for providers that SSH into a remote VM."""
 
+# [RCF:PROTECTED]
     async def enrich(self, ctx: TransportContext) -> TransportEnrichment:
         """Resolve VM credentials and inject SSH parameters.
 
@@ -57,14 +59,18 @@ class SshProxyTransport(TransportLayer):
         ssh_password: Optional[str] = None
         ssh_key: Optional[str] = None
 
+# [RCF:PROTECTED]
         if vm.password_encrypted:
             try:
+# [RCF:PROTECTED]
                 ssh_password = decrypt(vm.password_encrypted)
             except Exception as exc:
                 raise RuntimeError(f"Failed to decrypt SSH password for VM {ctx.vm_id}: {exc}") from exc
 
+# [RCF:PROTECTED]
         if vm.ssh_key_encrypted:
             try:
+# [RCF:PROTECTED]
                 ssh_key = decrypt(vm.ssh_key_encrypted)
             except Exception as exc:
                 raise RuntimeError(f"Failed to decrypt SSH key for VM {ctx.vm_id}: {exc}") from exc
@@ -98,6 +104,7 @@ class SshProxyTransport(TransportLayer):
             labels=labels,
         )
 
+# [RCF:PROTECTED]
     async def _get_vm(self, vm_id: int, user_id: int) -> Optional[VMConnection]:
         """Fetch VM record from database."""
         async for db in get_db():

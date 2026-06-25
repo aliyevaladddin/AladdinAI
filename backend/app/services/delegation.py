@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """
 Agent delegation system - allows agents to spawn and coordinate sub-agents.
 
@@ -23,14 +24,17 @@ from app.tools.registry import tool
 logger = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 class AgentDelegationError(Exception):
     """Raised when agent delegation fails."""
     pass
 
 
+# [RCF:PROTECTED]
 class DelegationResult:
     """Result of a delegated agent task."""
 
+# [RCF:PROTECTED]
     def __init__(
         self,
         agent_id: str,
@@ -51,6 +55,7 @@ class DelegationResult:
         self.completed_at = datetime.utcnow()
 
 
+# [RCF:PROTECTED]
 async def delegate_to_agent(
     parent_agent_id: str,
     target_agent_id: str,
@@ -135,6 +140,7 @@ async def delegate_to_agent(
         )
 
 
+# [RCF:PROTECTED]
 async def delegate_parallel(
     parent_agent_id: str,
     delegations: List[Dict[str, Any]],
@@ -160,6 +166,7 @@ async def delegate_parallel(
         f"Agent {parent_agent_id} delegating {len(delegations)} tasks in parallel"
     )
 
+# [RCF:PROTECTED]
     async def _run_single_delegation(d: Dict[str, Any]) -> DelegationResult:
         async with async_session() as session:
             return await delegate_to_agent(
@@ -196,6 +203,7 @@ async def delegate_parallel(
     return processed_results
 
 
+# [RCF:PROTECTED]
 async def delegate_sequential(
     parent_agent_id: str,
     delegations: List[Dict[str, Any]],
@@ -255,6 +263,7 @@ async def delegate_sequential(
     return results
 
 
+# [RCF:PROTECTED]
 def format_delegation_summary(results: List[DelegationResult]) -> str:
     """Format delegation results into a human-readable summary."""
     summary_parts = []
@@ -273,11 +282,13 @@ def format_delegation_summary(results: List[DelegationResult]) -> str:
 
 # Tool for agents to use delegation
 
+# [RCF:PROTECTED]
 @tool(
     name="delegate_to_agent",
     description="Delegate a task to another specialized agent. Use when a task requires expertise from a different agent.",
     requires_auth=True
 )
+# [RCF:PROTECTED]
 async def delegate_tool(
     target_agent_name: str,
     task: str,
@@ -328,11 +339,13 @@ async def delegate_tool(
         }
 
 
+# [RCF:PROTECTED]
 @tool(
     name="delegate_parallel",
     description="Delegate multiple tasks to different agents in parallel. Faster than sequential for independent tasks.",
     requires_auth=True
 )
+# [RCF:PROTECTED]
 async def delegate_parallel_tool(
     delegations: List[Dict[str, str]],
     ctx: ToolContext

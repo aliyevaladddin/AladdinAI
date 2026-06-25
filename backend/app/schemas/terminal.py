@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 
 
+# [RCF:PROTECTED]
 class MarketplaceEntry(BaseModel):
     """One row in the dashboard marketplace — read straight from a YAML manifest."""
 
@@ -21,6 +22,7 @@ class MarketplaceEntry(BaseModel):
     requires_ssh_proxy: bool = False
 
 
+# [RCF:PROTECTED]
 class ProviderInstall(BaseModel):
     """Install request — picks an entry from the marketplace by `type`."""
 
@@ -30,6 +32,7 @@ class ProviderInstall(BaseModel):
     vm_id: Optional[int] = Field(None, description="VM to connect to (for SSH-based providers like wetty)")
 
 
+# [RCF:PROTECTED]
 class ProviderResponse(BaseModel):
     id: int
     name: str
@@ -48,6 +51,7 @@ class ProviderResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class SessionRequest(BaseModel):
     """`POST /terminal/session` — what the drawer sends.
 
@@ -57,6 +61,7 @@ class SessionRequest(BaseModel):
     vm_id: Optional[int] = None
 
 
+# [RCF:PROTECTED]
 class SessionResponse(BaseModel):
     url: str
     expires_at: datetime

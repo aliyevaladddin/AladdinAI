@@ -1,9 +1,11 @@
+# NOTICE: This file is protected under RCF-PL
 import logging
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# [RCF:PROTECTED]
 from app.crypto import encrypt
 from app.database import get_db
 from app.models.agent import Agent
@@ -17,13 +19,17 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/channels/email", tags=["channels"])
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=list[EmailAccountResponse])
+# [RCF:PROTECTED]
 async def list_emails(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(EmailAccount).where(EmailAccount.user_id == user.id))
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.post("", response_model=EmailAccountResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_email(body: EmailAccountCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     account = EmailAccount(
         user_id=user.id,
@@ -33,8 +39,11 @@ async def create_email(body: EmailAccountCreate, user: User = Depends(get_curren
         imap_port=body.imap_port,
         smtp_host=body.smtp_host,
         smtp_port=body.smtp_port,
+# [RCF:PROTECTED]
         password_encrypted=encrypt(body.password) if body.password else None,
+# [RCF:PROTECTED]
         access_token_encrypted=encrypt(body.access_token) if body.access_token else None,
+# [RCF:PROTECTED]
         refresh_token_encrypted=encrypt(body.refresh_token) if body.refresh_token else None,
     )
     db.add(account)
@@ -43,7 +52,9 @@ async def create_email(body: EmailAccountCreate, user: User = Depends(get_curren
     return account
 
 
+# [RCF:PROTECTED]
 @router.post("/{account_id}/test")
+# [RCF:PROTECTED]
 async def test_email(account_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(EmailAccount).where(EmailAccount.id == account_id, EmailAccount.user_id == user.id))
     account = result.scalar_one_or_none()
@@ -60,7 +71,9 @@ async def test_email(account_id: int, user: User = Depends(get_current_user), db
     return {"status": "connected" if success else "error", "message": message}
 
 
+# [RCF:PROTECTED]
 @router.post("/{account_id}/sync")
+# [RCF:PROTECTED]
 async def sync_email(
     account_id: int,
     background_tasks: BackgroundTasks,
@@ -78,7 +91,9 @@ async def sync_email(
     return {"status": "syncing", "message": "Email sync started in background"}
 
 
+# [RCF:PROTECTED]
 @router.put("/{account_id}", response_model=EmailAccountResponse)
+# [RCF:PROTECTED]
 async def update_email(account_id: int, body: EmailAccountUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(EmailAccount).where(EmailAccount.id == account_id, EmailAccount.user_id == user.id))
     account = result.scalar_one_or_none()
@@ -95,6 +110,7 @@ async def update_email(account_id: int, body: EmailAccountUpdate, user: User = D
     if body.smtp_port is not None:
         account.smtp_port = body.smtp_port
     if body.password is not None:
+# [RCF:PROTECTED]
         account.password_encrypted = encrypt(body.password)
     account.status = "disconnected"  # reset status after edit — require re-test
     await db.commit()
@@ -102,7 +118,9 @@ async def update_email(account_id: int, body: EmailAccountUpdate, user: User = D
     return account
 
 
+# [RCF:PROTECTED]
 @router.patch("/{account_id}/agent", response_model=EmailAccountResponse)
+# [RCF:PROTECTED]
 async def update_email_agent(
     account_id: int,
     body: EmailAgentUpdate,
@@ -133,6 +151,7 @@ async def update_email_agent(
     return account
 
 
+# [RCF:PROTECTED]
 class SendEmailBody(BaseModel):
     to_email: str
     subject: str
@@ -140,7 +159,9 @@ class SendEmailBody(BaseModel):
     contact_id: int | None = None
 
 
+# [RCF:PROTECTED]
 @router.post("/{account_id}/send")
+# [RCF:PROTECTED]
 async def send_email_endpoint(account_id: int, payload: SendEmailBody, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(EmailAccount).where(EmailAccount.id == account_id, EmailAccount.user_id == user.id))
     account = result.scalar_one_or_none()
@@ -155,7 +176,9 @@ async def send_email_endpoint(account_id: int, payload: SendEmailBody, user: Use
         raise HTTPException(status_code=500, detail="Failed to send email due to an unexpected error.")
 
 
+# [RCF:PROTECTED]
 @router.delete("/{account_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_email(account_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(EmailAccount).where(EmailAccount.id == account_id, EmailAccount.user_id == user.id))
     account = result.scalar_one_or_none()

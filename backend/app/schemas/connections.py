@@ -1,6 +1,8 @@
+# NOTICE: This file is protected under RCF-PL
 from pydantic import BaseModel
 
 
+# [RCF:PROTECTED]
 class VMCreate(BaseModel):
     name: str
     host: str
@@ -10,6 +12,7 @@ class VMCreate(BaseModel):
     password: str | None = None
 
 
+# [RCF:PROTECTED]
 class VMResponse(BaseModel):
     id: int
     name: str
@@ -21,6 +24,7 @@ class VMResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class LLMProviderCreate(BaseModel):
     name: str
     type: str  # nvidia_nim, openai, anthropic, ollama, custom
@@ -28,6 +32,7 @@ class LLMProviderCreate(BaseModel):
     base_url: str
 
 
+# [RCF:PROTECTED]
 class LLMProviderResponse(BaseModel):
     id: int
     name: str
@@ -38,12 +43,14 @@ class LLMProviderResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class MongoCreate(BaseModel):
     name: str
     connection_string: str | None = None
     db_name: str
 
 
+# [RCF:PROTECTED]
 class MongoResponse(BaseModel):
     id: int
     name: str
@@ -53,12 +60,14 @@ class MongoResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class BentoMLCreate(BaseModel):
     name: str
     endpoint_url: str
     api_key: str | None = None
 
 
+# [RCF:PROTECTED]
 class BentoMLResponse(BaseModel):
     id: int
     name: str
@@ -67,6 +76,7 @@ class BentoMLResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+# [RCF:PROTECTED]
 class BentoMLDeployRequest(BaseModel):
     service_name: str = "service:latest"
     port: int = 3000

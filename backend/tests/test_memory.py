@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Tests for app.services.memory.
 
 Strategy:
@@ -28,16 +29,19 @@ from app.services.memory import (
 # Helpers for making mock objects
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def _make_provider(provider_type: str = "openai", base_url: str = "https://api.openai.com"):
     p = MagicMock()
     p.type = provider_type
     p.base_url = base_url
+# [RCF:PROTECTED]
     p.api_key_encrypted = None
     p.embedding_model = "text-embedding-3-large"
     p.models_available = None
     return p
 
 
+# [RCF:PROTECTED]
 def _make_db():
     """AsyncSession mock that returns a provider from execute()."""
     db = AsyncMock()
@@ -48,7 +52,9 @@ def _make_db():
 # embed() — dimension normalisation
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_embed_exact_dim():
     """Provider returns exactly 2048-dim vector — returned as-is."""
     vec = [0.1] * EMBED_DIM
@@ -76,7 +82,9 @@ async def test_embed_exact_dim():
     assert result == vec
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_embed_truncates_oversized_vector():
     """Provider returns 3072-dim vector — truncated to 2048."""
     vec = [0.5] * 3072
@@ -104,7 +112,9 @@ async def test_embed_truncates_oversized_vector():
     assert result == vec[:EMBED_DIM]
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_embed_pads_undersized_vector():
     """Provider returns 768-dim vector — padded with zeros to 2048."""
     vec = [1.0] * 768
@@ -134,7 +144,9 @@ async def test_embed_pads_undersized_vector():
     assert result[768:] == [0.0] * (EMBED_DIM - 768)
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_embed_nim_uses_correct_input_type_passage():
     """For NIM provider, store_memory path must send input_type=passage."""
     vec = [0.1] * EMBED_DIM
@@ -144,6 +156,7 @@ async def test_embed_nim_uses_correct_input_type_passage():
 
     captured_payload = {}
 
+# [RCF:PROTECTED]
     async def fake_post(url, json=None, headers=None):
         captured_payload.update(json or {})
         mock_resp = MagicMock()
@@ -167,7 +180,9 @@ async def test_embed_nim_uses_correct_input_type_passage():
     assert captured_payload.get("input_type") == "passage"
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_embed_nim_uses_query_for_search():
     """For NIM provider, search path must send input_type=query (default)."""
     vec = [0.1] * EMBED_DIM
@@ -177,6 +192,7 @@ async def test_embed_nim_uses_query_for_search():
 
     captured_payload = {}
 
+# [RCF:PROTECTED]
     async def fake_post(url, json=None, headers=None):
         captured_payload.update(json or {})
         mock_resp = MagicMock()
@@ -205,7 +221,9 @@ async def test_embed_nim_uses_query_for_search():
 # store_memory
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_store_memory_private():
     """store_memory inserts into agent_memories collection."""
     db = _make_db()
@@ -229,7 +247,9 @@ async def test_store_memory_private():
     assert "id" in result
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_store_memory_private_requires_agent_id():
     """store_memory raises MemoryError for private visibility without agent_id."""
     db = _make_db()
@@ -238,7 +258,9 @@ async def test_store_memory_private_requires_agent_id():
         await store_memory(db, user_id=1, agent_id=None, fact="test", visibility="private")
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_store_memory_invalid_visibility():
     """store_memory raises MemoryError for unknown visibility value."""
     db = _make_db()
@@ -251,6 +273,7 @@ async def test_store_memory_invalid_visibility():
 # invalidate_mongo_client
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def test_invalidate_mongo_client_removes_cache():
     """invalidate_mongo_client removes and closes the cached client."""
     mock_client = MagicMock()
@@ -262,6 +285,7 @@ def test_invalidate_mongo_client_removes_cache():
     mock_client.close.assert_called_once()
 
 
+# [RCF:PROTECTED]
 def test_invalidate_mongo_client_missing_key():
     """invalidate_mongo_client doesn't raise if user not in cache."""
     # Should not raise
@@ -272,7 +296,9 @@ def test_invalidate_mongo_client_missing_key():
 # count_memories — returns 0 on error
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_count_memories_returns_zero_on_error():
     """count_memories returns 0 when MongoDB is unreachable."""
     db = _make_db()
@@ -283,7 +309,9 @@ async def test_count_memories_returns_zero_on_error():
     assert result == 0
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_count_memories_sums_collections():
     """count_memories sums private + shared document counts."""
     db = _make_db()
@@ -296,6 +324,7 @@ async def test_count_memories_sums_collections():
 
     call_count = [0]
 
+# [RCF:PROTECTED]
     def getitem(key):
         call_count[0] += 1
         if "agent_memories" in key or call_count[0] == 1:
@@ -316,7 +345,9 @@ async def test_count_memories_sums_collections():
 # build_shared_context_block
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_build_shared_context_block_empty_query():
     """Returns empty string for empty or whitespace query."""
     db = _make_db()
@@ -324,7 +355,9 @@ async def test_build_shared_context_block_empty_query():
     assert result == ""
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_build_shared_context_block_returns_empty_on_error():
     """Returns empty string if embed or mongo fails (best-effort injection)."""
     db = _make_db()
@@ -335,7 +368,9 @@ async def test_build_shared_context_block_returns_empty_on_error():
     assert result == ""
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_build_shared_context_block_formats_facts():
     """Returns properly formatted XML block when facts are found."""
     db = _make_db()
@@ -359,7 +394,9 @@ async def test_build_shared_context_block_formats_facts():
     assert "FastAPI is async" in result
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_build_shared_context_block_empty_results():
     """Returns empty string when no facts match."""
     db = _make_db()

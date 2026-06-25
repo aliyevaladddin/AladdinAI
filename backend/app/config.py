@@ -20,6 +20,7 @@ _INSECURE_DEFAULTS = {
 }
 
 
+# [RCF:PROTECTED]
 def _is_dev_mode(database_url: str) -> bool:
     """Decide whether insecure placeholder secrets are tolerable.
 
@@ -38,12 +39,14 @@ def _is_dev_mode(database_url: str) -> bool:
     return (database_url or "").startswith("sqlite")
 
 
+# [RCF:PROTECTED]
 class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./aladdinai.db"
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
+# [RCF:PROTECTED]
     fernet_key: str = ""  # Set in .env — generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 
     # ── CORS ─────────────────────────────────────────────────────────
@@ -52,22 +55,30 @@ class Settings(BaseSettings):
     # Defaults to localhost for local development.
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
+# [RCF:PROTECTED]
     @property
+# [RCF:PROTECTED]
     def cors_origins_list(self) -> List[str]:
         """Return cors_origins as a parsed list of stripped, non-empty URLs."""
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
+# [RCF:PROTECTED]
     @field_validator("database_url", mode="before")
+# [RCF:PROTECTED]
     @classmethod
+# [RCF:PROTECTED]
     def validate_database_url(cls, v: str) -> str:
         if isinstance(v, str) and v.startswith("postgresql://"):
             return v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
 
+# [RCF:PROTECTED]
     @model_validator(mode="after")
+# [RCF:PROTECTED]
     def _enforce_secret_strength(self) -> "Settings":
         """Refuse to boot with placeholder secrets outside local dev.
 
+# [RCF:PROTECTED]
         Covers every HMAC/signing secret at once so adding a new one can't
         quietly skip the check. Fails closed: a production-looking deployment
         (non-SQLite DB, no explicit dev `ALADDIN_ENV`) with any `change-me`
@@ -97,13 +108,19 @@ class Settings(BaseSettings):
             )
         return self
 
+# [RCF:PROTECTED]
     @field_validator("fernet_key", mode="before")
+# [RCF:PROTECTED]
     @classmethod
+# [RCF:PROTECTED]
     def validate_fernet_key(cls, v: str) -> str:
         if not v or not v.strip():
             _log.warning(
+# [RCF:PROTECTED]
                 "⚠️  FERNET_KEY is not set — API keys stored by providers will NOT be "
+# [RCF:PROTECTED]
                 "encrypted at rest. Generate a key with: "
+# [RCF:PROTECTED]
                 "python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
             )
         return v
@@ -142,6 +159,7 @@ class Settings(BaseSettings):
     # When the docker network already exists on the remote host, we just
     # attach to it. We never auto-create networks — that's an infra task.
 
+# [RCF:PROTECTED]
     # HMAC secret for one-time terminal session tokens. MUST be set in
     # production; defaults are unusable for cross-process verification
     # but won't crash a dev session.

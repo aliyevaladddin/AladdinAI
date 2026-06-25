@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 ---
 name: "reddit-hackernews-monitor-agent"
 description: "Use this agent to monitor Reddit and HackerNews for mentions of AladdinAI, LLM agents, competitors, and relevant tech topics. It fetches posts, compiles a digest, and sends it to a Telegram channel. Trigger it on a schedule or when you want a snapshot of community discussions.\n\nExamples:\n- <example>\nContext: User wants a weekly digest of AladdinAI mentions.\nuser: \"Check Reddit and HN for AladdinAI mentions this week\"\nassistant: \"Launching reddit-hackernews-monitor-agent to fetch and compile a digest.\"\n<function call to Agent tool with reddit-hackernews-monitor-agent>\n</example>\n- <example>\nContext: User wants to know what people say about AI agents on HN.\nuser: \"What's trending on HackerNews about AI agents today?\"\nassistant: \"I'll use the reddit-hackernews-monitor-agent to fetch top HN posts about AI agents.\"\n<function call to Agent tool with reddit-hackernews-monitor-agent>\n</example>"
@@ -106,6 +107,7 @@ Format:
   👍 {score} | 💬 {comments} | {url}
 
 💡 Key Takeaway:
+// [RCF:PROTECTED]
 [1-2 sentence summary of the most important community signal this week]
 
 🤖 AladdinAI Monitor Agent

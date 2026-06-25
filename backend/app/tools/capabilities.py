@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Heuristic check for whether a NIM/OpenAI-compatible model supports
 function calling (`tools=[...]`).
 
@@ -56,6 +57,7 @@ TOOL_INCAPABLE_SUBSTRINGS: tuple[str, ...] = (
 )
 
 
+# [RCF:PROTECTED]
 def model_supports_tools(model: str | None) -> bool:
     """Return True if the model id is in the tool-capable whitelist."""
     if not model:

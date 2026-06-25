@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Application Services (Business Logic)
 
 This directory contains the core business logic, background tasks, external SDK wrappers, and runner components of the AladdinAI application. 

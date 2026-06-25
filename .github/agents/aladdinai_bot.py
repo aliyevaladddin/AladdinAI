@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """AladdinAI Bot - Autonomous AI agent living inside the GitHub repository.
 
 An AI with personality that remembers every interaction, celebrates wins,
@@ -41,12 +42,14 @@ Current repository stats will be provided with each event.
 React authentically based on your personality."""
 
 
+# [RCF:PROTECTED]
 class AladdinAIBot:
     """Active bot that reacts to all repository events."""
 
     name = "aladdinai-bot"
     description = "Active bot that reacts to all repository events"
 
+# [RCF:PROTECTED]
     def __init__(self, token: str, telegram_bot_token: str | None = None, telegram_chat_id: str | None = None):
         """Initialize AladdinAI bot.
 
@@ -60,6 +63,7 @@ class AladdinAIBot:
         self.telegram_chat_id = telegram_chat_id
         self.user_interactions: dict[str, int] = {}  # Track interaction count per user
 
+# [RCF:PROTECTED]
     async def run(self, event_type: str, payload: dict[str, Any]) -> None:
         """Process GitHub webhook event.
 
@@ -191,6 +195,7 @@ class AladdinAIBot:
             user = payload.get("sender", {}).get("login", "")
             await self._notify_telegram(f"👀 @{user} is now watching AladdinAI!")
 
+# [RCF:PROTECTED]
     async def _get_user_context(self, username: str, owner: str) -> str:
         """Get personalized context based on user interaction history.
 
@@ -222,6 +227,7 @@ class AladdinAIBot:
         else:
             return f"They've interacted {interaction_count} times. Be friendly and encouraging."
 
+# [RCF:PROTECTED]
     async def _post_issue_comment(self, owner: str, repo: str, issue_number: int, body: str) -> None:
         """Post a comment on an issue."""
         try:
@@ -240,6 +246,7 @@ class AladdinAIBot:
         except httpx.HTTPError as e:
             log.error(f"Failed to post comment on issue #{issue_number}: {e}")
 
+# [RCF:PROTECTED]
     async def _post_pr_comment(self, owner: str, repo: str, pr_number: int, body: str) -> None:
         """Post a comment on a pull request."""
         try:
@@ -258,6 +265,7 @@ class AladdinAIBot:
         except httpx.HTTPError as e:
             log.error(f"Failed to post comment on PR #{pr_number}: {e}")
 
+# [RCF:PROTECTED]
     async def _react_to_issue(self, owner: str, repo: str, issue_number: int) -> None:
         """Add a random reaction to an issue or PR."""
         try:
@@ -276,6 +284,7 @@ class AladdinAIBot:
         except httpx.HTTPError as e:
             log.error(f"Failed to add reaction to issue #{issue_number}: {e}")
 
+# [RCF:PROTECTED]
     async def _notify_telegram(self, message: str) -> None:
         """Send notification to Telegram."""
         if not self.telegram_bot_token or not self.telegram_chat_id:
@@ -292,6 +301,7 @@ class AladdinAIBot:
         except httpx.HTTPError as e:
             log.error(f"Failed to send Telegram notification: {e}")
 
+# [RCF:PROTECTED]
     async def _assign_reviewer(self, owner: str, repo: str, pr_number: int, reviewers: list[str]) -> None:
         """Assign reviewers to a pull request."""
         try:
@@ -310,6 +320,7 @@ class AladdinAIBot:
         except httpx.HTTPError as e:
             log.error(f"Failed to assign reviewers to PR #{pr_number}: {e}")
 
+# [RCF:PROTECTED]
     async def _assign_to_issue(self, owner: str, repo: str, issue_number: int, assignees: list[str]) -> None:
         """Assign users to an issue."""
         try:

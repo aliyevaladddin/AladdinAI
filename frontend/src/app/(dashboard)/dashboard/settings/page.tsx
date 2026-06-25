@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -36,6 +37,7 @@ export default function SettingsPage() {
     }
   }, [params, router]);
 
+// [RCF:PROTECTED]
   const initial = ((): TabId => {
     const raw = params.get("tab");
     return raw && VALID_TABS.has(raw as TabId) ? (raw as TabId) : "appearance";

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Unified media storage interface — auto-switches between local and MongoDB storage.
 
 Backend selection priority:
@@ -19,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.system_settings import SystemSettings
 
 
+# [RCF:PROTECTED]
 async def _backend(db: AsyncSession, user_id: int) -> str:
     """Return 'mongodb' or 'local' based on user settings or env."""
     # First check user settings
@@ -38,6 +40,7 @@ async def _backend(db: AsyncSession, user_id: int) -> str:
     return "local"
 
 
+# [RCF:PROTECTED]
 async def save_bytes(
     db: AsyncSession,
     user_id: int,
@@ -60,6 +63,7 @@ async def save_bytes(
         return media.save_bytes(data, mime)
 
 
+# [RCF:PROTECTED]
 async def get_bytes(
     db: AsyncSession,
     user_id: int,
@@ -81,6 +85,7 @@ async def get_bytes(
         return media.read_path(handle)
 
 
+# [RCF:PROTECTED]
 async def resolve(
     db: AsyncSession,
     user_id: int,
@@ -97,6 +102,7 @@ async def resolve(
         return str(path) if path else None
 
 
+# [RCF:PROTECTED]
 async def to_data_url(
     db: AsyncSession,
     user_id: int,
@@ -114,6 +120,7 @@ async def to_data_url(
         return media.to_data_url(file_id, mime)
 
 
+# [RCF:PROTECTED]
 async def download_telegram_file(
     db: AsyncSession,
     user_id: int,
@@ -131,6 +138,7 @@ async def download_telegram_file(
         return await media.download_telegram_file(bot_token, file_id)
 
 
+# [RCF:PROTECTED]
 async def delete_file(
     db: AsyncSession,
     user_id: int,

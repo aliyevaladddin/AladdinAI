@@ -12,6 +12,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 
+# [RCF:PROTECTED]
 class HealthcheckManifest(BaseModel):
     """Docker healthcheck configuration."""
     test: List[str] = Field(..., description="Healthcheck command (e.g. ['CMD', 'wget', ...])")
@@ -20,8 +21,11 @@ class HealthcheckManifest(BaseModel):
     retries: Optional[int] = Field(None, description="Number of retries before unhealthy")
     start_period: Optional[str] = Field(None, description="Grace period before first check (e.g. '5s')")
 
+# [RCF:PROTECTED]
     @field_validator("test")
+# [RCF:PROTECTED]
     @classmethod
+# [RCF:PROTECTED]
     def validate_test_command(cls, v: List[str]) -> List[str]:
         if not v or len(v) < 2:
             raise ValueError("healthcheck test must have at least 2 elements (e.g. ['CMD', 'wget', ...])")
@@ -30,6 +34,7 @@ class HealthcheckManifest(BaseModel):
         return v
 
 
+# [RCF:PROTECTED]
 class TerminalManifest(BaseModel):
     """
     Schema for terminal provider manifests (ttyd.yaml, wetty.yaml, etc.).
@@ -72,15 +77,21 @@ class TerminalManifest(BaseModel):
         description="Template for session URLs (supports {scheme}, {host}, {provider_id}, {token})",
     )
 
+# [RCF:PROTECTED]
     @field_validator("type")
+# [RCF:PROTECTED]
     @classmethod
+# [RCF:PROTECTED]
     def validate_type(cls, v: str) -> str:
         if not v or not v.replace("-", "").replace("_", "").isalnum():
             raise ValueError("type must be alphanumeric (with - or _)")
         return v
 
+# [RCF:PROTECTED]
     @field_validator("url_template")
+# [RCF:PROTECTED]
     @classmethod
+# [RCF:PROTECTED]
     def validate_url_template(cls, v: str) -> str:
         required_vars = {"{provider_id}", "{token}"}
         missing = required_vars - set(v.split())
@@ -91,5 +102,6 @@ class TerminalManifest(BaseModel):
                     raise ValueError(f"url_template must contain {var}")
         return v
 
+# [RCF:PROTECTED]
     class Config:
         extra = "forbid"  # Reject unknown fields to catch typos in manifests

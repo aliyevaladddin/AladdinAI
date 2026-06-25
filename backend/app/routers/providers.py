@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 import json
 import logging
 
@@ -6,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# [RCF:PROTECTED]
 from app.crypto import decrypt, encrypt
 from app.database import get_db
 from app.models.llm_provider import LLMProvider
@@ -18,18 +20,23 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/providers", tags=["providers"])
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=list[LLMProviderResponse])
+# [RCF:PROTECTED]
 async def list_providers(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(LLMProvider).where(LLMProvider.user_id == user.id))
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.post("", response_model=LLMProviderResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_provider(body: LLMProviderCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     provider = LLMProvider(
         user_id=user.id,
         name=body.name,
         type=body.type,
+# [RCF:PROTECTED]
         api_key_encrypted=encrypt(body.api_key) if body.api_key else body.api_key,
         base_url=body.base_url,
     )
@@ -39,13 +46,16 @@ async def create_provider(body: LLMProviderCreate, user: User = Depends(get_curr
     return provider
 
 
+# [RCF:PROTECTED]
 @router.post("/{provider_id}/connect")
+# [RCF:PROTECTED]
 async def connect_provider(provider_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))
     provider = result.scalar_one_or_none()
     if not provider:
         raise HTTPException(status_code=404, detail="Provider not found")
 
+# [RCF:PROTECTED]
     api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
 
     headers: dict = {"Content-Type": "application/json"}
@@ -109,7 +119,9 @@ async def connect_provider(provider_id: int, user: User = Depends(get_current_us
         return {"status": "error", "message": "An unexpected error occurred while connecting to the provider."}
 
 
+# [RCF:PROTECTED]
 @router.get("/{provider_id}/models")
+# [RCF:PROTECTED]
 async def get_provider_models(provider_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))
     provider = result.scalar_one_or_none()
@@ -123,7 +135,9 @@ async def get_provider_models(provider_id: int, user: User = Depends(get_current
     return {"models": models, "count": len(models)}
 
 
+# [RCF:PROTECTED]
 @router.post("/{provider_id}/disconnect")
+# [RCF:PROTECTED]
 async def disconnect_provider(provider_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))
     provider = result.scalar_one_or_none()
@@ -134,7 +148,9 @@ async def disconnect_provider(provider_id: int, user: User = Depends(get_current
     return {"status": "disconnected"}
 
 
+# [RCF:PROTECTED]
 @router.put("/{provider_id}", response_model=LLMProviderResponse)
+# [RCF:PROTECTED]
 async def update_provider(
     provider_id: int,
     body: LLMProviderCreate,
@@ -150,6 +166,7 @@ async def update_provider(
     provider.type = body.type
     provider.base_url = body.base_url
     if body.api_key:
+# [RCF:PROTECTED]
         provider.api_key_encrypted = encrypt(body.api_key)
         
     await db.commit()
@@ -157,7 +174,9 @@ async def update_provider(
     return provider
 
 
+# [RCF:PROTECTED]
 @router.delete("/{provider_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_provider(provider_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))
     provider = result.scalar_one_or_none()

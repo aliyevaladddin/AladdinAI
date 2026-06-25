@@ -1,6 +1,8 @@
+# NOTICE: This file is protected under RCF-PL
 """Test provider management endpoints."""
 
 
+# [RCF:PROTECTED]
 def test_list_providers_empty(client, auth_headers):
     """Test listing providers when none exist."""
     response = client.get("/api/providers", headers=auth_headers)
@@ -8,6 +10,7 @@ def test_list_providers_empty(client, auth_headers):
     assert response.json() == []
 
 
+# [RCF:PROTECTED]
 def test_create_provider(client, auth_headers):
     """Test creating a new LLM provider."""
     response = client.post(
@@ -25,10 +28,12 @@ def test_create_provider(client, auth_headers):
     assert data["name"] == "My NVIDIA NIM"
     assert data["type"] == "nim"
     assert data["base_url"] == "https://integrate.api.nvidia.com/v1"
+# [RCF:PROTECTED]
     # API key should be encrypted, not returned in plain
     assert "api_key" not in data
 
 
+# [RCF:PROTECTED]
 def test_create_provider_without_key(client, auth_headers):
     """Test creating provider without API key (e.g., Ollama local)."""
     response = client.post(
@@ -46,6 +51,7 @@ def test_create_provider_without_key(client, auth_headers):
     assert data["type"] == "ollama"
 
 
+# [RCF:PROTECTED]
 def test_list_providers(client, auth_headers):
     """Test listing user's providers."""
     # Create two providers
@@ -79,6 +85,7 @@ def test_list_providers(client, auth_headers):
     assert "Provider 2" in names
 
 
+# [RCF:PROTECTED]
 def test_update_provider(client, auth_headers):
     """Test updating provider configuration."""
     create_response = client.post(
@@ -108,6 +115,7 @@ def test_update_provider(client, auth_headers):
     assert data["name"] == "Updated Provider"
 
 
+# [RCF:PROTECTED]
 def test_delete_provider(client, auth_headers):
     """Test deleting a provider."""
     create_response = client.post(
@@ -131,6 +139,7 @@ def test_delete_provider(client, auth_headers):
     assert provider_id not in provider_ids
 
 
+# [RCF:PROTECTED]
 def test_get_provider_models_not_connected(client, auth_headers):
     """Test getting models from a provider that hasn't been connected."""
     create_response = client.post(
@@ -152,6 +161,7 @@ def test_get_provider_models_not_connected(client, auth_headers):
     assert "hint" in data
 
 
+# [RCF:PROTECTED]
 def test_disconnect_provider(client, auth_headers):
     """Test disconnecting a provider."""
     create_response = client.post(
@@ -172,6 +182,7 @@ def test_disconnect_provider(client, auth_headers):
     assert data["status"] == "disconnected"
 
 
+# [RCF:PROTECTED]
 def test_provider_user_scoping(client, test_user):
     """Test users cannot access other users' providers."""
     # Create second user
@@ -205,12 +216,14 @@ def test_provider_user_scoping(client, test_user):
     assert response.status_code == 404
 
 
+# [RCF:PROTECTED]
 def test_provider_unauthorized(client):
     """Test accessing providers without auth fails."""
     response = client.get("/api/providers")
     assert response.status_code == 401
 
 
+# [RCF:PROTECTED]
 def test_update_nonexistent_provider(client, auth_headers):
     """Test updating a provider that doesn't exist."""
     response = client.put(
@@ -226,6 +239,7 @@ def test_update_nonexistent_provider(client, auth_headers):
     assert response.status_code == 404
 
 
+# [RCF:PROTECTED]
 def test_delete_nonexistent_provider(client, auth_headers):
     """Test deleting a provider that doesn't exist."""
     response = client.delete("/api/providers/99999", headers=auth_headers)

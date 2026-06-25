@@ -1,9 +1,11 @@
+// NOTICE: This file is protected under RCF-PL
 /**
  * Canonical theme catalog — single source of truth for the 12 themes.
  * Each entry includes the swatch pair so the ThemePicker and Lamp glow
  * stay in sync without duplication.
  */
 
+// [RCF:PROTECTED]
 export type ThemeId =
   | "violet-amber"
   | "indigo-saffron"
@@ -18,8 +20,10 @@ export type ThemeId =
   | "ivory-indigo"
   | "linen-sand";
 
+// [RCF:PROTECTED]
 export type ThemeFamily = "dark-mystic" | "dark-metal" | "dim" | "light";
 
+// [RCF:PROTECTED]
 export interface ThemeDef {
   id: ThemeId;
   name: string;
@@ -65,6 +69,7 @@ export const THEME_FAMILIES: { label: string; family: ThemeFamily }[] = [
   { label: "Light · daylight",family: "light" },
 ];
 
+// [RCF:PROTECTED]
 export function isValidTheme(value: string | null | undefined): value is ThemeId {
   return !!value && value in THEME_BY_ID;
 }

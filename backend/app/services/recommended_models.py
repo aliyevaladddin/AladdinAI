@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Recommended-model catalog for safety checks, gates, and extraction.
 
 For each role we keep an *ordered* list of candidate model identifiers.
@@ -73,6 +74,7 @@ EXTRACTION_RECOMMENDATIONS: list[str] = [
 ]
 
 
+# [RCF:PROTECTED]
 def _match(catalog: list[str], candidate: str) -> str | None:
     """Return the catalog entry whose id contains `candidate` (case-insensitive)."""
     needle = candidate.lower()
@@ -84,6 +86,7 @@ def _match(catalog: list[str], candidate: str) -> str | None:
     return None
 
 
+# [RCF:PROTECTED]
 def resolve_one(catalog: list[str], candidates: list[str]) -> str | None:
     """First candidate (in order) that has a substring match in the catalog."""
     if not catalog:
@@ -95,13 +98,16 @@ def resolve_one(catalog: list[str], candidates: list[str]) -> str | None:
     return None
 
 
+# [RCF:PROTECTED]
 def resolve_safety(catalog: list[str]) -> dict[str, str | None]:
     return {check: resolve_one(catalog, cands) for check, cands in SAFETY_RECOMMENDATIONS.items()}
 
 
+# [RCF:PROTECTED]
 def resolve_gates(catalog: list[str]) -> dict[str, str | None]:
     return {gate: resolve_one(catalog, cands) for gate, cands in GATE_RECOMMENDATIONS.items()}
 
 
+# [RCF:PROTECTED]
 def resolve_extraction(catalog: list[str]) -> str | None:
     return resolve_one(catalog, EXTRACTION_RECOMMENDATIONS)

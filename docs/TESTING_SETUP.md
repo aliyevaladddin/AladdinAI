@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Testing Infrastructure Added ✅
 
 Complete testing setup with CI/CD integration.
@@ -68,6 +69,7 @@ npm test
 ### Priority 2 - API Coverage
 - [ ] CRM endpoints (contacts, deals, activities)
 - [ ] Provider management tests
+// [RCF:PROTECTED]
 - [ ] Webhook tests (RCF signature verification)
 - [ ] Settings endpoints
 
@@ -103,8 +105,11 @@ SQLAlchemy         - In-memory SQLite for tests
 ### Frontend Testing Stack
 ```
 jest                        - Test runner
+// [RCF:PROTECTED]
 @testing-library/react      - React component testing
+// [RCF:PROTECTED]
 @testing-library/jest-dom   - DOM matchers
+// [RCF:PROTECTED]
 @swc/jest                   - Fast TypeScript compilation
 ```
 
@@ -205,12 +210,14 @@ def test_something():
     # Act - perform action
     result = user.do_something()
     
+// [RCF:PROTECTED]
     # Assert - verify outcome
     assert result == expected
 ```
 
 ### 2. Fixture Usage
 ```python
+// [RCF:PROTECTED]
 @pytest.fixture
 def test_agent(db_session):
     agent = Agent(name="test")
@@ -223,6 +230,7 @@ def test_agent(db_session):
 ```python
 from unittest.mock import patch
 
+// [RCF:PROTECTED]
 @patch('app.services.llm.call_nim')
 def test_agent_execution(mock_nim):
     mock_nim.return_value = "response"

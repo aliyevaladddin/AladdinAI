@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 import asyncio
 import email
 import email.header
@@ -20,6 +21,7 @@ from app.models.email_account import EmailAccount
 log = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 def _decode_mime(value: str) -> str:
     """Decode RFC 2047 encoded-word strings like =?UTF-8?B?...?= or =?UTF-8?Q?...?="""
     if not value:
@@ -34,6 +36,7 @@ def _decode_mime(value: str) -> str:
     return " ".join(decoded).strip()
 
 
+# [RCF:PROTECTED]
 def _parse_email_address(header: str) -> tuple[str, str]:
     """Parse 'Name <email@example.com>' → (name, email)"""
     header = _decode_mime(header)
@@ -45,15 +48,19 @@ def _parse_email_address(header: str) -> tuple[str, str]:
     return "", header.strip()
 
 
+# [RCF:PROTECTED]
 async def test_email_connection(account: EmailAccount) -> tuple[bool, str]:
     if account.provider == "imap":
         return await _test_imap(account)
     return False, f"OAuth for {account.provider} not yet implemented — use IMAP for now"
 
 
+# [RCF:PROTECTED]
 async def _test_imap(account: EmailAccount) -> tuple[bool, str]:
     try:
+# [RCF:PROTECTED]
         password = decrypt(account.password_encrypted or "")
+# [RCF:PROTECTED]
         def _connect():
             host = account.imap_host or "imap.gmail.com"
             port = account.imap_port or 993
@@ -68,6 +75,7 @@ async def _test_imap(account: EmailAccount) -> tuple[bool, str]:
         return False, "Failed to connect to IMAP server due to an unexpected error."
 
 
+# [RCF:PROTECTED]
 def _detect_sent_folder(m: imaplib.IMAP4_SSL) -> str | None:
     """Try common Sent folder names across providers."""
     candidates = [
@@ -103,6 +111,7 @@ def _detect_sent_folder(m: imaplib.IMAP4_SSL) -> str | None:
     return None
 
 
+# [RCF:PROTECTED]
 async def sync_emails(account_id: int):
     async with async_session() as db:
         result = await db.execute(select(EmailAccount).where(EmailAccount.id == account_id))
@@ -147,6 +156,7 @@ async def sync_emails(account_id: int):
         await db.commit()
 
 
+# [RCF:PROTECTED]
 async def _find_contact(db, user_id: int, addr: str) -> Contact | None:
     result = await db.execute(
         select(Contact).where(Contact.user_id == user_id, Contact.email == addr)
@@ -154,6 +164,7 @@ async def _find_contact(db, user_id: int, addr: str) -> Contact | None:
     return result.scalar_one_or_none()
 
 
+# [RCF:PROTECTED]
 async def _upsert_activity(db, account: EmailAccount, contact_id: int | None, activity_type: str, msg: dict):
     """Insert or update activity with robust deduplication."""
     subject = msg.get("subject", "")
@@ -227,6 +238,7 @@ async def _upsert_activity(db, account: EmailAccount, contact_id: int | None, ac
 ATTACHMENTS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "media", "attachments")
 
 
+# [RCF:PROTECTED]
 def _save_attachments(msg: email.message.Message, activity_id: int) -> list[dict]:
     """Extract and save email attachments to disk. Returns list of metadata dicts."""
     saved = []
@@ -269,6 +281,7 @@ def _save_attachments(msg: email.message.Message, activity_id: int) -> list[dict
     return saved
 
 
+# [RCF:PROTECTED]
 def _parse_msg_data(msg_data) -> dict | None:
     """Build a normalized dict from imaplib FETCH response. Returns None on parse failure."""
     try:
@@ -294,10 +307,13 @@ def _parse_msg_data(msg_data) -> dict | None:
         return None
 
 
+# [RCF:PROTECTED]
 async def _fetch_folder_emails(account: EmailAccount, folder: str, limit: int = 50) -> list[dict]:
     """Fetch emails from a given IMAP folder. Extracts From/Subject/Body."""
+# [RCF:PROTECTED]
     password = decrypt(account.password_encrypted or "")
 
+# [RCF:PROTECTED]
     def _fetch():
         host = account.imap_host or "imap.gmail.com"
         port = account.imap_port or 993
@@ -333,10 +349,13 @@ async def _fetch_folder_emails(account: EmailAccount, folder: str, limit: int = 
     return await asyncio.to_thread(_fetch)
 
 
+# [RCF:PROTECTED]
 async def _fetch_sent_emails(account: EmailAccount, limit: int = 50) -> list[dict]:
     """Fetch emails from the Sent folder, auto-detecting folder name."""
+# [RCF:PROTECTED]
     password = decrypt(account.password_encrypted or "")
 
+# [RCF:PROTECTED]
     def _fetch():
         host = account.imap_host or "imap.gmail.com"
         port = account.imap_port or 993
@@ -378,6 +397,7 @@ async def _fetch_sent_emails(account: EmailAccount, limit: int = 50) -> list[dic
     return await asyncio.to_thread(_fetch)
 
 
+# [RCF:PROTECTED]
 def _extract_body(msg: email.message.Message) -> str:
     """Extract body from email, prefer text/html over text/plain."""
     html_body = ""
@@ -400,6 +420,7 @@ def _extract_body(msg: email.message.Message) -> str:
     return html_body if html_body else plain_body
 
 
+# [RCF:PROTECTED]
 async def send_email(db: AsyncSession, account: EmailAccount, to_email: str, subject: str, body: str, contact_id: int | None = None):
     """Send email via SMTP and record it in the activity log.
 
@@ -408,6 +429,7 @@ async def send_email(db: AsyncSession, account: EmailAccount, to_email: str, sub
     That way an SMTP failure leaves a visible record, and a DB failure after
     a successful send is logged loudly so the operator can recover by hand.
     """
+# [RCF:PROTECTED]
     password = decrypt(account.password_encrypted or "")
 
     import uuid
@@ -433,6 +455,7 @@ async def send_email(db: AsyncSession, account: EmailAccount, to_email: str, sub
     await db.commit()
     await db.refresh(activity)
 
+# [RCF:PROTECTED]
     def _send():
         msg = MIMEText(body)
         msg["Subject"] = subject

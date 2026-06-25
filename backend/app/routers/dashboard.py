@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy import select, func
@@ -18,7 +19,9 @@ from app.services import memory, gate_log
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
+# [RCF:PROTECTED]
 @router.get("/stats")
+# [RCF:PROTECTED]
 async def get_dashboard_stats(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timezone
 
 from sqlalchemy import JSON, ForeignKey, String, Text
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
+# [RCF:PROTECTED]
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
@@ -20,6 +22,7 @@ class ChatSession(Base):
     )
 
 
+# [RCF:PROTECTED]
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 

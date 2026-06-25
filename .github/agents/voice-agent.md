@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 ---
 name: "voice-agent"
 description: "Use this agent to handle voice interactions via WebRTC in the browser. It processes audio input through ASR (speech-to-text), generates a response using the LLM, and synthesizes speech via TTS. Trigger it when setting up voice sessions, debugging WebRTC connections, or processing a voice interaction transcript.\n\nExamples:\n- <example>\nuser: \"Set up a voice session for agent ID 5\"\nassistant: \"Launching voice-agent to initialize a WebRTC voice session.\"\n<function call to Agent tool with voice-agent>\n</example>\n- <example>\nuser: \"Process this audio transcript and respond as the sales agent\"\nassistant: \"I'll use the voice-agent to process the transcript and generate a TTS response.\"\n<function call to Agent tool with voice-agent>\n</example>"
@@ -52,6 +53,7 @@ When a voice session starts:
 1. Validate `session_id` and `agent_id` from the WebSocket connection params
 2. Load the agent's system prompt via `memory_read(key="agent:{agent_id}:system_prompt")`
 3. Initialize conversation history: `[{"role": "system", "content": system_prompt}]`
+// [RCF:PROTECTED]
 4. Send ready signal to browser: `{"type": "session_ready", "session_id": session_id}`
 
 ### Phase 2: ASR — AUDIO → TEXT
@@ -108,6 +110,7 @@ Stream the audio bytes back to the browser via WebSocket:
 await websocket.send_bytes(audio_chunk)
 ```
 
+// [RCF:PROTECTED]
 Send end-of-speech signal: `{"type": "tts_done"}`
 
 ### Phase 5: SESSION END

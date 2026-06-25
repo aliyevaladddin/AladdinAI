@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -10,6 +11,7 @@ import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
 import { AgentMemoryPanel } from "@/components/agent-memory-panel";
 import { ChevronRight, Trash2 } from "lucide-react";
 
+// [RCF:PROTECTED]
 interface Agent {
   id: number;
   name: string;
@@ -21,6 +23,7 @@ interface Agent {
   status: string;
 }
 
+// [RCF:PROTECTED]
 interface Provider {
   id: number;
   name: string;
@@ -45,6 +48,7 @@ export default function AgentsPage() {
   const [openExtraction, setOpenExtraction] = useState<number | null>(null);
   const [openMemory, setOpenMemory] = useState<number | null>(null);
 
+// [RCF:PROTECTED]
   const load = async () => {
     setLoading(true);
     try {
@@ -63,9 +67,11 @@ export default function AgentsPage() {
     load();
   }, []);
 
+// [RCF:PROTECTED]
   const providerName = (id: number | null) =>
     id ? providers.find((p) => p.id === id)?.name ?? `#${id}` : "—";
 
+// [RCF:PROTECTED]
   const handleStart = async (id: number) => {
     setBusyId(id);
     try {
@@ -76,6 +82,7 @@ export default function AgentsPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleStop = async (id: number) => {
     setBusyId(id);
     try {
@@ -86,6 +93,7 @@ export default function AgentsPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this agent?")) return;
     setBusyId(id);

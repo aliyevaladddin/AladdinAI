@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Image generation tool.
 
 `generate_image` lets any agent create a NEW picture from a text prompt and
@@ -26,6 +27,7 @@ from app.tools.base import ToolContext, tool
 log = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 @tool(
     name="generate_image",
     description=(
@@ -46,6 +48,7 @@ log = logging.getLogger(__name__)
         "required": ["prompt"],
     },
 )
+# [RCF:PROTECTED]
 async def generate_image(ctx: ToolContext, prompt: str) -> dict:
     prompt = (prompt or "").strip()
     if not prompt:

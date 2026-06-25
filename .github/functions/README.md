@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # AladdinAI Cloudflare Functions
 
 Serverless functions for AladdinAI GitHub bot, deployed on Cloudflare Pages.
@@ -91,7 +92,9 @@ wrangler pages dev . --port 8788
 curl -X POST http://localhost:8788/api/webhooks/github \
   -H "Content-Type: application/json" \
   -H "X-GitHub-Event: ping" \
+// [RCF:PROTECTED]
   -H "X-Hub-Signature-256: sha256=test" \
+// [RCF:PROTECTED]
   -d '{"zen": "Design for failure."}'
 ```
 
@@ -131,10 +134,13 @@ Check Cloudflare logs:
 
 **Bot not responding:**
 1. Check webhook URL is correct in GitHub App settings
+// [RCF:PROTECTED]
 2. Verify `WEBHOOK_SECRET` matches in both places
 3. Check Cloudflare Functions logs for errors
+// [RCF:PROTECTED]
 4. Verify events are subscribed in GitHub App settings
 
+// [RCF:PROTECTED]
 **Signature verification failed:**
 - Webhook secret mismatch between GitHub App and Cloudflare env var
 - Check Recent Deliveries in GitHub App for error details
@@ -152,6 +158,7 @@ GitHub Webhook
     ↓
 Cloudflare Pages Function (aliyev.site/api/webhooks/github)
     ↓
+// [RCF:PROTECTED]
 Verify signature (HMAC-SHA256)
     ↓
 Route to handler (PR/Issue/Comment)
@@ -163,8 +170,10 @@ Post comment via GitHub API
 
 ## Security
 
+// [RCF:PROTECTED]
 - ✅ Webhook signature verification (HMAC-SHA256)
 - ✅ CORS headers configured
+// [RCF:PROTECTED]
 - ✅ Secrets stored in Cloudflare environment variables (encrypted at rest)
 - ✅ No secrets in code or git
 

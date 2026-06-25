@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Add Two Demo Agents: Code Review & Proactive Reminders
 
 ## Overview
@@ -158,12 +159,14 @@ frontend/src/components/agent-triggers-panel.tsx  # Added templates UI
 ## Architecture Notes
 
 ### Code Review Agent
+// [RCF:PROTECTED]
 - **Standalone design** — no AladdinAI backend dependencies
 - Runs in GitHub Actions, not in AladdinAI process
 - Uses NVIDIA NIM instead of Anthropic (free, no rate limits)
 - `github_tools.py` is reusable for other automation scripts
 
 ### Proactive Reminder Agent
+// [RCF:PROTECTED]
 - **Integrated design** — uses existing AladdinAI infrastructure
 - Leverages APScheduler (already running in FastAPI process)
 - Works through `agent_triggers` table (existing feature)

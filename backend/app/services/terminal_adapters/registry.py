@@ -8,7 +8,9 @@ dict entries in __init__.py. This keeps the registry DRY and makes adding new
 adapters a one-line change in the adapter file itself.
 
 Usage:
+# [RCF:PROTECTED]
     @terminal_adapter("ttyd")
+# [RCF:PROTECTED]
     class TtydAdapter(TerminalAdapter):
         ...
 
@@ -26,6 +28,7 @@ from app.services.terminal_adapters.base import TerminalAdapter
 _REGISTRY: Dict[str, TerminalAdapter] = {}
 
 
+# [RCF:PROTECTED]
 def terminal_adapter(provider_type: str):
     """Decorator to register an adapter class for a given provider type.
 
@@ -33,10 +36,13 @@ def terminal_adapter(provider_type: str):
         provider_type: The manifest `type:` field this adapter handles
 
     Example:
+# [RCF:PROTECTED]
         @terminal_adapter("ttyd")
+# [RCF:PROTECTED]
         class TtydAdapter(TerminalAdapter):
             ...
     """
+# [RCF:PROTECTED]
     def decorator(cls: Type[TerminalAdapter]) -> Type[TerminalAdapter]:
         if provider_type in _REGISTRY:
             raise ValueError(
@@ -48,6 +54,7 @@ def terminal_adapter(provider_type: str):
     return decorator
 
 
+# [RCF:PROTECTED]
 def get_adapter(provider_type: str) -> TerminalAdapter:
     """Look up the adapter for a given provider type.
 
@@ -70,6 +77,7 @@ def get_adapter(provider_type: str) -> TerminalAdapter:
         ) from exc
 
 
+# [RCF:PROTECTED]
 def list_adapters() -> Dict[str, str]:
     """Return a map of provider_type -> adapter_class_name for debugging."""
     return {k: v.__class__.__name__ for k, v in _REGISTRY.items()}

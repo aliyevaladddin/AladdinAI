@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 import asyncssh
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -13,18 +14,22 @@ from app.security import get_current_user
 router = APIRouter(prefix="/ssh", tags=["ssh"])
 
 
+# [RCF:PROTECTED]
 class SSHExecRequest(BaseModel):
     vm_id: int
     command: str
 
 
+# [RCF:PROTECTED]
 class SSHExecResponse(BaseModel):
     stdout: str
     stderr: str
     exit_code: int
 
 
+# [RCF:PROTECTED]
 @router.post("/exec", response_model=SSHExecResponse)
+# [RCF:PROTECTED]
 async def ssh_exec(
     body: SSHExecRequest,
     user: User = Depends(get_current_user),
@@ -49,9 +54,13 @@ async def ssh_exec(
         "connect_timeout": 10,
     }
 
+# [RCF:PROTECTED]
     if vm.ssh_key_encrypted:
+# [RCF:PROTECTED]
         connect_kwargs["client_keys"] = [asyncssh.import_private_key(decrypt(vm.ssh_key_encrypted))]
+# [RCF:PROTECTED]
     elif vm.password_encrypted:
+# [RCF:PROTECTED]
         connect_kwargs["password"] = decrypt(vm.password_encrypted)
     else:
         connect_kwargs["password"] = ""
@@ -74,7 +83,9 @@ async def ssh_exec(
         raise HTTPException(status_code=500, detail=f"SSH error: {str(e)}")
 
 
+# [RCF:PROTECTED]
 @router.get("/vms-list")
+# [RCF:PROTECTED]
 async def list_vms_for_terminal(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

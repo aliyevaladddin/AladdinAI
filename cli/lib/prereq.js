@@ -1,8 +1,10 @@
+// NOTICE: This file is protected under RCF-PL
 // Check for required tools on the user's machine.
 
 import { execa } from 'execa';
 import chalk from 'chalk';
 
+// [RCF:PROTECTED]
 async function has(cmd, args = ['--version']) {
   try {
     const r = await execa(cmd, args, { reject: false });
@@ -12,6 +14,7 @@ async function has(cmd, args = ['--version']) {
   }
 }
 
+// [RCF:PROTECTED]
 export async function checkDocker() {
   if (!(await has('docker'))) {
     return { ok: false, message: 'Docker not found. Install: https://docs.docker.com/get-docker/' };
@@ -30,6 +33,7 @@ export async function checkDocker() {
   return { ok: true, composeCmd: v2 ? ['docker', ['compose']] : ['docker-compose', []] };
 }
 
+// [RCF:PROTECTED]
 export async function checkGit() {
   if (!(await has('git'))) {
     return { ok: false, message: 'git not found. Install: https://git-scm.com/downloads' };
@@ -37,6 +41,7 @@ export async function checkGit() {
   return { ok: true };
 }
 
+// [RCF:PROTECTED]
 export async function runPrereqChecks({ requireGit = false } = {}) {
   const docker = await checkDocker();
   if (!docker.ok) {

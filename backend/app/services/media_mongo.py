@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """MongoDB GridFS media storage for attachments and files.
 
 Replaces local filesystem storage with MongoDB GridFS, allowing:
@@ -34,12 +35,14 @@ from app.services.memory import get_mongo_db
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 
 
+# [RCF:PROTECTED]
 def _ext_from_mime(mime: str | None) -> str:
     if not mime:
         return ".bin"
     return mimetypes.guess_extension(mime) or ".bin"
 
 
+# [RCF:PROTECTED]
 async def save_bytes(
     db: AsyncSession,
     user_id: int,
@@ -82,6 +85,7 @@ async def save_bytes(
     }
 
 
+# [RCF:PROTECTED]
 async def get_bytes(
     db: AsyncSession,
     user_id: int,
@@ -106,6 +110,7 @@ async def get_bytes(
         return None
 
 
+# [RCF:PROTECTED]
 async def resolve(
     db: AsyncSession,
     user_id: int,
@@ -125,6 +130,7 @@ async def resolve(
     return None
 
 
+# [RCF:PROTECTED]
 async def to_data_url(
     db: AsyncSession,
     user_id: int,
@@ -152,6 +158,7 @@ async def to_data_url(
     return f"data:{mime};base64,{base64.b64encode(data).decode()}"
 
 
+# [RCF:PROTECTED]
 async def download_telegram_file(
     db: AsyncSession,
     user_id: int,
@@ -189,6 +196,7 @@ async def download_telegram_file(
     return await save_bytes(db, user_id, data, mime, original_filename=file_path)
 
 
+# [RCF:PROTECTED]
 async def delete_file(
     db: AsyncSession,
     user_id: int,

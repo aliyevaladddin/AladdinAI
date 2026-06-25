@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 /**
  * AladdinAI GitHub Bot Webhook Handler
  * Cloudflare Pages Function for handling GitHub App events
@@ -12,10 +13,12 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// [RCF:PROTECTED]
   'Access-Control-Allow-Headers': 'Content-Type, X-GitHub-Event, X-Hub-Signature-256',
   'Content-Type': 'application/json'
 };
 
+// [RCF:PROTECTED]
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
@@ -23,14 +26,18 @@ export async function onRequestOptions() {
   });
 }
 
+// [RCF:PROTECTED]
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
 
+// [RCF:PROTECTED]
     // Verify GitHub webhook signature
+// [RCF:PROTECTED]
     const signature = request.headers.get('X-Hub-Signature-256');
     const event = request.headers.get('X-GitHub-Event');
 
+// [RCF:PROTECTED]
     if (!signature || !event) {
       return new Response(
         JSON.stringify({ error: 'Missing GitHub headers' }),
@@ -48,18 +55,23 @@ export async function onRequestPost(context) {
       );
     }
 
+// [RCF:PROTECTED]
     // Read raw body BEFORE parsing (GitHub signs the raw bytes)
     const rawBody = await request.text();
 
+// [RCF:PROTECTED]
     // Verify signature against raw body
+// [RCF:PROTECTED]
     const isValid = await verifySignature(
       rawBody,
+// [RCF:PROTECTED]
       signature,
       webhookSecret
     );
 
     if (!isValid) {
       return new Response(
+// [RCF:PROTECTED]
         JSON.stringify({ error: 'Invalid signature' }),
         { status: 401, headers: corsHeaders }
       );
@@ -112,48 +124,62 @@ export async function onRequestPost(context) {
   }
 }
 
+// [RCF:PROTECTED]
 async function verifySignature(payload, signature, secret) {
   try {
     const encoder = new TextEncoder();
 
+// [RCF:PROTECTED]
     // Import secret as HMAC key
+// [RCF:PROTECTED]
     const key = await crypto.subtle.importKey(
       'raw',
       encoder.encode(secret),
+// [RCF:PROTECTED]
       { name: 'HMAC', hash: 'SHA-256' },
       false,
+// [RCF:PROTECTED]
       ['sign']
     );
 
+// [RCF:PROTECTED]
     // Compute HMAC-SHA256 signature
+// [RCF:PROTECTED]
     const signatureBytes = await crypto.subtle.sign(
+// [RCF:PROTECTED]
       'HMAC',
       key,
       encoder.encode(payload)
     );
 
     // Convert to hex string with 'sha256=' prefix (GitHub format)
+// [RCF:PROTECTED]
     const expectedSignature = 'sha256=' + Array.from(new Uint8Array(signatureBytes))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
 
     // Constant-time comparison to prevent timing attacks
+// [RCF:PROTECTED]
     if (signature.length !== expectedSignature.length) {
       return false;
     }
 
     let result = 0;
+// [RCF:PROTECTED]
     for (let i = 0; i < signature.length; i++) {
+// [RCF:PROTECTED]
       result |= signature.charCodeAt(i) ^ expectedSignature.charCodeAt(i);
     }
 
     return result === 0;
   } catch (error) {
+// [RCF:PROTECTED]
     console.error('Signature verification error:', error);
     return false;
   }
 }
 
+// [RCF:PROTECTED]
 async function handlePullRequest(payload, env) {
   const { action, pull_request, repository } = payload;
 
@@ -175,6 +201,7 @@ async function handlePullRequest(payload, env) {
   return { message: 'PR handled', action, pr: pull_request.number };
 }
 
+// [RCF:PROTECTED]
 async function handleIssue(payload, env) {
   const { action, issue, repository } = payload;
 
@@ -196,6 +223,7 @@ async function handleIssue(payload, env) {
   return { message: 'Issue handled', action, issue: issue.number };
 }
 
+// [RCF:PROTECTED]
 async function handleIssueComment(payload, env) {
   const { action, comment, issue, repository } = payload;
 
@@ -218,6 +246,7 @@ async function handleIssueComment(payload, env) {
   return { message: 'Comment handled', action };
 }
 
+// [RCF:PROTECTED]
 async function handlePullRequestReview(payload, env) {
   const { action, review, pull_request, repository } = payload;
 
@@ -229,6 +258,7 @@ async function handlePullRequestReview(payload, env) {
   return { message: 'Review handled', action, pr: pull_request.number };
 }
 
+// [RCF:PROTECTED]
 function generatePRComment(action, pr) {
   const author = pr.user.login;
 
@@ -251,6 +281,7 @@ function generatePRComment(action, pr) {
   }
 }
 
+// [RCF:PROTECTED]
 function generateIssueComment(action, issue) {
   const author = issue.user.login;
 
@@ -267,6 +298,7 @@ function generateIssueComment(action, issue) {
   }
 }
 
+// [RCF:PROTECTED]
 function generateMentionReply(comment, issue) {
   const author = comment.user.login;
 
@@ -274,6 +306,7 @@ function generateMentionReply(comment, issue) {
          `I'm here and watching. What do you need help with?`;
 }
 
+// [RCF:PROTECTED]
 async function postComment(repoFullName, issueNumber, body, env) {
   const githubToken = env.GITHUB_TOKEN || env.PATH_TOKEN || env.GITHUB_APP_TOKEN;
 

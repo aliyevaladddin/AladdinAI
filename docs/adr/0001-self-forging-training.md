@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # ADR-0001: Self-Forging Model Training from Agent Traces
 
 **Status**: Accepted
@@ -27,6 +28,7 @@ Implement a **Self-Forging** system that:
 4. Hosts the forged model at `api.aliyev.site/v1` endpoint
 5. Uses `ALADDIN_EDITION=internal` flag to enable trace capture
 
+// [RCF:PROTECTED]
 **Key Design Choices:**
 - Traces stored in Postgres (not MongoDB) for relational queries
 - Privacy: Only system traces, never user chat data

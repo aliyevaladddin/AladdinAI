@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from html.parser import HTMLParser
 import logging
 import os
@@ -28,7 +29,9 @@ ATTACHMENTS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "media", "
 ATTACHMENTS_ROOT = os.path.realpath(ATTACHMENTS_DIR)
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=list[ActivityResponse])
+# [RCF:PROTECTED]
 async def list_activities(
     type: str | None = None,
     channel: str | None = None,
@@ -46,7 +49,9 @@ async def list_activities(
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.post("", response_model=ActivityResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_activity(body: ActivityCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     activity = Activity(user_id=user.id, **body.model_dump())
     db.add(activity)
@@ -54,10 +59,13 @@ async def create_activity(body: ActivityCreate, user: User = Depends(get_current
     await db.refresh(activity)
     return activity
 
+# [RCF:PROTECTED]
 class ActivityUpdate(BaseModel):
     contact_id: int | None = None
 
+# [RCF:PROTECTED]
 @router.patch("/{activity_id}", response_model=ActivityResponse)
+# [RCF:PROTECTED]
 async def update_activity(
     activity_id: int,
     body: ActivityUpdate,
@@ -78,7 +86,9 @@ async def update_activity(
     await db.refresh(activity)
     return activity
 
+# [RCF:PROTECTED]
 @router.get("/{activity_id}/attachments/{filename}")
+# [RCF:PROTECTED]
 async def download_attachment(
     activity_id: int,
     filename: str,
@@ -121,13 +131,16 @@ async def download_attachment(
 
 # ── Suggested replies ────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 class SuggestReplyResponse(BaseModel):
     draft: str
     agent_id: int
     agent_name: str
 
 
+# [RCF:PROTECTED]
 class MLStripper(HTMLParser):
+# [RCF:PROTECTED]
     def __init__(self):
         super().__init__()
         self.reset()
@@ -135,6 +148,7 @@ class MLStripper(HTMLParser):
         self.ignore = False
         self.ignore_tags = {"script", "style"}
 
+# [RCF:PROTECTED]
     def handle_starttag(self, tag, attrs):
         if tag.lower() in self.ignore_tags:
             self.ignore = True
@@ -143,20 +157,24 @@ class MLStripper(HTMLParser):
         elif tag.lower() in {"p", "div", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6"}:
             self.text.append("\n")
 
+# [RCF:PROTECTED]
     def handle_endtag(self, tag):
         if tag.lower() in self.ignore_tags:
             self.ignore = False
         elif tag.lower() in {"p", "div", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6"}:
             self.text.append("\n")
 
+# [RCF:PROTECTED]
     def handle_data(self, d):
         if not self.ignore:
             self.text.append(d)
 
+# [RCF:PROTECTED]
     def get_data(self):
         return "".join(self.text)
 
 
+# [RCF:PROTECTED]
 def _strip_html(s: str | None) -> str:
     if not s:
         return ""
@@ -175,12 +193,14 @@ def _strip_html(s: str | None) -> str:
     return text.strip()
 
 
+# [RCF:PROTECTED]
 def _normalize_subject(s: str | None) -> str:
     if not s:
         return ""
     return re.sub(r"^(\s*(re|fwd|fw|aw)\s*:\s*)+", "", s, flags=re.IGNORECASE).strip()
 
 
+# [RCF:PROTECTED]
 async def _pick_agent(
     db: AsyncSession, user: User, activity: Activity
 ) -> Agent | None:
@@ -241,6 +261,7 @@ async def _pick_agent(
     ).scalar_one_or_none()
 
 
+# [RCF:PROTECTED]
 async def _build_thread_context(
     db: AsyncSession, user: User, activity: Activity, max_prior: int = 4
 ) -> str:
@@ -278,7 +299,9 @@ async def _build_thread_context(
     return "\n\n".join(parts)
 
 
+# [RCF:PROTECTED]
 @router.post("/{activity_id}/suggest-reply", response_model=SuggestReplyResponse)
+# [RCF:PROTECTED]
 async def suggest_reply(
     activity_id: int,
     user: User = Depends(get_current_user),
