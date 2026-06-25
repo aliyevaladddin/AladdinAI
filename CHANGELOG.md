@@ -45,6 +45,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add tests for safety PII, memory embeddings, agent runner ([44d5c1f](https://github.com/aliyevaladddin/AladdinAI/commit/44d5c1f9bb715347246210c13c652dc41508a237))
 
+
+### Efactor
+
+- Remove RCF:PROTECTED placeholders from codebase and documentation ([3e7f9cd](https://github.com/aliyevaladddin/AladdinAI/commit/3e7f9cd1b1720f70ce47059cf4157792d20f4f83))
+
 ## [v2.1.8] - 2026-06-08
 
 ### Bug Fixes
