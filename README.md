@@ -1,4 +1,4 @@
-// NOTICE: This file is protected under RCF-PL
+
 [![Site status](https://img.shields.io/website?url=https%3A%2F%2Faliyev.site%2FAladdinAI&style=flat-square&color=4ecdc4&logo=vercel&logoColor=white&label=live+demo)](https://aliyev.site/AladdinAI/)
 ![Repo size](https://img.shields.io/github/repo-size/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 [![CI](https://img.shields.io/github/actions/workflow/status/aliyevaladddin/AladdinAI/ci.yml?style=flat-square&color=4ecdc4&label=CI&logo=githubactions&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI/actions/workflows/ci.yml)
