@@ -4,7 +4,7 @@
 import { Check, Loader2, AlertTriangle } from "lucide-react";
 import type { InstallStep } from "./types";
 
-// [RCF:PROTECTED]
+
 interface Props {
   steps: InstallStep[];
 }
@@ -14,7 +14,7 @@ interface Props {
  * the connector line between dots is gradient-filled up to the active
  * step. No bounce; durations 200ms cubic-bezier(0.16, 1, 0.3, 1).
  */
-// [RCF:PROTECTED]
+
 export function InstallStepper({ steps }: Props) {
   return (
     <ol className="flex flex-col gap-2.5" role="list">
@@ -54,15 +54,14 @@ export function InstallStepper({ steps }: Props) {
                       : step.status === "error"
                         ? "var(--err-soft)"
                         : "var(--bg-3)",
-                border: `1px solid ${
-                  step.status === "done"
+                border: `1px solid ${step.status === "done"
                     ? "color-mix(in oklab, var(--ok) 45%, transparent)"
                     : step.status === "running"
                       ? "var(--violet-line)"
                       : step.status === "error"
                         ? "color-mix(in oklab, var(--err) 45%, transparent)"
                         : "var(--line)"
-                }`,
+                  }`,
                 color:
                   step.status === "done"
                     ? "var(--ok)"

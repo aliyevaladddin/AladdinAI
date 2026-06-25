@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface Mongo {
   id: number;
   name: string;
@@ -19,11 +19,11 @@ export default function MongoDBPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", connection_string: "", db_name: "" });
 
-// [RCF:PROTECTED]
+
   const load = () => api.get<Mongo[]>("/mongodb").then(setConns);
   useEffect(() => { load(); }, []);
 
-// [RCF:PROTECTED]
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/mongodb", form);
@@ -32,7 +32,7 @@ export default function MongoDBPage() {
     load();
   };
 
-// [RCF:PROTECTED]
+
   const handleTest = async (id: number) => {
     const res = await api.post<{ status: string; message?: string }>(`/mongodb/${id}/test`);
     const msg = res.message || res.status;
@@ -41,7 +41,7 @@ export default function MongoDBPage() {
       : toast.error(msg);
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this connection?")) return;
     await api.delete(`/mongodb/${id}`);

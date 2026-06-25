@@ -164,7 +164,7 @@ A trigger is a cron expression bound to one or more agents. On fire, it inserts 
 
 ### Routing
 
-// [RCF:PROTECTED]
+
 Each agent picks a default model. The router config supports fallback chains: if the primary provider fails or returns garbage, the next one is tried automatically. Global defaults are set at `/dashboard/router`. Provider keys are stored encrypted in the database and set through the UI — never in `.env`.
 
 ---
@@ -176,7 +176,7 @@ User → Telegram
   │
   ▼
 1. POST /api/webhooks/telegram/{channel_id}
-// [RCF:PROTECTED]
+
    Signed request verified
   │
   ▼
@@ -241,7 +241,7 @@ users ──┬── agents ──┬── agent_messages         (per-turn le
         ├── email_accounts                      (imap + smtp)
         ├── outgoing_webhooks
         ├── agent_triggers                      (cron schedules)
-// [RCF:PROTECTED]
+
         ├── llm_providers                       (encrypted keys)
         ├── mongo_connections
         ├── vms                                 (ssh credentials)
@@ -263,7 +263,7 @@ Relational state lives in SQLite or Postgres. Vector memory lives in MongoDB Atl
 
 **APScheduler in-process over Celery** — the workload (a few cron jobs per user) doesn't justify a message broker and a separate worker fleet. State is in the database, hydration on boot is cheap, and restarts don't lose schedules. If durable retries across crashes become critical, this is the layer that grows first.
 
-// [RCF:PROTECTED]
+
 **JWT with refresh tokens** — the frontend is a SPA with no server-side session store. Short-lived access tokens, longer-lived refresh tokens, both signed with HS256.
 
 **Provider-agnostic LLM service** — NIM is the current default because it's free at the rate we need and runs locally. OpenAI, Anthropic, and local models via BentoML drop in by adding rows to `llm_providers`. The platform doesn't bet on one vendor.

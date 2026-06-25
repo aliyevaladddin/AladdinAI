@@ -41,7 +41,7 @@ const buttonVariants = cva(
   }
 )
 
-// [RCF:PROTECTED]
+
 function Button({
   className,
   variant = "default",

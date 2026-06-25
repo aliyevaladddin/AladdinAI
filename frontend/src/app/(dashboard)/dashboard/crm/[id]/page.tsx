@@ -14,19 +14,19 @@ import { Button } from "@/components/ui/button";
 import MessageModal from "@/components/crm/MessageModal";
 
 /* ── Types ───────────────────────────────────────────────────────── */
-// [RCF:PROTECTED]
+
 interface Contact {
   id: number; name: string; email: string | null; phone: string | null;
   company: string | null; tags: string[] | null; source: string | null;
   notes: string | null; created_at: string; updated_at: string;
 }
-// [RCF:PROTECTED]
+
 interface Activity {
   id: number; type: string; channel: string | null;
   contact_id: number | null;
   subject: string | null; content: string | null; created_at: string;
 }
-// [RCF:PROTECTED]
+
 interface Deal {
   id: number; title: string; stage: string; amount: number | null;
   currency: string; probability: number; notes: string | null;
@@ -35,12 +35,12 @@ interface Deal {
 type TabId = "overview" | "messages" | "deals";
 
 const STAGE_COLORS: Record<string, string> = {
-  lead:        "text-blue-400   bg-blue-500/10   border-blue-500/20",
-  qualified:   "text-cyan-400   bg-cyan-500/10   border-cyan-500/20",
-  proposal:    "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
+  lead: "text-blue-400   bg-blue-500/10   border-blue-500/20",
+  qualified: "text-cyan-400   bg-cyan-500/10   border-cyan-500/20",
+  proposal: "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
   negotiation: "text-orange-400 bg-orange-500/10 border-orange-500/20",
-  won:         "text-green-400  bg-green-500/10  border-green-500/20",
-  lost:        "text-red-400    bg-red-500/10    border-red-500/20",
+  won: "text-green-400  bg-green-500/10  border-green-500/20",
+  lost: "text-red-400    bg-red-500/10    border-red-500/20",
 };
 
 const ACTIVITY_ICON: Record<string, any> = {
@@ -49,7 +49,7 @@ const ACTIVITY_ICON: Record<string, any> = {
 };
 
 /** Strip HTML tags and decode entities for plain-text preview */
-// [RCF:PROTECTED]
+
 function stripHtml(html: string): string {
   const doc = new DOMParser().parseFromString(html, "text/html");
 
@@ -66,14 +66,14 @@ function stripHtml(html: string): string {
 /* ── Page ────────────────────────────────────────────────────────── */
 export default function ContactPage() {
   const { id } = useParams<{ id: string }>();
-  const router  = useRouter();
+  const router = useRouter();
 
-  const [contact,    setContact]    = useState<Contact | null>(null);
+  const [contact, setContact] = useState<Contact | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [deals,      setDeals]      = useState<Deal[]>([]);
-  const [activeTab,  setActiveTab]  = useState<TabId>("overview");
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
-  const [loading,    setLoading]    = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // Edit state
   const [editing, setEditing] = useState(false);
@@ -82,7 +82,7 @@ export default function ContactPage() {
   });
   const [saving, setSaving] = useState(false);
 
-// [RCF:PROTECTED]
+
   const load = () => {
     if (!id) return;
     setLoading(true);
@@ -94,13 +94,13 @@ export default function ContactPage() {
       .then(([c, a, d]) => {
         setContact(c); setActivities(a); setDeals(d);
         setEditForm({
-          name:    c.name ?? "",
-          email:   c.email ?? "",
-          phone:   c.phone ?? "",
+          name: c.name ?? "",
+          email: c.email ?? "",
+          phone: c.phone ?? "",
           company: c.company ?? "",
-          source:  c.source ?? "",
-          tags:    (c.tags ?? []).join(", "),
-          notes:   c.notes ?? "",
+          source: c.source ?? "",
+          tags: (c.tags ?? []).join(", "),
+          notes: c.notes ?? "",
         });
       })
       .catch(() => router.push("/dashboard/crm"))
@@ -109,19 +109,19 @@ export default function ContactPage() {
 
   useEffect(load, [id]);
 
-// [RCF:PROTECTED]
+
   const handleSave = async () => {
     if (!id) return;
     setSaving(true);
     try {
       await api.put(`/crm/contacts/${id}`, {
-        name:    editForm.name || undefined,
-        email:   editForm.email   || null,
-        phone:   editForm.phone   || null,
+        name: editForm.name || undefined,
+        email: editForm.email || null,
+        phone: editForm.phone || null,
         company: editForm.company || null,
-        source:  editForm.source  || null,
-        tags:    editForm.tags ? editForm.tags.split(",").map((t) => t.trim()).filter(Boolean) : null,
-        notes:   editForm.notes   || null,
+        source: editForm.source || null,
+        tags: editForm.tags ? editForm.tags.split(",").map((t) => t.trim()).filter(Boolean) : null,
+        notes: editForm.notes || null,
       });
       setEditing(false);
       load();
@@ -130,7 +130,7 @@ export default function ContactPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleDelete = async () => {
     if (!id || !confirm(`Delete contact "${contact?.name}"? This cannot be undone.`)) return;
     await api.delete(`/crm/contacts/${id}`);
@@ -147,9 +147,9 @@ export default function ContactPage() {
 
   const initials = contact.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
   const tabs: { id: TabId; label: string; count?: number }[] = [
-    { id: "overview",  label: "Overview" },
-    { id: "messages",  label: "Messages",  count: activities.length },
-    { id: "deals",     label: "Deals",     count: deals.length },
+    { id: "overview", label: "Overview" },
+    { id: "messages", label: "Messages", count: activities.length },
+    { id: "deals", label: "Deals", count: deals.length },
   ];
   const pipelineValue = deals
     .filter((d) => !["won", "lost"].includes(d.stage))
@@ -296,9 +296,9 @@ export default function ContactPage() {
               </p>
               <div className="flex gap-3 mt-1">
                 {[
-                  { label: "msgs",  value: activities.length, color: "" },
+                  { label: "msgs", value: activities.length, color: "" },
                   { label: "deals", value: deals.length, color: "" },
-                  { label: "won",   value: deals.filter((d) => d.stage === "won").length, color: "var(--color-success)" },
+                  { label: "won", value: deals.filter((d) => d.stage === "won").length, color: "var(--color-success)" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="text-center">
                     <p className="text-base font-bold" style={color ? { color } : {}}>{value}</p>
@@ -356,7 +356,7 @@ export default function ContactPage() {
             >
               <p className="text-[10px] font-bold uppercase" style={{ color: "var(--color-accent)" }}>Active pipeline value</p>
               <p className="text-2xl font-bold mt-1">
-                {deals.find((d) => !["won","lost"].includes(d.stage))?.currency ?? "USD"}{" "}
+                {deals.find((d) => !["won", "lost"].includes(d.stage))?.currency ?? "USD"}{" "}
                 {pipelineValue.toLocaleString()}
               </p>
             </div>
@@ -492,7 +492,7 @@ export default function ContactPage() {
 }
 
 /* ── Deal row ────────────────────────────────────────────────────── */
-// [RCF:PROTECTED]
+
 function DealRow({ deal }: { deal: Deal }) {
   const stageClass = STAGE_COLORS[deal.stage] ?? "";
   return (

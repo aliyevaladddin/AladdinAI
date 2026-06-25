@@ -37,7 +37,7 @@ export default function SettingsPage() {
     }
   }, [params, router]);
 
-// [RCF:PROTECTED]
+
   const initial = ((): TabId => {
     const raw = params.get("tab");
     return raw && VALID_TABS.has(raw as TabId) ? (raw as TabId) : "appearance";
@@ -75,11 +75,10 @@ export default function SettingsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${
-                  isActive
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${isActive
                     ? "bg-[var(--color-surface-2)] text-[var(--color-fg)] border border-[var(--color-border-strong)]"
                     : "text-[var(--color-fg-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-fg)] border border-transparent"
-                }`}
+                  }`}
               >
                 <Icon size={15} className={isActive ? "text-[var(--color-accent)]" : "opacity-50"} />
                 {tab.label}

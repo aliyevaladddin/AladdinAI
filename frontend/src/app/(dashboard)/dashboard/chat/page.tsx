@@ -22,7 +22,7 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-// [RCF:PROTECTED]
+
 interface Attachment {
   filename: string;
   path: string;
@@ -30,7 +30,7 @@ interface Attachment {
   kind: string;
 }
 
-// [RCF:PROTECTED]
+
 function AuthImage({ filename }: { filename: string }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
@@ -47,7 +47,7 @@ function AuthImage({ filename }: { filename: string }) {
         revoke = url;
         setSrc(url);
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       cancelled = true;
       if (revoke) URL.revokeObjectURL(revoke);
@@ -60,14 +60,14 @@ function AuthImage({ filename }: { filename: string }) {
   return <img src={src} alt={filename} className="max-w-xs max-h-80 rounded-md border border-border" />;
 }
 
-// [RCF:PROTECTED]
+
 interface Agent {
   id: number;
   name: string;
   role: string;
 }
 
-// [RCF:PROTECTED]
+
 interface Session {
   id: number;
   agent_id: number;
@@ -75,7 +75,7 @@ interface Session {
   updated_at: string;
 }
 
-// [RCF:PROTECTED]
+
 interface Message {
   id?: number;
   role: "user" | "assistant";
@@ -111,7 +111,7 @@ export default function ChatPage() {
     ta.style.height = `${Math.min(ta.scrollHeight, 240)}px`;
   }, [input]);
 
-// [RCF:PROTECTED]
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -129,13 +129,13 @@ export default function ChatPage() {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-// [RCF:PROTECTED]
+
   const loadSessions = async () => {
     const data = await api.get<Session[]>("/chat/sessions");
     setSessions(data);
   };
 
-// [RCF:PROTECTED]
+
   const openSession = async (session: Session): Promise<void> => {
     setIsGeneralChat(false);
     setComposingNew(false);
@@ -150,7 +150,7 @@ export default function ChatPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const newChat = () => {
     setIsGeneralChat(false);
     setActiveSession(null);
@@ -161,7 +161,7 @@ export default function ChatPage() {
     setPendingAttachments([]);
   };
 
-// [RCF:PROTECTED]
+
   const startNewChatWithAgent = (agentId: number) => {
     setIsGeneralChat(false);
     setActiveSession(null);
@@ -171,7 +171,7 @@ export default function ChatPage() {
     setComposingNew(true);
   };
 
-// [RCF:PROTECTED]
+
   const openGeneralChat = () => {
     setIsGeneralChat(true);
     setComposingNew(false);
@@ -181,7 +181,7 @@ export default function ChatPage() {
     setSelectedAgentId("unified");
   };
 
-// [RCF:PROTECTED]
+
   const deleteSession = async (id: number, e: MouseEvent): Promise<void> => {
     e.stopPropagation();
     if (!confirm("Delete this chat?")) return;
@@ -190,13 +190,13 @@ export default function ChatPage() {
     loadSessions();
   };
 
-// [RCF:PROTECTED]
+
   const handleAttachClick = () => {
     if (uploading) return;
     fileInputRef.current?.click();
   };
 
-// [RCF:PROTECTED]
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
@@ -216,12 +216,12 @@ export default function ChatPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const removePending = (filename: string) => {
     setPendingAttachments((prev) => prev.filter((a) => a.filename !== filename));
   };
 
-// [RCF:PROTECTED]
+
   const copyToClipboard = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
@@ -232,7 +232,7 @@ export default function ChatPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleSend = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     const hasText = input.trim().length > 0;
@@ -301,13 +301,13 @@ export default function ChatPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const agentName = (agentId: number | string): string => {
     if (agentId === "unified") return "Unified";
     return agents.find((a: Agent) => a.id === agentId)?.name ?? `Agent #${agentId}`;
   };
 
-// [RCF:PROTECTED]
+
   const formatTime = (iso: string) => {
     const d = new Date(iso);
     const now = new Date();
@@ -321,9 +321,8 @@ export default function ChatPage() {
     <div className="flex h-[calc(100vh-4rem)] -mx-8 -my-6 overflow-hidden bg-background">
       {/* Premium Sidebar */}
       <aside
-        className={`${
-          sidebarOpen ? "w-64" : "w-0"
-        } border-r border-border/50 flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden bg-muted/10`}
+        className={`${sidebarOpen ? "w-64" : "w-0"
+          } border-r border-border/50 flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden bg-muted/10`}
       >
         <div className="p-4 border-b border-border/50">
           <Button
@@ -340,11 +339,10 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
           <button
             onClick={openGeneralChat}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all text-sm ${
-              isGeneralChat
+            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all text-sm ${isGeneralChat
                 ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
                 : "hover:bg-muted/50"
-            }`}
+              }`}
           >
             <Globe size={16} className="shrink-0 opacity-70" />
             <span className="truncate">General Chat</span>
@@ -362,11 +360,10 @@ export default function ChatPage() {
             <div
               key={s.id}
               onClick={() => openSession(s)}
-              className={`w-full text-left px-3 py-2.5 rounded-xl transition-all group cursor-pointer relative ${
-                activeSession?.id === s.id
+              className={`w-full text-left px-3 py-2.5 rounded-xl transition-all group cursor-pointer relative ${activeSession?.id === s.id
                   ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
                   : "hover:bg-muted/50 border border-transparent"
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm truncate flex-1">{s.title}</p>
@@ -484,11 +481,10 @@ export default function ChatPage() {
 
                         {/* Content */}
                         <div
-                          className={`rounded-2xl px-4 py-3 ${
-                            msg.role === "user"
+                          className={`rounded-2xl px-4 py-3 ${msg.role === "user"
                               ? "bg-gradient-to-br from-blue-500 to-violet-600 text-white shadow-md"
                               : "bg-muted/50 border border-border/50"
-                          }`}
+                            }`}
                         >
                           {msg.attachments && msg.attachments.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-3">
@@ -498,11 +494,10 @@ export default function ChatPage() {
                             </div>
                           )}
                           {msg.content && (
-                            <div className={`prose prose-sm max-w-none ${
-                              msg.role === "user"
+                            <div className={`prose prose-sm max-w-none ${msg.role === "user"
                                 ? "prose-invert prose-headings:text-white prose-p:text-white/95 prose-strong:text-white prose-code:text-white/90"
                                 : "dark:prose-invert"
-                            } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
+                              } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
                               <ReactMarkdown
                                 components={{
                                   code({ node, className, children, ...props }) {
@@ -534,11 +529,10 @@ export default function ChatPage() {
                                         </SyntaxHighlighter>
                                       </div>
                                     ) : (
-                                      <code className={`${
-                                        msg.role === "user"
+                                      <code className={`${msg.role === "user"
                                           ? "bg-white/20 text-white"
                                           : "bg-muted/80 dark:bg-muted/60 text-foreground"
-                                      } px-1.5 py-0.5 rounded text-[13px] font-mono`} {...props}>
+                                        } px-1.5 py-0.5 rounded text-[13px] font-mono`} {...props}>
                                         {children}
                                       </code>
                                     );

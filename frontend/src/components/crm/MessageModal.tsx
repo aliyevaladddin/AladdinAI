@@ -8,23 +8,20 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 /* ── Types ───────────────────────────────────────────────────────── */
-// [RCF:PROTECTED]
 interface Activity {
   id: number; type: string; channel: string | null;
   contact_id: number | null;
   subject: string | null; content: string | null; created_at: string;
   metadata_json?: { attachments?: Attachment[]; message_id?: string } | null;
 }
-// [RCF:PROTECTED]
 interface Attachment {
   filename: string; content_type: string; size: number;
 }
-// [RCF:PROTECTED]
 interface EmailAccount {
   id: number; email: string; provider: string; status: string;
 }
 
-// [RCF:PROTECTED]
+
 interface Props {
   activity: Activity;
   contactEmail: string | null;
@@ -32,7 +29,7 @@ interface Props {
   inline?: boolean;
 }
 
-// [RCF:PROTECTED]
+
 function stripHtml(html: string): string {
   if (!html) return "";
 
@@ -93,7 +90,7 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
   const plainText = stripHtml(activity.content ?? "");
   const attachments: Attachment[] = activity.metadata_json?.attachments ?? [];
 
-// [RCF:PROTECTED]
+
   const fetchSuggestion = async (regenerate = false) => {
     setSuggestLoading(true);
     setSuggestError(null);
@@ -123,7 +120,7 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
           setEmailAccounts(connected);
           if (connected.length > 0) setSelectedAccount(connected[0].id);
         })
-        .catch(() => {});
+        .catch(() => { });
     }
 
     if (!inline) {
@@ -146,7 +143,7 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activity.id, isInbound]);
 
-// [RCF:PROTECTED]
+
   const handleSend = async () => {
     if (!selectedAccount || !contactEmail) {
       toast.error("No connected email account or contact email missing");
@@ -178,12 +175,12 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
   };
 
   // Close on backdrop click
-// [RCF:PROTECTED]
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
 
-// [RCF:PROTECTED]
+
   const content = (
     <div
       className={`flex flex-col w-full h-full overflow-hidden ${!inline ? "sm:max-w-2xl rounded-t-3xl sm:rounded-3xl" : ""}`}
@@ -234,10 +231,10 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
       )}
 
       {/* ── Body ────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-hidden relative">
-          {activity.content ? (
-            <iframe 
-              srcDoc={`
+      <div className="flex-1 overflow-hidden relative">
+        {activity.content ? (
+          <iframe
+            srcDoc={`
                 <!DOCTYPE html>
                 <html>
                   <head>
@@ -265,212 +262,212 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
                   </body>
                 </html>
               `}
-              sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
-              className="w-full h-full border-none bg-white"
-              style={{ background: "#ffffff" }}
-            />
+            sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
+            className="w-full h-full border-none bg-white"
+            style={{ background: "#ffffff" }}
+          />
+        ) : (
+          <div className="px-6 py-5">
+            <p className="text-xs italic" style={{ color: "var(--color-fg-subtle)" }}>No content</p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Attachments ─────────────────────────────────────── */}
+      {attachments.length > 0 && (
+        <div
+          className="shrink-0 border-t px-6 py-4"
+          style={{ borderColor: "var(--color-border)", background: "var(--color-surface-2)" }}
+        >
+          <p className="text-[10px] font-bold uppercase mb-3" style={{ color: "var(--color-fg-muted)" }}>
+            <Paperclip size={10} className="inline mr-1" />
+            {attachments.length} attachment{attachments.length > 1 ? "s" : ""}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {attachments.map((att) => {
+              const isImage = att.content_type.startsWith("image/");
+              const isPdf = att.content_type === "application/pdf";
+              const isZip = att.content_type.includes("zip") || att.content_type.includes("archive");
+              const Icon = isImage ? FileImage : isZip ? FileArchive : FileText;
+
+              const sizeKb = (att.size / 1024).toFixed(1);
+
+
+              const handleDownload = async (e: React.MouseEvent) => {
+                e.preventDefault();
+                try {
+                  const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/crm/activities/${activity.id}/attachments/${encodeURIComponent(att.filename)}`;
+                  const token = localStorage.getItem("access_token");
+                  const res = await fetch(url, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                  });
+                  if (!res.ok) throw new Error("Not authenticated");
+                  const blob = await res.blob();
+                  const blobUrl = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = blobUrl;
+                  a.download = att.filename;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+                } catch (err) {
+                  toast.error("Failed to download file");
+                }
+              };
+
+              return (
+                <button
+                  key={att.filename}
+                  onClick={handleDownload}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border text-xs hover:opacity-80 transition-opacity cursor-pointer"
+                  style={{ background: "var(--color-surface)", borderColor: "var(--color-border)", textAlign: "left" }}
+                >
+                  <Icon size={14} style={{ color: "var(--color-accent)", flexShrink: 0 }} />
+                  <span className="max-w-[120px] truncate font-medium">{att.filename}</span>
+                  <span style={{ color: "var(--color-fg-subtle)", flexShrink: 0 }}>{sizeKb}KB</span>
+                  <Download size={11} style={{ color: "var(--color-fg-subtle)", flexShrink: 0 }} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Reply form ──────────────────────────────────────── */}
+      {isEmail && (
+        <div
+          className="shrink-0 border-t px-6 py-4"
+          style={{ borderColor: "var(--color-border)", background: "var(--color-surface-1)" }}
+        >
+          {!showReply && !isInbound ? (
+            <div className="flex items-center justify-between gap-3">
+              {contactEmail ? (
+                <p className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
+                  Reply to: <span className="font-mono">{contactEmail}</span>
+                </p>
+              ) : (
+                <p className="text-xs italic" style={{ color: "var(--color-fg-subtle)" }}>
+                  No email on this contact — can't reply
+                </p>
+              )}
+              {contactEmail && (
+                <Button variant="outline" size="sm" onClick={() => setShowReply(true)} className="gap-1.5 shrink-0">
+                  <Reply size={13} /> Reply
+                </Button>
+              )}
+            </div>
           ) : (
-            <div className="px-6 py-5">
-              <p className="text-xs italic" style={{ color: "var(--color-fg-subtle)" }}>No content</p>
+            <div className="space-y-3">
+              {/* AI-suggested draft banner */}
+              {isInbound && (
+                <div
+                  className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border"
+                  style={{
+                    borderColor: "var(--color-border)",
+                    background: "var(--color-accent-soft)",
+                  }}
+                >
+                  <div className="flex items-center gap-2 text-[11px] min-w-0" style={{ color: "var(--color-fg)" }}>
+                    <Sparkles size={12} style={{ color: "var(--color-accent)" }} />
+                    {suggestLoading ? (
+                      <span style={{ color: "var(--color-fg-muted)" }}>
+                        Drafting reply…
+                      </span>
+                    ) : suggestError ? (
+                      <span className="truncate" style={{ color: "var(--color-danger)" }}>
+                        {suggestError}
+                      </span>
+                    ) : suggestedBy ? (
+                      <span className="truncate">
+                        Suggested by <span className="font-semibold">{suggestedBy}</span>
+                        {userEditedRef.current && (
+                          <span className="ml-1 italic" style={{ color: "var(--color-fg-muted)" }}>
+                            (edited)
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span style={{ color: "var(--color-fg-muted)" }}>AI draft</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchSuggestion(true)}
+                    disabled={suggestLoading}
+                    className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide hover:opacity-80 disabled:opacity-40 shrink-0"
+                    style={{ color: "var(--color-accent)" }}
+                  >
+                    {suggestLoading ? (
+                      <Loader2 size={10} className="animate-spin" />
+                    ) : (
+                      <RotateCw size={10} />
+                    )}
+                    Regenerate
+                  </button>
+                </div>
+              )}
+
+              {/* Account selector */}
+              {emailAccounts.length > 1 && (
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase" style={{ color: "var(--color-fg-muted)" }}>
+                    Send from
+                  </label>
+                  <select
+                    className="input text-sm"
+                    value={selectedAccount ?? ""}
+                    onChange={(e) => setSelectedAccount(Number(e.target.value))}
+                  >
+                    {emailAccounts.map((a) => (
+                      <option key={a.id} value={a.id}>{a.email}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {emailAccounts.length === 0 && (
+                <p className="text-xs text-amber-400">
+                  No connected email accounts. Connect and test one in Channels settings first.
+                </p>
+              )}
+              {/* Compose */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase" style={{ color: "var(--color-fg-muted)" }}>
+                  Message
+                </label>
+                <textarea
+                  className="input resize-none"
+                  rows={5}
+                  placeholder={suggestLoading ? "Drafting…" : "Write your reply…"}
+                  value={replyBody}
+                  onChange={(e) => {
+                    setReplyBody(e.target.value);
+                    userEditedRef.current = true;
+                  }}
+                  autoFocus={!isInbound}
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowReply(false);
+                    setReplyBody("");
+                    userEditedRef.current = false;
+                  }}
+                >
+                  {isInbound ? "Clear" : "Cancel"}
+                </Button>
+                <Button size="sm" onClick={handleSend} disabled={sending || emailAccounts.length === 0 || !contactEmail} className="gap-1.5">
+                  {sending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                  {sending ? "Sending…" : "Send reply"}
+                </Button>
+              </div>
             </div>
           )}
         </div>
-
-        {/* ── Attachments ─────────────────────────────────────── */}
-        {attachments.length > 0 && (
-          <div
-            className="shrink-0 border-t px-6 py-4"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-surface-2)" }}
-          >
-            <p className="text-[10px] font-bold uppercase mb-3" style={{ color: "var(--color-fg-muted)" }}>
-              <Paperclip size={10} className="inline mr-1" />
-              {attachments.length} attachment{attachments.length > 1 ? "s" : ""}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {attachments.map((att) => {
-                const isImage = att.content_type.startsWith("image/");
-                const isPdf   = att.content_type === "application/pdf";
-                const isZip   = att.content_type.includes("zip") || att.content_type.includes("archive");
-                const Icon    = isImage ? FileImage : isZip ? FileArchive : FileText;
-// [RCF:PROTECTED]
-                const sizeKb  = (att.size / 1024).toFixed(1);
-                
-// [RCF:PROTECTED]
-                const handleDownload = async (e: React.MouseEvent) => {
-                  e.preventDefault();
-                  try {
-                    const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/crm/activities/${activity.id}/attachments/${encodeURIComponent(att.filename)}`;
-                    const token = localStorage.getItem("access_token");
-                    const res = await fetch(url, {
-                      headers: token ? { Authorization: `Bearer ${token}` } : {}
-                    });
-                    if (!res.ok) throw new Error("Not authenticated");
-                    const blob = await res.blob();
-                    const blobUrl = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = blobUrl;
-                    a.download = att.filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-                  } catch (err) {
-                    toast.error("Failed to download file");
-                  }
-                };
-
-                return (
-                  <button
-                    key={att.filename}
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border text-xs hover:opacity-80 transition-opacity cursor-pointer"
-                    style={{ background: "var(--color-surface)", borderColor: "var(--color-border)", textAlign: "left" }}
-                  >
-                    <Icon size={14} style={{ color: "var(--color-accent)", flexShrink: 0 }} />
-                    <span className="max-w-[120px] truncate font-medium">{att.filename}</span>
-                    <span style={{ color: "var(--color-fg-subtle)", flexShrink: 0 }}>{sizeKb}KB</span>
-                    <Download size={11} style={{ color: "var(--color-fg-subtle)", flexShrink: 0 }} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ── Reply form ──────────────────────────────────────── */}
-        {isEmail && (
-          <div
-            className="shrink-0 border-t px-6 py-4"
-            style={{ borderColor: "var(--color-border)", background: "var(--color-surface-1)" }}
-          >
-            {!showReply && !isInbound ? (
-              <div className="flex items-center justify-between gap-3">
-                {contactEmail ? (
-                  <p className="text-xs" style={{ color: "var(--color-fg-muted)" }}>
-                    Reply to: <span className="font-mono">{contactEmail}</span>
-                  </p>
-                ) : (
-                  <p className="text-xs italic" style={{ color: "var(--color-fg-subtle)" }}>
-                    No email on this contact — can't reply
-                  </p>
-                )}
-                {contactEmail && (
-                  <Button variant="outline" size="sm" onClick={() => setShowReply(true)} className="gap-1.5 shrink-0">
-                    <Reply size={13} /> Reply
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {/* AI-suggested draft banner */}
-                {isInbound && (
-                  <div
-                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-md border"
-                    style={{
-                      borderColor: "var(--color-border)",
-                      background: "var(--color-accent-soft)",
-                    }}
-                  >
-                    <div className="flex items-center gap-2 text-[11px] min-w-0" style={{ color: "var(--color-fg)" }}>
-                      <Sparkles size={12} style={{ color: "var(--color-accent)" }} />
-                      {suggestLoading ? (
-                        <span style={{ color: "var(--color-fg-muted)" }}>
-                          Drafting reply…
-                        </span>
-                      ) : suggestError ? (
-                        <span className="truncate" style={{ color: "var(--color-danger)" }}>
-                          {suggestError}
-                        </span>
-                      ) : suggestedBy ? (
-                        <span className="truncate">
-                          Suggested by <span className="font-semibold">{suggestedBy}</span>
-                          {userEditedRef.current && (
-                            <span className="ml-1 italic" style={{ color: "var(--color-fg-muted)" }}>
-                              (edited)
-                            </span>
-                          )}
-                        </span>
-                      ) : (
-                        <span style={{ color: "var(--color-fg-muted)" }}>AI draft</span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => fetchSuggestion(true)}
-                      disabled={suggestLoading}
-                      className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide hover:opacity-80 disabled:opacity-40 shrink-0"
-                      style={{ color: "var(--color-accent)" }}
-                    >
-                      {suggestLoading ? (
-                        <Loader2 size={10} className="animate-spin" />
-                      ) : (
-                        <RotateCw size={10} />
-                      )}
-                      Regenerate
-                    </button>
-                  </div>
-                )}
-
-                {/* Account selector */}
-                {emailAccounts.length > 1 && (
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase" style={{ color: "var(--color-fg-muted)" }}>
-                      Send from
-                    </label>
-                    <select
-                      className="input text-sm"
-                      value={selectedAccount ?? ""}
-                      onChange={(e) => setSelectedAccount(Number(e.target.value))}
-                    >
-                      {emailAccounts.map((a) => (
-                        <option key={a.id} value={a.id}>{a.email}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                {emailAccounts.length === 0 && (
-                  <p className="text-xs text-amber-400">
-                    No connected email accounts. Connect and test one in Channels settings first.
-                  </p>
-                )}
-                {/* Compose */}
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase" style={{ color: "var(--color-fg-muted)" }}>
-                    Message
-                  </label>
-                  <textarea
-                    className="input resize-none"
-                    rows={5}
-                    placeholder={suggestLoading ? "Drafting…" : "Write your reply…"}
-                    value={replyBody}
-                    onChange={(e) => {
-                      setReplyBody(e.target.value);
-                      userEditedRef.current = true;
-                    }}
-                    autoFocus={!isInbound}
-                  />
-                </div>
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setShowReply(false);
-                      setReplyBody("");
-                      userEditedRef.current = false;
-                    }}
-                  >
-                    {isInbound ? "Clear" : "Cancel"}
-                  </Button>
-                  <Button size="sm" onClick={handleSend} disabled={sending || emailAccounts.length === 0 || !contactEmail} className="gap-1.5">
-                    {sending ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-                    {sending ? "Sending…" : "Send reply"}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+      )}
     </div>
   );
 

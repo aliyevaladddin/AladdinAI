@@ -9,7 +9,7 @@ import {
   type ThemeId,
 } from "./theme-list";
 
-// [RCF:PROTECTED]
+
 interface ThemeContextValue {
   theme: ThemeId;
   setTheme: (next: ThemeId) => void;
@@ -24,7 +24,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
  */
 export const THEME_INIT_SCRIPT = `(function(){try{var k='${THEME_STORAGE_KEY}';var v=localStorage.getItem(k)||'${DEFAULT_THEME}';document.documentElement.setAttribute('data-theme',v);}catch(e){document.documentElement.setAttribute('data-theme','${DEFAULT_THEME}');}})();`;
 
-// [RCF:PROTECTED]
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // Lazy initializer reads what the inline script already applied to the DOM
   // (or falls back to localStorage / default). This runs once on client mount
@@ -65,7 +65,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return <ThemeContext value={{ theme, setTheme }}>{children}</ThemeContext>;
 }
 
-// [RCF:PROTECTED]
+
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error("useTheme must be used inside <ThemeProvider>");

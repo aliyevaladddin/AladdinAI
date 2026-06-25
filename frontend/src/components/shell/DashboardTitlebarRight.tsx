@@ -20,7 +20,7 @@ import {
 import { useAuth } from "@/providers/auth-provider";
 import { api } from "@/lib/api";
 
-// [RCF:PROTECTED]
+
 interface NotifItem {
   id: number;
   title: string;
@@ -31,7 +31,7 @@ interface NotifItem {
   created_at: string | null;
 }
 
-// [RCF:PROTECTED]
+
 interface SearchResult {
   kind: "contact" | "deal" | "activity";
   id: number;
@@ -44,7 +44,7 @@ interface SearchResult {
   created_at: string | null;
 }
 
-// [RCF:PROTECTED]
+
 interface SearchResponse {
   contacts: SearchResult[];
   deals: SearchResult[];
@@ -59,7 +59,7 @@ interface SearchResponse {
  * Migrated from the legacy AppHeader to live inside the 44px titlebar.
  * Theme picker is rendered separately by Titlebar.tsx.
  */
-// [RCF:PROTECTED]
+
 export function DashboardTitlebarRight() {
   const { user, logout } = useAuth();
   const router = useRouter();
@@ -81,13 +81,13 @@ export function DashboardTitlebarRight() {
   const fetchUnread = useCallback(() => {
     api.get<{ count: number }>("/notifications/unread-count")
       .then((r) => setUnreadCount(r.count))
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const fetchNotifs = useCallback(() => {
     api.get<NotifItem[]>("/notifications?limit=10")
       .then(setNotifications)
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -102,7 +102,7 @@ export function DashboardTitlebarRight() {
 
   useEffect(() => {
     if (!menuOpen && !bellOpen && !searchOpen) return;
-// [RCF:PROTECTED]
+
     const handler = (e: MouseEvent) => {
       if (menuOpen && menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
       if (bellOpen && bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false);
@@ -140,7 +140,7 @@ export function DashboardTitlebarRight() {
 
   // ⌘K / Ctrl+K → focus search
   useEffect(() => {
-// [RCF:PROTECTED]
+
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -152,7 +152,7 @@ export function DashboardTitlebarRight() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-// [RCF:PROTECTED]
+
   const handleResult = (r: SearchResult) => {
     setSearchOpen(false);
     setSearchQuery("");
@@ -165,14 +165,14 @@ export function DashboardTitlebarRight() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const markAllRead = async () => {
     await api.post("/notifications/read-all");
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
   };
 
-// [RCF:PROTECTED]
+
   const markRead = async (id: number) => {
     await api.post(`/notifications/${id}/read`);
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
@@ -183,12 +183,12 @@ export function DashboardTitlebarRight() {
     ? user.name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase()
     : "U";
 
-// [RCF:PROTECTED]
+
   const categoryIcon = (cat: string) => {
     switch (cat) {
       case "trigger": return <Zap size={12} className="text-orange-400" />;
-      case "email":   return <Mail size={12} className="text-blue-400" />;
-      default:        return <Info size={12} style={{ color: "var(--fg-3)" }} />;
+      case "email": return <Mail size={12} className="text-blue-400" />;
+      default: return <Info size={12} style={{ color: "var(--fg-3)" }} />;
     }
   };
 
@@ -464,7 +464,7 @@ export function DashboardTitlebarRight() {
               style={{ width: "100%", color: "var(--err)" }}
             >
               <LogOut size={14} />
-// [RCF:PROTECTED]
+
               <span className="name" style={{ marginLeft: 4, color: "var(--err)" }}>Sign out</span>
             </button>
           </div>
@@ -474,7 +474,7 @@ export function DashboardTitlebarRight() {
   );
 }
 
-// [RCF:PROTECTED]
+
 function SearchGroup({
   label,
   icon,

@@ -246,7 +246,7 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ### Bug Fixes
 
-// [RCF:PROTECTED]
+
 - Verify GitHub webhook signature against raw body bytes ([c8a8ea2](https://github.com/aliyevaladddin/AladdinAI/commit/c8a8ea2c8599ff540ac8f361afb881016afa09a7))
 
 - Improve security and error handling in webhook handler ([af4a852](https://github.com/aliyevaladddin/AladdinAI/commit/af4a8522323603f7c115c0d5fb3c0d4be240ff3c))
@@ -349,7 +349,7 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add project structure documentation for backend modules and update environment configuration reference. ([0fc54cc](https://github.com/aliyevaladddin/AladdinAI/commit/0fc54cce6f97c03f8bbe85c2d2fae1c5574693b4))
 
-// [RCF:PROTECTED]
+
 - Redesign and update README with improved project branding and documentation structure ([173a978](https://github.com/aliyevaladddin/AladdinAI/commit/173a978135747838f478e004d6ab4075673bd0e6))
 
 
@@ -361,7 +361,7 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Implement modular plug-and-play terminal system ([4e1d4fc](https://github.com/aliyevaladddin/AladdinAI/commit/4e1d4fc7f5d7f79df996499860ad663e84a07d69))
 
-// [RCF:PROTECTED]
+
 - Terminal UI fixes, router resolver, and encryption updates ([2d5610e](https://github.com/aliyevaladddin/AladdinAI/commit/2d5610e2af62123fcdb0d14353b38f6cecb85201))
 
 - Initialize session tracking file and configure Claude proxy model routes ([17b2412](https://github.com/aliyevaladddin/AladdinAI/commit/17b2412789a6472e70f0f590a8a0246ecaefcf86))
@@ -392,14 +392,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add AladdinAI bot with reactions and Telegram notifications ([0e5d47e](https://github.com/aliyevaladddin/AladdinAI/commit/0e5d47ed26b9f581f79309fe79374522bfc6b79a))
 
-// [RCF:PROTECTED]
+
 - Add issue milestone celebrations, mention handling, random PR roasts, and automated reviewer assignment ([efa686b](https://github.com/aliyevaladddin/AladdinAI/commit/efa686bc7b2fa5ee4f7494333ef9e960233f451a))
 
 - Add autonomous AI personality and advanced features to AladdinAI bot ([c19956b](https://github.com/aliyevaladddin/AladdinAI/commit/c19956b43d1f3c4907226afc9a5c34c4c107d37b))
 
 - Add autonomous bot scheduler with morning standup and Friday recap ([637bc4a](https://github.com/aliyevaladddin/AladdinAI/commit/637bc4ab644cb4a66a441c7ca7f8b9efd5e8fc25))
 
-// [RCF:PROTECTED]
+
 - Add automatic issue assignment functionality for the aladdinai bot ([c372744](https://github.com/aliyevaladddin/AladdinAI/commit/c3727445c7a1af7733516b9a7601e8baa573d370))
 
 - Add user interaction tracking with personalized bot responses ([bdf162c](https://github.com/aliyevaladddin/AladdinAI/commit/bdf162c65a4dfe4a402ce42da6ebadb8bbc29bf5))
@@ -439,10 +439,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - PII phases, shared visibility for user facts, NIM timeout ([c3e04e1](https://github.com/aliyevaladddin/AladdinAI/commit/c3e04e17d2f4982ae71a6ea5bd685a9f92ad050d))
 
-// [RCF:PROTECTED]
+
 - Add exception handling to migration for password_encrypted column in vm_connections ([a5bcf76](https://github.com/aliyevaladddin/AladdinAI/commit/a5bcf76293b990e8c95602edef22324e792f8718))
 
-// [RCF:PROTECTED]
+
 - Verify signatures on incoming channel webhooks ([a68a79f](https://github.com/aliyevaladddin/AladdinAI/commit/a68a79fd3318d1ddc1262198e2c8dcf509f498c7))
 
 - Block SSRF via user-configured waha_url (#23) ([ab79b14](https://github.com/aliyevaladddin/AladdinAI/commit/ab79b14186b3c96f5da5cf257e62b8ad1967c713))
@@ -463,15 +463,15 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Stabilize terminal lifecycle, fix BentoML deploy & enhance network diagnostics ([f9f40c7](https://github.com/aliyevaladddin/AladdinAI/commit/f9f40c719477b416d19cdfe8e4fd07544af90695))
 
-// [RCF:PROTECTED]
+
 - Feat: redesign comms/crm/agents pages and add VM password migration
   - Replace mock cyberpunk UI on /comms, /crm, /agents with real API-driven views
-// [RCF:PROTECTED]
+
   - Match design system used by /channels, /deals (shadcn Button, border-border, muted-foreground)
   - /comms now shows connected messaging channels and email accounts with Test/Sync
   - /crm becomes Contacts list with create form, search, tags, source
   - /agents lists real agents with Start/Stop/Delete and provider join
-// [RCF:PROTECTED]
+
   - Add Alembic migration adding password_encrypted column to vm_connections ([2d481f0](https://github.com/aliyevaladddin/AladdinAI/commit/2d481f0c16966b68c831e2ea8b1ed8d151625c4d))
 
 - Replace alert() with sonner toasts across dashboard ([e1c7b00](https://github.com/aliyevaladddin/AladdinAI/commit/e1c7b00babf114b3e0de36b4dc61023b7c028aef))

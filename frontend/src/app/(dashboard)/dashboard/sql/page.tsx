@@ -12,7 +12,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-// [RCF:PROTECTED]
+
 interface QueryResult {
   success: boolean;
   rows: any[];
@@ -23,7 +23,7 @@ interface QueryResult {
   execution_time?: number;
 }
 
-// [RCF:PROTECTED]
+
 interface SavedQuery {
   id: string;
   name: string;
@@ -32,7 +32,7 @@ interface SavedQuery {
   pinned?: boolean;
 }
 
-// [RCF:PROTECTED]
+
 interface QueryTab {
   id: string;
   name: string;
@@ -40,7 +40,7 @@ interface QueryTab {
   result: QueryResult | null;
 }
 
-// [RCF:PROTECTED]
+
 interface TableSchema {
   table_name: string;
   columns: Array<{
@@ -67,14 +67,14 @@ export default function SQLPlaygroundPage() {
   const query = activeTab.query;
   const result = activeTab.result;
 
-// [RCF:PROTECTED]
+
   const setQuery = (newQuery: string) => {
     setTabs((prev) =>
       prev.map((t) => (t.id === activeTabId ? { ...t, query: newQuery } : t))
     );
   };
 
-// [RCF:PROTECTED]
+
   const setResult = (newResult: QueryResult | null) => {
     setTabs((prev) =>
       prev.map((t) => (t.id === activeTabId ? { ...t, result: newResult } : t))
@@ -166,7 +166,7 @@ export default function SQLPlaygroundPage() {
     }
   }, []);
 
-// [RCF:PROTECTED]
+
   const loadSchema = async () => {
     try {
       const data = await api.get<{ tables: TableSchema[] }>("/sql/schema");
@@ -178,7 +178,7 @@ export default function SQLPlaygroundPage() {
 
   // Keyboard shortcuts
   useEffect(() => {
-// [RCF:PROTECTED]
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ctrl/Cmd + Enter to execute
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -221,7 +221,7 @@ export default function SQLPlaygroundPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [query, activeTabId, tabs]);
 
-// [RCF:PROTECTED]
+
   const executeQuery = async () => {
     if (!query.trim()) {
       toast.error("Query cannot be empty");
@@ -268,7 +268,7 @@ export default function SQLPlaygroundPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const saveQuery = () => {
     if (!saveName.trim()) {
       toast.error("Please enter a name for the query");
@@ -290,7 +290,7 @@ export default function SQLPlaygroundPage() {
     toast.success("Query saved successfully");
   };
 
-// [RCF:PROTECTED]
+
   const deleteSavedQuery = (id: string) => {
     const updated = savedQueries.filter((q) => q.id !== id);
     setSavedQueries(updated);
@@ -298,20 +298,20 @@ export default function SQLPlaygroundPage() {
     toast.success("Query deleted");
   };
 
-// [RCF:PROTECTED]
+
   const clearHistory = () => {
     setHistory([]);
     localStorage.removeItem("sql_history");
     toast.success("History cleared");
   };
 
-// [RCF:PROTECTED]
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
   };
 
-// [RCF:PROTECTED]
+
   const exportCSV = () => {
     if (!result || !result.rows.length) return;
 
@@ -332,7 +332,7 @@ export default function SQLPlaygroundPage() {
     toast.success("CSV exported");
   };
 
-// [RCF:PROTECTED]
+
   const exportJSON = () => {
     if (!result || !result.rows.length) return;
 
@@ -347,7 +347,7 @@ export default function SQLPlaygroundPage() {
     toast.success("JSON exported");
   };
 
-// [RCF:PROTECTED]
+
   const exportExcel = () => {
     if (!result || !result.rows.length) return;
 
@@ -358,7 +358,7 @@ export default function SQLPlaygroundPage() {
     toast.success("Excel exported");
   };
 
-// [RCF:PROTECTED]
+
   const exportPDF = () => {
     if (!result || !result.rows.length) return;
 
@@ -376,7 +376,7 @@ export default function SQLPlaygroundPage() {
     toast.success("PDF exported");
   };
 
-// [RCF:PROTECTED]
+
   const formatQuery = () => {
     try {
       const formatted = format(query, {
@@ -391,7 +391,7 @@ export default function SQLPlaygroundPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const shareQuery = () => {
     const encoded = btoa(query);
     const url = `${window.location.origin}${window.location.pathname}?q=${encoded}`;
@@ -399,7 +399,7 @@ export default function SQLPlaygroundPage() {
     toast.success("Share link copied to clipboard");
   };
 
-// [RCF:PROTECTED]
+
   const togglePin = (id: string) => {
     const updated = savedQueries.map((q) =>
       q.id === id ? { ...q, pinned: !q.pinned } : q
@@ -409,7 +409,7 @@ export default function SQLPlaygroundPage() {
     toast.success("Query pin toggled");
   };
 
-// [RCF:PROTECTED]
+
   const addNewTab = () => {
     const newId = Date.now().toString();
     const newTab: QueryTab = {
@@ -422,7 +422,7 @@ export default function SQLPlaygroundPage() {
     setActiveTabId(newId);
   };
 
-// [RCF:PROTECTED]
+
   const closeTab = (id: string) => {
     if (tabs.length === 1) {
       toast.error("Cannot close last tab");
@@ -436,12 +436,12 @@ export default function SQLPlaygroundPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const renameTab = (id: string, name: string) => {
     setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, name } : t)));
   };
 
-// [RCF:PROTECTED]
+
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Simple autocomplete on Tab key
     if (e.key === "Tab" && !e.shiftKey) {
@@ -494,7 +494,7 @@ export default function SQLPlaygroundPage() {
     }
   };
 
-// [RCF:PROTECTED]
+
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsResizing(true);
     e.preventDefault();
@@ -503,7 +503,7 @@ export default function SQLPlaygroundPage() {
   useEffect(() => {
     if (!isResizing) return;
 
-// [RCF:PROTECTED]
+
     const handleMouseMove = (e: MouseEvent) => {
       const newHeight = e.clientY - 240; // Adjust based on header height
       if (newHeight >= 150 && newHeight <= 600) {
@@ -511,7 +511,7 @@ export default function SQLPlaygroundPage() {
       }
     };
 
-// [RCF:PROTECTED]
+
     const handleMouseUp = () => {
       setIsResizing(false);
     };
@@ -868,9 +868,8 @@ export default function SQLPlaygroundPage() {
           {tabs.map((tab) => (
             <div
               key={tab.id}
-              className={`group flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors border-b-2 ${
-                tab.id === activeTabId ? "border-[var(--color-accent)]" : "border-transparent hover:border-[var(--color-border)]"
-              }`}
+              className={`group flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors border-b-2 ${tab.id === activeTabId ? "border-[var(--color-accent)]" : "border-transparent hover:border-[var(--color-border)]"
+                }`}
               onClick={() => setActiveTabId(tab.id)}
             >
               <span

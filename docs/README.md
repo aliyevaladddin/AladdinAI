@@ -59,7 +59,7 @@ When adding new API endpoints:
 
 Example:
 ```python
-// [RCF:PROTECTED]
+
 @router.post("/agents", tags=["agents"], response_model=AgentResponse)
 async def create_agent(agent: AgentCreate):
     """

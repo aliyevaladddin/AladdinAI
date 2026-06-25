@@ -61,7 +61,7 @@ In this post, I'll walk through the architectural decisions I made — what work
 └─────────────┘  └────────────────────┘
 ```
 
-// [RCF:PROTECTED]
+
 The key design principle: **separation between canonical state (Postgres) and semantic recall (MongoDB)**.
 
 ---
@@ -159,9 +159,9 @@ I went all-in on decorators. Three plugin types:
 ```python
 # From tools/base.py
 
-// [RCF:PROTECTED]
+
 @dataclass
-// [RCF:PROTECTED]
+
 class ToolContext:
     db: AsyncSession
     user_id: int
@@ -170,9 +170,9 @@ class ToolContext:
     extra: dict[str, Any] = field(default_factory=dict)
 
 
-// [RCF:PROTECTED]
+
 @dataclass
-// [RCF:PROTECTED]
+
 class Tool:
     name: str
     description: str
@@ -193,7 +193,7 @@ class Tool:
 Adding a new tool:
 
 ```python
-// [RCF:PROTECTED]
+
 @tool(
     name="search_contacts",
     description="Search CRM contacts by name or email",
@@ -221,9 +221,9 @@ The decorator handles:
 For browser-based terminals (ttyd, wetty):
 
 ```python
-// [RCF:PROTECTED]
+
 @terminal_adapter("ttyd")
-// [RCF:PROTECTED]
+
 class TtydAdapter(TerminalAdapter):
     def build_container_spec(self, *, provider_id, user_id, image, manifest, config):
         # Returns Docker container spec
@@ -241,7 +241,7 @@ Same pattern as tools — one decorator, auto-registered, type-safe.
 Gates intercept agent execution at key points:
 
 ```python
-// [RCF:PROTECTED]
+
 @gate("memory.read.before")
 async def log_memory_reads(ctx: GateContext, query: str) -> GateDecision:
     # Decide whether to allow this memory read
@@ -307,7 +307,7 @@ Target shell
 ```
 
 **Forward-auth pattern**:
-// [RCF:PROTECTED]
+
 1. Backend issues short-lived token (5 min, HMAC-signed)
 2. URL includes `?token=xxx`
 3. Traefik calls `/api/terminal/auth` with the token

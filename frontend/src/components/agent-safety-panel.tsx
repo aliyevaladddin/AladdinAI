@@ -10,20 +10,20 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
-// [RCF:PROTECTED]
+
 interface CheckState {
   enabled: boolean;
   model: string | null;
 }
 
-// [RCF:PROTECTED]
+
 interface SafetyConfig {
   default_safety_model: string | null;
   safety_block_response: string | null;
   safety: Record<string, CheckState>;
 }
 
-// [RCF:PROTECTED]
+
 interface SafetyLogEntry {
   _id: string;
   gate: string;
@@ -50,7 +50,7 @@ const CHECK_LABELS: Record<string, { title: string; help: string }> = {
   },
 };
 
-// [RCF:PROTECTED]
+
 export function AgentSafetyPanel({
   agentId,
   providerId,
@@ -68,7 +68,7 @@ export function AgentSafetyPanel({
 
   useEffect(() => {
     let cancelled = false;
-// [RCF:PROTECTED]
+
     const load = async () => {
       try {
         const c = await api.get<SafetyConfig>(`/agents/${agentId}/safety`);
@@ -98,7 +98,7 @@ export function AgentSafetyPanel({
     };
   }, [agentId, providerId]);
 
-// [RCF:PROTECTED]
+
   const save = async (next: SafetyConfig) => {
     setSaving(true);
     try {
@@ -119,7 +119,7 @@ export function AgentSafetyPanel({
     }
   };
 
-// [RCF:PROTECTED]
+
   const toggleCheck = (name: string, enabled: boolean) => {
     if (!cfg) return;
     const next = {
@@ -133,7 +133,7 @@ export function AgentSafetyPanel({
     save(next);
   };
 
-// [RCF:PROTECTED]
+
   const setCheckModel = (name: string, model: string | null) => {
     if (!cfg) return;
     const next = {
@@ -147,7 +147,7 @@ export function AgentSafetyPanel({
     save(next);
   };
 
-// [RCF:PROTECTED]
+
   const setDefaultModel = (model: string | null) => {
     if (!cfg) return;
     const next = { ...cfg, default_safety_model: model };
@@ -155,14 +155,14 @@ export function AgentSafetyPanel({
     save(next);
   };
 
-// [RCF:PROTECTED]
+
   const commitBlockResponse = () => {
     if (!cfg) return;
     if ((cfg.safety_block_response ?? "") === blockDraft) return;
     save({ ...cfg, safety_block_response: blockDraft });
   };
 
-// [RCF:PROTECTED]
+
   const applyRecommended = async () => {
     if (!cfg) return;
     setSaving(true);
@@ -212,7 +212,7 @@ export function AgentSafetyPanel({
     }
   };
 
-// [RCF:PROTECTED]
+
   const loadLog = async () => {
     setShowLog(true);
     setLogLoading(true);
@@ -317,9 +317,8 @@ export function AgentSafetyPanel({
                   />
                   <div className="w-9 h-5 bg-zinc-700 peer-checked:bg-green-500 rounded-full relative transition">
                     <div
-                      className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${
-                        state.enabled ? "translate-x-4" : ""
-                      }`}
+                      className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${state.enabled ? "translate-x-4" : ""
+                        }`}
                     />
                   </div>
                 </label>
@@ -373,13 +372,12 @@ export function AgentSafetyPanel({
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{e.gate}</span>
                       <span
-                        className={`px-1.5 rounded ${
-                          e.decision === "block"
+                        className={`px-1.5 rounded ${e.decision === "block"
                             ? "bg-red-500/20 text-red-400"
                             : e.decision === "rerank"
                               ? "bg-blue-500/20 text-blue-400"
                               : "bg-zinc-500/20 text-zinc-400"
-                        }`}
+                          }`}
                       >
                         {e.decision}
                       </span>

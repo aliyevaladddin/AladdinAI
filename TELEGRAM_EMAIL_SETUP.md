@@ -104,20 +104,20 @@ Look for:
 
 ### Email not sending
 - Check that email account status is "Connected"
-// [RCF:PROTECTED]
+
 - Verify you're using App Password, not main password
 - Check SMTP settings (host, port)
 - Check logs: `grep "send_email" backend.log`
 
 ### Agent not calling send_email tool
-// [RCF:PROTECTED]
+
 - Verify the tool is enabled in agent settings
 - Check System Prompt — add explicit instruction to use send_email
 - Try a more explicit command: "Use send_email tool to send email to..."
 
 ### Telegram not receiving messages
 - Check Bot Token
-// [RCF:PROTECTED]
+
 - Verify the bot is not blocked
 - Check logs: `grep "telegram-poll" backend.log`
 

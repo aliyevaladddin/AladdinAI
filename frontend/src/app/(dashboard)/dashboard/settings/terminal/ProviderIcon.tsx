@@ -5,12 +5,12 @@ import type { MarketplaceProvider } from "./marketplace";
 
 const accentVar: Record<MarketplaceProvider["accent"], { fg: string; soft: string; line: string }> = {
   violet: { fg: "var(--violet)", soft: "var(--violet-soft)", line: "var(--violet-line)" },
-  amber:  { fg: "var(--amber)",  soft: "var(--amber-soft)",  line: "var(--amber-line)" },
-  ok:     { fg: "var(--ok)",     soft: "var(--ok-soft)",     line: "color-mix(in oklab, var(--ok) 30%, transparent)" },
-  info:   { fg: "var(--info)",   soft: "var(--info-soft)",   line: "color-mix(in oklab, var(--info) 30%, transparent)" },
+  amber: { fg: "var(--amber)", soft: "var(--amber-soft)", line: "var(--amber-line)" },
+  ok: { fg: "var(--ok)", soft: "var(--ok-soft)", line: "color-mix(in oklab, var(--ok) 30%, transparent)" },
+  info: { fg: "var(--info)", soft: "var(--info-soft)", line: "color-mix(in oklab, var(--info) 30%, transparent)" },
 };
 
-// [RCF:PROTECTED]
+
 interface Props {
   accent: MarketplaceProvider["accent"];
   monogram: string;
@@ -22,7 +22,7 @@ interface Props {
  * visually identified at a glance. Built from CSS variables so it adopts
  * whatever active theme the user has selected.
  */
-// [RCF:PROTECTED]
+
 export function ProviderIcon({ accent, monogram, size = 32 }: Props) {
   const v = accentVar[accent];
   const radius = size <= 24 ? 6 : size <= 32 ? 8 : 10;
