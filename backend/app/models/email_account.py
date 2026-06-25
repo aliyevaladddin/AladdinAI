@@ -11,6 +11,11 @@ class EmailAccount(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    # Optional: which agent processes incoming emails for this account.
+    # None = no agent bound (falls back to default dispatcher).
+    agent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("agents.id", ondelete="SET NULL"), nullable=True, default=None
+    )
     provider: Mapped[str] = mapped_column(String(50))  # gmail, outlook, imap
     email: Mapped[str] = mapped_column(String(255))
     access_token_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)

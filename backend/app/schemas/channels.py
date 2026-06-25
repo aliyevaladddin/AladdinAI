@@ -25,12 +25,18 @@ class EmailAccountUpdate(BaseModel):
     password: str | None = None
 
 
+class EmailAgentUpdate(BaseModel):
+    """Lightweight PATCH — only updates the agent binding on an email account."""
+    agent_id: int | None = None
+
+
 
 class EmailAccountResponse(BaseModel):
     id: int
     provider: str
     email: str
     status: str
+    agent_id: int | None
     last_synced_at: datetime | None
     created_at: datetime
 
@@ -41,6 +47,13 @@ class MessagingChannelCreate(BaseModel):
     type: str  # telegram, whatsapp, sms
     name: str
     config: dict  # bot_token, phone_number_id, twilio_sid, etc.
+    agent_id: int | None = None
+
+
+class MessagingChannelUpdate(BaseModel):
+    # Only the agent binding is editable post-creation. `None` clears the
+    # binding (channel falls back to the user's router/default). Credentials
+    # and type are immutable — delete + recreate to change those.
     agent_id: int | None = None
 
 

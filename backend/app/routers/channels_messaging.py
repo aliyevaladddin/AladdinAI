@@ -6,9 +6,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.agent import Agent
 from app.models.messaging_channel import MessagingChannel
 from app.models.user import User
-from app.schemas.channels import MessagingChannelCreate, MessagingChannelResponse
+from app.schemas.channels import (
+    MessagingChannelCreate,
+    MessagingChannelResponse,
+    MessagingChannelUpdate,
+)
 from app.security import get_current_user
 
 log = logging.getLogger(__name__)
@@ -33,6 +38,42 @@ async def create_channel(body: MessagingChannelCreate, user: User = Depends(get_
         webhook_secret=secrets.token_urlsafe(32),
     )
     db.add(channel)
+    await db.commit()
+    await db.refresh(channel)
+    return channel
+
+
+@router.patch("/{channel_id}", response_model=MessagingChannelResponse)
+async def update_channel(
+    channel_id: int,
+    body: MessagingChannelUpdate,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Change which agent answers on this channel.
+
+    The agent must belong to the same user — otherwise a tenant could point
+    their channel at someone else's agent. Passing agent_id=null detaches the
+    channel (it then falls back to the router/default at dispatch time).
+    """
+    result = await db.execute(
+        select(MessagingChannel).where(
+            MessagingChannel.id == channel_id,
+            MessagingChannel.user_id == user.id,
+        )
+    )
+    channel = result.scalar_one_or_none()
+    if not channel:
+        raise HTTPException(status_code=404, detail="Channel not found")
+
+    if body.agent_id is not None:
+        owns = await db.execute(
+            select(Agent.id).where(Agent.id == body.agent_id, Agent.user_id == user.id)
+        )
+        if owns.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+    channel.agent_id = body.agent_id
     await db.commit()
     await db.refresh(channel)
     return channel
