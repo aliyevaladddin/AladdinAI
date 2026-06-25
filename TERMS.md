@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Terms of Service for AladdinAI GitHub Bot
 
 **Last Updated:** May 30, 2026

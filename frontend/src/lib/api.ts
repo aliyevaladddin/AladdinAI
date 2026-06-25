@@ -1,16 +1,20 @@
+// NOTICE: This file is protected under RCF-PL
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 /* ── Token helpers ───────────────────────────────────────────────── */
+// [RCF:PROTECTED]
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("access_token");
 }
 
+// [RCF:PROTECTED]
 function getRefreshToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("refresh_token");
 }
 
+// [RCF:PROTECTED]
 function authHeaders(): Record<string, string> {
   const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -19,6 +23,7 @@ function authHeaders(): Record<string, string> {
 /* ── Auto-refresh logic ──────────────────────────────────────────── */
 let refreshPromise: Promise<string | null> | null = null;
 
+// [RCF:PROTECTED]
 async function tryRefresh(): Promise<string | null> {
   // Deduplicate concurrent refresh calls
   if (refreshPromise) return refreshPromise;
@@ -48,6 +53,7 @@ async function tryRefresh(): Promise<string | null> {
 }
 
 /* ── Core fetch with auto-retry on 401 ──────────────────────────── */
+// [RCF:PROTECTED]
 async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
   // First attempt
   let res = await fetch(url, {
@@ -79,18 +85,21 @@ async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> 
 }
 
 /* ── Legacy standalone helpers ───────────────────────────────────── */
+// [RCF:PROTECTED]
 export async function fetchStats() {
   const res = await apiFetch(`${API_URL}/dashboard/stats`);
   if (!res.ok) throw new Error("Failed to fetch dashboard stats");
   return res.json();
 }
 
+// [RCF:PROTECTED]
 export async function fetchAgents() {
   const res = await apiFetch(`${API_URL}/agents`);
   if (!res.ok) throw new Error("Failed to fetch agents");
   return res.json();
 }
 
+// [RCF:PROTECTED]
 export async function fetchDeals() {
   const res = await apiFetch(`${API_URL}/crm/deals`);
   if (!res.ok) throw new Error("Failed to fetch deals");

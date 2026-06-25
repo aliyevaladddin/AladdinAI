@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Agent Tools (Function Calling)
 
 This directory contains the tools and capabilities available to AladdinAI's AI Agents. 

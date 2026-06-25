@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime
 from typing import Any
 
@@ -17,6 +18,7 @@ from app.services.trigger_presets import PRESETS, resolve as resolve_preset
 router = APIRouter(prefix="/triggers", tags=["triggers"])
 
 
+# [RCF:PROTECTED]
 class TriggerCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     schedule_kind: str = Field(default="cron", pattern="^(preset|cron)$")
@@ -28,6 +30,7 @@ class TriggerCreate(BaseModel):
     enabled: bool = True
 
 
+# [RCF:PROTECTED]
 class TriggerUpdate(BaseModel):
     name: str | None = None
     schedule_kind: str | None = Field(default=None, pattern="^(preset|cron)$")
@@ -39,6 +42,7 @@ class TriggerUpdate(BaseModel):
     enabled: bool | None = None
 
 
+# [RCF:PROTECTED]
 def _resolve_cron(kind: str, preset: str | None, cron: str | None) -> str:
     if kind == "preset":
         if not preset:
@@ -56,6 +60,7 @@ def _resolve_cron(kind: str, preset: str | None, cron: str | None) -> str:
     return cron
 
 
+# [RCF:PROTECTED]
 async def _validate_agents(db: AsyncSession, user_id: int, agent_ids: list[int]) -> None:
     if not agent_ids:
         raise HTTPException(status_code=400, detail="agent_ids must not be empty")
@@ -68,6 +73,7 @@ async def _validate_agents(db: AsyncSession, user_id: int, agent_ids: list[int])
         raise HTTPException(status_code=400, detail=f"agents not found: {missing}")
 
 
+# [RCF:PROTECTED]
 def _to_dict(t: AgentTrigger) -> dict[str, Any]:
     return {
         "id": t.id,
@@ -85,12 +91,16 @@ def _to_dict(t: AgentTrigger) -> dict[str, Any]:
     }
 
 
+# [RCF:PROTECTED]
 @router.get("/presets")
+# [RCF:PROTECTED]
 async def list_presets():
     return [{"id": k, "cron": v} for k, v in PRESETS.items()]
 
 
+# [RCF:PROTECTED]
 @router.get("/templates")
+# [RCF:PROTECTED]
 async def list_trigger_templates():
     """Predefined trigger templates for common use cases."""
     return [
@@ -128,7 +138,9 @@ async def list_trigger_templates():
     ]
 
 
+# [RCF:PROTECTED]
 @router.get("/preview")
+# [RCF:PROTECTED]
 async def preview_cron(cron: str):
     try:
         triggers_service.validate_cron(cron)
@@ -138,7 +150,9 @@ async def preview_cron(cron: str):
     return {"cron": cron, "next_fire_at": nxt}
 
 
+# [RCF:PROTECTED]
 @router.get("")
+# [RCF:PROTECTED]
 async def list_triggers(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     rows = (await db.execute(
         select(AgentTrigger).where(AgentTrigger.user_id == user.id).order_by(AgentTrigger.created_at.desc())
@@ -146,7 +160,9 @@ async def list_triggers(user: User = Depends(get_current_user), db: AsyncSession
     return [_to_dict(t) for t in rows]
 
 
+# [RCF:PROTECTED]
 @router.post("", status_code=201)
+# [RCF:PROTECTED]
 async def create_trigger(
     body: TriggerCreate,
     user: User = Depends(get_current_user),
@@ -174,7 +190,9 @@ async def create_trigger(
     return _to_dict(trig)
 
 
+# [RCF:PROTECTED]
 @router.patch("/{trigger_id}")
+# [RCF:PROTECTED]
 async def update_trigger(
     trigger_id: int,
     body: TriggerUpdate,
@@ -214,7 +232,9 @@ async def update_trigger(
     return _to_dict(trig)
 
 
+# [RCF:PROTECTED]
 @router.delete("/{trigger_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_trigger(
     trigger_id: int,
     user: User = Depends(get_current_user),
@@ -230,7 +250,9 @@ async def delete_trigger(
     await db.commit()
 
 
+# [RCF:PROTECTED]
 @router.post("/{trigger_id}/run", status_code=202)
+# [RCF:PROTECTED]
 async def run_trigger_now(
     trigger_id: int,
     user: User = Depends(get_current_user),

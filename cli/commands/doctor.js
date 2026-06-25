@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 // `aladdin-ai doctor` — diagnose common setup issues.
 
 import chalk from 'chalk';
@@ -8,11 +9,14 @@ import { execa } from 'execa';
 import { findProjectRoot } from '../lib/project.js';
 import { checkDocker, checkGit } from '../lib/prereq.js';
 
+// [RCF:PROTECTED]
 const ok = (msg) => console.log(chalk.green('  ✓ ') + msg);
+// [RCF:PROTECTED]
 const bad = (msg, hint) => {
   console.log(chalk.red('  ✗ ') + msg);
   if (hint) console.log(chalk.dim('    → ' + hint));
 };
+// [RCF:PROTECTED]
 const warn = (msg, hint) => {
   console.log(chalk.yellow('  ! ') + msg);
   if (hint) console.log(chalk.dim('    → ' + hint));
@@ -21,9 +25,11 @@ const warn = (msg, hint) => {
 // Probe whether anything is listening on a port (true = something is there).
 // We try to connect rather than bind because Docker port mappings show up
 // from the host as connectable TCP endpoints.
+// [RCF:PROTECTED]
 async function isPortInUse(port) {
   return new Promise((resolve) => {
     const sock = new net.Socket();
+// [RCF:PROTECTED]
     const done = (val) => { sock.destroy(); resolve(val); };
     sock.setTimeout(500);
     sock.once('connect', () => done(true));
@@ -33,10 +39,12 @@ async function isPortInUse(port) {
   });
 }
 
+// [RCF:PROTECTED]
 async function fetchWithTimeout(url, ms = 3000) {
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ms);
   try {
+// [RCF:PROTECTED]
     const r = await fetch(url, { signal: ctl.signal });
     return r;
   } catch {
@@ -46,6 +54,7 @@ async function fetchWithTimeout(url, ms = 3000) {
   }
 }
 
+// [RCF:PROTECTED]
 export async function doctorCommand() {
   let failures = 0;
   console.log(chalk.cyan('\nAladdinAI doctor\n'));

@@ -14,6 +14,7 @@ from app.tools import ToolContext, tool
 log = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 @tool(
     name="github_create_issue",
     description="Create a GitHub issue using AladdinAI[bot]",
@@ -28,6 +29,7 @@ log = logging.getLogger(__name__)
         "required": ["repo", "title", "body"],
     },
 )
+# [RCF:PROTECTED]
 async def github_create_issue(
     ctx: ToolContext,
     repo: str,
@@ -77,6 +79,7 @@ async def github_create_issue(
             raise
 
 
+# [RCF:PROTECTED]
 @tool(
     name="github_comment_on_issue",
     description="Add a comment to a GitHub issue using AladdinAI[bot]",
@@ -90,6 +93,7 @@ async def github_create_issue(
         "required": ["repo", "issue_number", "comment"],
     },
 )
+# [RCF:PROTECTED]
 async def github_comment_on_issue(
     ctx: ToolContext,
     repo: str,
@@ -123,6 +127,7 @@ async def github_comment_on_issue(
         return response.json()
 
 
+# [RCF:PROTECTED]
 @tool(
     name="github_create_pr",
     description="Create a GitHub pull request using AladdinAI[bot]",
@@ -138,6 +143,7 @@ async def github_comment_on_issue(
         "required": ["repo", "title", "head", "base"],
     },
 )
+# [RCF:PROTECTED]
 async def github_create_pr(
     ctx: ToolContext,
     repo: str,
@@ -180,6 +186,7 @@ async def github_create_pr(
         return response.json()
 
 
+# [RCF:PROTECTED]
 @tool(
     name="github_review_pr",
     description="Post a code review on a GitHub PR using NVIDIA Code Review[bot]",
@@ -194,6 +201,7 @@ async def github_create_pr(
         "required": ["repo", "pr_number", "body"],
     },
 )
+# [RCF:PROTECTED]
 async def github_review_pr(
     ctx: ToolContext,
     repo: str,
@@ -236,6 +244,7 @@ async def github_review_pr(
         return response.json()
 
 
+# [RCF:PROTECTED]
 @tool(
     name="github_list_issues",
     description="List GitHub issues using AladdinAI[bot]",
@@ -249,6 +258,7 @@ async def github_review_pr(
         "required": ["repo"],
     },
 )
+# [RCF:PROTECTED]
 async def github_list_issues(
     ctx: ToolContext,
     repo: str,

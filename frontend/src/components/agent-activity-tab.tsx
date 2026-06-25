@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -14,6 +15,7 @@ import {
   ChevronRight
 } from "lucide-react";
 
+// [RCF:PROTECTED]
 interface ActivityEvent {
   id: string;
   type: "task" | "action" | "gate" | "trigger";
@@ -39,10 +41,12 @@ const STATUS_COLORS: Record<string, string> = {
   trigger: "text-purple-400 bg-purple-500/10 border-purple-500/20",
 };
 
+// [RCF:PROTECTED]
 export function AgentActivityTab({ agentId }: { agentId: number }) {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
+// [RCF:PROTECTED]
   const load = async () => {
     setLoading(true);
     try {
@@ -70,11 +74,13 @@ export function AgentActivityTab({ agentId }: { agentId: number }) {
     );
   }
 
+// [RCF:PROTECTED]
   const formatTime = (ts: string) => {
     const d = new Date(ts);
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+// [RCF:PROTECTED]
   const formatDate = (ts: string) => {
     const d = new Date(ts);
     return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -147,6 +153,7 @@ export function AgentActivityTab({ agentId }: { agentId: number }) {
 }
 
 // Helper to keep Activity icon available
+// [RCF:PROTECTED]
 function Activity({ size, className }: { size?: number, className?: string }) {
     return <Zap size={size} className={className} />
 }

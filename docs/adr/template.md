@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # ADR-NNNN: [Short title of solved problem and solution]
 
 **Status**: [Proposed | Accepted | Deprecated | Superseded by ADR-XXXX]

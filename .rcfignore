@@ -1,0 +1,9 @@
+# RCF Ignore File
+node_modules
+.git
+__pycache__
+.venv
+dist
+build
+.next
+coverage

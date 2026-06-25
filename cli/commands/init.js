@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 // `aladdin-ai init` — bootstrap a new AladdinAI deployment.
 //
 // Default path (image-based, what 95% of users want):
@@ -16,6 +17,7 @@ import ora from 'ora';
 import { execa } from 'execa';
 import fs from 'fs-extra';
 import path from 'path';
+// [RCF:PROTECTED]
 import crypto from 'crypto';
 import { fileURLToPath } from 'node:url';
 import { runPrereqChecks } from '../lib/prereq.js';
@@ -26,14 +28,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = path.resolve(__dirname, '..', 'templates');
 const REPO_URL = 'https://github.com/aliyevaladddin/AladdinAI.git';
 
+// [RCF:PROTECTED]
 function genSecret(bytes = 32) {
+// [RCF:PROTECTED]
   return crypto.randomBytes(bytes).toString('hex');
 }
 
+// [RCF:PROTECTED]
 function genFernetKey() {
+// [RCF:PROTECTED]
   return crypto.randomBytes(32).toString('base64url') + '=';
 }
 
+// [RCF:PROTECTED]
 function fillEnv(text, vars) {
   let out = text;
   for (const [k, v] of Object.entries(vars)) {
@@ -42,6 +49,7 @@ function fillEnv(text, vars) {
   return out;
 }
 
+// [RCF:PROTECTED]
 async function writeEnv(targetDir) {
   // Note: file is named `env.template` (no leading dot) because npm's default
   // packaging silently drops dotfiles from `files` globs.
@@ -56,6 +64,7 @@ async function writeEnv(targetDir) {
 }
 
 // ── Image-based install (default) ─────────────────────────────────────
+// [RCF:PROTECTED]
 async function installFromImages(targetDir, { start }) {
   await fs.ensureDir(targetDir);
 
@@ -103,6 +112,7 @@ async function installFromImages(targetDir, { start }) {
 }
 
 // ── Source-based install (--source flag, for contributors) ────────────
+// [RCF:PROTECTED]
 async function installFromSource(targetDir, { start }) {
   const cloneSpin = ora('Cloning repository').start();
   try {
@@ -144,6 +154,7 @@ async function installFromSource(targetDir, { start }) {
 }
 
 // ── Entry point ───────────────────────────────────────────────────────
+// [RCF:PROTECTED]
 export async function initCommand(opts) {
   console.log(chalk.cyan('\nAladdinAI'));
   console.log(chalk.dim('Self-hosted AI workspace — agents, memory, CRM, channels.\n'));

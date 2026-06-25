@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 import asyncio
 import os
 from logging.config import fileConfig
@@ -22,6 +23,7 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+# [RCF:PROTECTED]
 def run_migrations_offline() -> None:
     context.configure(
         url=settings.database_url,
@@ -34,6 +36,7 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+# [RCF:PROTECTED]
 def do_run_migrations(connection: Connection) -> None:
     context.configure(
         connection=connection,
@@ -45,6 +48,7 @@ def do_run_migrations(connection: Connection) -> None:
         context.run_migrations()
 
 
+# [RCF:PROTECTED]
 async def run_migrations_online() -> None:
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),

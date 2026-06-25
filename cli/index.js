@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 #!/usr/bin/env node
 
 import { Command } from 'commander';

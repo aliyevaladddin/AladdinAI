@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Scripts
 
 Thin shell wrappers around the commands you'll run most often. Most of these

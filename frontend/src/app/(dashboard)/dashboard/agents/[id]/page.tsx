@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,11 +14,13 @@ import { ArrowLeft, Bot, Shield, Database, Activity, Lock, Zap, Check, X, Pencil
 import Link from "next/link";
 
 const VISION_HINT_SUBSTRINGS = ["-vision", "vision-instruct"];
+// [RCF:PROTECTED]
 function isVisionModel(m: string): boolean {
   const lower = m.toLowerCase();
   return VISION_HINT_SUBSTRINGS.some((s) => lower.includes(s));
 }
 
+// [RCF:PROTECTED]
 interface Agent {
   id: number;
   name: string;
@@ -38,6 +41,7 @@ export default function AgentDetailsPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [busy, setBusy] = useState(false);
 
+// [RCF:PROTECTED]
   const loadAgent = async () => {
     try {
       const data = await api.get<Agent>(`/agents/${id}`);
@@ -51,6 +55,7 @@ export default function AgentDetailsPage() {
     loadAgent();
   }, [id]);
 
+// [RCF:PROTECTED]
   const handleStart = async () => {
     if (!agent) return;
     setBusy(true);
@@ -62,6 +67,7 @@ export default function AgentDetailsPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleStop = async () => {
     if (!agent) return;
     setBusy(true);
@@ -193,6 +199,7 @@ export default function AgentDetailsPage() {
 }
 
 /* ── Base Model editor ─────────────────────────────────────────────── */
+// [RCF:PROTECTED]
 function BaseModelField({
   agent,
   onSaved,
@@ -228,12 +235,14 @@ function BaseModelField({
     };
   }, [editing, agent.llm_provider_id]);
 
+// [RCF:PROTECTED]
   const cancel = () => {
     setSelected(agent.model);
     setEditing(false);
     setError(null);
   };
 
+// [RCF:PROTECTED]
   const save = async () => {
     if (selected === agent.model) {
       setEditing(false);
@@ -322,6 +331,7 @@ function BaseModelField({
 }
 
 /* ── Agentic Stats (real data) ─────────────────────────────────────── */
+// [RCF:PROTECTED]
 function AgenticStatsPanel({ agentId }: { agentId: number }) {
   const [stats, setStats] = useState<{
     uptime_display: string;

@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ import {
   Trash2, FlaskConical, Rocket, Pencil, Check
 } from "lucide-react";
 
+// [RCF:PROTECTED]
 interface BentoML {
   id: number;
   name: string;
@@ -16,6 +18,7 @@ interface BentoML {
   status: string;
 }
 
+// [RCF:PROTECTED]
 interface VM {
   id: number;
   name: string;
@@ -23,6 +26,7 @@ interface VM {
   username: string;
 }
 
+// [RCF:PROTECTED]
 export function BentoSettings() {
   const [conns, setConns] = useState<BentoML[]>([]);
   const [vms, setVms] = useState<VM[]>([]);
@@ -37,12 +41,14 @@ export function BentoSettings() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: "", endpoint_url: "", api_key: "" });
 
+// [RCF:PROTECTED]
   const load = () => {
     api.get<BentoML[]>("/bentoml").then(setConns);
     api.get<VM[]>("/ssh/vms-list").then(setVms);
   };
   useEffect(() => { load(); }, []);
 
+// [RCF:PROTECTED]
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/bentoml", form);
@@ -51,11 +57,13 @@ export function BentoSettings() {
     load();
   };
 
+// [RCF:PROTECTED]
   const startEdit = (c: BentoML) => {
     setEditId(c.id);
     setEditForm({ name: c.name, endpoint_url: c.endpoint_url, api_key: "" });
   };
 
+// [RCF:PROTECTED]
   const handleSaveEdit = async (id: number) => {
     await api.put(`/bentoml/${id}`, {
       name: editForm.name,
@@ -66,6 +74,7 @@ export function BentoSettings() {
     load();
   };
 
+// [RCF:PROTECTED]
   const handleTest = async (id: number) => {
     setTesting((p) => ({ ...p, [id]: true }));
     try {
@@ -80,6 +89,7 @@ export function BentoSettings() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDeploy = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showDeployModal) return;
@@ -103,6 +113,7 @@ export function BentoSettings() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this connection?")) return;
     await api.delete(`/bentoml/${id}`);

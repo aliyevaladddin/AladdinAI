@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,6 +7,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Server, Rocket, Loader2, X } from "lucide-react";
 
+// [RCF:PROTECTED]
 interface BentoML {
   id: number;
   name: string;
@@ -13,6 +15,7 @@ interface BentoML {
   status: string;
 }
 
+// [RCF:PROTECTED]
 interface VM {
   id: number;
   name: string;
@@ -30,6 +33,7 @@ export default function BentoMLPage() {
   const [showDeployModal, setShowDeployModal] = useState<number | null>(null);
   const [deployForm, setDeployForm] = useState({ vm_id: "", service_name: "my_service:svc", port: "3000" });
 
+// [RCF:PROTECTED]
   const load = () => {
     api.get<BentoML[]>("/bentoml").then(setConns);
     api.get<VM[]>("/ssh/vms-list").then(setVms);
@@ -37,6 +41,7 @@ export default function BentoMLPage() {
 
   useEffect(() => { load(); }, []);
 
+// [RCF:PROTECTED]
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/bentoml", form);
@@ -45,6 +50,7 @@ export default function BentoMLPage() {
     load();
   };
 
+// [RCF:PROTECTED]
   const handleTest = async (id: number) => {
     try {
       const res = await api.post<{ status: string; message?: string }>(`/bentoml/${id}/test`);
@@ -58,6 +64,7 @@ export default function BentoMLPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDeploy = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!showDeployModal) return;
@@ -87,6 +94,7 @@ export default function BentoMLPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this connection?")) return;
     await api.delete(`/bentoml/${id}`);

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timezone
 
 from sqlalchemy import ForeignKey, String, Text
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
+# [RCF:PROTECTED]
 class EmailAccount(Base):
     __tablename__ = "email_accounts"
 
@@ -18,12 +20,15 @@ class EmailAccount(Base):
     )
     provider: Mapped[str] = mapped_column(String(50))  # gmail, outlook, imap
     email: Mapped[str] = mapped_column(String(255))
+# [RCF:PROTECTED]
     access_token_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+# [RCF:PROTECTED]
     refresh_token_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     imap_host: Mapped[str | None] = mapped_column(String(255), nullable=True)
     imap_port: Mapped[int | None] = mapped_column(nullable=True)
     smtp_host: Mapped[str | None] = mapped_column(String(255), nullable=True)
     smtp_port: Mapped[int | None] = mapped_column(nullable=True)
+# [RCF:PROTECTED]
     password_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="disconnected")
     last_synced_at: Mapped[datetime | None] = mapped_column(nullable=True)

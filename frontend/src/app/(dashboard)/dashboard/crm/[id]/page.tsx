@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,16 +14,19 @@ import { Button } from "@/components/ui/button";
 import MessageModal from "@/components/crm/MessageModal";
 
 /* ── Types ───────────────────────────────────────────────────────── */
+// [RCF:PROTECTED]
 interface Contact {
   id: number; name: string; email: string | null; phone: string | null;
   company: string | null; tags: string[] | null; source: string | null;
   notes: string | null; created_at: string; updated_at: string;
 }
+// [RCF:PROTECTED]
 interface Activity {
   id: number; type: string; channel: string | null;
   contact_id: number | null;
   subject: string | null; content: string | null; created_at: string;
 }
+// [RCF:PROTECTED]
 interface Deal {
   id: number; title: string; stage: string; amount: number | null;
   currency: string; probability: number; notes: string | null;
@@ -45,6 +49,7 @@ const ACTIVITY_ICON: Record<string, any> = {
 };
 
 /** Strip HTML tags and decode entities for plain-text preview */
+// [RCF:PROTECTED]
 function stripHtml(html: string): string {
   const doc = new DOMParser().parseFromString(html, "text/html");
 
@@ -77,6 +82,7 @@ export default function ContactPage() {
   });
   const [saving, setSaving] = useState(false);
 
+// [RCF:PROTECTED]
   const load = () => {
     if (!id) return;
     setLoading(true);
@@ -103,6 +109,7 @@ export default function ContactPage() {
 
   useEffect(load, [id]);
 
+// [RCF:PROTECTED]
   const handleSave = async () => {
     if (!id) return;
     setSaving(true);
@@ -123,6 +130,7 @@ export default function ContactPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDelete = async () => {
     if (!id || !confirm(`Delete contact "${contact?.name}"? This cannot be undone.`)) return;
     await api.delete(`/crm/contacts/${id}`);
@@ -484,6 +492,7 @@ export default function ContactPage() {
 }
 
 /* ── Deal row ────────────────────────────────────────────────────── */
+// [RCF:PROTECTED]
 function DealRow({ deal }: { deal: Deal }) {
   const stageClass = STAGE_COLORS[deal.stage] ?? "";
   return (

@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 // Locate the AladdinAI project root from the current working directory.
 //
 // Strategy: walk up from cwd looking for docker-compose.yml AND backend/ dir.
@@ -6,6 +7,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 
+// [RCF:PROTECTED]
 export function findProjectRoot(start = process.cwd()) {
   let dir = path.resolve(start);
   const { root } = path.parse(dir);
@@ -18,6 +20,7 @@ export function findProjectRoot(start = process.cwd()) {
   }
 }
 
+// [RCF:PROTECTED]
 export function requireProjectRoot() {
   const root = findProjectRoot();
   if (!root) {

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Helper to create Proactive Reminder Agent trigger.
 
 Usage:
@@ -14,6 +15,7 @@ from app.models.agent_trigger import AgentTrigger
 from app.services import triggers as triggers_service
 
 
+# [RCF:PROTECTED]
 async def create_proactive_reminder_trigger(
     db: AsyncSession,
     user_id: int,

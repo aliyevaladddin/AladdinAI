@@ -1,8 +1,10 @@
+# NOTICE: This file is protected under RCF-PL
 """Test tool registry and execution."""
 import pytest
 from app.tools.base import REGISTRY, Tool, ToolContext, execute, openai_schemas
 
 
+# [RCF:PROTECTED]
 def test_registry_contains_tools():
     """Test that tools are registered in REGISTRY."""
     assert len(REGISTRY) > 0
@@ -12,6 +14,7 @@ def test_registry_contains_tools():
     assert "forget" in REGISTRY
 
 
+# [RCF:PROTECTED]
 def test_tool_structure():
     """Test that registered tools have correct structure."""
     recall_tool = REGISTRY["recall"]
@@ -23,6 +26,7 @@ def test_tool_structure():
     assert "properties" in recall_tool.parameters
 
 
+# [RCF:PROTECTED]
 def test_openai_schema():
     """Test OpenAI-compatible schema generation."""
     recall_tool = REGISTRY["recall"]
@@ -35,6 +39,7 @@ def test_openai_schema():
     assert "parameters" in schema["function"]
 
 
+# [RCF:PROTECTED]
 def test_openai_schemas_all():
     """Test getting all tool schemas."""
     schemas = openai_schemas()
@@ -43,6 +48,7 @@ def test_openai_schemas_all():
     assert all("function" in s for s in schemas)
 
 
+# [RCF:PROTECTED]
 def test_openai_schemas_filtered():
     """Test getting filtered tool schemas."""
     allowed = ["recall", "remember"]
@@ -52,6 +58,7 @@ def test_openai_schemas_filtered():
     assert names == {"recall", "remember"}
 
 
+# [RCF:PROTECTED]
 def test_openai_schemas_with_invalid_tool():
     """Test filtering schemas with non-existent tool name."""
     allowed = ["recall", "nonexistent_tool"]
@@ -61,7 +68,9 @@ def test_openai_schemas_with_invalid_tool():
     assert schemas[0]["function"]["name"] == "recall"
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_execute_recall_tool(db_session, test_user):
     """Test executing recall tool through the registry."""
     ctx = ToolContext(
@@ -76,7 +85,9 @@ async def test_execute_recall_tool(db_session, test_user):
     assert "results" in result or "error" in result
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_execute_nonexistent_tool(db_session):
     """Test executing a tool that doesn't exist raises KeyError."""
     ctx = ToolContext(db=db_session, user_id=1, agent_id=None)
@@ -85,6 +96,7 @@ async def test_execute_nonexistent_tool(db_session):
         await execute("nonexistent_tool", {}, ctx)
 
 
+# [RCF:PROTECTED]
 def test_tool_parameters_have_required_fields():
     """Test that tool parameters follow JSON schema conventions."""
     for tool_name, tool in REGISTRY.items():
@@ -98,6 +110,7 @@ def test_tool_parameters_have_required_fields():
         assert "properties" in params, f"{tool_name}: parameters missing 'properties'"
 
 
+# [RCF:PROTECTED]
 def test_recall_tool_parameters():
     """Test recall tool has correct parameter structure."""
     recall = REGISTRY["recall"]
@@ -117,6 +130,7 @@ def test_recall_tool_parameters():
     assert "query" in params["required"]
 
 
+# [RCF:PROTECTED]
 def test_remember_tool_parameters():
     """Test remember tool has correct parameter structure."""
     remember = REGISTRY["remember"]
@@ -136,6 +150,7 @@ def test_remember_tool_parameters():
     assert "fact" in params["required"]
 
 
+# [RCF:PROTECTED]
 def test_forget_tool_parameters():
     """Test forget tool has correct parameter structure."""
     forget = REGISTRY["forget"]
@@ -148,6 +163,7 @@ def test_forget_tool_parameters():
     assert "memory_id" in params["required"]
 
 
+# [RCF:PROTECTED]
 def test_tool_context_structure():
     """Test ToolContext dataclass structure."""
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -163,6 +179,7 @@ def test_tool_context_structure():
     assert isinstance(ctx.extra, dict)
 
 
+# [RCF:PROTECTED]
 def test_tool_context_with_extra():
     """Test ToolContext with extra metadata."""
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -176,6 +193,7 @@ def test_tool_context_with_extra():
     assert ctx.extra["channel_id"] == "123"
 
 
+# [RCF:PROTECTED]
 def test_all_registered_tools_are_callable():
     """Test that all registered tools are async callables."""
     import inspect

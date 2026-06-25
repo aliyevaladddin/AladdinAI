@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 [![Site status](https://img.shields.io/website?url=https%3A%2F%2Faliyev.site%2FAladdinAI&style=flat-square&color=4ecdc4&logo=vercel&logoColor=white&label=live+demo)](https://aliyev.site/AladdinAI/)
 ![Repo size](https://img.shields.io/github/repo-size/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 [![CI](https://img.shields.io/github/actions/workflow/status/aliyevaladddin/AladdinAI/ci.yml?style=flat-square&color=4ecdc4&label=CI&logo=githubactions&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI/actions/workflows/ci.yml)
@@ -100,6 +101,7 @@ Retrieval uses MongoDB Atlas Vector Search — semantic, not keyword.
 
 ## ◈ Quick start
 
+// [RCF:PROTECTED]
 One command — pulls prebuilt images from GHCR (multi-arch: `amd64` + `arm64`), generates a `.env` with cryptographically-secure secrets, and brings up the full stack:
 
 ```bash
@@ -190,6 +192,7 @@ AladdinAI/
 ├── backend/          FastAPI service, models, services, tools, migrations
 ├── frontend/         Next.js 15 dashboard
 ├── scripts/          dev / install / migration helpers
+// [RCF:PROTECTED]
 ├── docs/             Architecture & design notes
 ├── cli/              npx aladdin-ai CLI
 ├── docker-compose.yml
@@ -227,6 +230,7 @@ make clean                         # remove .venv, caches, build artefacts
 - **`JWT_SECRET`** — replace with `openssl rand -hex 32` before deploying. Anyone who knows it can mint tokens for any user.
 - **Database** — switch `DATABASE_URL` to Postgres. SQLite is fine locally but not for multi-worker deployments.
 - **Frontend URL** — set `NEXT_PUBLIC_API_URL` to the public backend URL the browser will reach.
+// [RCF:PROTECTED]
 - **API keys** — provider keys live in the database (encrypted at rest, set via the UI), not in `.env`.
 
 ---

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Tests for app.services.safety.
 
 Strategy:
@@ -30,24 +31,31 @@ from app.services.safety import (
 # Helpers: _parse_json_object
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 class TestParseJsonObject:
+# [RCF:PROTECTED]
     def test_clean_json(self):
         result = _parse_json_object('{"safe": true, "reason": "ok"}')
         assert result == {"safe": True, "reason": "ok"}
 
+# [RCF:PROTECTED]
     def test_json_with_leading_text(self):
         result = _parse_json_object('Sure! Here you go: {"safe": false, "reason": "bad"}')
         assert result == {"safe": False, "reason": "bad"}
 
+# [RCF:PROTECTED]
     def test_empty_string(self):
         assert _parse_json_object("") is None
 
+# [RCF:PROTECTED]
     def test_no_braces(self):
         assert _parse_json_object("just a plain string") is None
 
+# [RCF:PROTECTED]
     def test_invalid_json(self):
         assert _parse_json_object("{not valid json}") is None
 
+# [RCF:PROTECTED]
     def test_nested_json(self):
         result = _parse_json_object('{"spans": [{"text": "John", "label": "NAME"}]}')
         assert result == {"spans": [{"text": "John", "label": "NAME"}]}
@@ -57,32 +65,39 @@ class TestParseJsonObject:
 # Helpers: _regex_redact
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 class TestRegexRedact:
+# [RCF:PROTECTED]
     def test_no_pii(self):
         text, labels = _regex_redact("Hello, how are you?")
         assert text == "Hello, how are you?"
         assert labels == []
 
+# [RCF:PROTECTED]
     def test_email_redacted(self):
         text, labels = _regex_redact("Contact me at user@example.com please")
         assert "user@example.com" not in text
         assert "[REDACTED:EMAIL]" in text
         assert "EMAIL" in labels
 
+# [RCF:PROTECTED]
     def test_phone_redacted(self):
         text, labels = _regex_redact("Call me at +1 800 555 1234")
         assert "PHONE" in labels
         assert "[REDACTED:PHONE]" in text
 
+# [RCF:PROTECTED]
     def test_ssn_redacted(self):
         text, labels = _regex_redact("My SSN is 123-45-6789")
         assert "SSN" in labels
         assert "123-45-6789" not in text
 
+# [RCF:PROTECTED]
     def test_credit_card_redacted(self):
         text, labels = _regex_redact("Card: 4111111111111111")
         assert "CREDIT_CARD" in labels
 
+# [RCF:PROTECTED]
     def test_multiple_pii(self):
         text, labels = _regex_redact("Email: foo@bar.com, SSN: 987-65-4321")
         assert "EMAIL" in labels
@@ -93,20 +108,25 @@ class TestRegexRedact:
 # Helpers: block_response
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 class TestBlockResponse:
+# [RCF:PROTECTED]
     def _make_agent(self, tools_config=None):
         agent = MagicMock(spec=Agent)
         agent.tools_config = tools_config
         return agent
 
+# [RCF:PROTECTED]
     def test_default_block_response(self):
         agent = self._make_agent(tools_config={})
         assert block_response(agent) == DEFAULT_BLOCK_RESPONSE
 
+# [RCF:PROTECTED]
     def test_custom_block_response(self):
         agent = self._make_agent(tools_config={"safety_block_response": "Nope!"})
         assert block_response(agent) == "Nope!"
 
+# [RCF:PROTECTED]
     def test_none_config(self):
         agent = self._make_agent(tools_config=None)
         assert block_response(agent) == DEFAULT_BLOCK_RESPONSE
@@ -116,28 +136,35 @@ class TestBlockResponse:
 # Helpers: _pii_phase_enabled
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 class TestPiiPhaseEnabled:
+# [RCF:PROTECTED]
     def _make_agent(self, tools_config=None):
         agent = MagicMock(spec=Agent)
         agent.tools_config = tools_config
         return agent
 
+# [RCF:PROTECTED]
     def test_default_ingress_enabled(self):
         agent = self._make_agent(tools_config={})
         assert _pii_phase_enabled(agent, "ingress") is True
 
+# [RCF:PROTECTED]
     def test_default_egress_enabled(self):
         agent = self._make_agent(tools_config={})
         assert _pii_phase_enabled(agent, "egress") is True
 
+# [RCF:PROTECTED]
     def test_default_memory_write_disabled(self):
         agent = self._make_agent(tools_config={})
         assert _pii_phase_enabled(agent, "memory_write") is False
 
+# [RCF:PROTECTED]
     def test_default_memory_read_disabled(self):
         agent = self._make_agent(tools_config={})
         assert _pii_phase_enabled(agent, "memory_read") is False
 
+# [RCF:PROTECTED]
     def test_explicit_phase_override(self):
         cfg = {
             "safety": {
@@ -152,6 +179,7 @@ class TestPiiPhaseEnabled:
         assert _pii_phase_enabled(agent, "egress") is True
         assert _pii_phase_enabled(agent, "memory_write") is True
 
+# [RCF:PROTECTED]
     def test_no_config(self):
         agent = self._make_agent(tools_config=None)
         # Falls back to defaults
@@ -163,6 +191,7 @@ class TestPiiPhaseEnabled:
 # Async: safety_ingress / safety_egress — check disabled (pass-through)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def _agent_no_safety():
     """Agent with no safety config — all checks disabled."""
     agent = MagicMock(spec=Agent)
@@ -173,7 +202,9 @@ def _agent_no_safety():
     return agent
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_safety_ingress_disabled_passes():
     """When ingress check is disabled, returns safe=True without calling LLM."""
     db = AsyncMock()
@@ -184,7 +215,9 @@ async def test_safety_ingress_disabled_passes():
     assert result["reason"] == "check_disabled"
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_safety_egress_disabled_passes():
     """When egress check is disabled, returns safe=True without calling LLM."""
     db = AsyncMock()
@@ -199,6 +232,7 @@ async def test_safety_egress_disabled_passes():
 # Async: safety_ingress — check enabled, LLM mocked
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def _agent_with_safety():
     """Agent with ingress + egress safety enabled."""
     agent = MagicMock(spec=Agent)
@@ -215,7 +249,9 @@ def _agent_with_safety():
     return agent
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_safety_ingress_blocks_unsafe():
     """When LLM says unsafe, ingress returns safe=False."""
     db = AsyncMock()
@@ -238,7 +274,9 @@ async def test_safety_ingress_blocks_unsafe():
     assert "harm" in result["reason"].lower() or result["reason"]
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_safety_ingress_allows_safe():
     """When LLM says safe, ingress returns safe=True."""
     db = AsyncMock()
@@ -260,7 +298,9 @@ async def test_safety_ingress_allows_safe():
     assert result["safe"] is True
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_safety_ingress_llm_error_fails_open():
     """On LLM error, safety fails open (returns safe=True) — never blocks users silently."""
     db = AsyncMock()
@@ -287,7 +327,9 @@ async def test_safety_ingress_llm_error_fails_open():
 # Async: safety_pii — regex only (no model configured)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_safety_pii_regex_only():
     """Without a PII model, regex redaction still works."""
     db = AsyncMock()
@@ -306,7 +348,9 @@ async def test_safety_pii_regex_only():
     assert "test@example.com" not in result["text"]
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_safety_pii_phase_disabled():
     """When phase is disabled, text is returned unchanged."""
     db = AsyncMock()
@@ -323,7 +367,9 @@ async def test_safety_pii_phase_disabled():
     assert result["text"] == "secret@hidden.com"
 
 
+# [RCF:PROTECTED]
 @pytest.mark.asyncio
+# [RCF:PROTECTED]
 async def test_safety_pii_no_pii_found():
     """Clean text returns unchanged with empty labels."""
     db = AsyncMock()

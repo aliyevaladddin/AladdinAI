@@ -15,24 +15,29 @@ from app.database import get_db
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
+# [RCF:PROTECTED]
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
+# [RCF:PROTECTED]
 def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
+# [RCF:PROTECTED]
 def create_access_token(user_id: int) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_access_token_expire_minutes)
     return jwt.encode({"sub": str(user_id), "exp": expire, "type": "access"}, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
+# [RCF:PROTECTED]
 def create_refresh_token(user_id: int) -> str:
     expire = datetime.now(timezone.utc) + timedelta(days=settings.jwt_refresh_token_expire_days)
     return jwt.encode({"sub": str(user_id), "exp": expire, "type": "refresh"}, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
+# [RCF:PROTECTED]
 def decode_token(token: str, expected_type: str = "access") -> int:
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
@@ -46,6 +51,7 @@ def decode_token(token: str, expected_type: str = "access") -> int:
     return int(user_id)
 
 
+# [RCF:PROTECTED]
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     from app.models.user import User
     user_id = decode_token(token)
@@ -56,6 +62,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     return user
 
 
+# [RCF:PROTECTED]
 async def get_current_user_ws(token: str, db: AsyncSession):
     from app.models.user import User
     user_id = decode_token(token)

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -5,6 +6,7 @@ from app.models.activity import Activity
 from app.models.contact import Contact
 
 
+# [RCF:PROTECTED]
 async def find_or_create_contact(
     db: AsyncSession,
     user_id: int,
@@ -38,6 +40,7 @@ async def find_or_create_contact(
     return contact
 
 
+# [RCF:PROTECTED]
 async def log_activity(
     db: AsyncSession,
     user_id: int,

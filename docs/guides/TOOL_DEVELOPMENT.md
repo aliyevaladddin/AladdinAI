@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Tool Development Guide
 
 Complete guide to creating and registering tools for AladdinAI agents.
@@ -37,6 +38,7 @@ from app.tools.registry import tool
 from app.services.memory import ToolContext
 import httpx
 
+// [RCF:PROTECTED]
 @tool(
     name="get_weather",
     description="Get current weather for a city. Use when user asks about weather conditions.",
@@ -91,6 +93,7 @@ The `@tool` decorator automatically registers the tool. No manual registration n
 ### Parameters
 
 ```python
+// [RCF:PROTECTED]
 @tool(
     name: str,                    # Unique tool identifier
     description: str,             # What the tool does (shown to LLM)
@@ -106,7 +109,9 @@ The `@tool` decorator automatically registers the tool. No manual registration n
 Every tool receives a `ToolContext` with:
 
 ```python
+// [RCF:PROTECTED]
 @dataclass
+// [RCF:PROTECTED]
 class ToolContext:
     user_id: int           # Current user ID
     agent_id: str         # Agent executing the tool
@@ -119,6 +124,7 @@ class ToolContext:
 ### Pattern 1: Read-Only Query Tool
 
 ```python
+// [RCF:PROTECTED]
 @tool(
     name="search_documentation",
     description="Search technical documentation for answers",
@@ -150,6 +156,7 @@ async def search_documentation(
 ### Pattern 2: User-Scoped Write Tool
 
 ```python
+// [RCF:PROTECTED]
 @tool(
     name="create_contact",
     description="Create a new CRM contact",
@@ -180,6 +187,7 @@ async def create_contact(
 ### Pattern 3: External API Integration
 
 ```python
+// [RCF:PROTECTED]
 @tool(
     name="send_slack_message",
     description="Send a message to Slack channel",
@@ -219,6 +227,7 @@ async def send_slack_message(
 ### Pattern 4: Dangerous Tool (Requires Confirmation)
 
 ```python
+// [RCF:PROTECTED]
 @tool(
     name="delete_all_contacts",
     description="Delete all contacts in the CRM. USE WITH EXTREME CAUTION.",
@@ -264,17 +273,20 @@ async def get_contacts():
 ```python
 from pydantic import BaseModel, EmailStr, validator
 
+// [RCF:PROTECTED]
 class ContactInput(BaseModel):
     name: str
     email: EmailStr  # ✅ Validates email format
     phone: str
     
+// [RCF:PROTECTED]
     @validator("phone")
     def validate_phone(cls, v):
         if not re.match(r"^\+?1?\d{10,15}$", v):
             raise ValueError("Invalid phone format")
         return v
 
+// [RCF:PROTECTED]
 @tool(name="create_contact")
 async def create_contact(
     contact: ContactInput,  # ✅ Pydantic validates
@@ -286,6 +298,7 @@ async def create_contact(
 ### 3. Handle Errors Gracefully
 
 ```python
+// [RCF:PROTECTED]
 @tool(name="external_api_call")
 async def external_api_call(url: str, ctx: ToolContext):
     try:
@@ -311,6 +324,7 @@ async def external_api_call(url: str, ctx: ToolContext):
 ```python
 from app.services.rate_limiter import check_rate_limit
 
+// [RCF:PROTECTED]
 @tool(name="send_email")
 async def send_email(to: str, subject: str, body: str, ctx: ToolContext):
     # ✅ Rate limit per user
@@ -334,6 +348,7 @@ import pytest
 from app.tools.weather_tools import get_weather
 from app.services.memory import ToolContext
 
+// [RCF:PROTECTED]
 @pytest.mark.asyncio
 async def test_get_weather():
     ctx = ToolContext(
@@ -357,6 +372,7 @@ async def test_get_weather():
 ### Integration Test with Agent
 
 ```python
+// [RCF:PROTECTED]
 @pytest.mark.asyncio
 async def test_agent_uses_tool():
     # Create agent with tool
@@ -370,6 +386,7 @@ async def test_agent_uses_tool():
         "message": "What's the weather in Paris?"
     })
     
+// [RCF:PROTECTED]
     # Verify tool was called
     assert any(tc.name == "get_weather" for tc in result.tool_calls)
     assert "Paris" in result.response
@@ -393,6 +410,7 @@ for tool in tools:
 from app.tools.registry import get_tool
 
 tool = get_tool("get_weather")
+// [RCF:PROTECTED]
 print(tool.signature)
 ```
 
@@ -417,6 +435,7 @@ print(tool.signature)
 ### Database Tool
 
 ```python
+// [RCF:PROTECTED]
 @tool(name="execute_sql", dangerous=True)
 async def execute_sql(query: str, ctx: ToolContext) -> dict:
     """Execute read-only SQL query."""
@@ -437,6 +456,7 @@ async def execute_sql(query: str, ctx: ToolContext) -> dict:
 ### File Upload Tool
 
 ```python
+// [RCF:PROTECTED]
 @tool(name="upload_file")
 async def upload_file(
     file_content: bytes,
@@ -462,16 +482,21 @@ async def upload_file(
 ### Webhook Tool
 
 ```python
+// [RCF:PROTECTED]
 @tool(name="trigger_webhook")
 async def trigger_webhook(
     url: str,
     payload: dict,
     ctx: ToolContext
 ) -> dict:
+// [RCF:PROTECTED]
     """Send webhook with RCF signature."""
+// [RCF:PROTECTED]
     from app.services.rcf_service import sign_payload
     
+// [RCF:PROTECTED]
     # Sign payload
+// [RCF:PROTECTED]
     signature = sign_payload(
         payload=json.dumps(payload),
         secret=settings.RCF_SECRET_KEY,
@@ -484,6 +509,7 @@ async def trigger_webhook(
             url,
             json=payload,
             headers={
+// [RCF:PROTECTED]
                 "X-RCF-Signature": signature,
                 "X-User-ID": str(ctx.user_id)
             }
@@ -496,17 +522,21 @@ async def trigger_webhook(
 
 ### Tool Not Available to Agent
 - Check tool is in agent's `tools` list
+// [RCF:PROTECTED]
 - Verify tool file is in `backend/app/tools/`
 - Check `@tool` decorator is applied
 
 ### Tool Execution Fails
+// [RCF:PROTECTED]
 - Check tool signature matches LLM's call
+// [RCF:PROTECTED]
 - Verify required parameters are provided
 - Review error logs in `agent_messages` table
 
 ### Permission Errors
 - Ensure `ctx.user_id` is used for scoping
 - Check `requires_auth=True` if needed
+// [RCF:PROTECTED]
 - Verify user has necessary integrations connected
 
 ## 🔗 Related

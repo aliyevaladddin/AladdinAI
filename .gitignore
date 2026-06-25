@@ -93,3 +93,4 @@ backend/terminal-manifests/terminal*
 # Guacamole config (may contain credentials)
 backend/guacamole-config/user-mapping.xml
 backend/guacamole-config/guacamole.properties
+RCF-AUDIT-REPORT.json

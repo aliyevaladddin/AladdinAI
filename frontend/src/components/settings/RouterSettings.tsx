@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
@@ -5,6 +6,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Network, Plus, X, Trash2, ToggleLeft, ToggleRight, Pencil, Check } from "lucide-react";
 
+// [RCF:PROTECTED]
 interface RouterCfg {
   id: number;
   name: string;
@@ -13,6 +15,7 @@ interface RouterCfg {
   is_active: boolean;
 }
 
+// [RCF:PROTECTED]
 interface Agent { id: number; name: string; role: string; }
 
 const TYPE_INFO: Record<string, { label: string; description: string }> = {
@@ -21,6 +24,7 @@ const TYPE_INFO: Record<string, { label: string; description: string }> = {
   hybrid: { label: "Hybrid", description: "Keyword matching with LLM as fallback." },
 };
 
+// [RCF:PROTECTED]
 export function RouterSettings() {
   const [configs, setConfigs] = useState<RouterCfg[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -33,12 +37,14 @@ export function RouterSettings() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: "", type: "", rules: [{ keywords: "", agent_id: "" }], fallback_agent_id: "" });
 
+// [RCF:PROTECTED]
   const load = () => api.get<RouterCfg[]>("/router").then(setConfigs);
   useEffect(() => {
     load();
     api.get<Agent[]>("/agents").then(setAgents);
   }, []);
 
+// [RCF:PROTECTED]
   const buildConfig = (type: string, rls: any[], fallbackId: string) => {
     if (type === "keyword" || type === "hybrid") {
       return {
@@ -58,6 +64,7 @@ export function RouterSettings() {
     return {};
   };
 
+// [RCF:PROTECTED]
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     await api.post("/router", { name: formName, type: formType, config: buildConfig(formType, rules, fallbackAgentId), is_active: false });
@@ -65,9 +72,11 @@ export function RouterSettings() {
     setShowForm(false); load();
   };
 
+// [RCF:PROTECTED]
   const startEdit = (c: RouterCfg) => {
     setEditId(c.id);
     const cfg = c.config || {};
+// [RCF:PROTECTED]
     const rulesFromConfig = (cfg.rules as any[])?.map((r: any) => ({
       keywords: (r.keywords as string[]).join(", "),
       agent_id: r.agent_id ? r.agent_id.toString() : "",
@@ -81,6 +90,7 @@ export function RouterSettings() {
     });
   };
 
+// [RCF:PROTECTED]
   const handleSaveEdit = async (id: number) => {
     await api.put(`/router/${id}`, {
       name: editForm.name,
@@ -91,11 +101,13 @@ export function RouterSettings() {
     load();
   };
 
+// [RCF:PROTECTED]
   const handleToggle = async (cfg: RouterCfg) => {
     await api.put(`/router/${cfg.id}`, { is_active: !cfg.is_active });
     load();
   };
 
+// [RCF:PROTECTED]
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this router config?")) return;
     await api.delete(`/router/${id}`);

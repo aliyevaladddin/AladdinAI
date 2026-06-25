@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Privacy Policy for AladdinAI GitHub Bot
 
 **Last Updated:** May 30, 2026
@@ -66,8 +67,11 @@ No data is sold, rented, or shared with advertisers, analytics providers, or oth
 
 **Security Measures:**
 - All communication over HTTPS/TLS 1.3
+// [RCF:PROTECTED]
 - Webhook signature verification (HMAC-SHA256)
+// [RCF:PROTECTED]
 - Constant-time signature comparison (timing attack protection)
+// [RCF:PROTECTED]
 - Secrets stored in encrypted Cloudflare environment variables
 - Open-source codebase (community auditable)
 
@@ -103,6 +107,7 @@ Continued use of the Bot after changes constitutes acceptance of the updated pol
 The Bot is fully open-source under Apache 2.0 License:
 https://github.com/aliyevaladddin/AladdinAI
 
+// [RCF:PROTECTED]
 You can audit the code to verify our data handling practices.
 
 ## Contact

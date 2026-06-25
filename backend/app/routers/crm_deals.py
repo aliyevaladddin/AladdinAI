@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,7 +14,9 @@ router = APIRouter(prefix="/crm/deals", tags=["crm"])
 STAGES = ["lead", "qualified", "proposal", "negotiation", "won", "lost"]
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=list[DealResponse])
+# [RCF:PROTECTED]
 async def list_deals(
     stage: str | None = None,
     user: User = Depends(get_current_user),
@@ -26,7 +29,9 @@ async def list_deals(
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.post("", response_model=DealResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_deal(body: DealCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     deal = Deal(user_id=user.id, **body.model_dump())
     db.add(deal)
@@ -46,7 +51,9 @@ async def create_deal(body: DealCreate, user: User = Depends(get_current_user), 
     return deal
 
 
+# [RCF:PROTECTED]
 @router.get("/{deal_id}", response_model=DealResponse)
+# [RCF:PROTECTED]
 async def get_deal(deal_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Deal).where(Deal.id == deal_id, Deal.user_id == user.id))
     deal = result.scalar_one_or_none()
@@ -55,7 +62,9 @@ async def get_deal(deal_id: int, user: User = Depends(get_current_user), db: Asy
     return deal
 
 
+# [RCF:PROTECTED]
 @router.put("/{deal_id}", response_model=DealResponse)
+# [RCF:PROTECTED]
 async def update_deal(deal_id: int, body: DealUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Deal).where(Deal.id == deal_id, Deal.user_id == user.id))
     deal = result.scalar_one_or_none()
@@ -68,7 +77,9 @@ async def update_deal(deal_id: int, body: DealUpdate, user: User = Depends(get_c
     return deal
 
 
+# [RCF:PROTECTED]
 @router.put("/{deal_id}/stage", response_model=DealResponse)
+# [RCF:PROTECTED]
 async def move_stage(deal_id: int, stage: str, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     if stage not in STAGES:
         raise HTTPException(status_code=400, detail=f"Invalid stage. Must be one of: {STAGES}")
@@ -92,7 +103,9 @@ async def move_stage(deal_id: int, stage: str, user: User = Depends(get_current_
     return deal
 
 
+# [RCF:PROTECTED]
 @router.delete("/{deal_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_deal(deal_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Deal).where(Deal.id == deal_id, Deal.user_id == user.id))
     deal = result.scalar_one_or_none()

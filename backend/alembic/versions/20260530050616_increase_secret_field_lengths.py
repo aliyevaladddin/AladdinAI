@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """increase secret field lengths for GitHub App tokens
 
 GitHub App installation tokens will soon use a new stateless format (ghs_...)
@@ -21,6 +22,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     """
     Increase the length of secret fields to accommodate GitHub's new token format.
@@ -52,6 +54,7 @@ def upgrade() -> None:
                               existing_nullable=True)
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     # Revert to original length (may truncate data if new tokens exist)
     with op.batch_alter_table('messaging_channels', schema=None) as batch_op:

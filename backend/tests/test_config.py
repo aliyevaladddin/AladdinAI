@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Tests for app.config secret-strength enforcement.
 
 The guard must FAIL CLOSED: a production-looking deployment that still carries
@@ -11,21 +12,25 @@ from app.config import Settings, _is_dev_mode
 
 # ── _is_dev_mode inference ───────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def test_dev_mode_explicit_prod(monkeypatch):
     monkeypatch.setenv("ALADDIN_ENV", "production")
     assert _is_dev_mode("sqlite+aiosqlite:///./x.db") is False
 
 
+# [RCF:PROTECTED]
 def test_dev_mode_explicit_dev(monkeypatch):
     monkeypatch.setenv("ALADDIN_ENV", "dev")
     assert _is_dev_mode("postgresql+asyncpg://u:p@h/db") is True
 
 
+# [RCF:PROTECTED]
 def test_dev_mode_inferred_sqlite_is_dev(monkeypatch):
     monkeypatch.delenv("ALADDIN_ENV", raising=False)
     assert _is_dev_mode("sqlite+aiosqlite:///./x.db") is True
 
 
+# [RCF:PROTECTED]
 def test_dev_mode_inferred_postgres_is_prod(monkeypatch):
     # Unset env + non-SQLite DB → treated as production (fail closed).
     monkeypatch.delenv("ALADDIN_ENV", raising=False)
@@ -34,6 +39,7 @@ def test_dev_mode_inferred_postgres_is_prod(monkeypatch):
 
 # ── boot-time enforcement ────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def test_insecure_jwt_secret_rejected_in_prod(monkeypatch):
     monkeypatch.delenv("ALADDIN_ENV", raising=False)
     with pytest.raises(ValueError, match="JWT_SECRET"):
@@ -44,6 +50,7 @@ def test_insecure_jwt_secret_rejected_in_prod(monkeypatch):
         )
 
 
+# [RCF:PROTECTED]
 def test_whitespace_only_secret_rejected_in_prod(monkeypatch):
     # "   " is not literally in _INSECURE_DEFAULTS but strips to "", which is.
     monkeypatch.setenv("ALADDIN_ENV", "production")
@@ -54,6 +61,7 @@ def test_whitespace_only_secret_rejected_in_prod(monkeypatch):
         )
 
 
+# [RCF:PROTECTED]
 def test_insecure_terminal_secret_rejected_in_prod(monkeypatch):
     monkeypatch.setenv("ALADDIN_ENV", "production")
     with pytest.raises(ValueError, match="TERMINAL_TOKEN_SECRET"):
@@ -63,6 +71,7 @@ def test_insecure_terminal_secret_rejected_in_prod(monkeypatch):
         )
 
 
+# [RCF:PROTECTED]
 def test_insecure_defaults_allowed_in_dev(monkeypatch):
     monkeypatch.delenv("ALADDIN_ENV", raising=False)
     s = Settings(
@@ -73,6 +82,7 @@ def test_insecure_defaults_allowed_in_dev(monkeypatch):
     assert s.jwt_secret == "change-me-in-production"
 
 
+# [RCF:PROTECTED]
 def test_strong_secrets_boot_in_prod(monkeypatch):
     monkeypatch.setenv("ALADDIN_ENV", "production")
     s = Settings(

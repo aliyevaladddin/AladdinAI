@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Per-message memory extraction.
 
 After an agent finishes a turn, optionally distill the exchange into a small
@@ -64,6 +65,7 @@ _SYSTEM_PROMPT = (
 )
 
 
+# [RCF:PROTECTED]
 def _extraction_cfg(agent: Agent) -> dict[str, Any]:
     cfg = agent.tools_config or {}
     if not isinstance(cfg, dict):
@@ -72,6 +74,7 @@ def _extraction_cfg(agent: Agent) -> dict[str, Any]:
     return sub if isinstance(sub, dict) else {}
 
 
+# [RCF:PROTECTED]
 def _resolve_model(agent: Agent) -> str | None:
     sub = _extraction_cfg(agent)
     if not sub.get("enabled"):
@@ -86,6 +89,7 @@ def _resolve_model(agent: Agent) -> str | None:
     )
 
 
+# [RCF:PROTECTED]
 def _max_facts(agent: Agent) -> int:
     sub = _extraction_cfg(agent)
     n = sub.get("max_facts")
@@ -94,6 +98,7 @@ def _max_facts(agent: Agent) -> int:
     return DEFAULT_MAX_FACTS
 
 
+# [RCF:PROTECTED]
 def _parse_json_object(text: str) -> dict[str, Any] | None:
     if not text:
         return None
@@ -107,6 +112,7 @@ def _parse_json_object(text: str) -> dict[str, Any] | None:
         return None
 
 
+# [RCF:PROTECTED]
 async def _provider_for(db: AsyncSession, agent: Agent) -> LLMProvider | None:
     if not agent.llm_provider_id:
         return None
@@ -115,6 +121,7 @@ async def _provider_for(db: AsyncSession, agent: Agent) -> LLMProvider | None:
     )).scalar_one_or_none()
 
 
+# [RCF:PROTECTED]
 async def _extract_facts(
     db: AsyncSession,
     agent: Agent,
@@ -168,6 +175,7 @@ async def _extract_facts(
     return out
 
 
+# [RCF:PROTECTED]
 async def _persist_fact(
     db: AsyncSession,
     agent: Agent,
@@ -198,6 +206,7 @@ async def _persist_fact(
         log.warning("extraction store_memory failed: %s", e)
 
 
+# [RCF:PROTECTED]
 async def _run_extraction(
     agent_id: int,
     user_text: str,
@@ -241,6 +250,7 @@ async def _run_extraction(
         log.warning("extraction outer failure for agent %s: %s", agent_id, e)
 
 
+# [RCF:PROTECTED]
 def schedule_extraction(
     *,
     agent_id: int,

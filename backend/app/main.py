@@ -41,7 +41,9 @@ except Exception:
     VERSION = "2.1.5"  # Fallback
 
 
+# [RCF:PROTECTED]
 @asynccontextmanager
+# [RCF:PROTECTED]
 async def lifespan(app: FastAPI):
     """Manages startup and shutdown of background services."""
     log.info("AladdinAI starting up (v%s)", VERSION)
@@ -147,20 +149,28 @@ app.include_router(notifications.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
 app.include_router(terminal_providers.router, prefix="/api/terminal", tags=["terminal"])
 
+# [RCF:PROTECTED]
 @app.get("/")
+# [RCF:PROTECTED]
 @limiter.limit("60/minute")
+# [RCF:PROTECTED]
 async def root(request: Request):
     return {"message": "AladdinAI API is running", "version": VERSION, "protocol": "RCF/2.0.3"}
 
 
+# [RCF:PROTECTED]
 @app.get("/health")
+# [RCF:PROTECTED]
 @limiter.limit("120/minute")
+# [RCF:PROTECTED]
 async def health(request: Request):
     """Health check endpoint for load balancers and container orchestration."""
     return {"status": "ok", "version": VERSION}
 
 
+# [RCF:PROTECTED]
 @app.get("/api/edition")
+# [RCF:PROTECTED]
 async def edition():
     """Open-core edition marker. Lets the frontend / CLI / `doctor` learn the
     commercial boundary (e.g. whether to surface forge UI). Public, non-secret.

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Safety stack — optional input/output moderation and PII redaction.
 
 Three checks (all opt-in, all fail-open):
@@ -68,11 +69,13 @@ CHECK_NAMES = {"ingress", "egress", "pii"}
 # Config helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def _safety_cfg(agent: Agent) -> dict[str, Any]:
     cfg = agent.tools_config or {}
     return cfg if isinstance(cfg, dict) else {}
 
 
+# [RCF:PROTECTED]
 def _resolve_model(agent: Agent, check: str) -> str | None:
     cfg = _safety_cfg(agent)
     per = (cfg.get("safety") or {}).get(check) or {}
@@ -90,6 +93,7 @@ _PII_PHASE_DEFAULTS = {
 }
 
 
+# [RCF:PROTECTED]
 def _pii_phase_enabled(agent: Agent, phase: str) -> bool:
     """Whether PII redaction should run for the given phase."""
     cfg = _safety_cfg(agent)
@@ -103,11 +107,13 @@ def _pii_phase_enabled(agent: Agent, phase: str) -> bool:
     return _PII_PHASE_DEFAULTS.get(phase, False)
 
 
+# [RCF:PROTECTED]
 def block_response(agent: Agent) -> str:
     cfg = _safety_cfg(agent)
     return cfg.get("safety_block_response") or DEFAULT_BLOCK_RESPONSE
 
 
+# [RCF:PROTECTED]
 async def _provider_for(db: AsyncSession, agent: Agent) -> LLMProvider | None:
     if not agent.llm_provider_id:
         return None
@@ -116,6 +122,7 @@ async def _provider_for(db: AsyncSession, agent: Agent) -> LLMProvider | None:
     )).scalar_one_or_none()
 
 
+# [RCF:PROTECTED]
 async def _call_safety_model(
     provider: LLMProvider,
     model: str,
@@ -135,6 +142,7 @@ async def _call_safety_model(
     return (res.get("content") or "").strip()
 
 
+# [RCF:PROTECTED]
 def _parse_json_object(text: str) -> dict[str, Any] | None:
     if not text:
         return None
@@ -161,6 +169,7 @@ _MODERATION_SYSTEM = (
 )
 
 
+# [RCF:PROTECTED]
 def _flatten_multimodal(text: Any) -> str:
     """Accept str or OpenAI multimodal list; return plain text for moderation."""
     if isinstance(text, str) or text is None:
@@ -176,6 +185,7 @@ def _flatten_multimodal(text: Any) -> str:
     return str(text)
 
 
+# [RCF:PROTECTED]
 async def _moderate(
     db: AsyncSession,
     *,
@@ -216,10 +226,12 @@ async def _moderate(
     return {"safe": safe, "reason": reason}
 
 
+# [RCF:PROTECTED]
 async def safety_ingress(db: AsyncSession, *, agent: Agent, text: str) -> dict[str, Any]:
     return await _moderate(db, agent=agent, check="ingress", text=text)
 
 
+# [RCF:PROTECTED]
 async def safety_egress(db: AsyncSession, *, agent: Agent, text: str) -> dict[str, Any]:
     return await _moderate(db, agent=agent, check="egress", text=text)
 
@@ -241,6 +253,7 @@ _REGEX_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 ]
 
 
+# [RCF:PROTECTED]
 def _regex_redact(text: str) -> tuple[str, list[str]]:
     out = text
     found: list[str] = []
@@ -260,6 +273,7 @@ _PII_SYSTEM = (
 )
 
 
+# [RCF:PROTECTED]
 async def safety_pii(
     db: AsyncSession,
     *,

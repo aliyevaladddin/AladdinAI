@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """add embedding_model to llm_providers
 
 Revision ID: 438f7ac908b6
@@ -16,11 +17,13 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     with op.batch_alter_table('llm_providers', schema=None) as batch_op:
         batch_op.add_column(sa.Column('embedding_model', sa.String(length=255), nullable=True))
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     with op.batch_alter_table('llm_providers', schema=None) as batch_op:
         batch_op.drop_column('embedding_model')

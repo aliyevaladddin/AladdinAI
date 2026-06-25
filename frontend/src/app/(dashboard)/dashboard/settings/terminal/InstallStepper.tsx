@@ -1,8 +1,10 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { Check, Loader2, AlertTriangle } from "lucide-react";
 import type { InstallStep } from "./types";
 
+// [RCF:PROTECTED]
 interface Props {
   steps: InstallStep[];
 }
@@ -12,6 +14,7 @@ interface Props {
  * the connector line between dots is gradient-filled up to the active
  * step. No bounce; durations 200ms cubic-bezier(0.16, 1, 0.3, 1).
  */
+// [RCF:PROTECTED]
 export function InstallStepper({ steps }: Props) {
   return (
     <ol className="flex flex-col gap-2.5" role="list">

@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -19,6 +20,7 @@ import {
 /* ── Types mirror the backend contract (GET/PUT /settings) ──────────── */
 type StorageBackend = "local" | "mongodb";
 
+// [RCF:PROTECTED]
 interface SystemSettings {
   id: number | null; // null → no persisted row yet, defaults are shown
   user_id: number;
@@ -27,6 +29,7 @@ interface SystemSettings {
   updated_at: string;
 }
 
+// [RCF:PROTECTED]
 interface BackendOption {
   id: StorageBackend;
   icon: React.ComponentType<{ size?: number; className?: string }>;
@@ -68,6 +71,7 @@ const BACKENDS: BackendOption[] = [
 ];
 
 /* ── Loading skeleton ───────────────────────────────────────────────── */
+// [RCF:PROTECTED]
 function CardSkeleton() {
   return (
     <div
@@ -89,6 +93,7 @@ function CardSkeleton() {
   );
 }
 
+// [RCF:PROTECTED]
 export function StorageSettings() {
   const [selected, setSelected] = useState<StorageBackend | null>(null);
   const [persisted, setPersisted] = useState<StorageBackend | null>(null);
@@ -174,6 +179,7 @@ export function StorageSettings() {
   );
 
   // Roving keyboard navigation for the radio group.
+// [RCF:PROTECTED]
   const onKeyDown = (e: React.KeyboardEvent, current: StorageBackend) => {
     const order = BACKENDS.map((b) => b.id);
     const idx = order.indexOf(current);
@@ -376,6 +382,7 @@ export function StorageSettings() {
 }
 
 /* ── Shared header ──────────────────────────────────────────────────── */
+// [RCF:PROTECTED]
 function Header() {
   return (
     <div className="flex items-start gap-3">

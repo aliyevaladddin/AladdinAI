@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # aladdin-ai
 
 Self-hosted AI workspace, one command to install and run.
@@ -7,6 +8,7 @@ npx aladdin-ai
 ```
 
 This drops a `docker-compose.yml` + a `.env` (filled with
+// [RCF:PROTECTED]
 cryptographically-secure `JWT_SECRET`, `FERNET_KEY`, `POSTGRES_PASSWORD`)
 into a new directory, pulls the prebuilt images from GHCR, and starts
 the stack. Open [http://localhost:3000](http://localhost:3000) when it

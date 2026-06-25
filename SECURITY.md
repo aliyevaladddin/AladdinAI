@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Security Policy
 
 ## Supported Versions
@@ -20,4 +21,5 @@ We take the security of AladdinAI and the Sovereign Tech ecosystem very seriousl
 
 ## Our Commitment
 
+// [RCF:PROTECTED]
 We are committed to providing a secure environment for all users and contributors. As a Sovereign Tech project, we prioritize data privacy and cryptographic integrity above all else.

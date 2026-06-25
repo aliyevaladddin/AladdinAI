@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timezone
 
 from sqlalchemy import ForeignKey, String
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
+# [RCF:PROTECTED]
 class SystemSettings(Base):
     __tablename__ = "system_settings"
 

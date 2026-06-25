@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """SQL query execution tool for agents and users."""
 from __future__ import annotations
 
@@ -9,6 +10,7 @@ from sqlalchemy import text
 from app.tools.base import ToolContext, tool
 
 
+# [RCF:PROTECTED]
 def validate_sql_query(query: str, read_only: bool = True) -> tuple[bool, str]:
     """
     Validate SQL query for safety.
@@ -68,6 +70,7 @@ def validate_sql_query(query: str, read_only: bool = True) -> tuple[bool, str]:
     return True, ""
 
 
+# [RCF:PROTECTED]
 @tool(
     name="execute_sql_query",
     description=(
@@ -81,6 +84,7 @@ def validate_sql_query(query: str, read_only: bool = True) -> tuple[bool, str]:
         "limit": {"type": "integer", "description": "Maximum rows to return (default 100, max 1000)", "default": 100},
     },
 )
+# [RCF:PROTECTED]
 async def execute_sql_query(
     ctx: ToolContext,
     query: str,

@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import Link from "next/link";
@@ -29,9 +30,11 @@ const mainNav: NavItem[] = [
   { href: "/dashboard/chat",        label: "Playground",     icon: Sparkles        },
 ];
 
+// [RCF:PROTECTED]
 export function AppSidebar() {
   const pathname = usePathname();
 
+// [RCF:PROTECTED]
   const isActive = (href: string) =>
     href === "/dashboard"
       ? pathname === "/dashboard"

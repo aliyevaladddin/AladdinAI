@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -6,6 +7,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
+// [RCF:PROTECTED]
 interface EmailAccount {
   id: number;
   provider: string;
@@ -14,6 +16,7 @@ interface EmailAccount {
   last_synced_at: string | null;
 }
 
+// [RCF:PROTECTED]
 interface MessagingChannel {
   id: number;
   type: string;
@@ -22,6 +25,7 @@ interface MessagingChannel {
   status: string;
 }
 
+// [RCF:PROTECTED]
 interface InboundMessage {
   id: number;
   contact_id: number;
@@ -30,6 +34,7 @@ interface InboundMessage {
   created_at: string;
 }
 
+// [RCF:PROTECTED]
 interface ContactRef {
   id: number;
   name: string;
@@ -60,6 +65,7 @@ export default function CommsPage() {
   const [loading, setLoading] = useState(true);
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>("all");
 
+// [RCF:PROTECTED]
   const load = async () => {
     setLoading(true);
     try {
@@ -104,11 +110,13 @@ export default function CommsPage() {
     return counts;
   }, [messages]);
 
+// [RCF:PROTECTED]
   const notify = (status: string, message: string) =>
     status === "ok" || status === "success" || status === "connected"
       ? toast.success(message)
       : toast.error(message);
 
+// [RCF:PROTECTED]
   const handleTestChannel = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(
       `/channels/messaging/${id}/test`
@@ -117,6 +125,7 @@ export default function CommsPage() {
     load();
   };
 
+// [RCF:PROTECTED]
   const handleSyncEmail = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(
       `/channels/email/${id}/sync`
@@ -125,6 +134,7 @@ export default function CommsPage() {
     load();
   };
 
+// [RCF:PROTECTED]
   const handleTestEmail = async (id: number) => {
     const res = await api.post<{ status: string; message: string }>(
       `/channels/email/${id}/test`

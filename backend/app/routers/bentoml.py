@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -14,11 +15,14 @@ log = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# [RCF:PROTECTED]
 async def get_db():
     async with async_session() as session:
         yield session
 
+# [RCF:PROTECTED]
 @router.get("")
+# [RCF:PROTECTED]
 async def get_bentoml_connections(
     db: AsyncSession = Depends(get_db),
     current_user = Depends(get_current_user),
@@ -28,7 +32,9 @@ async def get_bentoml_connections(
     )
     return result.scalars().all()
 
+# [RCF:PROTECTED]
 @router.post("")
+# [RCF:PROTECTED]
 async def create_bentoml_connection(
     body: BentoMLCreate,
     db: AsyncSession = Depends(get_db),
@@ -45,7 +51,9 @@ async def create_bentoml_connection(
     await db.refresh(new_conn)
     return new_conn
 
+# [RCF:PROTECTED]
 @router.post("/{conn_id}/deploy")
+# [RCF:PROTECTED]
 async def deploy_service(
     conn_id: int, 
     body: BentoMLDeployRequest,
@@ -78,8 +86,11 @@ async def deploy_service(
         "username": vm.username,
         "known_hosts": None
     }
+# [RCF:PROTECTED]
     # Note: Use vm.password_encrypted if needed as per main.py
+# [RCF:PROTECTED]
     if hasattr(vm, 'password_encrypted') and vm.password_encrypted:
+# [RCF:PROTECTED]
         connect_kwargs["password"] = decrypt(vm.password_encrypted)
 
     try:
@@ -115,7 +126,9 @@ async def deploy_service(
         return {"status": "error", "message": "An unexpected error occurred during deployment."}
 
 
+# [RCF:PROTECTED]
 @router.put("/{conn_id}")
+# [RCF:PROTECTED]
 async def update_bentoml_connection(
     conn_id: int,
     body: BentoMLCreate,
@@ -141,7 +154,9 @@ async def update_bentoml_connection(
     return conn
 
 
+# [RCF:PROTECTED]
 @router.post("/{conn_id}/test")
+# [RCF:PROTECTED]
 async def test_bentoml(conn_id: int, db: AsyncSession = Depends(get_db), user = Depends(get_current_user)):
     result = await db.execute(
         select(BentoMLConnection).where(BentoMLConnection.id == conn_id, BentoMLConnection.user_id == user.id)
@@ -170,7 +185,9 @@ async def test_bentoml(conn_id: int, db: AsyncSession = Depends(get_db), user = 
         return {"status": "error", "message": "An unexpected error occurred during the health check."}
 
 
+# [RCF:PROTECTED]
 @router.delete("/{conn_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_bentoml_connection(
     conn_id: int,
     db: AsyncSession = Depends(get_db),

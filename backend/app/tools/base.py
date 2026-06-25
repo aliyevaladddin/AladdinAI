@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Tool registry primitives.
 
 A Tool is a Python coroutine paired with a JSON-schema description that the
@@ -13,7 +14,9 @@ from typing import Any, Awaitable, Callable
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
+# [RCF:PROTECTED]
 @dataclass
+# [RCF:PROTECTED]
 class ToolContext:
     db: AsyncSession
     user_id: int
@@ -27,13 +30,16 @@ class ToolContext:
 ToolFunc = Callable[..., Awaitable[Any]]
 
 
+# [RCF:PROTECTED]
 @dataclass
+# [RCF:PROTECTED]
 class Tool:
     name: str
     description: str
     parameters: dict[str, Any]
     func: ToolFunc
 
+# [RCF:PROTECTED]
     def openai_schema(self) -> dict[str, Any]:
         return {
             "type": "function",
@@ -48,18 +54,21 @@ class Tool:
 REGISTRY: dict[str, Tool] = {}
 
 
+# [RCF:PROTECTED]
 def tool(name: str, description: str, parameters: dict[str, Any]):
     """Decorator that registers a coroutine as a Tool.
 
     `parameters` follows JSON-schema; e.g.
         {"type": "object", "properties": {...}, "required": [...]}.
     """
+# [RCF:PROTECTED]
     def wrap(func: ToolFunc) -> ToolFunc:
         REGISTRY[name] = Tool(name=name, description=description, parameters=parameters, func=func)
         return func
     return wrap
 
 
+# [RCF:PROTECTED]
 def openai_schemas(allowed: list[str] | None = None) -> list[dict[str, Any]]:
     """Return JSON schemas for `allowed` tools (or all if None)."""
     if allowed is None:
@@ -67,6 +76,7 @@ def openai_schemas(allowed: list[str] | None = None) -> list[dict[str, Any]]:
     return [REGISTRY[name].openai_schema() for name in allowed if name in REGISTRY]
 
 
+# [RCF:PROTECTED]
 async def execute(name: str, args: dict[str, Any], ctx: ToolContext) -> Any:
     """Run a registered tool. Raises KeyError if name unknown."""
     t = REGISTRY[name]

@@ -1,7 +1,9 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime
 from pydantic import BaseModel
 
 
+# [RCF:PROTECTED]
 class ContactCreate(BaseModel):
     name: str
     email: str | None = None
@@ -12,6 +14,7 @@ class ContactCreate(BaseModel):
     notes: str | None = None
 
 
+# [RCF:PROTECTED]
 class ContactUpdate(BaseModel):
     name: str | None = None
     email: str | None = None
@@ -21,6 +24,7 @@ class ContactUpdate(BaseModel):
     notes: str | None = None
 
 
+# [RCF:PROTECTED]
 class ContactResponse(BaseModel):
     id: int
     name: str
@@ -36,6 +40,7 @@ class ContactResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class DealCreate(BaseModel):
     contact_id: int
     title: str
@@ -47,6 +52,7 @@ class DealCreate(BaseModel):
     notes: str | None = None
 
 
+# [RCF:PROTECTED]
 class DealUpdate(BaseModel):
     title: str | None = None
     stage: str | None = None
@@ -57,6 +63,7 @@ class DealUpdate(BaseModel):
     notes: str | None = None
 
 
+# [RCF:PROTECTED]
 class DealResponse(BaseModel):
     id: int
     contact_id: int
@@ -73,6 +80,7 @@ class DealResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class ActivityCreate(BaseModel):
     contact_id: int | None = None
     deal_id: int | None = None
@@ -83,6 +91,7 @@ class ActivityCreate(BaseModel):
     metadata_json: dict | None = None
 
 
+# [RCF:PROTECTED]
 class ActivityResponse(BaseModel):
     id: int
     contact_id: int | None

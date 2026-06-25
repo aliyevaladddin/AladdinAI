@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Frontend
 
 Next.js 15 (App Router) dashboard for AladdinAI. TypeScript + Tailwind +

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """SSRF protection for outbound HTTP calls to user-configured URLs.
 
 Some channel configs (notably WAHA's `waha_url`) come from the dashboard,
@@ -46,6 +47,7 @@ if _ALLOW_PRIVATE:
     )
 
 
+# [RCF:PROTECTED]
 def _is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     # Dev overrides
     if _ALLOW_LOCALHOST and ip.is_loopback:
@@ -66,6 +68,7 @@ def _is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     )
 
 
+# [RCF:PROTECTED]
 def validate_external_url(url: str) -> None:
     """Raise HTTPException(400) if `url` is unsafe to fetch from the backend.
 

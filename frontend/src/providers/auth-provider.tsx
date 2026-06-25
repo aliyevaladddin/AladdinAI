@@ -1,14 +1,17 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { api } from "@/lib/api";
 
+// [RCF:PROTECTED]
 interface User {
   id: number;
   email: string;
   name: string;
 }
 
+// [RCF:PROTECTED]
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -19,6 +22,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// [RCF:PROTECTED]
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+// [RCF:PROTECTED]
   const login = async (email: string, password: string) => {
     const data = await api.post<{ access_token: string; refresh_token: string }>("/auth/login", { email, password });
     localStorage.setItem("access_token", data.access_token);
@@ -49,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(me);
   };
 
+// [RCF:PROTECTED]
   const register = async (email: string, password: string, name: string) => {
     const data = await api.post<{ access_token: string; refresh_token: string }>("/auth/register", { email, password, name });
     localStorage.setItem("access_token", data.access_token);
@@ -58,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(me);
   };
 
+// [RCF:PROTECTED]
   const logout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -68,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext value={{ user, loading, login, register, logout }}>{children}</AuthContext>;
 }
 
+// [RCF:PROTECTED]
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");

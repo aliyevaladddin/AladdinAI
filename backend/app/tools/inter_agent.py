@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Inter-agent communication tools.
 
 `delegate` queues an async handoff (writes a row to `agent_messages` with
@@ -22,6 +23,7 @@ from app.services.llm_service import LLMError, chat_completion
 from app.tools.base import ToolContext, tool
 
 
+# [RCF:PROTECTED]
 async def _resolve_target(ctx: ToolContext, target: str | int) -> Agent | None:
     if isinstance(target, int) or (isinstance(target, str) and target.isdigit()):
         q = select(Agent).where(Agent.id == int(target), Agent.user_id == ctx.user_id)
@@ -33,6 +35,7 @@ async def _resolve_target(ctx: ToolContext, target: str | int) -> Agent | None:
     return result.scalars().first()
 
 
+# [RCF:PROTECTED]
 async def _load_source_agent(ctx: ToolContext) -> Agent | None:
     if ctx.agent_id is None:
         return None
@@ -41,6 +44,7 @@ async def _load_source_agent(ctx: ToolContext) -> Agent | None:
     )).scalar_one_or_none()
 
 
+# [RCF:PROTECTED]
 @tool(
     name="delegate",
     description=(
@@ -69,6 +73,7 @@ async def _load_source_agent(ctx: ToolContext) -> Agent | None:
         "required": ["target", "task"],
     },
 )
+# [RCF:PROTECTED]
 async def delegate(ctx: ToolContext, target: str, task: str, context: dict | None = None) -> dict:
     target_agent = await _resolve_target(ctx, target)
     if not target_agent:
@@ -105,6 +110,7 @@ async def delegate(ctx: ToolContext, target: str, task: str, context: dict | Non
     }
 
 
+# [RCF:PROTECTED]
 @tool(
     name="ask_agent",
     description=(
@@ -127,6 +133,7 @@ async def delegate(ctx: ToolContext, target: str, task: str, context: dict | Non
         "required": ["target", "question"],
     },
 )
+# [RCF:PROTECTED]
 async def ask_agent(ctx: ToolContext, target: str, question: str) -> dict:
     target_agent = await _resolve_target(ctx, target)
     if not target_agent:

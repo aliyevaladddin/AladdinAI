@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Apply user-defined routing rules to pick which agent handles an
 incoming message.
 
@@ -36,6 +37,7 @@ from app.services.llm_service import LLMError, chat_completion
 log = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 async def resolve_agent_id(
     db: AsyncSession,
     user_id: int,
@@ -75,6 +77,7 @@ async def resolve_agent_id(
     return None
 
 
+# [RCF:PROTECTED]
 async def _resolve_one(
     db: AsyncSession, user_id: int, cfg: RouterConfig, text: str
 ) -> int | None:
@@ -106,6 +109,7 @@ async def _resolve_one(
 _WORD_RE = re.compile(r"\b\w+\b", re.UNICODE)
 
 
+# [RCF:PROTECTED]
 def _match_keywords(rules: list[dict], text: str) -> int | None:
     """Walk rules in order. First rule whose keyword appears in `text`
     (case-insensitive, substring match) wins. Empty rules are skipped.
@@ -143,6 +147,7 @@ _CLASSIFIER_PROMPT = (
 )
 
 
+# [RCF:PROTECTED]
 async def _classify_with_llm(
     db: AsyncSession,
     user_id: int,

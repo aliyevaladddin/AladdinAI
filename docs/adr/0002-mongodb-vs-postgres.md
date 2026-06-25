@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # ADR-0002: Data Storage Strategy - MongoDB vs Postgres
 
 **Status**: Accepted

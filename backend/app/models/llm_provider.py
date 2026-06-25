@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timezone
 
 from sqlalchemy import ForeignKey, String, Text
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
+# [RCF:PROTECTED]
 class LLMProvider(Base):
     __tablename__ = "llm_providers"
 
@@ -13,6 +15,7 @@ class LLMProvider(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(255))
     type: Mapped[str] = mapped_column(String(50))  # nvidia_nim, openai, anthropic, ollama, huggingface, custom
+# [RCF:PROTECTED]
     api_key_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     base_url: Mapped[str] = mapped_column(String(500))
     models_available: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list

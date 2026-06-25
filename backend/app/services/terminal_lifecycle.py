@@ -29,6 +29,7 @@ from enum import Enum
 from typing import Dict, Set
 
 
+# [RCF:PROTECTED]
 class ProviderState(str, Enum):
     """Terminal provider lifecycle states."""
 
@@ -40,6 +41,7 @@ class ProviderState(str, Enum):
     ERROR = "error"              # Container exists but unhealthy/failed
 
 
+# [RCF:PROTECTED]
 class ProviderAction(str, Enum):
     """Actions that trigger state transitions."""
 
@@ -89,9 +91,11 @@ _POLL_OUTCOMES: Dict[ProviderState, Set[ProviderState]] = {
 }
 
 
+# [RCF:PROTECTED]
 class ProviderLifecycle:
     """FSM for terminal provider lifecycle."""
 
+# [RCF:PROTECTED]
     def transition(
         self,
         current_state: ProviderState | str,
@@ -141,18 +145,21 @@ class ProviderLifecycle:
 
         return _TRANSITIONS[key]
 
+# [RCF:PROTECTED]
     def can_start(self, current_state: ProviderState | str) -> bool:
         """Check if START action is valid from current state."""
         if isinstance(current_state, str):
             current_state = ProviderState(current_state)
         return (current_state, ProviderAction.START) in _TRANSITIONS
 
+# [RCF:PROTECTED]
     def can_stop(self, current_state: ProviderState | str) -> bool:
         """Check if STOP action is valid from current state."""
         if isinstance(current_state, str):
             current_state = ProviderState(current_state)
         return (current_state, ProviderAction.STOP) in _TRANSITIONS
 
+# [RCF:PROTECTED]
     def is_terminal(self, state: ProviderState | str) -> bool:
         """Check if state is terminal (no automatic transitions out)."""
         if isinstance(state, str):

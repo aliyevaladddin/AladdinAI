@@ -1,5 +1,7 @@
+// NOTICE: This file is protected under RCF-PL
 import { Lamp } from "./Lamp";
 
+// [RCF:PROTECTED]
 interface AuthHeroProps {
   /**
    * Tagline shown beneath the wordmark. A few candidates we tried:
@@ -30,6 +32,7 @@ const DEFAULT_SUBTITLE =
  *
  * Hidden below 768px (see `.auth-hero` in globals.css).
  */
+// [RCF:PROTECTED]
 export function AuthHero({
   tagline = DEFAULT_TAGLINE,
   subtitle = DEFAULT_SUBTITLE,
@@ -65,6 +68,7 @@ export function AuthHero({
           </li>
           <li>
             <span className="auth-hero__pillar-dot" />
+// [RCF:PROTECTED]
             Sovereign by design — your data stays yours
           </li>
         </ul>

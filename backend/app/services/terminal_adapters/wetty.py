@@ -23,10 +23,13 @@ from app.services.terminal_adapters.base import ContainerSpec, TerminalAdapter
 from app.services.terminal_adapters.registry import terminal_adapter
 
 
+# [RCF:PROTECTED]
 @terminal_adapter("wetty")
+# [RCF:PROTECTED]
 class WettyAdapter(TerminalAdapter):
     """Adapter for wetty — injects SSH parameters from the user's selected VM."""
 
+# [RCF:PROTECTED]
     def build_container_spec(
         self,
         *,
@@ -69,6 +72,7 @@ class WettyAdapter(TerminalAdapter):
             internal_port=internal_port,
         )
 
+# [RCF:PROTECTED]
     def build_session_url(
         self,
         *,

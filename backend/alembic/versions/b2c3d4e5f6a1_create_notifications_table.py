@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """create notifications table
 
 Revision ID: b2c3d4e5f6a1
@@ -16,6 +17,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     # Check if table already exists to be safe and robust
     conn = op.get_bind()
@@ -46,5 +48,6 @@ def upgrade() -> None:
     )
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     op.drop_table('notifications')

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """add system_settings table
 
 Revision ID: 09f42bd494e9
@@ -16,6 +17,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     op.create_table(
         'system_settings',
@@ -30,5 +32,6 @@ def upgrade() -> None:
     )
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     op.drop_table('system_settings')

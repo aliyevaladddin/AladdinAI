@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # AladdinAI — Dev Container
 
 This directory configures a ready-to-code development environment for

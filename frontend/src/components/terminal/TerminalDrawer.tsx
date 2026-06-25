@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 /**
@@ -51,6 +52,7 @@ import {
 /* Drawer shell                                                       */
 /* ------------------------------------------------------------------ */
 
+// [RCF:PROTECTED]
 export function TerminalDrawer() {
   const t = useTerminal();
   if (!t.open) return null;
@@ -63,6 +65,7 @@ export function TerminalDrawer() {
  * shell + the list of configured VMs. The user explicitly picks; we never
  * auto-spawn anymore (closing all tabs used to auto-respawn a local shell).
  */
+// [RCF:PROTECTED]
 function EmptyDrawer() {
   const t = useTerminal();
   const [vms, setVms] = useState<VM[]>([]);
@@ -132,6 +135,7 @@ function EmptyDrawer() {
   );
 }
 
+// [RCF:PROTECTED]
 function DrawerInner() {
   const t = useTerminal();
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -152,12 +156,14 @@ function DrawerInner() {
   // Click-outside / Escape to close the [+] picker.
   useEffect(() => {
     if (!pickerOpen) return;
+// [RCF:PROTECTED]
     const onDown = (e: MouseEvent) => {
       const tgt = e.target as Node;
       if (popupRef.current?.contains(tgt)) return;
       if (plusBtnRef.current?.contains(tgt)) return;
       setPickerOpen(false);
     };
+// [RCF:PROTECTED]
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPickerOpen(false); };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -167,6 +173,7 @@ function DrawerInner() {
     };
   }, [pickerOpen]);
 
+// [RCF:PROTECTED]
   const togglePicker = () => {
     if (pickerOpen) { setPickerOpen(false); return; }
     const rect = plusBtnRef.current?.getBoundingClientRect();
@@ -184,11 +191,13 @@ function DrawerInner() {
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     dragRef.current = { startY: e.clientY, startH: t.height };
     document.body.style.userSelect = "none";
+// [RCF:PROTECTED]
     const onMove = (ev: MouseEvent) => {
       if (!dragRef.current) return;
       const dy = dragRef.current.startY - ev.clientY;
       t.setHeight(dragRef.current.startH + dy);
     };
+// [RCF:PROTECTED]
     const onUp = () => {
       dragRef.current = null;
       document.body.style.userSelect = "";
@@ -334,6 +343,7 @@ function DrawerInner() {
   );
 }
 
+// [RCF:PROTECTED]
 function SessionDot({ status, vm }: { status: SessionStatus; vm: VM | null }) {
   let color = "var(--fg-4)";
   if (status === "ready") color = "var(--ok, #5ec27a)";
@@ -359,6 +369,7 @@ function SessionDot({ status, vm }: { status: SessionStatus; vm: VM | null }) {
 const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-forms";
 const IFRAME_ALLOW = "clipboard-read; clipboard-write";
 
+// [RCF:PROTECTED]
 function IframePane({ session, visible }: { session: TerminalSession; visible: boolean }) {
   const t = useTerminal();
   // `display: none` instead of unmount — keeps the iframe's PTY warm when the
@@ -369,6 +380,7 @@ function IframePane({ session, visible }: { session: TerminalSession; visible: b
 
   const onLoad = useCallback(() => {
     // A cross-origin iframe always fires `load` once the navigation completes,
+// [RCF:PROTECTED]
     // even if the provider then renders an error page — we can only verify
     // network-level success. Token-expiry / auth errors must come back as
     // 5xx from `POST /api/terminal/session` (handled in the provider) so the
@@ -438,6 +450,7 @@ function IframePane({ session, visible }: { session: TerminalSession; visible: b
 
 type QuickStep = "idle" | "installing" | "starting" | "activating" | "done" | "error";
 
+// [RCF:PROTECTED]
 function QuickSetupPanel({ sessionId }: { sessionId: string }) {
   const t = useTerminal();
   const [step, setStep] = useState<QuickStep>("idle");
@@ -454,6 +467,7 @@ function QuickSetupPanel({ sessionId }: { sessionId: string }) {
 
   const busy = step === "installing" || step === "starting" || step === "activating";
 
+// [RCF:PROTECTED]
   const run = async () => {
     setError(null);
     try {
@@ -547,6 +561,7 @@ function QuickSetupPanel({ sessionId }: { sessionId: string }) {
 /* Launcher button (status bar) — unchanged contract                  */
 /* ------------------------------------------------------------------ */
 
+// [RCF:PROTECTED]
 export function TerminalLauncherButton() {
   const t = useTerminal();
   return (

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """SLM gates — optional filters between agents and memory operations.
 
 Three gates:
@@ -52,6 +53,7 @@ GATE_MAX_TOKENS = 512
 # Config helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def _gates_config(agent: Agent) -> dict[str, Any]:
     cfg = agent.tools_config or {}
     if not isinstance(cfg, dict):
@@ -60,6 +62,7 @@ def _gates_config(agent: Agent) -> dict[str, Any]:
     return gates if isinstance(gates, dict) else {}
 
 
+# [RCF:PROTECTED]
 def _resolve_model(agent: Agent, gate_name: str) -> str | None:
     cfg = agent.tools_config or {}
     if not isinstance(cfg, dict):
@@ -72,6 +75,7 @@ def _resolve_model(agent: Agent, gate_name: str) -> str | None:
     return per_gate.get("model") or cfg.get("default_gate_model") or None
 
 
+# [RCF:PROTECTED]
 async def _provider_for(db: AsyncSession, agent: Agent) -> LLMProvider | None:
     if not agent.llm_provider_id:
         return None
@@ -80,6 +84,7 @@ async def _provider_for(db: AsyncSession, agent: Agent) -> LLMProvider | None:
     )).scalar_one_or_none()
 
 
+# [RCF:PROTECTED]
 async def _call_slm(
     provider: LLMProvider,
     model: str,
@@ -100,6 +105,7 @@ async def _call_slm(
     return (res.get("content") or "").strip()
 
 
+# [RCF:PROTECTED]
 def _parse_json_object(text: str) -> dict[str, Any] | None:
     """Extract the first JSON object from `text` (LLMs often wrap in prose)."""
     if not text:
@@ -118,6 +124,7 @@ def _parse_json_object(text: str) -> dict[str, Any] | None:
 # Gate 1 — Handoff filter
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def gate_handoff(
     db: AsyncSession,
     *,
@@ -195,6 +202,7 @@ async def gate_handoff(
 # Gate 2 — Memory write classifier
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def gate_memory_write(
     db: AsyncSession,
     *,
@@ -251,6 +259,7 @@ async def gate_memory_write(
 # Gate 3 — Recall reranker
 # ─────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def gate_recall_rerank(
     db: AsyncSession,
     *,

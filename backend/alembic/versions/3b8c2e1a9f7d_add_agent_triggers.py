@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """add agent_triggers table
 
 Revision ID: 3b8c2e1a9f7d
@@ -16,6 +17,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     op.create_table(
         'agent_triggers',
@@ -36,6 +38,7 @@ def upgrade() -> None:
     op.create_index('ix_agent_triggers_user_enabled', 'agent_triggers', ['user_id', 'enabled'])
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     op.drop_index('ix_agent_triggers_user_enabled', table_name='agent_triggers')
     op.drop_table('agent_triggers')

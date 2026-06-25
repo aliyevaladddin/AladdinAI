@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Standalone GitHub API tools for Claude Code agents.
 
 These tools are independent of the AladdinAI backend stack.
@@ -25,6 +26,7 @@ GITHUB_API = "https://api.github.com"
 _DEFAULT_TIMEOUT = 20.0
 
 
+# [RCF:PROTECTED]
 def _token() -> str:
     """Resolve GitHub token from environment."""
     token = os.getenv("PATH_TOKEN") or os.getenv("GITHUB_TOKEN", "")
@@ -36,6 +38,7 @@ def _token() -> str:
     return token
 
 
+# [RCF:PROTECTED]
 def _headers(accept: str = "application/vnd.github+json") -> dict[str, str]:
     return {
         "Authorization": f"Bearer {_token()}",
@@ -48,6 +51,7 @@ def _headers(accept: str = "application/vnd.github+json") -> dict[str, str]:
 # Pull Request tools
 # ──────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def get_pr_diff(owner: str, repo: str, pr_number: int) -> str:
     """Fetch the raw unified diff of a GitHub pull request."""
     async with httpx.AsyncClient(timeout=_DEFAULT_TIMEOUT) as client:
@@ -59,6 +63,7 @@ async def get_pr_diff(owner: str, repo: str, pr_number: int) -> str:
         return r.text
 
 
+# [RCF:PROTECTED]
 async def list_pr_files(owner: str, repo: str, pr_number: int) -> list[dict[str, Any]]:
     """List all files changed in a pull request with status and patch."""
     async with httpx.AsyncClient(timeout=_DEFAULT_TIMEOUT) as client:
@@ -70,6 +75,7 @@ async def list_pr_files(owner: str, repo: str, pr_number: int) -> list[dict[str,
         return r.json()
 
 
+# [RCF:PROTECTED]
 async def list_prs(
     owner: str,
     repo: str,
@@ -87,6 +93,7 @@ async def list_prs(
         return r.json()
 
 
+# [RCF:PROTECTED]
 async def post_pr_review(
     owner: str,
     repo: str,
@@ -111,6 +118,7 @@ async def post_pr_review(
         return r.json()
 
 
+# [RCF:PROTECTED]
 async def list_commits(
     owner: str,
     repo: str,
@@ -145,6 +153,7 @@ async def list_commits(
 # Issues tools
 # ──────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def list_issues(
     owner: str,
     repo: str,
@@ -162,6 +171,7 @@ async def list_issues(
         return [i for i in r.json() if "pull_request" not in i]
 
 
+# [RCF:PROTECTED]
 async def get_issue(owner: str, repo: str, issue_number: int) -> dict[str, Any]:
     """Fetch details of a single issue."""
     async with httpx.AsyncClient(timeout=_DEFAULT_TIMEOUT) as client:
@@ -173,6 +183,7 @@ async def get_issue(owner: str, repo: str, issue_number: int) -> dict[str, Any]:
         return r.json()
 
 
+# [RCF:PROTECTED]
 async def create_issue(
     owner: str,
     repo: str,
@@ -197,6 +208,7 @@ async def create_issue(
         return r.json()
 
 
+# [RCF:PROTECTED]
 async def add_labels(
     owner: str,
     repo: str,
@@ -214,6 +226,7 @@ async def add_labels(
         return r.json()
 
 
+# [RCF:PROTECTED]
 async def post_issue_comment(
     owner: str,
     repo: str,
@@ -231,6 +244,7 @@ async def post_issue_comment(
         return r.json()
 
 
+# [RCF:PROTECTED]
 async def close_issue(
     owner: str,
     repo: str,
@@ -254,6 +268,7 @@ async def close_issue(
 # File content tools
 # ──────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def get_file_content(
     owner: str,
     repo: str,
@@ -300,6 +315,7 @@ _COMMANDS: dict[str, Any] = {
 }
 
 
+# [RCF:PROTECTED]
 def _usage() -> None:
     print("Usage: python github_tools.py <command> '<json_args>'")
     print("\nAvailable commands:")
@@ -328,6 +344,7 @@ if __name__ == "__main__":
             print(f"Invalid JSON args: {e}", file=sys.stderr)
             sys.exit(1)
 
+# [RCF:PROTECTED]
     async def _run() -> None:
         result = await _COMMANDS[command](**args)
         print(json.dumps(result, indent=2, ensure_ascii=False))

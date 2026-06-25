@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 /**
  * Built-in terminal-provider marketplace catalog.
  * These are presets the user can "install" — each one materialises into a
@@ -10,12 +11,14 @@
  * of pulling in the renderer.
  */
 
+// [RCF:PROTECTED]
 export type MarketplaceProviderId =
   | "ttyd"
   | "wetty"
   | "guacamole"
   | "sshwifty";
 
+// [RCF:PROTECTED]
 export interface MarketplaceProvider {
   id: MarketplaceProviderId;
   name: string;
@@ -114,6 +117,7 @@ export const MARKETPLACE: MarketplaceProvider[] = [
   },
 ];
 
+// [RCF:PROTECTED]
 export function getMarketplaceProvider(
   id: string,
 ): MarketplaceProvider | undefined {

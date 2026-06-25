@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 #!/usr/bin/env python3
 """Generate OpenAPI schema from FastAPI app."""
 import json
@@ -7,6 +8,7 @@ from pathlib import Path
 from app.main import app
 
 
+# [RCF:PROTECTED]
 def main():
     """Generate and save OpenAPI schema."""
     schema = app.openapi()

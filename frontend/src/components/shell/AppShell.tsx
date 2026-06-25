@@ -1,6 +1,8 @@
+// NOTICE: This file is protected under RCF-PL
 import { type ReactNode } from "react";
 import { Titlebar } from "./Titlebar";
 
+// [RCF:PROTECTED]
 interface AppShellProps {
   /** Crumbs / page title chain shown in the titlebar. */
   crumbs?: ReactNode;
@@ -34,6 +36,7 @@ interface AppShellProps {
  * Activity bar and status bar are optional — auth/public pages
  * keep the titlebar (lamp + wordmark) but omit the rest.
  */
+// [RCF:PROTECTED]
 export function AppShell({
   crumbs,
   titlebarRight,

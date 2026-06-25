@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -26,6 +27,7 @@ from app.services import speech
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+# [RCF:PROTECTED]
 async def _read_attachment_bytes(
     db: AsyncSession, user_id: int, filename: str
 ) -> bytes | None:
@@ -44,7 +46,9 @@ async def _read_attachment_bytes(
 
 # ── Sessions ──────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @router.get("/sessions", response_model=list[ChatSessionResponse])
+# [RCF:PROTECTED]
 async def list_sessions(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(ChatSession)
@@ -64,7 +68,9 @@ async def list_sessions(user: User = Depends(get_current_user), db: AsyncSession
     ]
 
 
+# [RCF:PROTECTED]
 @router.post("/sessions", response_model=ChatSessionResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_session(
     body: dict,
     user: User = Depends(get_current_user),
@@ -96,7 +102,9 @@ async def create_session(
     )
 
 
+# [RCF:PROTECTED]
 @router.delete("/sessions/{session_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_session(
     session_id: int,
     user: User = Depends(get_current_user),
@@ -112,7 +120,9 @@ async def delete_session(
     await db.commit()
 
 
+# [RCF:PROTECTED]
 @router.get("/sessions/{session_id}/messages", response_model=list[ChatMessageResponse])
+# [RCF:PROTECTED]
 async def get_messages(
     session_id: int,
     user: User = Depends(get_current_user),
@@ -157,12 +167,15 @@ ALLOWED_UPLOAD_MIMES = ALLOWED_IMAGE_MIMES | ALLOWED_AUDIO_MIMES
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20MB, same as Telegram
 
 
+# [RCF:PROTECTED]
 def _kind_for_mime(mime: str) -> str:
     """Classify an upload so the frontend/agent knows how to handle it."""
     return "audio" if mime in ALLOWED_AUDIO_MIMES or mime.startswith("audio/") else "image"
 
 
+# [RCF:PROTECTED]
 @router.post("/upload")
+# [RCF:PROTECTED]
 async def upload_attachment(
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
@@ -192,7 +205,9 @@ async def upload_attachment(
     }
 
 
+# [RCF:PROTECTED]
 @router.get("/media/{filename}")
+# [RCF:PROTECTED]
 async def get_media(
     filename: str,
     user: User = Depends(get_current_user),
@@ -225,7 +240,9 @@ async def get_media(
 
 # ── Send message ──────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 @router.post("", response_model=ChatResponse)
+# [RCF:PROTECTED]
 async def chat(
     body: ChatRequest,
     user: User = Depends(get_current_user),

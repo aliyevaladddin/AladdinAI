@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,6 +9,7 @@ import {
   Unplug, PlugZap, Pencil, Check
 } from "lucide-react";
 
+// [RCF:PROTECTED]
 interface Provider {
   id: number;
   name: string;
@@ -16,6 +18,7 @@ interface Provider {
   status: string;
 }
 
+// [RCF:PROTECTED]
 interface ConnectResult {
   status: string;
   message?: string;
@@ -33,6 +36,7 @@ const TYPE_LABELS: Record<string, string> = {
   custom: "Custom",
 };
 
+// [RCF:PROTECTED]
 export function ProvidersSettings() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -42,9 +46,11 @@ export function ProvidersSettings() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: "", type: "", base_url: "", api_key: "" });
 
+// [RCF:PROTECTED]
   const load = () => api.get<Provider[]>("/providers").then(setProviders);
   useEffect(() => { load(); }, []);
 
+// [RCF:PROTECTED]
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/providers", form);
@@ -53,6 +59,7 @@ export function ProvidersSettings() {
     load();
   };
 
+// [RCF:PROTECTED]
   const handleSaveEdit = async (id: number) => {
     await api.put(`/providers/${id}`, {
       name: editForm.name,
@@ -64,11 +71,13 @@ export function ProvidersSettings() {
     load();
   };
 
+// [RCF:PROTECTED]
   const startEdit = (p: Provider) => {
     setEditId(p.id);
     setEditForm({ name: p.name, type: p.type, base_url: p.base_url, api_key: "" });
   };
 
+// [RCF:PROTECTED]
   const handleConnect = async (id: number) => {
     setLoading((p) => ({ ...p, [id]: true }));
     setResult((p) => ({ ...p, [id]: { status: "connecting" } }));
@@ -83,6 +92,7 @@ export function ProvidersSettings() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDisconnect = async (id: number) => {
     setLoading((p) => ({ ...p, [id]: true }));
     try {
@@ -94,6 +104,7 @@ export function ProvidersSettings() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this provider?")) return;
     await api.delete(`/providers/${id}`);

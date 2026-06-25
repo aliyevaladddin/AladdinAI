@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 import { AppShell } from "@/components/shell/AppShell";
 import { AuthHero } from "@/components/shell/AuthHero";
 

@@ -1,6 +1,8 @@
+# NOTICE: This file is protected under RCF-PL
 """Test authentication endpoints."""
 
 
+# [RCF:PROTECTED]
 def test_register_user(client):
     """Test user registration."""
     response = client.post(
@@ -17,6 +19,7 @@ def test_register_user(client):
     assert data.get("email") or "newuser@example.com" == "newuser@example.com"
 
 
+# [RCF:PROTECTED]
 def test_register_duplicate_email(client, test_user):
     """Test registration with duplicate email fails."""
     response = client.post(
@@ -30,6 +33,7 @@ def test_register_duplicate_email(client, test_user):
     assert response.status_code == 400
 
 
+# [RCF:PROTECTED]
 def test_login_success(client, test_user):
     """Test successful login."""
     response = client.post(
@@ -45,6 +49,7 @@ def test_login_success(client, test_user):
     assert "refresh_token" in data
 
 
+# [RCF:PROTECTED]
 def test_login_wrong_password(client, test_user):
     """Test login with wrong password fails."""
     response = client.post(
@@ -57,6 +62,7 @@ def test_login_wrong_password(client, test_user):
     assert response.status_code == 401
 
 
+# [RCF:PROTECTED]
 def test_login_nonexistent_user(client):
     """Test login with nonexistent user fails."""
     response = client.post(
@@ -69,6 +75,7 @@ def test_login_nonexistent_user(client):
     assert response.status_code == 401
 
 
+# [RCF:PROTECTED]
 def test_get_current_user(client, test_user, auth_headers):
     """Test getting current user info."""
     response = client.get("/api/auth/me", headers=auth_headers)
@@ -77,6 +84,7 @@ def test_get_current_user(client, test_user, auth_headers):
     assert data["email"] == test_user["email"]
 
 
+# [RCF:PROTECTED]
 def test_get_current_user_unauthorized(client):
     """Test accessing protected endpoint without auth fails."""
     response = client.get("/api/auth/me")

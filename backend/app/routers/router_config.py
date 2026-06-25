@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,13 +12,17 @@ from app.security import get_current_user
 router = APIRouter(prefix="/router", tags=["router"])
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=list[RouterConfigResponse])
+# [RCF:PROTECTED]
 async def list_configs(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RouterConfig).where(RouterConfig.user_id == user.id))
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.post("", response_model=RouterConfigResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_config(body: RouterConfigCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     config = RouterConfig(user_id=user.id, **body.model_dump())
     db.add(config)
@@ -26,7 +31,9 @@ async def create_config(body: RouterConfigCreate, user: User = Depends(get_curre
     return config
 
 
+# [RCF:PROTECTED]
 @router.put("/{config_id}", response_model=RouterConfigResponse)
+# [RCF:PROTECTED]
 async def update_config(config_id: int, body: RouterConfigUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RouterConfig).where(RouterConfig.id == config_id, RouterConfig.user_id == user.id))
     config = result.scalar_one_or_none()
@@ -39,7 +46,9 @@ async def update_config(config_id: int, body: RouterConfigUpdate, user: User = D
     return config
 
 
+# [RCF:PROTECTED]
 @router.delete("/{config_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_config(config_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(RouterConfig).where(RouterConfig.id == config_id, RouterConfig.user_id == user.id))
     config = result.scalar_one_or_none()

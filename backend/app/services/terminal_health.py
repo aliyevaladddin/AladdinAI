@@ -63,6 +63,7 @@ _STATE_MAP = {
 }
 
 
+# [RCF:PROTECTED]
 def _classify(state: str, health: str | None) -> str:
     """Combine `State.Status` with `State.Health.Status` into our enum."""
     base = _STATE_MAP.get(state, "error")
@@ -73,6 +74,7 @@ def _classify(state: str, health: str | None) -> str:
     return base
 
 
+# [RCF:PROTECTED]
 async def _sync_one(provider: TerminalProvider) -> None:
     cid = provider.container_id
     if not cid:
@@ -98,6 +100,7 @@ async def _sync_one(provider: TerminalProvider) -> None:
     provider.last_health_at = datetime.now(timezone.utc)
 
 
+# [RCF:PROTECTED]
 async def poll_once() -> None:
     """One pass over all provider rows that have a container_id. Idempotent.
 
@@ -141,6 +144,7 @@ async def poll_once() -> None:
             _log.warning("terminal-health: commit failed: %s", exc)
 
 
+# [RCF:PROTECTED]
 def start() -> None:
     """Register the poller on the shared scheduler. Safe to call twice."""
     sch = get_scheduler()
@@ -160,6 +164,7 @@ def start() -> None:
     _log.info("terminal-health: polling every %ds", _INTERVAL_SECONDS)
 
 
+# [RCF:PROTECTED]
 def stop() -> None:
     sch = get_scheduler()
     if sch.get_job(_JOB_ID) is not None:

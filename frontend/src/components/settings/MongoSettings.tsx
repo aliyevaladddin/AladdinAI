@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,6 +7,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Database, Plus, X, CheckCircle2, XCircle, Trash2, FlaskConical, Pencil, Check } from "lucide-react";
 
+// [RCF:PROTECTED]
 interface Mongo {
   id: number;
   name: string;
@@ -13,6 +15,7 @@ interface Mongo {
   status: string;
 }
 
+// [RCF:PROTECTED]
 export function MongoSettings() {
   const [conns, setConns] = useState<Mongo[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -21,9 +24,11 @@ export function MongoSettings() {
   const [editId, setEditId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({ name: "", connection_string: "", db_name: "" });
 
+// [RCF:PROTECTED]
   const load = () => api.get<Mongo[]>("/mongodb").then(setConns);
   useEffect(() => { load(); }, []);
 
+// [RCF:PROTECTED]
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     await api.post("/mongodb", form);
@@ -32,11 +37,13 @@ export function MongoSettings() {
     load();
   };
 
+// [RCF:PROTECTED]
   const startEdit = (c: Mongo) => {
     setEditId(c.id);
     setEditForm({ name: c.name, connection_string: "", db_name: c.db_name });
   };
 
+// [RCF:PROTECTED]
   const handleSaveEdit = async (id: number) => {
     await api.put(`/mongodb/${id}`, {
       name: editForm.name,
@@ -47,6 +54,7 @@ export function MongoSettings() {
     load();
   };
 
+// [RCF:PROTECTED]
   const handleTest = async (id: number) => {
     setTesting((p) => ({ ...p, [id]: true }));
     try {
@@ -58,6 +66,7 @@ export function MongoSettings() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this connection?")) return;
     await api.delete(`/mongodb/${id}`);

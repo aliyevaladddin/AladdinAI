@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Cron-style trigger scheduler.
 
 A single APScheduler instance lives inside the FastAPI process. On startup we
@@ -33,6 +34,7 @@ log = logging.getLogger(__name__)
 _scheduler: AsyncIOScheduler | None = None
 
 
+# [RCF:PROTECTED]
 def get_scheduler() -> AsyncIOScheduler:
     global _scheduler
     if _scheduler is None:
@@ -40,10 +42,12 @@ def get_scheduler() -> AsyncIOScheduler:
     return _scheduler
 
 
+# [RCF:PROTECTED]
 def _job_id(trigger_id: int) -> str:
     return f"trigger_{trigger_id}"
 
 
+# [RCF:PROTECTED]
 def validate_cron(expr: str) -> None:
     """Raise ValueError if the cron expression is unparseable."""
     if not expr or not isinstance(expr, str):
@@ -54,11 +58,13 @@ def validate_cron(expr: str) -> None:
         raise ValueError(f"invalid cron expression: {e}") from e
 
 
+# [RCF:PROTECTED]
 def next_fire(expr: str, base: datetime | None = None) -> datetime:
     base = base or datetime.now(timezone.utc)
     return croniter(expr, base).get_next(datetime)
 
 
+# [RCF:PROTECTED]
 async def _fire_trigger(trigger_id: int) -> list[int]:
     """Insert agent_messages for every agent_id; schedule the worker for each.
 
@@ -126,6 +132,7 @@ async def _fire_trigger(trigger_id: int) -> list[int]:
     return message_ids
 
 
+# [RCF:PROTECTED]
 def _register_job(trigger: AgentTrigger) -> None:
     sch = get_scheduler()
     sch.add_job(
@@ -139,6 +146,7 @@ def _register_job(trigger: AgentTrigger) -> None:
     )
 
 
+# [RCF:PROTECTED]
 def _unregister_job(trigger_id: int) -> None:
     sch = get_scheduler()
     job = sch.get_job(_job_id(trigger_id))
@@ -146,6 +154,7 @@ def _unregister_job(trigger_id: int) -> None:
         sch.remove_job(job.id)
 
 
+# [RCF:PROTECTED]
 def upsert(trigger: AgentTrigger) -> None:
     """Add/replace the scheduled job for a trigger."""
     if trigger.enabled:
@@ -154,14 +163,17 @@ def upsert(trigger: AgentTrigger) -> None:
         _unregister_job(trigger.id)
 
 
+# [RCF:PROTECTED]
 def remove(trigger_id: int) -> None:
     _unregister_job(trigger_id)
 
 
+# [RCF:PROTECTED]
 async def run_now(trigger_id: int) -> list[int]:
     return await _fire_trigger(trigger_id)
 
 
+# [RCF:PROTECTED]
 async def hydrate_from_db() -> None:
     """Load enabled triggers from the DB and register them with the scheduler."""
     sch = get_scheduler()
@@ -179,6 +191,7 @@ async def hydrate_from_db() -> None:
                 log.warning("failed to register trigger %s: %s", t.id, e)
 
 
+# [RCF:PROTECTED]
 async def shutdown() -> None:
     sch = get_scheduler()
     if sch.running:

@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from fastapi import APIRouter, Depends
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +11,9 @@ from app.security import get_current_user
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
+# [RCF:PROTECTED]
 @router.get("")
+# [RCF:PROTECTED]
 async def list_notifications(
     limit: int = 20,
     user: User = Depends(get_current_user),
@@ -38,7 +41,9 @@ async def list_notifications(
     ]
 
 
+# [RCF:PROTECTED]
 @router.get("/unread-count")
+# [RCF:PROTECTED]
 async def unread_count(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -52,7 +57,9 @@ async def unread_count(
     return {"count": result.scalar() or 0}
 
 
+# [RCF:PROTECTED]
 @router.post("/{notification_id}/read")
+# [RCF:PROTECTED]
 async def mark_read(
     notification_id: int,
     user: User = Depends(get_current_user),
@@ -67,7 +74,9 @@ async def mark_read(
     return {"ok": True}
 
 
+# [RCF:PROTECTED]
 @router.post("/read-all")
+# [RCF:PROTECTED]
 async def mark_all_read(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

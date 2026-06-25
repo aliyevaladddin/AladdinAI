@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timezone
 from typing import Any
 
@@ -32,23 +33,27 @@ GATE_NAMES = {"handoff", "memory_write", "recall_rerank"}
 SAFETY_NAMES = {"ingress", "egress", "pii"}
 
 
+# [RCF:PROTECTED]
 class GatesUpdate(BaseModel):
     default_gate_model: str | None = None
     gates: dict[str, dict[str, Any]] | None = None  # {name: {enabled: bool, model: str|null}}
 
 
+# [RCF:PROTECTED]
 class SafetyUpdate(BaseModel):
     default_safety_model: str | None = None
     safety_block_response: str | None = None
     safety: dict[str, dict[str, Any]] | None = None
 
 
+# [RCF:PROTECTED]
 class ExtractionUpdate(BaseModel):
     enabled: bool | None = None
     model: str | None = None
     max_facts: int | None = None
 
 
+# [RCF:PROTECTED]
 class MemoryCreate(BaseModel):
     fact: str
     visibility: str = "private"
@@ -57,18 +62,22 @@ class MemoryCreate(BaseModel):
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 
+# [RCF:PROTECTED]
 class InboxRequest(BaseModel):
     task: str
     context: dict | None = None
     parent_session_id: int | None = None
 
 
+# [RCF:PROTECTED]
 class InboxResponse(BaseModel):
     message_id: int
     status: str
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/stats")
+# [RCF:PROTECTED]
 async def get_agent_stats(
     agent_id: int,
     user: User = Depends(get_current_user),
@@ -152,13 +161,17 @@ async def get_agent_stats(
     }
 
 
+# [RCF:PROTECTED]
 @router.get("", response_model=list[AgentResponse])
+# [RCF:PROTECTED]
 async def list_agents(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Agent).where(Agent.user_id == user.id))
     return result.scalars().all()
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}", response_model=AgentResponse)
+# [RCF:PROTECTED]
 async def get_agent(agent_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id))
     agent = result.scalar_one_or_none()
@@ -167,7 +180,9 @@ async def get_agent(agent_id: int, user: User = Depends(get_current_user), db: A
     return agent
 
 
+# [RCF:PROTECTED]
 @router.post("", response_model=AgentResponse, status_code=201)
+# [RCF:PROTECTED]
 async def create_agent(body: AgentCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     existing = await db.execute(
         select(Agent).where(Agent.name == body.name, Agent.user_id == user.id)
@@ -182,7 +197,9 @@ async def create_agent(body: AgentCreate, user: User = Depends(get_current_user)
     return agent
 
 
+# [RCF:PROTECTED]
 @router.put("/{agent_id}", response_model=AgentResponse)
+# [RCF:PROTECTED]
 async def update_agent(agent_id: int, body: AgentUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id))
     agent = result.scalar_one_or_none()
@@ -195,7 +212,9 @@ async def update_agent(agent_id: int, body: AgentUpdate, user: User = Depends(ge
     return agent
 
 
+# [RCF:PROTECTED]
 @router.delete("/{agent_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_agent(agent_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id))
     agent = result.scalar_one_or_none()
@@ -205,7 +224,9 @@ async def delete_agent(agent_id: int, user: User = Depends(get_current_user), db
     await db.commit()
 
 
+# [RCF:PROTECTED]
 @router.post("/{agent_id}/start")
+# [RCF:PROTECTED]
 async def start_agent(agent_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id))
     agent = result.scalar_one_or_none()
@@ -216,7 +237,9 @@ async def start_agent(agent_id: int, user: User = Depends(get_current_user), db:
     return {"status": "running", "agent": agent.name}
 
 
+# [RCF:PROTECTED]
 @router.post("/{agent_id}/stop")
+# [RCF:PROTECTED]
 async def stop_agent(agent_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id))
     agent = result.scalar_one_or_none()
@@ -227,7 +250,9 @@ async def stop_agent(agent_id: int, user: User = Depends(get_current_user), db: 
     return {"status": "stopped", "agent": agent.name}
 
 
+# [RCF:PROTECTED]
 @router.post("/{agent_id}/inbox", response_model=InboxResponse, status_code=202)
+# [RCF:PROTECTED]
 async def agent_inbox(
     agent_id: int,
     body: InboxRequest,
@@ -258,7 +283,9 @@ async def agent_inbox(
     return InboxResponse(message_id=msg.id, status="pending")
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/messages")
+# [RCF:PROTECTED]
 async def list_agent_messages(
     agent_id: int,
     limit: int = 50,
@@ -288,7 +315,9 @@ async def list_agent_messages(
     ]
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/gates")
+# [RCF:PROTECTED]
 async def get_agent_gates(
     agent_id: int,
     user: User = Depends(get_current_user),
@@ -314,7 +343,9 @@ async def get_agent_gates(
     }
 
 
+# [RCF:PROTECTED]
 @router.patch("/{agent_id}/gates")
+# [RCF:PROTECTED]
 async def patch_agent_gates(
     agent_id: int,
     body: GatesUpdate,
@@ -362,7 +393,9 @@ async def patch_agent_gates(
     }
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/safety")
+# [RCF:PROTECTED]
 async def get_agent_safety(
     agent_id: int,
     user: User = Depends(get_current_user),
@@ -389,7 +422,9 @@ async def get_agent_safety(
     }
 
 
+# [RCF:PROTECTED]
 @router.patch("/{agent_id}/safety")
+# [RCF:PROTECTED]
 async def patch_agent_safety(
     agent_id: int,
     body: SafetyUpdate,
@@ -440,6 +475,7 @@ async def patch_agent_safety(
     }
 
 
+# [RCF:PROTECTED]
 async def _provider_catalog(db: AsyncSession, agent: Agent) -> list[str]:
     if not agent.llm_provider_id:
         return []
@@ -455,7 +491,9 @@ async def _provider_catalog(db: AsyncSession, agent: Agent) -> list[str]:
     return [m for m in models if isinstance(m, str)]
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/safety/recommendations")
+# [RCF:PROTECTED]
 async def get_agent_safety_recommendations(
     agent_id: int,
     user: User = Depends(get_current_user),
@@ -470,7 +508,9 @@ async def get_agent_safety_recommendations(
     return {"recommendations": resolve_safety_recs(catalog), "catalog_size": len(catalog)}
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/gates/recommendations")
+# [RCF:PROTECTED]
 async def get_agent_gates_recommendations(
     agent_id: int,
     user: User = Depends(get_current_user),
@@ -485,7 +525,9 @@ async def get_agent_gates_recommendations(
     return {"recommendations": resolve_gates_recs(catalog), "catalog_size": len(catalog)}
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/extraction/recommendations")
+# [RCF:PROTECTED]
 async def get_agent_extraction_recommendations(
     agent_id: int,
     user: User = Depends(get_current_user),
@@ -500,7 +542,9 @@ async def get_agent_extraction_recommendations(
     return {"recommendation": resolve_extraction_recs(catalog), "catalog_size": len(catalog)}
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/extraction")
+# [RCF:PROTECTED]
 async def get_agent_extraction(
     agent_id: int,
     user: User = Depends(get_current_user),
@@ -521,7 +565,9 @@ async def get_agent_extraction(
     }
 
 
+# [RCF:PROTECTED]
 @router.patch("/{agent_id}/extraction")
+# [RCF:PROTECTED]
 async def patch_agent_extraction(
     agent_id: int,
     body: ExtractionUpdate,
@@ -560,7 +606,9 @@ async def patch_agent_extraction(
     }
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/safety/log")
+# [RCF:PROTECTED]
 async def get_agent_safety_log(
     agent_id: int,
     check: str | None = Query(default=None),
@@ -585,7 +633,9 @@ async def get_agent_safety_log(
     return decisions
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/gates/log")
+# [RCF:PROTECTED]
 async def get_agent_gates_log(
     agent_id: int,
     gate: str | None = Query(default=None),
@@ -606,7 +656,9 @@ async def get_agent_gates_log(
     )
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/activity")
+# [RCF:PROTECTED]
 async def get_agent_activity(
     agent_id: int,
     user: User = Depends(get_current_user),
@@ -708,7 +760,9 @@ async def get_agent_activity(
     return events[:100]
 
 
+# [RCF:PROTECTED]
 @router.get("/{agent_id}/memories")
+# [RCF:PROTECTED]
 async def list_agent_memories(
     agent_id: int,
     scope: str = Query(default="both", pattern="^(private|shared|both)$"),
@@ -730,7 +784,9 @@ async def list_agent_memories(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# [RCF:PROTECTED]
 @router.post("/{agent_id}/memories", status_code=201)
+# [RCF:PROTECTED]
 async def create_agent_memory(
     agent_id: int,
     body: MemoryCreate,
@@ -760,7 +816,9 @@ async def create_agent_memory(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# [RCF:PROTECTED]
 @router.delete("/{agent_id}/memories/{memory_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_agent_memory(
     agent_id: int,
     memory_id: str,
@@ -782,6 +840,7 @@ async def delete_agent_memory(
         raise HTTPException(status_code=404, detail="Memory not found")
 
 
+# [RCF:PROTECTED]
 async def _process_agent_message(message_id: int) -> None:
     """Worker: pick up a pending agent_messages row and run the target agent."""
     async with async_session() as db:

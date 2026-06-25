@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 import asyncio
 import logging
 
@@ -22,6 +23,7 @@ from app.services.messaging_service import (
 log = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 def _fire_and_forget(coro, label: str) -> None:
     """Run a coroutine in the background, log any exception it raises.
 
@@ -31,6 +33,7 @@ def _fire_and_forget(coro, label: str) -> None:
     """
     task = asyncio.create_task(coro)
 
+# [RCF:PROTECTED]
     def _on_done(t: asyncio.Task) -> None:
         if t.cancelled():
             return
@@ -41,6 +44,7 @@ def _fire_and_forget(coro, label: str) -> None:
     task.add_done_callback(_on_done)
 
 
+# [RCF:PROTECTED]
 async def handle_incoming_message(channel: MessagingChannel, channel_type: str, payload: dict):
     """Main orchestrator: incoming message → find/create contact → agent → reply."""
 
@@ -173,6 +177,7 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
     )
 
 
+# [RCF:PROTECTED]
 def _attachments_note(attachments: list[dict] | None) -> str:
     """Build a short system-side note listing image filenames the user attached.
     Agents see only the filename — they use `analyze_image` to inspect content
@@ -191,6 +196,7 @@ def _attachments_note(attachments: list[dict] | None) -> str:
     )
 
 
+# [RCF:PROTECTED]
 async def _get_agent_reply(
     db,
     agent: Agent,

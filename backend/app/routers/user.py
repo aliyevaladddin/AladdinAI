@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
@@ -6,6 +7,8 @@ from app.security import get_current_user
 
 router = APIRouter()
 
+# [RCF:PROTECTED]
 @router.get("/profile")
+# [RCF:PROTECTED]
 async def get_profile(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     return {"username": current_user.username, "email": current_user.email}

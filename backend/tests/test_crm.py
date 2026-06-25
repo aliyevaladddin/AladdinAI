@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Test CRM endpoints: Contacts, Deals, Activities."""
 
 
@@ -5,6 +6,7 @@
 # CONTACTS
 # ──────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def test_create_contact(client, auth_headers):
     """Test creating a new contact."""
     response = client.post(
@@ -28,6 +30,7 @@ def test_create_contact(client, auth_headers):
     assert "vip" in data["tags"]
 
 
+# [RCF:PROTECTED]
 def test_list_contacts(client, auth_headers):
     """Test listing user's contacts."""
     # Create two contacts
@@ -51,6 +54,7 @@ def test_list_contacts(client, auth_headers):
     assert "Bob Johnson" in names
 
 
+# [RCF:PROTECTED]
 def test_search_contacts(client, auth_headers):
     """Test searching contacts by name, email, or company."""
     client.post(
@@ -72,6 +76,7 @@ def test_search_contacts(client, auth_headers):
     assert data[0]["name"] == "Jane Doe"
 
 
+# [RCF:PROTECTED]
 def test_get_contact_by_id(client, auth_headers):
     """Test getting contact by ID."""
     create_response = client.post(
@@ -88,6 +93,7 @@ def test_get_contact_by_id(client, auth_headers):
     assert data["name"] == "Test Contact"
 
 
+# [RCF:PROTECTED]
 def test_update_contact(client, auth_headers):
     """Test updating contact information."""
     create_response = client.post(
@@ -109,6 +115,7 @@ def test_update_contact(client, auth_headers):
     assert data["email"] == "original@example.com"  # unchanged
 
 
+# [RCF:PROTECTED]
 def test_delete_contact(client, auth_headers):
     """Test deleting a contact."""
     create_response = client.post(
@@ -126,12 +133,14 @@ def test_delete_contact(client, auth_headers):
     assert get_response.status_code == 404
 
 
+# [RCF:PROTECTED]
 def test_contact_unauthorized(client):
     """Test accessing contacts without auth fails."""
     response = client.get("/api/crm/contacts")
     assert response.status_code == 401
 
 
+# [RCF:PROTECTED]
 def test_contact_user_scoping(client, test_user):
     """Test users cannot see other users' contacts."""
     # Create second user
@@ -164,6 +173,7 @@ def test_contact_user_scoping(client, test_user):
 # DEALS
 # ──────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def test_create_deal(client, auth_headers):
     """Test creating a new deal."""
     # Create contact first
@@ -195,6 +205,7 @@ def test_create_deal(client, auth_headers):
     assert data["contact_id"] == contact_id
 
 
+# [RCF:PROTECTED]
 def test_list_deals(client, auth_headers):
     """Test listing user's deals."""
     contact_response = client.post(
@@ -222,6 +233,7 @@ def test_list_deals(client, auth_headers):
     assert len(data) == 2
 
 
+# [RCF:PROTECTED]
 def test_filter_deals_by_stage(client, auth_headers):
     """Test filtering deals by stage."""
     contact_response = client.post(
@@ -250,6 +262,7 @@ def test_filter_deals_by_stage(client, auth_headers):
     assert data[0]["title"] == "Won Deal"
 
 
+# [RCF:PROTECTED]
 def test_update_deal(client, auth_headers):
     """Test updating deal information."""
     contact_response = client.post(
@@ -277,6 +290,7 @@ def test_update_deal(client, auth_headers):
     assert data["amount"] == 2000.0
 
 
+# [RCF:PROTECTED]
 def test_move_deal_stage(client, auth_headers):
     """Test moving deal to different stage."""
     contact_response = client.post(
@@ -302,6 +316,7 @@ def test_move_deal_stage(client, auth_headers):
     assert data["stage"] == "proposal"
 
 
+# [RCF:PROTECTED]
 def test_move_deal_invalid_stage(client, auth_headers):
     """Test moving deal to invalid stage fails."""
     contact_response = client.post(
@@ -325,6 +340,7 @@ def test_move_deal_invalid_stage(client, auth_headers):
     assert response.status_code == 400
 
 
+# [RCF:PROTECTED]
 def test_delete_deal(client, auth_headers):
     """Test deleting a deal."""
     contact_response = client.post(
@@ -349,6 +365,7 @@ def test_delete_deal(client, auth_headers):
     assert get_response.status_code == 404
 
 
+# [RCF:PROTECTED]
 def test_deal_user_scoping(client, test_user):
     """Test users cannot see other users' deals."""
     # Create second user
@@ -388,6 +405,7 @@ def test_deal_user_scoping(client, test_user):
 # ACTIVITIES
 # ──────────────────────────────────────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 def test_create_activity(client, auth_headers):
     """Test creating a new activity."""
     contact_response = client.post(
@@ -416,6 +434,7 @@ def test_create_activity(client, auth_headers):
     assert data["contact_id"] == contact_id
 
 
+# [RCF:PROTECTED]
 def test_list_activities(client, auth_headers):
     """Test listing activities."""
     contact_response = client.post(
@@ -443,6 +462,7 @@ def test_list_activities(client, auth_headers):
     assert len(data) == 2
 
 
+# [RCF:PROTECTED]
 def test_filter_activities_by_type(client, auth_headers):
     """Test filtering activities by type."""
     contact_response = client.post(
@@ -470,6 +490,7 @@ def test_filter_activities_by_type(client, auth_headers):
     assert data[0]["type"] == "call"
 
 
+# [RCF:PROTECTED]
 def test_filter_activities_by_channel(client, auth_headers):
     """Test filtering activities by channel."""
     contact_response = client.post(
@@ -497,6 +518,7 @@ def test_filter_activities_by_channel(client, auth_headers):
     assert data[0]["channel"] == "telegram"
 
 
+# [RCF:PROTECTED]
 def test_update_activity(client, auth_headers):
     """Test updating activity contact association."""
     contact1 = client.post(
@@ -528,6 +550,7 @@ def test_update_activity(client, auth_headers):
     assert data["contact_id"] == contact2["id"]
 
 
+# [RCF:PROTECTED]
 def test_get_contact_activities(client, auth_headers):
     """Test getting activities for a specific contact."""
     contact_response = client.post(
@@ -555,6 +578,7 @@ def test_get_contact_activities(client, auth_headers):
     assert len(data) == 2
 
 
+# [RCF:PROTECTED]
 def test_get_contact_deals(client, auth_headers):
     """Test getting deals for a specific contact."""
     contact_response = client.post(

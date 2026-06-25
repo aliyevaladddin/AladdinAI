@@ -33,15 +33,19 @@ import yaml
 from app.config import settings
 
 
+# [RCF:PROTECTED]
 class DockerUnavailable(RuntimeError):
     """Raised when the remote docker daemon isn't reachable or configured."""
 
 
+# [RCF:PROTECTED]
 class DockerOperationError(RuntimeError):
     """Raised when a docker API call returns an error we can't paper over."""
 
 
+# [RCF:PROTECTED]
 @dataclass(frozen=True)
+# [RCF:PROTECTED]
 class ContainerStatus:
     container_id: str
     state: str            # "created" | "running" | "exited" | "dead" | "paused" | …
@@ -58,6 +62,7 @@ LABEL_PROVIDER = f"{LABEL_NS}.provider_id"
 LABEL_TYPE = f"{LABEL_NS}.type"
 
 
+# [RCF:PROTECTED]
 def _client():
     """Construct a docker SDK client against the remote daemon.
 
@@ -98,6 +103,7 @@ _DUR_MUL = {None: 1_000_000_000, "ns": 1, "us": 1_000, "ms": 1_000_000,
             "s": 1_000_000_000, "m": 60_000_000_000, "h": 3_600_000_000_000}
 
 
+# [RCF:PROTECTED]
 def _duration_to_ns(value: Any) -> int:
     if isinstance(value, int):
         return value
@@ -110,6 +116,7 @@ def _duration_to_ns(value: Any) -> int:
     return n * _DUR_MUL[unit]
 
 
+# [RCF:PROTECTED]
 def _normalize_healthcheck(hc: Optional[Dict[str, Any]], provider_id: int) -> Optional[Dict[str, Any]]:
     if not hc:
         return None
@@ -130,6 +137,7 @@ def _normalize_healthcheck(hc: Optional[Dict[str, Any]], provider_id: int) -> Op
 # this network and `exposedByDefault=false`, so unlabelled containers are
 # ignored.
 
+# [RCF:PROTECTED]
 def _traefik_labels(*, provider_id: int, internal_port: int) -> Dict[str, str]:
     router = f"aladdin-term-{provider_id}"
     svc = f"aladdin-term-{provider_id}-svc"
@@ -166,6 +174,7 @@ def _traefik_labels(*, provider_id: int, internal_port: int) -> Dict[str, str]:
 
 # ── public ops (all async) ──────────────────────────────────────────────
 
+# [RCF:PROTECTED]
 async def is_available() -> bool:
     """Lightweight reachability probe — used by /providers/health."""
     try:
@@ -175,7 +184,9 @@ async def is_available() -> bool:
         return False
 
 
+# [RCF:PROTECTED]
 async def pull_image(image: str) -> None:
+# [RCF:PROTECTED]
     def _do():
         client = _client()
         try:
@@ -185,6 +196,7 @@ async def pull_image(image: str) -> None:
     await asyncio.to_thread(_do)
 
 
+# [RCF:PROTECTED]
 async def start_container(
     *,
     provider_id: int,
@@ -204,6 +216,7 @@ async def start_container(
     already exists we remove it first — we never run two instances per row.
     """
 
+# [RCF:PROTECTED]
     def _do() -> str:
         client = _client()
 
@@ -257,7 +270,9 @@ async def start_container(
     return await asyncio.to_thread(_do)
 
 
+# [RCF:PROTECTED]
 async def stop_container(container_id: str) -> None:
+# [RCF:PROTECTED]
     def _do():
         try:
             c = _client().containers.get(container_id)
@@ -270,7 +285,9 @@ async def stop_container(container_id: str) -> None:
     await asyncio.to_thread(_do)
 
 
+# [RCF:PROTECTED]
 async def remove_container(container_id: str) -> None:
+# [RCF:PROTECTED]
     def _do():
         try:
             c = _client().containers.get(container_id)
@@ -283,7 +300,9 @@ async def remove_container(container_id: str) -> None:
     await asyncio.to_thread(_do)
 
 
+# [RCF:PROTECTED]
 async def inspect_status(container_id: str) -> ContainerStatus:
+# [RCF:PROTECTED]
     def _do() -> ContainerStatus:
         try:
             c = _client().containers.get(container_id)
@@ -300,6 +319,7 @@ async def inspect_status(container_id: str) -> ContainerStatus:
     return await asyncio.to_thread(_do)
 
 
+# [RCF:PROTECTED]
 async def container_logs(container_id: str, *, tail: int = 200) -> str:
     """Fetch the last `tail` lines of combined stdout/stderr from a container.
 
@@ -309,6 +329,7 @@ async def container_logs(container_id: str, *, tail: int = 200) -> str:
     is unreachable we surface a one-line error instead of raising — the
     endpoint upstream of us treats this as a soft failure.
     """
+# [RCF:PROTECTED]
     def _do() -> str:
         try:
             c = _client().containers.get(container_id)
@@ -326,8 +347,10 @@ async def container_logs(container_id: str, *, tail: int = 200) -> str:
     return await asyncio.to_thread(_do)
 
 
+# [RCF:PROTECTED]
 async def list_containers_by_user(user_id: int) -> List[Dict[str, Any]]:
     """Lightweight listing — used by GET /providers for status hydration."""
+# [RCF:PROTECTED]
     def _do() -> List[Dict[str, Any]]:
         client = _client()
         out: List[Dict[str, Any]] = []
@@ -351,10 +374,12 @@ async def list_containers_by_user(user_id: int) -> List[Dict[str, Any]]:
 # Traefik watches with --providers.file.watch=true.
 
 
+# [RCF:PROTECTED]
 def _traefik_config_path(provider_id: int) -> str:
     return os.path.join(settings.traefik_dynamic_config_dir, f"terminal-p{provider_id}.yaml")
 
 
+# [RCF:PROTECTED]
 def _write_traefik_config_sync(
     *, provider_id: int, user_id: int, internal_port: int, strip_prefix: bool = True
 ) -> None:
@@ -446,6 +471,7 @@ def _write_traefik_config_sync(
         yaml.safe_dump(config, fh, default_flow_style=False, allow_unicode=True)
 
 
+# [RCF:PROTECTED]
 def _remove_traefik_config_sync(provider_id: int) -> None:
     """Remove the Traefik routing config file for this provider."""
     try:
@@ -454,6 +480,7 @@ def _remove_traefik_config_sync(provider_id: int) -> None:
         pass
 
 
+# [RCF:PROTECTED]
 async def write_traefik_config(
     *, provider_id: int, user_id: int, internal_port: int, strip_prefix: bool = True
 ) -> None:
@@ -467,6 +494,7 @@ async def write_traefik_config(
     )
 
 
+# [RCF:PROTECTED]
 async def remove_traefik_config(provider_id: int) -> None:
     """Async wrapper — remove Traefik file-provider config for a terminal provider."""
     await asyncio.to_thread(_remove_traefik_config_sync, provider_id)

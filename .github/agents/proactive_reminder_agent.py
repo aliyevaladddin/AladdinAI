@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Proactive Reminder Agent.
 
 Runs on schedule via APScheduler, checks CRM deals with approaching deadlines,
@@ -30,6 +31,7 @@ from app.models.user import User
 from app.services.llm import call_llm
 
 
+# [RCF:PROTECTED]
 async def check_deal_deadlines(db: AsyncSession, user_id: int) -> list[dict[str, Any]]:
     """Find deals with deadlines in the next 24-48 hours."""
     now = datetime.now(timezone.utc)
@@ -62,6 +64,7 @@ async def check_deal_deadlines(db: AsyncSession, user_id: int) -> list[dict[str,
     return deals
 
 
+# [RCF:PROTECTED]
 async def generate_reminder_message(deals: list[dict[str, Any]], user: User) -> str:
     """Generate a personalized reminder message using LLM."""
     if not deals:
@@ -98,6 +101,7 @@ Message:"""
     return response.strip()
 
 
+# [RCF:PROTECTED]
 async def send_reminder(
     db: AsyncSession,
     user_id: int,
@@ -138,6 +142,7 @@ async def send_reminder(
     return True
 
 
+# [RCF:PROTECTED]
 async def run_proactive_reminder_agent(user_id: int) -> None:
     """Main entry point for the proactive reminder agent."""
     async for db in get_db():
@@ -181,6 +186,7 @@ async def run_proactive_reminder_agent(user_id: int) -> None:
 
 
 # Scheduler integration helper
+# [RCF:PROTECTED]
 def schedule_proactive_reminders(scheduler, user_id: int, cron_expression: str = "0 9 * * *"):
     """Register proactive reminder agent with APScheduler.
 

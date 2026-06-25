@@ -62,6 +62,7 @@ _MANIFEST_DIR = Path(__file__).resolve().parent.parent / "terminal_plugins"
 _manifest_cache: Optional[Dict[str, TerminalManifest]] = None
 
 
+# [RCF:PROTECTED]
 def _load_manifests() -> Dict[str, TerminalManifest]:
     """Load and validate all terminal provider manifests from YAML files.
 
@@ -94,6 +95,7 @@ def _load_manifests() -> Dict[str, TerminalManifest]:
     return out
 
 
+# [RCF:PROTECTED]
 def _manifest_entry(t: str) -> TerminalManifest:
     """Get a validated manifest by type, or raise 404."""
     m = _load_manifests().get(t)
@@ -102,6 +104,7 @@ def _manifest_entry(t: str) -> TerminalManifest:
     return m
 
 
+# [RCF:PROTECTED]
 def _project(provider: TerminalProvider) -> ProviderResponse:
     return ProviderResponse(
         id=provider.id,
@@ -123,7 +126,9 @@ def _project(provider: TerminalProvider) -> ProviderResponse:
 # ── marketplace ─────────────────────────────────────────────────────────
 
 
+# [RCF:PROTECTED]
 @router.get("/marketplace", response_model=List[MarketplaceEntry])
+# [RCF:PROTECTED]
 async def marketplace(_: User = Depends(get_current_user)):
     """Catalogue of builtin manifests this backend can install."""
     out: List[MarketplaceEntry] = []
@@ -142,7 +147,9 @@ async def marketplace(_: User = Depends(get_current_user)):
 # ── CRUD ────────────────────────────────────────────────────────────────
 
 
+# [RCF:PROTECTED]
 @router.get("/providers", response_model=List[ProviderResponse])
+# [RCF:PROTECTED]
 async def list_providers(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -153,7 +160,9 @@ async def list_providers(
     return [_project(p) for p in result.scalars().all()]
 
 
+# [RCF:PROTECTED]
 @router.post("/providers", response_model=ProviderResponse, status_code=201)
+# [RCF:PROTECTED]
 async def install_provider(
     body: ProviderInstall,
     user: User = Depends(get_current_user),
@@ -184,7 +193,9 @@ async def install_provider(
     return _project(provider)
 
 
+# [RCF:PROTECTED]
 @router.delete("/providers/{provider_id}", status_code=204)
+# [RCF:PROTECTED]
 async def delete_provider(
     provider_id: int,
     user: User = Depends(get_current_user),
@@ -205,7 +216,9 @@ async def delete_provider(
     await db.commit()
 
 
+# [RCF:PROTECTED]
 @router.post("/providers/{provider_id}/start", response_model=ProviderResponse)
+# [RCF:PROTECTED]
 async def start_provider(
     provider_id: int,
     user: User = Depends(get_current_user),
@@ -232,7 +245,9 @@ async def start_provider(
             config_dict["ssh_host"] = vm.host
             config_dict["ssh_port"] = vm.port
             config_dict["ssh_user"] = vm.username
+# [RCF:PROTECTED]
             if vm.password_encrypted:
+# [RCF:PROTECTED]
                 config_dict["ssh_password"] = decrypt(vm.password_encrypted)
             # SSH key handling would go here if needed
         else:
@@ -291,7 +306,9 @@ async def start_provider(
     return _project(provider)
 
 
+# [RCF:PROTECTED]
 @router.post("/providers/{provider_id}/stop", response_model=ProviderResponse)
+# [RCF:PROTECTED]
 async def stop_provider(
     provider_id: int,
     user: User = Depends(get_current_user),
@@ -313,7 +330,9 @@ async def stop_provider(
     return _project(provider)
 
 
+# [RCF:PROTECTED]
 @router.post("/providers/{provider_id}/set_active", response_model=ProviderResponse)
+# [RCF:PROTECTED]
 async def set_active_provider(
     provider_id: int,
     user: User = Depends(get_current_user),
@@ -335,7 +354,9 @@ async def set_active_provider(
 # ── diagnostics ─────────────────────────────────────────────────────────
 
 
+# [RCF:PROTECTED]
 @router.get("/providers/{provider_id}/logs", response_model=dict)
+# [RCF:PROTECTED]
 async def provider_logs(
     provider_id: int,
     tail: int = 200,
@@ -358,7 +379,9 @@ async def provider_logs(
 # ── session issuance ────────────────────────────────────────────────────
 
 
+# [RCF:PROTECTED]
 @router.post("/session", response_model=SessionResponse)
+# [RCF:PROTECTED]
 async def issue_session(
     body: SessionRequest,
     user: User = Depends(get_current_user),
@@ -435,7 +458,9 @@ async def issue_session(
 # Deletion endpoint the frontend best-effort-calls on tab close. We don't
 # tear down the container for that — the container is shared across the
 # user's sessions. We just shred the token bookkeeping (no-op in MVP).
+# [RCF:PROTECTED]
 @router.delete("/session/{provider_session_id}", status_code=204)
+# [RCF:PROTECTED]
 async def end_session(provider_session_id: str, _: User = Depends(get_current_user)):
     return None
 
@@ -457,6 +482,7 @@ async def end_session(provider_session_id: str, _: User = Depends(get_current_us
 # rejects the upstream request and the iframe shows the provider's own error.
 
 
+# [RCF:PROTECTED]
 def _extract_token_from_uri(uri: str) -> str | None:
     """Pull `?token=` out of an X-Forwarded-Uri value.
 
@@ -473,7 +499,9 @@ def _extract_token_from_uri(uri: str) -> str | None:
     return raw[0] if raw else None
 
 
+# [RCF:PROTECTED]
 @router.get("/auth")
+# [RCF:PROTECTED]
 async def forward_auth(request: Request, response: Response):
     """Auth probe for Traefik's forward-auth middleware.
 
@@ -539,6 +567,7 @@ async def forward_auth(request: Request, response: Response):
 # ── helpers ─────────────────────────────────────────────────────────────
 
 
+# [RCF:PROTECTED]
 async def _load_owned(db: AsyncSession, user: User, provider_id: int) -> TerminalProvider:
     result = await db.execute(
         select(TerminalProvider)

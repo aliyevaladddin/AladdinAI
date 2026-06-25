@@ -1,7 +1,9 @@
+// NOTICE: This file is protected under RCF-PL
 import { type ReactNode } from "react";
 import { Lamp } from "./Lamp";
 import { Wordmark } from "./Wordmark";
 
+// [RCF:PROTECTED]
 interface TitlebarProps {
   /** Items shown to the left of the lamp wordmark, e.g. breadcrumb chain. */
   crumbs?: ReactNode;
@@ -16,6 +18,7 @@ interface TitlebarProps {
  *
  * Theme picker has been moved to /dashboard/settings?tab=appearance.
  */
+// [RCF:PROTECTED]
 export function Titlebar({ crumbs, right }: TitlebarProps) {
   return (
     <header className="titlebar">

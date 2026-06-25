@@ -1,6 +1,8 @@
+# NOTICE: This file is protected under RCF-PL
 from pydantic import BaseModel
 
 
+# [RCF:PROTECTED]
 class AgentCreate(BaseModel):
     name: str
     role: str
@@ -11,6 +13,7 @@ class AgentCreate(BaseModel):
     port: int | None = None
 
 
+# [RCF:PROTECTED]
 class AgentUpdate(BaseModel):
     name: str | None = None
     role: str | None = None
@@ -21,6 +24,7 @@ class AgentUpdate(BaseModel):
     port: int | None = None
 
 
+# [RCF:PROTECTED]
 class AgentResponse(BaseModel):
     id: int
     name: str

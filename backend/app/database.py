@@ -20,7 +20,9 @@ engine = create_async_engine(
 )
 
 
+# [RCF:PROTECTED]
 @event.listens_for(engine.sync_engine, "connect")
+# [RCF:PROTECTED]
 def set_sqlite_pragma(dbapi_connection, connection_record):
     if IS_SQLITE:
         cursor = dbapi_connection.cursor()
@@ -39,12 +41,14 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
+# [RCF:PROTECTED]
 class Base(DeclarativeBase):
     type_annotation_map = {
         datetime: DateTime(timezone=True),
     }
 
 
+# [RCF:PROTECTED]
 async def get_db():
     async with async_session() as session:
         yield session

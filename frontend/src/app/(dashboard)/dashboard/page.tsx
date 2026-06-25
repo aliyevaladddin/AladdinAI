@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 /* ── Types aligned with dashboard.py response ─────────────────────── */
+// [RCF:PROTECTED]
 interface ActivityItem {
   id: number;
   type: string;
@@ -32,6 +34,7 @@ interface ActivityItem {
   created_at: string;
 }
 
+// [RCF:PROTECTED]
 function stripHtmlPreview(html: string): string {
   if (!html) return "";
 
@@ -60,6 +63,7 @@ function stripHtmlPreview(html: string): string {
     .slice(0, 120);
 }
 
+// [RCF:PROTECTED]
 interface TopAgent {
   id: number;
   name: string;
@@ -67,6 +71,7 @@ interface TopAgent {
   responses_24h: number;
 }
 
+// [RCF:PROTECTED]
 interface FiredTrigger {
   id: number;
   name: string;
@@ -74,6 +79,7 @@ interface FiredTrigger {
   next_fire_at: string | null;
 }
 
+// [RCF:PROTECTED]
 interface Stats {
   messages_24h: { total: number; breakdown: Record<string, number> };
   agents: { total: number; top5: TopAgent[] };
@@ -103,6 +109,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
+// [RCF:PROTECTED]
   const load = () => {
     setLoading(true);
     api
@@ -415,6 +422,7 @@ export default function DashboardPage() {
 }
 
 /* ── Reusable components ─────────────────────────────────────────── */
+// [RCF:PROTECTED]
 function MetricCard({
   title,
   value,
@@ -448,6 +456,7 @@ function MetricCard({
   );
 }
 
+// [RCF:PROTECTED]
 function OnboardingCard({
   step,
   title,

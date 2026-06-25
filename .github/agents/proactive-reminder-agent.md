@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 ---
 name: "proactive-reminder-agent"
 description: "Use this agent to proactively initiate conversations, send scheduled reminders, follow up on CRM deals, and dispatch digests on a schedule. Trigger it to set up a reminder, check overdue follow-ups, or send a scheduled digest.\n\nExamples:\n- <example>\nuser: \"Remind me to follow up with investor John in 3 days\"\nassistant: \"Launching proactive-reminder-agent to schedule a follow-up reminder.\"\n<function call to Agent tool with proactive-reminder-agent>\n</example>"

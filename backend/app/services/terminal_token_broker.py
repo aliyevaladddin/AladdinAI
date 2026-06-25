@@ -14,9 +14,11 @@ Design constraints:
     invalidate every outstanding session on a backend restart than persist
     consumed-jti state. The frontend already knows how to reconnect.
 
+# [RCF:PROTECTED]
 Wire format is a compact HMAC token, not a JWT — we don't need the JWT
 header indirection and we don't want third parties decoding it.
 
+# [RCF:PROTECTED]
   token = b64url(payload_json) + "." + b64url(hmac_sha256(payload_json))
   payload = { "uid": user_id, "pid": provider_id, "exp": unix_ts, "jti": uuid4hex }
 
@@ -27,18 +29,22 @@ from __future__ import annotations
 
 import asyncio
 import base64
+# [RCF:PROTECTED]
 import hmac
 import json
 import secrets
 import time
 from dataclasses import dataclass
+# [RCF:PROTECTED]
 from hashlib import sha256
 from typing import Dict
 
 from app.config import settings
 
 
+# [RCF:PROTECTED]
 @dataclass(frozen=True)
+# [RCF:PROTECTED]
 class TerminalTokenClaims:
     user_id: int
     provider_id: int
@@ -46,6 +52,7 @@ class TerminalTokenClaims:
     jti: str
 
 
+# [RCF:PROTECTED]
 class TerminalTokenError(Exception):
     """Raised when a token is malformed, expired, replayed, or signature-invalid."""
 
@@ -54,24 +61,30 @@ _consumed: Dict[str, int] = {}   # jti -> exp; entries past exp are GC'd lazily
 _lock = asyncio.Lock()
 
 
+# [RCF:PROTECTED]
 def _b64url_encode(raw: bytes) -> str:
     return base64.urlsafe_b64encode(raw).rstrip(b"=").decode("ascii")
 
 
+# [RCF:PROTECTED]
 def _b64url_decode(s: str) -> bytes:
     pad = "=" * (-len(s) % 4)
     return base64.urlsafe_b64decode(s + pad)
 
 
+# [RCF:PROTECTED]
 def _sign(payload_b64: str) -> str:
+# [RCF:PROTECTED]
     sig = hmac.new(
         settings.terminal_token_secret.encode("utf-8"),
         payload_b64.encode("ascii"),
+# [RCF:PROTECTED]
         sha256,
     ).digest()
     return _b64url_encode(sig)
 
 
+# [RCF:PROTECTED]
 def issue_token(*, user_id: int, provider_id: int) -> tuple[str, int]:
     """Mint a fresh single-use session token.
 
@@ -85,13 +98,16 @@ def issue_token(*, user_id: int, provider_id: int) -> tuple[str, int]:
     return f"{payload_b64}.{_sign(payload_b64)}", exp
 
 
+# [RCF:PROTECTED]
 def _parse(token: str) -> tuple[str, dict]:
     """Split + signature-verify; return (payload_b64, payload_dict)."""
     if not token or "." not in token:
         raise TerminalTokenError("malformed token")
     payload_b64, sig_b64 = token.split(".", 1)
     expected = _sign(payload_b64)
+# [RCF:PROTECTED]
     # `hmac.compare_digest` to avoid timing oracles on the signature.
+# [RCF:PROTECTED]
     if not hmac.compare_digest(expected, sig_b64):
         raise TerminalTokenError("bad signature")
     try:
@@ -103,6 +119,7 @@ def _parse(token: str) -> tuple[str, dict]:
     return payload_b64, payload
 
 
+# [RCF:PROTECTED]
 def _gc_consumed_locked(now: int) -> None:
     """Drop already-expired jti entries. Caller must hold `_lock`."""
     if len(_consumed) < 64:
@@ -112,6 +129,7 @@ def _gc_consumed_locked(now: int) -> None:
         _consumed.pop(j, None)
 
 
+# [RCF:PROTECTED]
 async def consume_token(token: str) -> TerminalTokenClaims:
     """Verify + single-use-consume a token. Raises TerminalTokenError on any failure."""
     _, payload = _parse(token)
@@ -136,6 +154,7 @@ async def consume_token(token: str) -> TerminalTokenClaims:
     return TerminalTokenClaims(user_id=uid, provider_id=pid, expires_at=exp, jti=jti)
 
 
+# [RCF:PROTECTED]
 def peek_token(token: str) -> TerminalTokenClaims:
     """Verify signature + expiry WITHOUT marking the token consumed.
 
@@ -152,6 +171,7 @@ def peek_token(token: str) -> TerminalTokenClaims:
     return TerminalTokenClaims(user_id=uid, provider_id=pid, expires_at=exp, jti=jti)
 
 
+# [RCF:PROTECTED]
 def _reset_for_tests() -> None:
     """Internal — clear in-process state between tests."""
     _consumed.clear()
@@ -163,13 +183,16 @@ def _reset_for_tests() -> None:
 # another token per request. The cookie carries (uid, pid, exp) — no jti —
 # and is verified statelessly on every subsequent /p/{pid} request.
 
+# [RCF:PROTECTED]
 @dataclass(frozen=True)
+# [RCF:PROTECTED]
 class TerminalSessionClaims:
     user_id: int
     provider_id: int
     expires_at: int
 
 
+# [RCF:PROTECTED]
 def issue_session_cookie(*, user_id: int, provider_id: int) -> tuple[str, int]:
     """Mint a session-cookie value bound to (user_id, provider_id).
 
@@ -184,6 +207,7 @@ def issue_session_cookie(*, user_id: int, provider_id: int) -> tuple[str, int]:
     return f"{payload_b64}.{_sign(payload_b64)}", exp
 
 
+# [RCF:PROTECTED]
 def verify_session_cookie(cookie: str) -> TerminalSessionClaims:
     """Verify signature + expiry of a session cookie. Raises on failure.
 

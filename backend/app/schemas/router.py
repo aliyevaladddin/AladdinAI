@@ -1,6 +1,8 @@
+# NOTICE: This file is protected under RCF-PL
 from pydantic import BaseModel
 
 
+# [RCF:PROTECTED]
 class RouterConfigCreate(BaseModel):
     name: str
     type: str  # keyword, llm_classifier, hybrid
@@ -8,6 +10,7 @@ class RouterConfigCreate(BaseModel):
     is_active: bool = False
 
 
+# [RCF:PROTECTED]
 class RouterConfigUpdate(BaseModel):
     name: str | None = None
     type: str | None = None
@@ -15,6 +18,7 @@ class RouterConfigUpdate(BaseModel):
     is_active: bool | None = None
 
 
+# [RCF:PROTECTED]
 class RouterConfigResponse(BaseModel):
     id: int
     name: str
@@ -25,6 +29,7 @@ class RouterConfigResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class ChatRequest(BaseModel):
     message: str = ""  # may be empty when speaking — transcript comes from audio
     agent_id: int | None = None
@@ -33,6 +38,7 @@ class ChatRequest(BaseModel):
     voice_reply: bool = False  # if True, the agent's reply is also synthesized to audio
 
 
+# [RCF:PROTECTED]
 class ChatResponse(BaseModel):
     response: str
     agent_name: str
@@ -41,6 +47,7 @@ class ChatResponse(BaseModel):
     attachments: list[dict] | None = None
 
 
+# [RCF:PROTECTED]
 class ChatMessageResponse(BaseModel):
     id: int
     role: str
@@ -52,6 +59,7 @@ class ChatMessageResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# [RCF:PROTECTED]
 class ChatSessionResponse(BaseModel):
     id: int
     agent_id: int

@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # GitHub App Setup Guide
 
 Этот гайд объясняет как настроить GitHub App ботов для AladdinAI.

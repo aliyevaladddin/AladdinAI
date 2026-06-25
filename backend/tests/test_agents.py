@@ -1,6 +1,8 @@
+# NOTICE: This file is protected under RCF-PL
 """Test agent endpoints."""
 
 
+# [RCF:PROTECTED]
 def test_create_agent(client, auth_headers):
     """Test creating a new agent."""
     response = client.post(
@@ -20,6 +22,7 @@ def test_create_agent(client, auth_headers):
     assert data["system_prompt"] == "You are a helpful assistant"
 
 
+# [RCF:PROTECTED]
 def test_list_agents(client, auth_headers):
     """Test listing user's agents."""
     # Create an agent first
@@ -42,6 +45,7 @@ def test_list_agents(client, auth_headers):
     assert data[0]["name"] == "agent1"
 
 
+# [RCF:PROTECTED]
 def test_get_agent_by_id(client, auth_headers):
     """Test getting agent by ID."""
     # Create agent
@@ -65,6 +69,7 @@ def test_get_agent_by_id(client, auth_headers):
     assert data["name"] == "test_agent"
 
 
+# [RCF:PROTECTED]
 def test_update_agent(client, auth_headers):
     """Test updating agent configuration."""
     # Create agent
@@ -95,6 +100,7 @@ def test_update_agent(client, auth_headers):
     assert data["role"] == "updated_role"
 
 
+# [RCF:PROTECTED]
 def test_delete_agent(client, auth_headers):
     """Test deleting an agent."""
     # Create agent
@@ -119,6 +125,7 @@ def test_delete_agent(client, auth_headers):
     assert get_response.status_code == 404
 
 
+# [RCF:PROTECTED]
 def test_create_agent_unauthorized(client):
     """Test creating agent without auth fails."""
     response = client.post(
@@ -133,6 +140,7 @@ def test_create_agent_unauthorized(client):
     assert response.status_code == 401
 
 
+# [RCF:PROTECTED]
 def test_create_duplicate_agent_name(client, auth_headers):
     """Test creating agent with duplicate name fails."""
     # Create first agent

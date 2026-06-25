@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """add terminal_providers
 
 Revision ID: 8a1f3c5e2b07
@@ -16,6 +17,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     op.create_table(
         'terminal_providers',
@@ -50,6 +52,7 @@ def upgrade() -> None:
         )
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     with op.batch_alter_table('terminal_providers', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_terminal_providers_user_id'))

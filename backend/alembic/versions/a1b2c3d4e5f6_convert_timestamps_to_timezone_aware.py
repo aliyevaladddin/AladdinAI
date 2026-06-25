@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """convert all TIMESTAMP columns to TIMESTAMP WITH TIME ZONE
 
 Revision ID: a1b2c3d4e5f6
@@ -42,6 +43,7 @@ TIMESTAMP_COLUMNS = [
 ]
 
 
+# [RCF:PROTECTED]
 def _table_exists(conn, table_name: str) -> bool:
     result = conn.execute(
         sa.text(
@@ -55,6 +57,7 @@ def _table_exists(conn, table_name: str) -> bool:
     return result.scalar()
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     conn = op.get_bind()
     for table, column in TIMESTAMP_COLUMNS:
@@ -69,6 +72,7 @@ def upgrade() -> None:
         ))
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     conn = op.get_bind()
     for table, column in TIMESTAMP_COLUMNS:

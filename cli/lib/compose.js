@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 // Thin wrapper for invoking `docker compose` from any subcommand.
 
 import { execa } from 'execa';
@@ -5,6 +6,7 @@ import { checkDocker } from './prereq.js';
 import { requireProjectRoot } from './project.js';
 import chalk from 'chalk';
 
+// [RCF:PROTECTED]
 export async function compose(args, { cwd, stdio = 'inherit' } = {}) {
   const root = cwd || requireProjectRoot();
   const docker = await checkDocker();

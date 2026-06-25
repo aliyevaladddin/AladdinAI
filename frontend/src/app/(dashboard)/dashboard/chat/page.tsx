@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState, useRef, FormEvent, MouseEvent, KeyboardEvent } from "react";
@@ -21,6 +22,7 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
+// [RCF:PROTECTED]
 interface Attachment {
   filename: string;
   path: string;
@@ -28,6 +30,7 @@ interface Attachment {
   kind: string;
 }
 
+// [RCF:PROTECTED]
 function AuthImage({ filename }: { filename: string }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
@@ -57,12 +60,14 @@ function AuthImage({ filename }: { filename: string }) {
   return <img src={src} alt={filename} className="max-w-xs max-h-80 rounded-md border border-border" />;
 }
 
+// [RCF:PROTECTED]
 interface Agent {
   id: number;
   name: string;
   role: string;
 }
 
+// [RCF:PROTECTED]
 interface Session {
   id: number;
   agent_id: number;
@@ -70,6 +75,7 @@ interface Session {
   updated_at: string;
 }
 
+// [RCF:PROTECTED]
 interface Message {
   id?: number;
   role: "user" | "assistant";
@@ -105,6 +111,7 @@ export default function ChatPage() {
     ta.style.height = `${Math.min(ta.scrollHeight, 240)}px`;
   }, [input]);
 
+// [RCF:PROTECTED]
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -122,11 +129,13 @@ export default function ChatPage() {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+// [RCF:PROTECTED]
   const loadSessions = async () => {
     const data = await api.get<Session[]>("/chat/sessions");
     setSessions(data);
   };
 
+// [RCF:PROTECTED]
   const openSession = async (session: Session): Promise<void> => {
     setIsGeneralChat(false);
     setComposingNew(false);
@@ -141,6 +150,7 @@ export default function ChatPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const newChat = () => {
     setIsGeneralChat(false);
     setActiveSession(null);
@@ -151,6 +161,7 @@ export default function ChatPage() {
     setPendingAttachments([]);
   };
 
+// [RCF:PROTECTED]
   const startNewChatWithAgent = (agentId: number) => {
     setIsGeneralChat(false);
     setActiveSession(null);
@@ -160,6 +171,7 @@ export default function ChatPage() {
     setComposingNew(true);
   };
 
+// [RCF:PROTECTED]
   const openGeneralChat = () => {
     setIsGeneralChat(true);
     setComposingNew(false);
@@ -169,6 +181,7 @@ export default function ChatPage() {
     setSelectedAgentId("unified");
   };
 
+// [RCF:PROTECTED]
   const deleteSession = async (id: number, e: MouseEvent): Promise<void> => {
     e.stopPropagation();
     if (!confirm("Delete this chat?")) return;
@@ -177,11 +190,13 @@ export default function ChatPage() {
     loadSessions();
   };
 
+// [RCF:PROTECTED]
   const handleAttachClick = () => {
     if (uploading) return;
     fileInputRef.current?.click();
   };
 
+// [RCF:PROTECTED]
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
@@ -201,10 +216,12 @@ export default function ChatPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const removePending = (filename: string) => {
     setPendingAttachments((prev) => prev.filter((a) => a.filename !== filename));
   };
 
+// [RCF:PROTECTED]
   const copyToClipboard = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
@@ -215,6 +232,7 @@ export default function ChatPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleSend = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     const hasText = input.trim().length > 0;
@@ -283,11 +301,13 @@ export default function ChatPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const agentName = (agentId: number | string): string => {
     if (agentId === "unified") return "Unified";
     return agents.find((a: Agent) => a.id === agentId)?.name ?? `Agent #${agentId}`;
   };
 
+// [RCF:PROTECTED]
   const formatTime = (iso: string) => {
     const d = new Date(iso);
     const now = new Date();

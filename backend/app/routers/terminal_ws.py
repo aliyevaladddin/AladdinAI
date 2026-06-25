@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 import asyncio
 import json
 import logging
@@ -16,7 +17,9 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["Terminal WS"])
 
 
+# [RCF:PROTECTED]
 @router.websocket("/ws/terminal/{vm_id}")
+# [RCF:PROTECTED]
 async def terminal_websocket(websocket: WebSocket, vm_id: int):
     log.debug("terminal WS attempt for VM %s", vm_id)
     await websocket.accept()
@@ -54,9 +57,13 @@ async def terminal_websocket(websocket: WebSocket, vm_id: int):
                 "known_hosts": None,
                 "connect_timeout": 30,
             }
+# [RCF:PROTECTED]
             if vm.ssh_key_encrypted:
+# [RCF:PROTECTED]
                 connect_kwargs["client_keys"] = [asyncssh.import_private_key(decrypt(vm.ssh_key_encrypted))]
+# [RCF:PROTECTED]
             elif vm.password_encrypted:
+# [RCF:PROTECTED]
                 connect_kwargs["password"] = decrypt(vm.password_encrypted)
 
             async with asyncssh.connect(**connect_kwargs) as conn:
@@ -73,6 +80,7 @@ async def terminal_websocket(websocket: WebSocket, vm_id: int):
                 )
                 log.info("terminal WS: shell started for VM %s", vm_id)
 
+# [RCF:PROTECTED]
                 async def pipe_out(stream, label: str):
                     try:
                         while True:

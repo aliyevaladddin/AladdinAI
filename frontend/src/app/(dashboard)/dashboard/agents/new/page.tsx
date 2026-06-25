@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
+// [RCF:PROTECTED]
 interface Provider {
   id: number;
   name: string;
@@ -35,6 +37,7 @@ export default function NewAgentPage() {
   }, []);
 
   // Подгружаем модели когда выбирается провайдер
+// [RCF:PROTECTED]
   const handleProviderChange = async (providerId: string) => {
     setForm((prev) => ({ ...prev, llm_provider_id: providerId, model: "" }));
     setModels([]);
@@ -56,6 +59,7 @@ export default function NewAgentPage() {
     }
   };
 
+// [RCF:PROTECTED]
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");

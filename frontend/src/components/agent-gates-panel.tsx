@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,16 +6,19 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
+// [RCF:PROTECTED]
 interface GateState {
   enabled: boolean;
   model: string | null;
 }
 
+// [RCF:PROTECTED]
 interface GatesConfig {
   default_gate_model: string | null;
   gates: Record<string, GateState>;
 }
 
+// [RCF:PROTECTED]
 interface GateLogEntry {
   _id: string;
   gate: string;
@@ -41,6 +45,7 @@ const GATE_LABELS: Record<string, { title: string; help: string }> = {
   },
 };
 
+// [RCF:PROTECTED]
 export function AgentGatesPanel({
   agentId,
   providerId,
@@ -57,6 +62,7 @@ export function AgentGatesPanel({
 
   useEffect(() => {
     let cancelled = false;
+// [RCF:PROTECTED]
     const load = async () => {
       try {
         const c = await api.get<GatesConfig>(`/agents/${agentId}/gates`);
@@ -85,6 +91,7 @@ export function AgentGatesPanel({
     };
   }, [agentId, providerId]);
 
+// [RCF:PROTECTED]
   const save = async (next: GatesConfig) => {
     setSaving(true);
     try {
@@ -104,6 +111,7 @@ export function AgentGatesPanel({
     }
   };
 
+// [RCF:PROTECTED]
   const toggleGate = (name: string, enabled: boolean) => {
     if (!cfg) return;
     const next = {
@@ -117,6 +125,7 @@ export function AgentGatesPanel({
     save(next);
   };
 
+// [RCF:PROTECTED]
   const setGateModel = (name: string, model: string | null) => {
     if (!cfg) return;
     const next = {
@@ -130,6 +139,7 @@ export function AgentGatesPanel({
     save(next);
   };
 
+// [RCF:PROTECTED]
   const setDefaultModel = (model: string | null) => {
     if (!cfg) return;
     const next = { ...cfg, default_gate_model: model };
@@ -137,6 +147,7 @@ export function AgentGatesPanel({
     save(next);
   };
 
+// [RCF:PROTECTED]
   const applyRecommended = async () => {
     if (!cfg) return;
     setSaving(true);
@@ -186,6 +197,7 @@ export function AgentGatesPanel({
     }
   };
 
+// [RCF:PROTECTED]
   const loadLog = async () => {
     setShowLog(true);
     setLogLoading(true);

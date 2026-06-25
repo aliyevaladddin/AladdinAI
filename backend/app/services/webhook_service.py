@@ -25,6 +25,7 @@ _RETRY_DELAYS = (0.5, 2.0, 5.0)  # seconds; 3 attempts total
 _RETRYABLE_STATUS = {408, 425, 429, 500, 502, 503, 504}
 
 
+# [RCF:PROTECTED]
 async def trigger_webhooks(user_id: int, event_type: str, payload: Any):
     """Find all active webhooks for a user subscribed to event_type and send payload."""
     async with async_session() as db:
@@ -50,6 +51,7 @@ async def trigger_webhooks(user_id: int, event_type: str, payload: Any):
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
+# [RCF:PROTECTED]
 async def _send_webhook(
     client: httpx.AsyncClient,
     webhook: OutgoingWebhook,
@@ -106,6 +108,7 @@ async def _send_webhook(
         await db.commit()
 
 
+# [RCF:PROTECTED]
 async def _deliver_with_retries(
     client: httpx.AsyncClient,
     webhook: OutgoingWebhook,

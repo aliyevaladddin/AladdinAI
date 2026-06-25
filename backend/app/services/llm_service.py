@@ -41,10 +41,12 @@ TOOL_CALLING_SUPPORTED = OPENAI_COMPATIBLE
 LLM_PROVIDER_PRIORITY = ["nvidia_nim", "openai", "ollama", "custom", "anthropic", "huggingface"]
 
 
+# [RCF:PROTECTED]
 class LLMError(Exception):
     """Raised when the upstream provider call fails."""
 
 
+# [RCF:PROTECTED]
 async def resolve_llm_provider(
     db: AsyncSession,
     user_id: int,
@@ -90,6 +92,7 @@ async def resolve_llm_provider(
         )
 
 
+# [RCF:PROTECTED]
 async def chat_completion(
     provider: LLMProvider,
     model: str,
@@ -106,6 +109,7 @@ async def chat_completion(
     `tools` and `tool_choice` are honored only by OpenAI-compatible providers.
     """
     ptype = (provider.type or "").lower()
+# [RCF:PROTECTED]
     api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
 
     if ptype in OPENAI_COMPATIBLE:
@@ -131,6 +135,7 @@ async def chat_completion(
     raise LLMError(f"Unsupported provider type: {provider.type}")
 
 
+# [RCF:PROTECTED]
 async def _openai_compatible(
     base_url: str,
     api_key: str | None,
@@ -177,6 +182,7 @@ async def _openai_compatible(
         raise LLMError(f"Unexpected response shape: {str(data)[:200]}") from e
 
 
+# [RCF:PROTECTED]
 async def _anthropic(
     base_url: str, api_key: str | None, model: str, messages: list[dict], max_tokens: int, timeout: float
 ) -> str:
@@ -227,6 +233,7 @@ async def _anthropic(
         raise LLMError(f"Unexpected Anthropic response: {str(data)[:200]}") from e
 
 
+# [RCF:PROTECTED]
 async def _huggingface(
     base_url: str, api_key: str | None, model: str, messages: list[dict], max_tokens: int, timeout: float
 ) -> str:
@@ -259,6 +266,7 @@ async def _huggingface(
     return str(data)
 
 
+# [RCF:PROTECTED]
 def _messages_to_prompt(messages: list[dict]) -> str:
     """Flatten chat messages into a single prompt for completion-only endpoints."""
     parts: list[str] = []

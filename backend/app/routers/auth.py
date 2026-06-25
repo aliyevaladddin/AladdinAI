@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,7 +24,9 @@ from app.security import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+# [RCF:PROTECTED]
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+# [RCF:PROTECTED]
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none():
@@ -40,7 +43,9 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
+# [RCF:PROTECTED]
 @router.post("/login", response_model=TokenResponse)
+# [RCF:PROTECTED]
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
@@ -53,7 +58,9 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
+# [RCF:PROTECTED]
 @router.post("/refresh", response_model=TokenResponse)
+# [RCF:PROTECTED]
 async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     user_id = decode_token(body.refresh_token, expected_type="refresh")
     result = await db.execute(select(User).where(User.id == user_id))
@@ -67,6 +74,8 @@ async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     )
 
 
+# [RCF:PROTECTED]
 @router.get("/me", response_model=UserResponse)
+# [RCF:PROTECTED]
 async def me(user: User = Depends(get_current_user)):
     return user

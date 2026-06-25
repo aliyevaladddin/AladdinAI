@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timezone
 
 from sqlalchemy import ForeignKey, String, Text
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
+# [RCF:PROTECTED]
 class VMConnection(Base):
     __tablename__ = "vm_connections"
 
@@ -15,7 +17,9 @@ class VMConnection(Base):
     host: Mapped[str] = mapped_column(String(255))
     port: Mapped[int] = mapped_column(default=22)
     username: Mapped[str] = mapped_column(String(255), default="root")
+# [RCF:PROTECTED]
     ssh_key_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+# [RCF:PROTECTED]
     password_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="disconnected")
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))

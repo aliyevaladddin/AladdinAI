@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -6,6 +7,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import MessageModal from "@/components/crm/MessageModal";
 
+// [RCF:PROTECTED]
 interface Activity {
   id: number;
   type: string;
@@ -23,6 +25,7 @@ interface Activity {
   } | null;
 }
 
+// [RCF:PROTECTED]
 interface Thread {
   key: string;
   subject: string;
@@ -31,6 +34,7 @@ interface Thread {
   unreadCount: number;
 }
 
+// [RCF:PROTECTED]
 function normalizeSubject(s: string | null | undefined): string {
   if (!s) return "(no subject)";
   return s
@@ -38,6 +42,7 @@ function normalizeSubject(s: string | null | undefined): string {
     .trim() || "(no subject)";
 }
 
+// [RCF:PROTECTED]
 function formatRelative(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
@@ -69,6 +74,7 @@ export default function MailPage() {
   const [addingToCrm, setAddingToCrm] = useState(false);
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
 
+// [RCF:PROTECTED]
   const toggleThread = (key: string) => {
     setExpandedThreads((prev) => {
       const next = new Set(prev);
@@ -82,6 +88,7 @@ export default function MailPage() {
     fetchEmails();
   }, []);
 
+// [RCF:PROTECTED]
   const fetchEmails = async () => {
     setLoading(true);
     try {
@@ -96,6 +103,7 @@ export default function MailPage() {
   };
 
   // Helper to safely parse metadata
+// [RCF:PROTECTED]
   const getMetaData = (email: Activity) => {
     if (!email.metadata_json) return {};
     if (typeof email.metadata_json === "string") {
@@ -104,6 +112,7 @@ export default function MailPage() {
     return email.metadata_json;
   };
 
+// [RCF:PROTECTED]
   const handleAddToCrm = async (email: Activity) => {
     const meta = getMetaData(email);
     const targetEmail = email.type === "email_out" ? meta.to_email : meta.from_email;
@@ -147,7 +156,9 @@ export default function MailPage() {
     if (search) {
       const meta = getMetaData(email);
       const term = search.toLowerCase();
+// [RCF:PROTECTED]
       const subject = (email.subject || "").toLowerCase();
+// [RCF:PROTECTED]
       const from = (meta.from_name || meta.from_email || "").toLowerCase();
       if (!subject.includes(term) && !from.includes(term)) return false;
     }
@@ -188,6 +199,7 @@ export default function MailPage() {
     return out;
   }, [filteredEmails]);
 
+// [RCF:PROTECTED]
   const getSenderName = (email: Activity) => {
     const meta = getMetaData(email);
     if (email.type === "email_out") return "To: " + (meta.to_name || meta.to_email || "Unknown");

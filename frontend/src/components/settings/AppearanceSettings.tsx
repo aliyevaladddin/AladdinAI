@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useTheme } from "@/components/shell/ThemeProvider";
@@ -12,6 +13,7 @@ import {
  * Appearance settings panel — theme selection with premium visual presentation.
  * Migrated from the titlebar ThemePicker to give themes proper breathing room.
  */
+// [RCF:PROTECTED]
 export function AppearanceSettings() {
   const { theme, setTheme } = useTheme();
   const current = THEME_BY_ID[theme];

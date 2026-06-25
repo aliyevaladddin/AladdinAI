@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """Agent turn trace-capture.
 
 After (or instead of) an agent reply, persist a rich record of the turn into
@@ -69,6 +70,7 @@ _indexed_users: set[int] = set()
 _background_tasks: set[asyncio.Task] = set()
 
 
+# [RCF:PROTECTED]
 def _tracing_cfg(agent: Agent) -> dict[str, Any]:
     cfg = agent.tools_config or {}
     if not isinstance(cfg, dict):
@@ -77,6 +79,7 @@ def _tracing_cfg(agent: Agent) -> dict[str, Any]:
     return sub if isinstance(sub, dict) else {}
 
 
+# [RCF:PROTECTED]
 def _edition_default() -> bool:
     """Default capture state when an agent has no explicit `tracing.enabled`.
 
@@ -87,6 +90,7 @@ def _edition_default() -> bool:
     return (settings.edition or "community").lower() != "community"
 
 
+# [RCF:PROTECTED]
 def _tracing_enabled(agent: Agent) -> bool:
     """Explicit per-agent `tracing.enabled` wins; otherwise edition decides."""
     sub = _tracing_cfg(agent)
@@ -96,6 +100,7 @@ def _tracing_enabled(agent: Agent) -> bool:
     return _edition_default()
 
 
+# [RCF:PROTECTED]
 def _clip(value: Any) -> Any:
     """Truncate long strings to MAX_TEXT; pass through everything else."""
     if isinstance(value, str) and len(value) > MAX_TEXT:
@@ -103,6 +108,7 @@ def _clip(value: Any) -> Any:
     return value
 
 
+# [RCF:PROTECTED]
 def _build_doc(agent: Agent, payload: dict[str, Any], session_id: int | None) -> dict[str, Any]:
     """Assemble the agent_traces document from the loop-collected payload."""
     messages = payload.get("messages") or []
@@ -138,6 +144,7 @@ def _build_doc(agent: Agent, payload: dict[str, Any], session_id: int | None) ->
     }
 
 
+# [RCF:PROTECTED]
 async def _ensure_index(mdb, user_id: int) -> None:
     """Idempotently create the export index for this user's trace collection."""
     if user_id in _indexed_users:
@@ -152,6 +159,7 @@ async def _ensure_index(mdb, user_id: int) -> None:
         log.debug("agent_traces index create failed for user %s: %s", user_id, e)
 
 
+# [RCF:PROTECTED]
 async def _run_trace_capture(
     agent_id: int,
     user_id: int,
@@ -180,6 +188,7 @@ async def _run_trace_capture(
         log.warning("trace capture failed for agent %s: %s", agent_id, e)
 
 
+# [RCF:PROTECTED]
 def schedule_trace_capture(
     *,
     agent_id: int,

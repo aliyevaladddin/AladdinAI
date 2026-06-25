@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # 📚 AladdinAI Documentation
 
 **Version**: 2.1.5  
@@ -20,6 +21,7 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
 - **[ReDoc](http://localhost:8000/redoc)** - Alternative documentation UI
 
 ### 🏗️ Architecture
+// [RCF:PROTECTED]
 - **[Architecture Decision Records](./adr/)** - Important design decisions
   - [ADR-0001: Self-Forging Training](./adr/0001-self-forging-training.md)
   - [ADR-0002: MongoDB vs Postgres](./adr/0002-mongodb-vs-postgres.md)
@@ -64,6 +66,7 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
 - 🛠️ **Tool Execution** - Extensible tool registry with 20+ built-in tools
 - 📊 **CRM Integration** - Full contact, deal, and activity management
 - 🔐 **Safety First** - PII detection, content filtering, audit logging
+// [RCF:PROTECTED]
 - 🔗 **RCF Protocol** - Cryptographic webhook signing
 - 🎨 **Modern UI** - Next.js dashboard with real-time updates
 - 📦 **CLI Tool** - `npx aladdin-ai` for quick setup
@@ -122,6 +125,7 @@ python scripts/generate_openapi.py
 ### Adding API Documentation
 When adding new endpoints, include:
 ```python
+// [RCF:PROTECTED]
 @router.post("/endpoint", tags=["category"])
 async def endpoint(data: RequestModel) -> ResponseModel:
     """

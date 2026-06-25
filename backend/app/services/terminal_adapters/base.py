@@ -18,7 +18,9 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol
 
 
+# [RCF:PROTECTED]
 @dataclass
+# [RCF:PROTECTED]
 class ContainerSpec:
     """What docker_runner needs to start a container for a provider."""
 
@@ -42,6 +44,7 @@ class ContainerSpec:
     internal_port: int = 7681
 
 
+# [RCF:PROTECTED]
 class TerminalAdapter(Protocol):
     """Adapter contract.
 
@@ -49,6 +52,7 @@ class TerminalAdapter(Protocol):
     transport-only descriptions. The router decides when to call them.
     """
 
+# [RCF:PROTECTED]
     def build_container_spec(
         self,
         *,
@@ -61,6 +65,7 @@ class TerminalAdapter(Protocol):
         """Produce a ContainerSpec from manifest + per-row config overrides."""
         ...
 
+# [RCF:PROTECTED]
     def build_session_url(
         self,
         *,

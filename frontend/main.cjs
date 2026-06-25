@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const serve = require('electron-serve');
@@ -5,6 +6,7 @@ const serve = require('electron-serve');
 const loadURL = serve({ directory: 'out' });
 const isDev = process.env.NODE_ENV === 'development';
 
+// [RCF:PROTECTED]
 function createWindow() {
   const win = new BrowserWindow({
     width: 1300,

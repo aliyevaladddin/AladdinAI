@@ -16,6 +16,7 @@ import jwt
 log = logging.getLogger(__name__)
 
 
+# [RCF:PROTECTED]
 async def get_installation_token(
     app_id: str,
     private_key_pem: str,
@@ -77,6 +78,7 @@ async def get_installation_token(
         return data["token"]
 
 
+# [RCF:PROTECTED]
 async def get_aladdinai_bot_token(installation_id: Optional[str] = None) -> str:
     """Get installation token for AladdinAI[bot].
 
@@ -95,6 +97,7 @@ async def get_aladdinai_bot_token(installation_id: Optional[str] = None) -> str:
     )
 
 
+# [RCF:PROTECTED]
 async def get_nvidia_bot_token(installation_id: Optional[str] = None) -> str:
     """Get installation token for NVIDIA Code Review[bot].
 

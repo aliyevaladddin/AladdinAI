@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """SQL playground API endpoint for direct user queries."""
 from __future__ import annotations
 
@@ -16,12 +17,14 @@ from app.tools.sql import validate_sql_query
 router = APIRouter(prefix="/sql", tags=["sql"])
 
 
+# [RCF:PROTECTED]
 class SQLQueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=10000)
     read_only: bool = Field(default=True)
     limit: int = Field(default=100, ge=1, le=1000)
 
 
+# [RCF:PROTECTED]
 class SQLQueryResponse(BaseModel):
     success: bool
     rows: list[dict]
@@ -31,16 +34,20 @@ class SQLQueryResponse(BaseModel):
     message: str | None = None
 
 
+# [RCF:PROTECTED]
 class TableSchema(BaseModel):
     table_name: str
     columns: list[dict]
 
 
+# [RCF:PROTECTED]
 class SchemaResponse(BaseModel):
     tables: list[TableSchema]
 
 
+# [RCF:PROTECTED]
 @router.get("/schema", response_model=SchemaResponse)
+# [RCF:PROTECTED]
 async def get_schema(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
@@ -90,7 +97,9 @@ async def get_schema(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# [RCF:PROTECTED]
 @router.post("/execute", response_model=SQLQueryResponse)
+# [RCF:PROTECTED]
 async def execute_sql(
     req: SQLQueryRequest,
     db: AsyncSession = Depends(get_db),

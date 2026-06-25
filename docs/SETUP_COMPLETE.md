@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 # Documentation System Setup Complete ✅
 
 Complete documentation system configured for AladdinAI.
@@ -29,6 +30,7 @@ Created 3 ADRs with full context:
   - Storage matrix with decision table
   - Render.com gotchas
 - **[ADR-0003](adr/0003-rcf-webhook-auth.md)** - RCF Protocol Integration
+// [RCF:PROTECTED]
   - Why RCF instead of HMAC
   - Dogfooding our own product
   - Verification examples
@@ -120,6 +122,7 @@ python scripts/generate_openapi.py
 
 ### Add New Endpoint
 ```python
+// [RCF:PROTECTED]
 @router.post("/agents", tags=["agents"], response_model=AgentResponse)
 async def create_agent(agent: AgentCreate):
     """
@@ -189,6 +192,7 @@ cp template.md 0004-my-decision.md
 4. **GitHub Action working?**
    - Make change in `backend/app/main.py`
    - Commit and push
+// [RCF:PROTECTED]
    - Verify `docs/openapi.json` updated
 
 ## 🎓 Learning Materials Created
@@ -198,6 +202,7 @@ New developers can now:
 - ✅ Create their own agent (Agent Guide)
 - ✅ Write new tools (Tool Guide)
 - ✅ Find any API endpoint (OpenAPI)
+// [RCF:PROTECTED]
 - ✅ Understand why the system is designed this way (ADR)
 
 ---

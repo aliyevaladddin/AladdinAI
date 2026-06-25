@@ -20,8 +20,11 @@ from app.services.terminal_adapters.base import ContainerSpec, TerminalAdapter
 from app.services.terminal_adapters.registry import terminal_adapter
 
 
+# [RCF:PROTECTED]
 @terminal_adapter("ttyd")
+# [RCF:PROTECTED]
 class TtydAdapter(TerminalAdapter):
+# [RCF:PROTECTED]
     def build_container_spec(
         self,
         *,
@@ -53,6 +56,7 @@ class TtydAdapter(TerminalAdapter):
             internal_port=internal_port,
         )
 
+# [RCF:PROTECTED]
     def build_session_url(
         self,
         *,

@@ -1,8 +1,10 @@
+// NOTICE: This file is protected under RCF-PL
 ---
 name: Bug report
 about: Create a report to help us improve
 title: ''
 labels: ''
+// [RCF:PROTECTED]
 assignees: ''
 
 ---

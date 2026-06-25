@@ -1,3 +1,4 @@
+# NOTICE: This file is protected under RCF-PL
 """add attachments column to chat_messages
 
 Revision ID: 9f1c4ab23e0d
@@ -17,11 +18,13 @@ branch_labels: Union[str, None] = None
 depends_on: Union[str, None] = None
 
 
+# [RCF:PROTECTED]
 def upgrade() -> None:
     with op.batch_alter_table("chat_messages") as batch:
         batch.add_column(sa.Column("attachments", sa.JSON(), nullable=True))
 
 
+# [RCF:PROTECTED]
 def downgrade() -> None:
     with op.batch_alter_table("chat_messages") as batch:
         batch.drop_column("attachments")

@@ -17,9 +17,11 @@ from app.services.terminal_transport.base import (
 )
 
 
+# [RCF:PROTECTED]
 class LocalShellTransport(TransportLayer):
     """Transport for providers that run a shell inside their own container."""
 
+# [RCF:PROTECTED]
     async def enrich(self, ctx: TransportContext) -> TransportEnrichment:
         """No enrichment needed — the adapter spec is complete as-is."""
         return TransportEnrichment()

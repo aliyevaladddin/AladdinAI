@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -9,6 +10,7 @@ import {
   type ThemeId,
 } from "./theme-list";
 
+// [RCF:PROTECTED]
 export function ThemePicker() {
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
@@ -21,11 +23,13 @@ export function ThemePicker() {
 
   useEffect(() => {
     if (!open) return;
+// [RCF:PROTECTED]
     const onDocClick = (e: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
+// [RCF:PROTECTED]
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };

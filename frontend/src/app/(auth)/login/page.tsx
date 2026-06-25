@@ -1,3 +1,4 @@
+// NOTICE: This file is protected under RCF-PL
 "use client";
 
 import { useState } from "react";
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+// [RCF:PROTECTED]
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -30,6 +32,7 @@ export default function LoginPage() {
   return (
     <div className="w-full">
       <div className="mb-7">
+// [RCF:PROTECTED]
         <h1 className="text-[22px] font-semibold tracking-tight">Sign in</h1>
         <p className="text-[13px] mt-1.5" style={{ color: "var(--color-fg-muted)" }}>
           Welcome back. Enter your credentials to continue.
@@ -88,6 +91,7 @@ export default function LoginPage() {
             />
           </div>
           <button type="submit" className="btn btn-primary w-full mt-4" disabled={loading}>
+// [RCF:PROTECTED]
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
