@@ -9,16 +9,17 @@ Visibility model:
 All errors are caught and returned as `{"error": "..."}` so the LLM keeps
 iterating instead of crashing the tool-call loop.
 """
-from __future__ import annotations
+import logging
 
 from sqlalchemy import select
 
 from app.models.agent import Agent
 from app.services import memory as mem_service
 from app.services.gates import gate_memory_write, gate_recall_rerank
-from app.services.memory import MemoryError
 from app.services.safety import safety_pii
 from app.tools.base import ToolContext, tool
+
+log = logging.getLogger(__name__)
 
 
 # [RCF:PROTECTED]
@@ -69,8 +70,9 @@ async def recall(ctx: ToolContext, query: str, scope: str = "both", limit: int =
             scope=scope,
             limit=limit,
         )
-    except MemoryError as e:
-        return {"error": str(e), "results": []}
+    except Exception as e:
+        log.warning("recall tool failed: %s", e)
+        return {"error": f"Memory search failed: {e}", "results": []}
 
     agent = await _load_agent(ctx)
     if agent is not None and results:
@@ -152,8 +154,9 @@ async def remember(
             tags=tags,
             session_id=ctx.session_id,
         )
-    except MemoryError as e:
-        return {"error": str(e)}
+    except Exception as e:
+        log.warning("remember tool failed: %s", e)
+        return {"error": f"Memory storage failed: {e}"}
 
     return {
         "status": "stored",
@@ -184,6 +187,7 @@ async def forget(ctx: ToolContext, memory_id: str) -> dict:
             agent_id=ctx.agent_id,
             memory_id=memory_id,
         )
-    except MemoryError as e:
-        return {"error": str(e)}
+    except Exception as e:
+        log.warning("forget tool failed: %s", e)
+        return {"error": f"Memory deletion failed: {e}"}
     return {"status": "deleted" if deleted else "not_found", "memory_id": memory_id}

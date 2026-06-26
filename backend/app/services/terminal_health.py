@@ -22,9 +22,9 @@ Design notes:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Iterable
 
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError, ProgrammingError
@@ -104,46 +104,99 @@ async def _sync_one(provider: TerminalProvider) -> None:
 async def poll_once() -> None:
     """One pass over all provider rows that have a container_id. Idempotent.
 
-    Safe to call before `alembic upgrade head` has been run — if the
-    `terminal_providers` table doesn't exist yet we log once and skip; the
-    scheduler keeps ticking and will pick up real rows after the migration
-    lands.
+    Safe to call before `alembic upgrade head` has been run.
     """
     global _table_missing_logged
-    async with async_session() as db:
-        try:
+    from sqlalchemy.exc import OperationalError as _OE
+
+    # 1. Load active providers from DB
+    providers_to_sync: list[dict] = []
+    try:
+        async with async_session() as db:
             result = await db.execute(
                 select(TerminalProvider).where(TerminalProvider.container_id.is_not(None)),
             )
-        except (OperationalError, ProgrammingError) as exc:
-            # SQLite raises OperationalError("no such table: …"); Postgres
-            # raises ProgrammingError("relation … does not exist"). Both mean
-            # the migration hasn't been applied yet — not a real fault.
-            msg = str(exc).lower()
-            if "terminal_providers" in msg and (
-                "no such table" in msg or "does not exist" in msg
-            ):
-                if not _table_missing_logged:
-                    _log.warning(
-                        "terminal-health: table 'terminal_providers' is missing — "
-                        "did you run `alembic upgrade head`? Skipping polls until it appears.",
-                    )
-                    _table_missing_logged = True
-                return
-            raise
-        # Once we successfully queried, reset the latch so a later drop
-        # (extremely unlikely) would re-log.
-        _table_missing_logged = False
+            rows = result.scalars().all()
+            for r in rows:
+                providers_to_sync.append({
+                    "id": r.id,
+                    "container_id": r.container_id,
+                    "status": r.status,
+                    "last_error": r.last_error,
+                })
+            _table_missing_logged = False
+    except (OperationalError, ProgrammingError) as exc:
+        msg = str(exc).lower()
+        if "terminal_providers" in msg and (
+            "no such table" in msg or "does not exist" in msg
+        ):
+            if not _table_missing_logged:
+                _log.warning(
+                    "terminal-health: table 'terminal_providers' is missing — "
+                    "did you run `alembic upgrade head`? Skipping polls until it appears.",
+                )
+                _table_missing_logged = True
+            return
+        raise
 
-        rows: Iterable[TerminalProvider] = result.scalars().all()
-        for provider in rows:
-            await _sync_one(provider)
+    if not providers_to_sync:
+        return
+
+    # 2. Inspect Docker status outside DB session (no connection held during slow I/O)
+    sync_results: list[dict] = []
+    for p in providers_to_sync:
+        cid = p["container_id"]
+        status = "error"
+        last_error = None
+
         try:
-            await db.commit()
+            info = await docker_runner.inspect_status(cid)
+            status = _classify(info.state, info.health)
+            last_error = info.error if info.error else (
+                p["last_error"] if status not in ("running", "starting") else None
+            )
+        except docker_runner.DockerUnavailable as exc:
+            status = "unhealthy"
+            last_error = f"docker unavailable: {exc}"
         except Exception as exc:  # noqa: BLE001
-            _log.warning("terminal-health: commit failed: %s", exc)
+            status = "error"
+            last_error = str(exc)
 
+        sync_results.append({
+            "id": p["id"],
+            "status": status,
+            "last_error": last_error,
+        })
 
+    # 3. Write results to DB in a short-lived write session (with retry)
+    for attempt in range(5):
+        try:
+            async with async_session() as db:
+                for res in sync_results:
+                    db_prov = (await db.execute(
+                        select(TerminalProvider).where(TerminalProvider.id == res["id"])
+                    )).scalar_one_or_none()
+                    if db_prov:
+                        db_prov.status = res["status"]
+                        db_prov.last_error = res["last_error"]
+                        db_prov.last_health_at = datetime.now(timezone.utc)
+                await db.commit()
+            return  # Success!
+        except _OE as exc:
+            err = str(exc).lower()
+            if ("locked" in err or "busy" in err) and attempt < 4:
+                wait = 2 ** attempt
+                _log.debug(
+                    "terminal-health: DB locked on update (attempt %d/5), retrying in %ds",
+                    attempt + 1, wait,
+                )
+                await asyncio.sleep(wait)
+            else:
+                _log.warning("terminal-health: failed to commit health update: %s", exc)
+                break
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("terminal-health: unexpected write failure: %s", exc)
+            break
 # [RCF:PROTECTED]
 def start() -> None:
     """Register the poller on the shared scheduler. Safe to call twice."""
