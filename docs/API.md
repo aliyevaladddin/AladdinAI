@@ -1,4 +1,3 @@
-// NOTICE: This file is protected under RCF-PL
 # AladdinAI API
 
     🧞 **AladdinAI** - Self-hosted AI workspace with multi-agent orchestration, persistent memory, and tool execution.
@@ -10,7 +9,6 @@
     * 🛠️ **Tool Execution** - Extensible tool registry with safety gates
     * 📊 **CRM Integration** - Contacts, deals, and activities management
     * 🔐 **Safety First** - PII detection, content filtering, and audit logging
-
     * 🔗 **RCF Protocol** - Cryptographic signing for webhook authenticity
 
     ## Authentication
@@ -1426,7 +1424,6 @@ Get Webhook Config
 Return the webhook URL, secret, and setup instructions for this channel.
 
 For self-hosted providers like WAHA, the secret must be configured
-
 on the provider side too — otherwise the channel runs unsigned and
 incoming requests are accepted with a warning. Knowing this is
 essential for production deployments.
@@ -1710,6 +1707,80 @@ Create Contact
 | Code | Description |
 | ---- | ----------- |
 | 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/contacts/import
+
+#### POST
+##### Summary:
+
+Import Contacts From Excel
+
+##### Description:
+
+POST /api/crm/contacts/import
+Upload .xlsx / .xls → parse → create contacts with column mapping.
+
+Query params let the frontend pass custom column names from the user's file:
+  ?name_col=Full+Name&email_col=Email+Address&company_col=Organization
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| name_col | query |  | No | string |
+| email_col | query |  | No | string |
+| phone_col | query |  | No | string |
+| company_col | query |  | No | string |
+| tags_col | query |  | No | string |
+| notes_col | query |  | No | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/contacts/export
+
+#### GET
+##### Summary:
+
+Export Contacts To Excel
+
+##### Description:
+
+GET /api/crm/contacts/export
+Returns a styled .xlsx file with all (filtered) contacts.
+
+Optional filters: ?tag=vip&source=excel_import&created_after=2026-01-01
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| tag | query |  | No |  |
+| source | query |  | No |  |
+| created_after | query |  | No |  |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
 | 422 | Validation Error |
 
 ##### Security
@@ -2605,11 +2676,9 @@ Telegram Webhook
 #### GET
 ##### Summary:
 
-
 Verify Whatsapp Webhook
 
 ##### Description:
-
 
 Meta verifies the webhook URL by calling GET with hub.verify_token —
 it must match `channel.webhook_secret`. No fallback: an unconfigured
@@ -3311,6 +3380,60 @@ session cookie.
 | ---- | ----------- |
 | 200 | Successful Response |
 
+### /api/reports/excel
+
+#### GET
+##### Summary:
+
+Download Excel Report
+
+##### Description:
+
+GET /api/reports/excel?type=all|deals|contacts|activities
+Returns a styled multi-sheet Excel workbook for the authenticated user.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| type | query |  | No | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/digest/trigger
+
+#### POST
+##### Summary:
+
+Trigger Daily Digest
+
+##### Description:
+
+Trigger daily digest manually for the authenticated user and send via Telegram/Email.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /
 
 #### GET
@@ -3447,6 +3570,12 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | service_name | string |  | No |
 | port | integer |  | No |
 
+#### Body_import_contacts_from_excel_api_crm_contacts_import_post
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| file | string |  | Yes |
+
 #### Body_upload_attachment_api_chat_upload_post
 
 | Name | Type | Description | Required |
@@ -3542,7 +3671,6 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | amount |  |  | No |
 | currency | string |  | No |
 | probability | integer |  | No |
-
 | assigned_agent_id |  |  | No |
 | notes |  |  | No |
 
@@ -3557,7 +3685,6 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | amount |  |  | Yes |
 | currency | string |  | Yes |
 | probability | integer |  | Yes |
-
 | assigned_agent_id |  |  | Yes |
 | notes |  |  | Yes |
 | created_at | dateTime |  | Yes |
@@ -3572,7 +3699,6 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | amount |  |  | No |
 | currency |  |  | No |
 | probability |  |  | No |
-
 | assigned_agent_id |  |  | No |
 | notes |  |  | No |
 
@@ -3895,6 +4021,8 @@ Install request — picks an entry from the marketplace by `type`.
 | contacts | [ [SearchResult](#searchresult) ] |  | Yes |
 | deals | [ [SearchResult](#searchresult) ] |  | Yes |
 | activities | [ [SearchResult](#searchresult) ] |  | Yes |
+| agents | [ [SearchResult](#searchresult) ] |  | Yes |
+| memories | [ [SearchResult](#searchresult) ] |  | Yes |
 | total | integer |  | Yes |
 
 #### SearchResult
