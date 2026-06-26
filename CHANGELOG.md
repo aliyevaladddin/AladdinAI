@@ -18,6 +18,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Set ALADDIN_ENV=test so backend tests boot under Postgres (#293) ([3486531](https://github.com/aliyevaladddin/AladdinAI/commit/3486531d9c151b227cdb63c2c0e6f8f455697228))
 
+- Resolve SQLite concurrency locking and decouple database transactions, update Telegram bot command descriptions to English (#306) ([f7c4d63](https://github.com/aliyevaladddin/AladdinAI/commit/f7c4d637357f2650e728488966c1b871c906eec4))
+
 
 ### Documentation
 
