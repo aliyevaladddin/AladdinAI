@@ -13,14 +13,13 @@ import logging
 
 from sqlalchemy import select
 
-log = logging.getLogger(__name__)
-
 from app.models.agent import Agent
 from app.services import memory as mem_service
 from app.services.gates import gate_memory_write, gate_recall_rerank
-from app.services.memory import MemoryError
 from app.services.safety import safety_pii
 from app.tools.base import ToolContext, tool
+
+log = logging.getLogger(__name__)
 
 
 # [RCF:PROTECTED]

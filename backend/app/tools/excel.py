@@ -13,7 +13,6 @@ endpoint, e.g. "1234/report.xlsx".
 """
 from __future__ import annotations
 
-import io
 import os
 from typing import Any
 

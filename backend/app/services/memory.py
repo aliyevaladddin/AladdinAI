@@ -33,13 +33,12 @@ import httpx
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from sqlalchemy import select
 
-log = logging.getLogger(__name__)
-
 from app.crypto import decrypt
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.models.llm_provider import LLMProvider
 from app.models.mongo_connection import MongoConnection
+
+log = logging.getLogger(__name__)
 
 # Target embedding dimension for all providers
 EMBED_DIM = 2048

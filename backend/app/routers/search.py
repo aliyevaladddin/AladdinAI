@@ -182,7 +182,7 @@ async def global_search(
     # ── Memory search (MongoDB regex — graceful no-op if not configured) ──────
     memories: list[SearchResult] = []
     try:
-        from app.services.memory import list_memories, MemoryError
+        from app.services.memory import list_memories
         mem_docs = await list_memories(
             db,
             user_id=user.id,

@@ -25,7 +25,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Iterable
 
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError, ProgrammingError
