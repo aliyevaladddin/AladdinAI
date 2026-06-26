@@ -3177,6 +3177,199 @@
         }
       }
     },
+    "/api/crm/contacts/import": {
+      "post": {
+        "tags": [
+          "crm"
+        ],
+        "summary": "Import Contacts From Excel",
+        "description": "POST /api/crm/contacts/import\nUpload .xlsx / .xls \u2192 parse \u2192 create contacts with column mapping.\n\nQuery params let the frontend pass custom column names from the user's file:\n  ?name_col=Full+Name&email_col=Email+Address&company_col=Organization",
+        "operationId": "import_contacts_from_excel_api_crm_contacts_import_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name_col",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "name",
+              "title": "Name Col"
+            }
+          },
+          {
+            "name": "email_col",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "email",
+              "title": "Email Col"
+            }
+          },
+          {
+            "name": "phone_col",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "phone",
+              "title": "Phone Col"
+            }
+          },
+          {
+            "name": "company_col",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "company",
+              "title": "Company Col"
+            }
+          },
+          {
+            "name": "tags_col",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "tags",
+              "title": "Tags Col"
+            }
+          },
+          {
+            "name": "notes_col",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "notes",
+              "title": "Notes Col"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_contacts_from_excel_api_crm_contacts_import_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/contacts/export": {
+      "get": {
+        "tags": [
+          "crm"
+        ],
+        "summary": "Export Contacts To Excel",
+        "description": "GET /api/crm/contacts/export\nReturns a styled .xlsx file with all (filtered) contacts.\n\nOptional filters: ?tag=vip&source=excel_import&created_after=2026-01-01",
+        "operationId": "export_contacts_to_excel_api_crm_contacts_export_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source"
+            }
+          },
+          {
+            "name": "created_after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created After"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/crm/contacts/{contact_id}": {
       "get": {
         "tags": [
@@ -6089,6 +6282,84 @@
         }
       }
     },
+    "/api/reports/excel": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Download Excel Report",
+        "description": "GET /api/reports/excel?type=all|deals|contacts|activities\nReturns a styled multi-sheet Excel workbook for the authenticated user.",
+        "operationId": "download_excel_report_api_reports_excel_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "deals",
+                "contacts",
+                "activities"
+              ],
+              "default": "all",
+              "title": "Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/digest/trigger": {
+      "post": {
+        "tags": [
+          "Digest Agent"
+        ],
+        "summary": "Trigger Daily Digest",
+        "description": "Trigger daily digest manually for the authenticated user and send via Telegram/Email.",
+        "operationId": "trigger_daily_digest_api_digest_trigger_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -6601,6 +6872,20 @@
         },
         "type": "object",
         "title": "BentoMLDeployRequest"
+      },
+      "Body_import_contacts_from_excel_api_crm_contacts_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_contacts_from_excel_api_crm_contacts_import_post"
       },
       "Body_upload_attachment_api_chat_upload_post": {
         "properties": {
@@ -8592,6 +8877,20 @@
             "type": "array",
             "title": "Activities"
           },
+          "agents": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "type": "array",
+            "title": "Agents"
+          },
+          "memories": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "type": "array",
+            "title": "Memories"
+          },
           "total": {
             "type": "integer",
             "title": "Total"
@@ -8602,6 +8901,8 @@
           "contacts",
           "deals",
           "activities",
+          "agents",
+          "memories",
           "total"
         ],
         "title": "SearchResponse"
@@ -8613,7 +8914,9 @@
             "enum": [
               "contact",
               "deal",
-              "activity"
+              "activity",
+              "agent",
+              "memory"
             ],
             "title": "Kind"
           },
