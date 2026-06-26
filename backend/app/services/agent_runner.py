@@ -182,6 +182,35 @@ async def run_agent(
                 }
 
     allowed = [name for name in _allowed_tools(agent) if name in REGISTRY]
+    if extras and extras.get("is_admin"):
+        # Auto-grant workspace management tools to authorized administrator commands
+        management_tools = ["list_agents", "create_agent", "start_agent", "stop_agent", "list_triggers", "create_trigger", "run_trigger"]
+        for tool_name in management_tools:
+            if tool_name in REGISTRY and tool_name not in allowed:
+                allowed.append(tool_name)
+
+        # Append workspace management instructions to the system prompt
+        sys_msg = (
+            "\n\n[ADMINISTRATIVE ACCESS GRANTED]\n"
+            "You are interacting with the workspace administrator (Aladdin). "
+            "You have access to workspace management tools: 'list_agents', 'create_agent', "
+            "'start_agent', 'stop_agent', 'list_triggers', 'create_trigger', and 'run_trigger'. "
+            "Use them when requested. To create an agent on NVIDIA NIM, call 'create_agent' without "
+            "specifying llm_provider_id (it will auto-detect the NIM provider)."
+        )
+        sys_idx = next(
+            (i for i, m in enumerate(messages) if m.get("role") == "system"),
+            None,
+        )
+        if sys_idx is None:
+            messages = [{"role": "system", "content": sys_msg}, *messages]
+        else:
+            base = _text_of(messages[sys_idx].get("content"))
+            messages[sys_idx] = {
+                "role": "system",
+                "content": f"{base}{sys_msg}" if base else sys_msg,
+            }
+
     use_tools = bool(allowed) and model_supports_tools(agent.model)
     schemas = openai_schemas(allowed) if use_tools else None
 

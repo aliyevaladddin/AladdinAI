@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, LogOut, User as UserIcon, Bell, Zap, Mail, Info, Check, Users, Briefcase, MessageSquare, Loader2 } from "lucide-react";
+import { Search, LogOut, User as UserIcon, Bell, Zap, Mail, Info, Check, Users, Briefcase, MessageSquare, Loader2, Bot, Brain } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { api } from "@/lib/api";
 
@@ -20,7 +20,7 @@ interface NotifItem {
 
 
 interface SearchResult {
-  kind: "contact" | "deal" | "activity";
+  kind: "contact" | "deal" | "activity" | "agent" | "memory";
   id: number;
   title: string;
   subtitle: string | null;
@@ -36,6 +36,8 @@ interface SearchResponse {
   contacts: SearchResult[];
   deals: SearchResult[];
   activities: SearchResult[];
+  agents: SearchResult[];
+  memories: SearchResult[];
   total: number;
 }
 
@@ -162,7 +164,7 @@ export function AppHeader() {
       api
         .get<SearchResponse>(`/search?q=${encodeURIComponent(q)}&limit=6`)
         .then((res) => setSearchResults(res))
-        .catch(() => setSearchResults({ contacts: [], deals: [], activities: [], total: 0 }))
+        .catch(() => setSearchResults({ contacts: [], deals: [], activities: [], agents: [], memories: [], total: 0 }))
         .finally(() => setSearchLoading(false));
     }, 220);
     return () => {
@@ -176,12 +178,17 @@ export function AppHeader() {
     setSearchQuery("");
     setSearchResults(null);
     if (r.kind === "contact") {
-      router.push(`/dashboard/contacts/${r.id}`);
+      router.push(`/dashboard/crm/${r.id}`);
     } else if (r.kind === "deal") {
-      router.push(`/dashboard/deals`);
+      router.push("/dashboard/deals");
     } else if (r.kind === "activity") {
       if (r.activity_type?.startsWith("email")) router.push("/dashboard/mail");
       else router.push("/dashboard/comms");
+    } else if (r.kind === "agent") {
+      router.push(`/dashboard/agents/${r.id}`);
+    } else if (r.kind === "memory") {
+      // Memory has no dedicated page — open agents panel
+      router.push("/dashboard/agents");
     }
   };
 
@@ -289,9 +296,21 @@ export function AppHeader() {
                   onClick={handleResultClick}
                 />
                 <ResultGroup
+                  label="Agents"
+                  icon={<Bot size={11} />}
+                  results={searchResults.agents ?? []}
+                  onClick={handleResultClick}
+                />
+                <ResultGroup
                   label="Conversations"
                   icon={<MessageSquare size={11} />}
                   results={searchResults.activities}
+                  onClick={handleResultClick}
+                />
+                <ResultGroup
+                  label="Memory"
+                  icon={<Brain size={11} />}
+                  results={searchResults.memories ?? []}
                   onClick={handleResultClick}
                 />
               </>

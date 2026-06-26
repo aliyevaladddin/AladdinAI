@@ -15,14 +15,16 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.config import settings as app_settings
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
-    chat, crm_activities, crm_contacts, crm_deals, dashboard, mongodb,
-    notifications, providers, router_config, search, settings, sql, ssh_exec,
+    chat, crm_activities, crm_contacts, crm_deals, dashboard, digest, mongodb,
+    notifications, providers, reports as reports_router, router_config, search,
+    settings, sql, ssh_exec,
     terminal_providers, terminal_ws, triggers as triggers_router, vms, webhooks,
 )
 from app.services import triggers as triggers_service
 from app.services import telegram_poller
 from app.services import terminal_health
 from app.services import autonomous_bot_scheduler
+from app.tools import excel as _excel_tools  # noqa: F401 — registers excel tools
 
 log = logging.getLogger(__name__)
 
@@ -148,6 +150,8 @@ app.include_router(triggers_router.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
 app.include_router(terminal_providers.router, prefix="/api/terminal", tags=["terminal"])
+app.include_router(reports_router.router, prefix="/api")
+app.include_router(digest.router, prefix="/api")
 
 # [RCF:PROTECTED]
 @app.get("/")

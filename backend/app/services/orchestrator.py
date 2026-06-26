@@ -91,51 +91,115 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
         contact = await find_or_create_contact(
             db, channel.user_id, sender_id, sender_name, source=channel_type, is_phone=is_phone
         )
-
         await log_activity(
             db, channel.user_id, contact.id,
             activity_type="message_in", channel=channel_type, content=text,
         )
+        await db.commit()
 
+    # Check if the sender is the authorized administrator
+    is_admin = False
+    if channel_type == "telegram":
+        from app.config import settings
+        admin_id = settings.telegram_chat_id or (channel.config or {}).get("admin_chat_id")
+        if admin_id and str(sender_id) == str(admin_id):
+            is_admin = True
+
+    reply = "I received your message. An agent will respond shortly."
+    outgoing_attachments: list[dict] = []
+
+    # ── Telegram Commander: intercept admin slash-commands ──────────
+    # If the message comes from the authorized admin and starts with '/'
+    # we route it to the commander instead of an LLM agent so Aladdin
+    # can manage agents and triggers directly from the chat.
+    if is_admin and channel_type == "telegram":
+        from app.services.telegram_commander import is_admin_command, handle_admin_command
+        if is_admin_command(text):
+            log.info("orchestrator: admin command from %s: %r", sender_id, text)
+            # Resolve chat_id upfront so the commander can send agent replies back.
+            cmd_chat_id = str(
+                payload.get("message", {}).get("chat", {}).get("id", sender_id)
+            )
+            reply = await handle_admin_command(
+                channel, channel.user_id, text, chat_id=cmd_chat_id
+            )
+            # Skip agent processing entirely — jump to send step below
+            async with async_session() as db:
+                await log_activity(
+                    db, channel.user_id, contact.id,
+                    activity_type="message_out", channel=channel_type, content=reply,
+                )
+                await db.commit()
+
+            from app.services.webhook_service import trigger_webhooks
+            _fire_and_forget(
+                trigger_webhooks(channel.user_id, "message_received", {
+                    "contact_id": contact.id,
+                    "contact_name": contact.name,
+                    "channel": channel_type,
+                    "text": text,
+                }),
+                "webhook:message_received",
+            )
+
+            try:
+                if reply:
+                    await send_telegram(channel, cmd_chat_id, reply)
+            except Exception:
+                log.exception("orchestrator: telegram send failed for admin reply chat_id=%s", cmd_chat_id)
+
+            _fire_and_forget(
+                trigger_webhooks(channel.user_id, "message_sent", {
+                    "contact_id": contact.id,
+                    "channel": channel_type,
+                    "reply": reply,
+                }),
+                "webhook:message_sent",
+            )
+            return
+    # ── End Commander block ─────────────────────────────────────────
+
+    agent = None
+    async with async_session() as db:
         # Router rules can override the channel's default agent based on
         # message content. If none matches, fall back to channel.agent_id.
         routed_agent_id = await resolve_agent_id(
             db, channel.user_id, text or "", channel_agent_id=channel.agent_id
         )
         target_agent_id = routed_agent_id if routed_agent_id is not None else channel.agent_id
-
-        agent = None
         if target_agent_id:
             result = await db.execute(select(Agent).where(Agent.id == target_agent_id))
             agent = result.scalar_one_or_none()
 
-        reply = "I received your message. An agent will respond shortly."
-        outgoing_attachments: list[dict] = []
-        if agent and agent.llm_provider_id:
-            log.info("orchestrator: running agent %s", agent.name)
-            recipient = sender_id
-            if channel_type == "telegram":
-                recipient = str(payload.get("message", {}).get("chat", {}).get("id", sender_id))
-            extras: dict = {
-                "channel_type": channel_type,
-                "channel_id": channel.id,
-                "recipient": recipient,
-                "inbound_attachments": attachments,
-                "outgoing_attachments": outgoing_attachments,
-            }
+    if agent and agent.llm_provider_id:
+        log.info("orchestrator: running agent %s", agent.name)
+        recipient = sender_id
+        if channel_type == "telegram":
+            recipient = str(payload.get("message", {}).get("chat", {}).get("id", sender_id))
+        extras: dict = {
+            "channel_type": channel_type,
+            "channel_id": channel.id,
+            "recipient": recipient,
+            "inbound_attachments": attachments,
+            "outgoing_attachments": outgoing_attachments,
+            "is_admin": is_admin,
+        }
+        async with async_session() as db:
+            # Merge agent to attach it to the current clean session
+            agent_db = await db.merge(agent)
             reply = await _get_agent_reply(
-                db, agent, text, attachments=attachments, extras=extras,
+                db, agent_db, text, attachments=attachments, extras=extras,
             )
-        else:
-            log.debug("orchestrator: no agent assigned, using default reply")
+            await db.commit()
+    else:
+        log.debug("orchestrator: no agent assigned, using default reply")
 
+    async with async_session() as db:
         await log_activity(
             db, channel.user_id, contact.id,
             activity_type="message_out", channel=channel_type, content=reply,
         )
-
         await db.commit()
-        await db.refresh(contact)
 
     from app.services.webhook_service import trigger_webhooks
 

@@ -12,6 +12,7 @@ import {
   Zap,
   Settings,
   Sparkles,
+  BarChart2,
 } from "lucide-react";
 
 type NavItem = {
@@ -27,6 +28,7 @@ const mainNav: NavItem[] = [
   { href: "/dashboard/agents", label: "Agents", icon: Bot },
   { href: "/dashboard/automations", label: "Automations", icon: Zap },
   { href: "/dashboard/crm", label: "CRM", icon: Users },
+  { href: "/dashboard/reports", label: "Reports", icon: BarChart2 },
   { href: "/dashboard/chat", label: "Playground", icon: Sparkles },
 ];
 

@@ -1,4 +1,5 @@
 # NOTICE: This file is protected under RCF-PL
+import asyncio
 from datetime import datetime, timezone
 from typing import Any
 
@@ -842,63 +843,135 @@ async def delete_agent_memory(
 
 # [RCF:PROTECTED]
 async def _process_agent_message(message_id: int) -> None:
-    """Worker: pick up a pending agent_messages row and run the target agent."""
+    """Worker: pick up a pending agent_messages row and run the target agent.
+
+    DB access is split into short-lived sessions so the long LLM HTTP call
+    never holds a connection open. SQLite WAL + busy_timeout handle the
+    rare case where two short writes collide.
+    """
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
+
+    # ── Phase 1: mark in_progress ──────────────────────────────────────────
     async with async_session() as db:
-        msg = (await db.execute(select(AgentMessage).where(AgentMessage.id == message_id))).scalar_one_or_none()
+        msg = (await db.execute(
+            select(AgentMessage).where(AgentMessage.id == message_id)
+        )).scalar_one_or_none()
         if not msg or msg.status != "pending":
             return
-
         msg.status = "in_progress"
+        user_id_val = msg.user_id
+        to_agent_id_val = msg.to_agent_id
+        task_val = msg.task
+        context_val = msg.context
+        parent_session_val = msg.parent_session_id
         await db.commit()
+    # Session is CLOSED here — no lock held during LLM call.
 
-        agent = (await db.execute(select(Agent).where(Agent.id == msg.to_agent_id))).scalar_one_or_none()
-        if not agent or not agent.llm_provider_id:
-            msg.status = "failed"
-            msg.error = "Agent or provider missing"
-            msg.completed_at = datetime.now(timezone.utc)
-            await db.commit()
-            return
+    # ── Phase 2: load agent data (quick read, session closed after) ────────
+    agent_name = "unknown"
+    agent_obj: Agent | None = None
+    async with async_session() as db:
+        agent_obj = (await db.execute(
+            select(Agent).where(Agent.id == to_agent_id_val)
+        )).scalar_one_or_none()
+        if agent_obj:
+            agent_name = agent_obj.name
 
-        ctx_str = ""
-        if msg.context:
-            ctx_str = f"\n\nContext:\n{msg.context}"
+    if not agent_obj or not agent_obj.llm_provider_id:
+        async with async_session() as db:
+            msg2 = (await db.execute(
+                select(AgentMessage).where(AgentMessage.id == message_id)
+            )).scalar_one_or_none()
+            if msg2:
+                msg2.status = "failed"
+                msg2.error = "Agent or LLM provider not configured"
+                msg2.completed_at = datetime.now(timezone.utc)
+                await db.commit()
+        return
 
-        try:
+    # ── Phase 3: run LLM (NO DB session open during this long HTTP call) ───
+    ctx_str = f"\n\nContext:\n{context_val}" if context_val else ""
+    messages = [
+        {"role": "system", "content": agent_obj.system_prompt},
+        {"role": "user",   "content": f"{task_val}{ctx_str}"},
+    ]
+
+    result_text: str | None = None
+    error_text: str | None = None
+    final_status = "failed"
+
+    # run_agent needs a db for memory reads/writes; give it a fresh short session.
+    try:
+        async with async_session() as db:
             answer = await run_agent(
                 db,
-                agent,
-                [
-                    {"role": "system", "content": agent.system_prompt},
-                    {"role": "user", "content": f"{msg.task}{ctx_str}"},
-                ],
-                session_id=msg.parent_session_id,
+                agent_obj,
+                messages,
+                session_id=parent_session_val,
             )
-            msg.result = answer
-            msg.status = "done"
-        except LLMError as e:
-            msg.error = str(e)
-            msg.status = "failed"
+            result_text = answer
+            final_status = "done"
+    except LLMError as e:
+        error_text = str(e)
+    except Exception as e:  # noqa: BLE001
+        _log.exception(
+            "_process_agent_message: unexpected error for msg %s", message_id
+        )
+        error_text = f"{type(e).__name__}: {e}"
 
-        msg.completed_at = datetime.now(timezone.utc)
+    # ── Phase 4: persist result (short write, retry on lock) ───────────────
+    from sqlalchemy.exc import OperationalError as _OE
+    for attempt in range(5):
+        try:
+            async with async_session() as db:
+                msg3 = (await db.execute(
+                    select(AgentMessage).where(AgentMessage.id == message_id)
+                )).scalar_one_or_none()
+                if msg3:
+                    msg3.result = result_text
+                    msg3.error = error_text
+                    msg3.status = final_status
+                    msg3.completed_at = datetime.now(timezone.utc)
+                    await db.commit()
+            break
+        except _OE as exc:
+            err = str(exc).lower()
+            if ("locked" in err or "busy" in err) and attempt < 4:
+                await asyncio.sleep(2 ** attempt)
+            else:
+                _log.exception(
+                    "_process_agent_message: could not persist result for msg %s",
+                    message_id,
+                )
+                break
 
-        # Create notification with the result
-        from app.models.notification import Notification
-        if msg.status == "done":
-            notif = Notification(
-                user_id=msg.user_id,
-                title=f"Agent \"{agent.name}\" completed task",
-                body=(msg.result or "")[:200],
-                category="trigger",
-                link=f"/dashboard/agents/{agent.id}",
-            )
-        else:
-            notif = Notification(
-                user_id=msg.user_id,
-                title=f"Agent \"{agent.name}\" failed",
-                body=(msg.error or "Unknown error")[:200],
-                category="system",
-                link=f"/dashboard/agents/{agent.id}",
-            )
-        db.add(notif)
+    # ── Phase 5: notification (non-critical, own session) ─────────────────
+    from app.models.notification import Notification
+    try:
+        async with async_session() as db:
+            if final_status == "done":
+                notif = Notification(
+                    user_id=user_id_val,
+                    title=f"Agent \"{agent_name}\" completed task",
+                    body=(result_text or "")[:200],
+                    category="trigger",
+                    link=f"/dashboard/agents/{to_agent_id_val}",
+                )
+            else:
+                notif = Notification(
+                    user_id=user_id_val,
+                    title=f"Agent \"{agent_name}\" failed",
+                    body=(error_text or "Unknown error")[:200],
+                    category="system",
+                    link=f"/dashboard/agents/{to_agent_id_val}",
+                )
+            db.add(notif)
+            await db.commit()
+    except Exception:  # noqa: BLE001
+        _log.warning(
+            "_process_agent_message: notification failed for msg %s (non-fatal)",
+            message_id,
+        )
 
-        await db.commit()
+
