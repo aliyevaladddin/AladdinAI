@@ -17,5 +17,6 @@ from app.tools import messaging  # noqa: F401
 from app.tools import vision  # noqa: F401
 from app.tools import image  # noqa: F401
 from app.tools import github_tools  # noqa: F401
+from app.tools import workspace_management  # noqa: F401
 
 __all__ = ["REGISTRY", "Tool", "ToolContext", "execute", "openai_schemas", "tool"]

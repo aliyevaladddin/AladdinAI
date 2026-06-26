@@ -24,6 +24,29 @@ log = logging.getLogger(__name__)
 _tasks: dict[int, asyncio.Task] = {}
 _running = False
 
+# ── Bot command menu definitions ───────────────────────────────────────────────
+# These are registered with Telegram via setMyCommands so they appear
+# in the "/" menu when the admin opens the bot chat.
+_BOT_COMMANDS = [
+    # ── Quick info (no args needed — tap and send immediately) ──
+    {"command": "agents",         "description": "🤖 List all agents with status"},
+    {"command": "triggers",        "description": "⚡ List all triggers"},
+    {"command": "status",          "description": "📊 Overall system status"},
+    {"command": "help",            "description": "ℹ️ Help for all commands"},
+    # ── Agent actions (need ID after command) ──
+    {"command": "agent_start",     "description": "🟢 Start agent — add ID"},
+    {"command": "agent_stop",      "description": "🔴 Stop agent — add ID"},
+    {"command": "agent_task",      "description": "📨 Send task to agent — add ID and task"},
+    {"command": "agent_create",    "description": "➕ Create agent — Add Name | Prompt"},
+    {"command": "agent_delete",    "description": "🗑 Delete agent — add ID"},
+    # ── Trigger actions (need ID after command) ──
+    {"command": "trigger_fire",    "description": "🚀 Fire trigger now — add ID"},
+    {"command": "trigger_on",      "description": "✅ Enable trigger — add ID"},
+    {"command": "trigger_off",     "description": "⏸ Disable trigger — add ID"},
+    {"command": "trigger_create",  "description": "⚡ Create trigger — Name | cron | agent_id | Task"},
+    {"command": "trigger_delete",  "description": "🗑 Delete trigger — add ID"},
+]
+
 
 # [RCF:PROTECTED]
 async def _poll_channel(channel_id: int, bot_token: str) -> None:
@@ -124,6 +147,33 @@ async def _poll_channel(channel_id: int, bot_token: str) -> None:
 
 
 # [RCF:PROTECTED]
+async def _register_bot_commands(bot_token: str) -> None:
+    """Register slash-command menu entries with Telegram via setMyCommands.
+
+    This populates the "/" button menu in the bot chat so the admin can
+    tap a command name and have it pre-filled in the input field.
+    Failures are logged as warnings but never crash the poller.
+    """
+    url = f"https://api.telegram.org/bot{bot_token}/setMyCommands"
+    payload = {"commands": _BOT_COMMANDS}
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(url, json=payload)
+            data = resp.json()
+            if data.get("ok"):
+                log.info(
+                    "telegram-poll: ✅ bot commands menu registered (%d commands)",
+                    len(_BOT_COMMANDS),
+                )
+            else:
+                log.warning(
+                    "telegram-poll: setMyCommands failed: %s", data.get("description", data)
+                )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("telegram-poll: could not register bot commands menu: %s", exc)
+
+
+# [RCF:PROTECTED]
 async def start() -> None:
     """Load all telegram channels and start a polling task for each."""
     global _running
@@ -147,6 +197,9 @@ async def start() -> None:
         if not token:
             log.warning("telegram-poll: channel %s has no bot_token, skipping", ch.id)
             continue
+
+        # Register command menu in Telegram for this bot (fire-and-forget).
+        asyncio.create_task(_register_bot_commands(token))
 
         task = asyncio.create_task(_poll_channel(ch.id, token))
         _tasks[ch.id] = task

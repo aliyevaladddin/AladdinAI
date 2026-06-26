@@ -25,12 +25,15 @@ Both indexes additionally need filter fields so we can scope queries:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 from typing import Any
 
 import certifi
 import httpx
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from sqlalchemy import select
+
+log = logging.getLogger(__name__)
 
 from app.crypto import decrypt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -344,16 +347,36 @@ async def _vector_search(
         },
     ]
     out: list[dict[str, Any]] = []
-    async for doc in coll.aggregate(pipeline):
-        out.append({
-            "id": str(doc["_id"]),
-            "fact": doc.get("fact", ""),
-            "tags": doc.get("tags", []),
-            "agent_id": doc.get("agent_id"),
-            "visibility": visibility,
-            "score": doc.get("score", 0.0),
-            "created_at": doc.get("created_at"),
-        })
+    try:
+        async for doc in coll.aggregate(pipeline):
+            out.append({
+                "id": str(doc["_id"]),
+                "fact": doc.get("fact", ""),
+                "tags": doc.get("tags", []),
+                "agent_id": doc.get("agent_id"),
+                "visibility": visibility,
+                "score": doc.get("score", 0.0),
+                "created_at": doc.get("created_at"),
+            })
+    except Exception as e:
+        log.warning(
+            "Vector search aggregation failed, falling back to recent facts query: %s",
+            e,
+        )
+        try:
+            cursor = coll.find(filter_).sort("created_at", -1).limit(limit)
+            async for doc in cursor:
+                out.append({
+                    "id": str(doc["_id"]),
+                    "fact": doc.get("fact", ""),
+                    "tags": doc.get("tags", []),
+                    "agent_id": doc.get("agent_id"),
+                    "visibility": visibility,
+                    "score": 0.5,  # Default score for fallback matches
+                    "created_at": doc.get("created_at"),
+                })
+        except Exception as fe:
+            log.exception("Fallback query also failed: %s", fe)
     return out
 
 

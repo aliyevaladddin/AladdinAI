@@ -3,8 +3,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { ImportExcelModal } from "@/components/excel/ImportExcelModal";
+
 
 
 interface Contact {
@@ -33,9 +35,32 @@ export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [search, setSearch] = useState("");
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch(`${API_URL}/crm/contacts/export`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `contacts_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -99,6 +124,23 @@ export default function ContactsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            id="export-excel-btn"
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={exporting}
+          >
+            {exporting ? "Exporting…" : "⬇ Export Excel"}
+          </Button>
+          <Button
+            id="import-excel-btn"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowImport(true)}
+          >
+            ⬆ Import Excel
+          </Button>
           <Link href="/dashboard/deals">
             <Button variant="outline">Deals</Button>
           </Link>
@@ -107,6 +149,13 @@ export default function ContactsPage() {
           </Button>
         </div>
       </div>
+
+      {showImport && (
+        <ImportExcelModal
+          onClose={() => setShowImport(false)}
+          onSuccess={load}
+        />
+      )}
 
       {showForm && (
         <form
