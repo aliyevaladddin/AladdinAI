@@ -20,6 +20,6 @@ docker==7.1.0
 PyYAML==6.0.3
 PyJWT==2.13.0
 sqlparse==0.5.5
-slowapi==0.1.9
+slowapi==0.1.10
 openpyxl==3.1.5
 pandas==2.2.3
