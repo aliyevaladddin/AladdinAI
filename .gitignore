@@ -16,9 +16,25 @@ htmlcov/
 # Node
 node_modules/
 .next/
+out/
 dist/
 build/
 *.tsbuildinfo
+next-env.d.ts
+
+# Yarn PnP / package managers
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+.pnpm-debug.log*
+
+# Frontend deploy / certs
+.vercel
+*.pem
 
 # Database
 *.db
@@ -68,6 +84,7 @@ frontend/test_login.html
 frontend/public/debug_login.html
 # Project specific
 .idx/
+common-main/
 
 # Logs
 *.log

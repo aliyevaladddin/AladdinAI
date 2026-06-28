@@ -14,9 +14,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# System deps that some Python packages need at runtime
+# System deps that some Python packages need at runtime.
+# ffmpeg: transcode browser webm/opus audio to PCM for Riva ASR (speech.py).
 RUN apt-get update && apt-get install -y --no-install-recommends \
       curl \
+      ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

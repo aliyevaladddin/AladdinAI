@@ -15,7 +15,8 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+from typing import Any, Callable
+
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -101,6 +102,7 @@ async def run_agent(
     *,
     session_id: int | None = None,
     extras: dict | None = None,
+    on_step: Callable[[dict], Any] | None = None,
 ) -> str:
     """Execute one agent turn with tool support.
 
@@ -223,11 +225,21 @@ async def run_agent(
     last_content: str | None = None
 
     for iteration in range(max_iter):
+        if on_step:
+            try:
+                await on_step({"type": "thought", "message": f"Thinking (step {iteration + 1} of {max_iter})..."})
+            except Exception:
+                pass
         try:
+            async def handle_token(token: str):
+                if on_step:
+                    await on_step({"type": "token", "text": token})
+
             res = await chat_completion(
                 provider, agent.model, messages,
                 tools=schemas,
                 tool_choice="auto" if schemas else None,
+                on_token=handle_token if on_step else None,
             )
         except LLMError as e:
             if use_tools and "tool" in str(e).lower():
@@ -268,13 +280,29 @@ async def run_agent(
         })
 
         for call in tool_calls:
-            tool_msg = await _execute_tool_call(call, ctx)
             fn = call.get("function") or {}
+            name = fn.get("name", "")
             raw = fn.get("arguments") or "{}"
             try:
                 parsed_args = json.loads(raw) if isinstance(raw, str) else (raw or {})
             except Exception:  # noqa: BLE001
                 parsed_args = {"_raw": str(raw)[:500]}
+            if on_step:
+                try:
+                    await on_step({"type": "tool_start", "name": name, "arguments": parsed_args})
+                except Exception:
+                    pass
+            tool_msg = await _execute_tool_call(call, ctx)
+            res_content = tool_msg.get("content") or "{}"
+            try:
+                parsed_res = json.loads(res_content) if isinstance(res_content, str) else (res_content or {})
+            except Exception:
+                parsed_res = {"_raw": str(res_content)[:500]}
+            if on_step:
+                try:
+                    await on_step({"type": "tool_end", "name": name, "result": parsed_res})
+                except Exception:
+                    pass
             tool_events.append({
                 "name": fn.get("name", ""),
                 "arguments": parsed_args,

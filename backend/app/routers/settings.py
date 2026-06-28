@@ -130,3 +130,18 @@ async def update_settings(
         created_at=settings.created_at,
         updated_at=settings.updated_at,
     )
+
+
+# [RCF:PROTECTED]
+@router.post("/security-audit")
+# [RCF:PROTECTED]
+async def security_audit(user: User = Depends(get_current_user)):
+    """Run security audit of tools using NVIDIA SkillSpector."""
+    import anyio
+    from app.services.security_audit import run_tools_audit
+    
+    result = await anyio.to_thread.run_sync(run_tools_audit)
+    if not result.get("success"):
+        raise HTTPException(status_code=500, detail=result.get("error"))
+    return result
+
