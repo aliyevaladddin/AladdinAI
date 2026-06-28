@@ -364,7 +364,6 @@ async def chat(
         async def event_generator():
             import json
             import asyncio
-            from fastapi.responses import StreamingResponse
 
             queue = asyncio.Queue()
 
