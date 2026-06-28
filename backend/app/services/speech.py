@@ -58,19 +58,22 @@ async def _to_wav_pcm16(audio_bytes: bytes) -> bytes:
     ``offline_recognize`` cannot decode. ffmpeg reads the encoded bytes from
     stdin and writes a canonical WAV to stdout — no temp files.
     """
-    proc = await asyncio.create_subprocess_exec(
-        "ffmpeg",
-        "-hide_banner", "-loglevel", "error",
-        "-i", "pipe:0",           # read encoded audio from stdin
-        "-ac", "1",               # mono — Riva supports 1 channel only
-        "-ar", str(RIVA_TARGET_SAMPLE_RATE),
-        "-f", "wav",
-        "-acodec", "pcm_s16le",   # LINEAR_PCM
-        "pipe:1",                 # write WAV to stdout
-        stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "ffmpeg",
+            "-hide_banner", "-loglevel", "error",
+            "-i", "pipe:0",           # read encoded audio from stdin
+            "-ac", "1",               # mono — Riva supports 1 channel only
+            "-ar", str(RIVA_TARGET_SAMPLE_RATE),
+            "-f", "wav",
+            "-acodec", "pcm_s16le",   # LINEAR_PCM
+            "pipe:1",                 # write WAV to stdout
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+    except FileNotFoundError as e:
+        raise LLMError("ffmpeg executable not found. Please ensure ffmpeg is installed and available in PATH.") from e
     out, err = await proc.communicate(input=audio_bytes)
     if proc.returncode != 0:
         raise LLMError(f"ffmpeg transcode failed: {err.decode('utf-8', 'ignore')[:300]}")
