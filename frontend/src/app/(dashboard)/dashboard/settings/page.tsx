@@ -10,9 +10,11 @@ import { BentoSettings } from "@/components/settings/BentoSettings";
 import { RouterSettings } from "@/components/settings/RouterSettings";
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 import { StorageSettings } from "@/components/settings/StorageSettings";
-import { Cpu, Cloud, Database, Server, Network, Palette, HardDrive } from "lucide-react";
+import { SecuritySettings } from "@/components/settings/SecuritySettings";
+import { Cpu, Cloud, Database, Server, Network, Palette, HardDrive, Shield } from "lucide-react";
 
-type TabId = "appearance" | "storage" | "providers" | "vms" | "mongo" | "bento" | "router";
+
+type TabId = "appearance" | "storage" | "providers" | "vms" | "mongo" | "bento" | "router" | "security";
 
 const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
   { id: "appearance", label: "Appearance", icon: Palette },
@@ -22,7 +24,9 @@ const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: numbe
   { id: "mongo", label: "MongoDB", icon: Database },
   { id: "bento", label: "BentoML", icon: Server },
   { id: "router", label: "Routing", icon: Network },
+  { id: "security", label: "Security & Safety", icon: Shield },
 ];
+
 
 const VALID_TABS = new Set<TabId>(tabs.map((t) => t.id));
 
@@ -96,6 +100,8 @@ export default function SettingsPage() {
           {activeTab === "mongo" && <MongoSettings />}
           {activeTab === "bento" && <BentoSettings />}
           {activeTab === "router" && <RouterSettings />}
+          {activeTab === "security" && <SecuritySettings />}
+
         </div>
       </div>
     </div>
