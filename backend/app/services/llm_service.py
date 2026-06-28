@@ -190,10 +190,9 @@ async def _openai_compatible(
                                 content = delta.get("content")
                                 if content:
                                     content_parts.append(content)
-                                    if inspect.iscoroutinefunction(on_token):
-                                        await on_token(content)
-                                    else:
-                                        on_token(content)
+                                    res = on_token(content)
+                                    if inspect.iscoroutine(res):
+                                        await res
                                         
                                 tool_calls = delta.get("tool_calls")
                                 if tool_calls:
