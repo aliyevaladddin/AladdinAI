@@ -17,6 +17,10 @@ import {
   Sparkles,
   Copy,
   Check,
+  Mic,
+  Square,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -31,7 +35,7 @@ interface Attachment {
 }
 
 
-function AuthImage({ filename }: { filename: string }) {
+function AuthAttachment({ filename, mime, kind }: { filename: string; mime?: string; kind?: string }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     let revoke: string | null = null;
@@ -53,11 +57,38 @@ function AuthImage({ filename }: { filename: string }) {
       if (revoke) URL.revokeObjectURL(revoke);
     };
   }, [filename]);
+
   if (!src) {
     return <div className="w-40 h-40 rounded-md bg-muted animate-pulse" />;
   }
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={filename} className="max-w-xs max-h-80 rounded-md border border-border" />;
+
+  const isImg = kind === "image" || (mime && mime.startsWith("image/")) || filename.match(/\.(jpeg|jpg|gif|png|webp)$/i);
+  const isAudio = kind === "audio" || (mime && mime.startsWith("audio/")) || filename.match(/\.(webm|ogg|wav|mp3|m4a)$/i);
+
+  if (isImg) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={src} alt={filename} className="max-w-xs max-h-80 rounded-md border border-border" />;
+  }
+
+  if (isAudio) {
+    return (
+      <div className="flex items-center gap-2 p-2 bg-muted/70 rounded-lg border border-border max-w-sm">
+        <audio src={src} controls className="w-full h-8" />
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={src}
+      download={filename}
+      className="flex items-center gap-2 px-3 py-2 bg-muted/80 hover:bg-muted border border-border rounded-lg text-xs font-medium text-foreground transition-colors max-w-sm"
+    >
+      <span className="shrink-0 text-primary">📄</span>
+      <span className="truncate flex-1">{filename}</span>
+      <span className="text-[10px] text-muted-foreground uppercase">{mime?.split("/")[1] || "DOC"}</span>
+    </a>
+  );
 }
 
 
@@ -100,9 +131,79 @@ export default function ChatPage() {
   const [uploading, setUploading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [currentThought, setCurrentThought] = useState<string | null>(null);
+  const [thoughtHistory, setThoughtHistory] = useState<string[]>([]);
+  const [assistantStreaming, setAssistantStreaming] = useState(false);
   const messagesEnd = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [voiceReply, setVoiceReply] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerIntervalRef = useRef<any>(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const file = new File([audioBlob], "voice.webm", { type: "audio/webm" });
+        setUploading(true);
+        try {
+          const saved = await api.upload<Attachment>("/chat/upload", file);
+          setPendingAttachments((prev) => [...prev, { ...saved, kind: "audio" }]);
+        } catch (err) {
+          console.error("Failed to upload recorded audio:", err);
+        } finally {
+          setUploading(false);
+        }
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingSeconds(0);
+      timerIntervalRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Microphone access denied or error:", err);
+      alert("Microphone access is required to record voice messages.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+  };
+
+  const formatDuration = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const ta = textareaRef.current;
@@ -254,40 +355,131 @@ export default function ChatPage() {
     try {
       const agentId = selectedAgentId === "unified" ? 1 : parseInt(selectedAgentId);
 
-      const res = await api.post<{
-        response: string;
-        agent_name: string;
-        model: string;
-        session_id: number;
-        attachments?: Attachment[] | null;
-      }>("/chat", {
-        message: sentInput,
-        agent_id: agentId,
-        session_id: activeSession?.id ?? null,
-        attachments: sentAttachments.length ? sentAttachments : undefined,
+      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      const response = await fetch(`${API_URL}/chat`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          message: sentInput,
+          agent_id: agentId,
+          session_id: activeSession?.id ?? null,
+          attachments: sentAttachments.length ? sentAttachments : undefined,
+          stream: true,
+          voice_reply: voiceReply,
+        }),
       });
 
-      if (!activeSession && selectedAgentId !== "unified") {
-        const next = await api.get<Session[]>("/chat/sessions");
-        setSessions(next);
-        const newSession = next.find((s) => s.id === res.session_id);
-        if (newSession) {
-          setActiveSession(newSession);
-          setComposingNew(false);
-        }
-      } else {
-        loadSessions();
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText || `Request failed with status ${response.status}`);
       }
 
-      setMessages((prev: Message[]) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: res.response,
-          model: res.model,
-          attachments: res.attachments ?? null,
-        },
-      ]);
+      if (!response.body) {
+        throw new Error("Response body is empty");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      setThoughtHistory([]);
+      setCurrentThought("Initializing agent execution...");
+      setAssistantStreaming(false);
+      let streamedReply = "";
+      let assistantMessageAdded = false;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const event = JSON.parse(line);
+            if (event.type === "thought") {
+              setCurrentThought(event.message);
+            } else if (event.type === "token") {
+              streamedReply += event.text;
+              setAssistantStreaming(true);
+              if (!assistantMessageAdded) {
+                setMessages((prev: Message[]) => [
+                  ...prev,
+                  {
+                    role: "assistant",
+                    content: streamedReply,
+                    model: null,
+                  },
+                ]);
+                assistantMessageAdded = true;
+              } else {
+                setMessages((prev: Message[]) =>
+                  prev.map((m, idx) =>
+                    idx === prev.length - 1 ? { ...m, content: streamedReply } : m
+                  )
+                );
+              }
+            } else if (event.type === "tool_start") {
+              const argStr = event.arguments ? JSON.stringify(event.arguments) : "";
+              setCurrentThought(`Running tool '${event.name}' ${argStr.length > 50 ? argStr.slice(0, 50) + "..." : argStr}`);
+            } else if (event.type === "tool_end") {
+              const name = event.name;
+              setThoughtHistory((prev) => [...prev, `Tool '${name}' executed successfully.`]);
+            } else if (event.type === "done") {
+              setAssistantStreaming(false);
+              if (assistantMessageAdded) {
+                setMessages((prev: Message[]) =>
+                  prev.map((m, idx) =>
+                    idx === prev.length - 1
+                      ? {
+                          ...m,
+                          content: event.response,
+                          model: event.model,
+                          attachments: event.attachments ?? null,
+                        }
+                      : m
+                  )
+                );
+              } else {
+                setMessages((prev: Message[]) => [
+                  ...prev,
+                  {
+                    role: "assistant",
+                    content: event.response,
+                    model: event.model,
+                    attachments: event.attachments ?? null,
+                  },
+                ]);
+              }
+
+              if (!activeSession && selectedAgentId !== "unified") {
+                const next = await api.get<Session[]>("/chat/sessions");
+                setSessions(next);
+                const newSession = next.find((s) => s.id === event.session_id);
+                if (newSession) {
+                  setActiveSession(newSession);
+                  setComposingNew(false);
+                }
+              } else {
+                loadSessions();
+              }
+              setCurrentThought(null);
+            } else if (event.type === "error") {
+              throw new Error(event.message);
+            }
+          } catch (jsonErr) {
+            console.error("Failed to parse stream line:", line, jsonErr);
+          }
+        }
+      }
     } catch (err) {
       setMessages((prev: Message[]) => [
         ...prev,
@@ -298,6 +490,8 @@ export default function ChatPage() {
       ]);
     } finally {
       setLoading(false);
+      setAssistantStreaming(false);
+      setCurrentThought(null);
     }
   };
 
@@ -489,7 +683,7 @@ export default function ChatPage() {
                           {msg.attachments && msg.attachments.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-3">
                               {msg.attachments.map((att) => (
-                                <AuthImage key={att.filename} filename={att.filename} />
+                                <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} />
                               ))}
                             </div>
                           )}
@@ -548,23 +742,44 @@ export default function ChatPage() {
                     </div>
                   ))
                 )}
-                {loading && (
-                  <div className="flex gap-4">
+                {loading && !assistantStreaming && (
+                  <div className="flex gap-4" style={{ animation: "mpIn 200ms ease-out both" }}>
                     <div className="shrink-0 mt-1">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
-                        <Sparkles size={16} className="text-primary" />
+                        <Sparkles size={16} className="text-primary animate-pulse" />
                       </div>
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs font-semibold text-foreground">AladdinAI</span>
                       </div>
-                      <div className="rounded-2xl px-4 py-3 bg-muted/50 border border-border/50 inline-block">
-                        <div className="flex gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.3s]" />
-                          <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.15s]" />
-                          <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" />
+                      
+                      <div className="rounded-2xl p-4 bg-muted/30 border border-border/50 max-w-xl space-y-2 text-xs font-mono">
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold border-b border-border/40 pb-1.5 mb-1.5 flex items-center justify-between">
+                          <span>Agent Thought Process</span>
+                          <span className="flex gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+                          </span>
                         </div>
+                        {thoughtHistory.map((step, idx) => (
+                          <div key={idx} className="text-muted-foreground flex items-start gap-1.5">
+                            <span className="text-emerald-500 font-bold">✓</span>
+                            <span>{step}</span>
+                          </div>
+                        ))}
+                        {currentThought && (
+                          <div className="text-foreground font-medium animate-pulse flex items-start gap-1.5">
+                            <span className="text-blue-500 font-bold">▶</span>
+                            <span>{currentThought}</span>
+                          </div>
+                        )}
+                        {!currentThought && thoughtHistory.length === 0 && (
+                          <div className="flex gap-1.5 py-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.3s]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.15s]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -580,7 +795,7 @@ export default function ChatPage() {
                   <div className="flex flex-wrap gap-2">
                     {pendingAttachments.map((att) => (
                       <div key={att.filename} className="relative group">
-                        <AuthImage filename={att.filename} />
+                        <AuthAttachment filename={att.filename} mime={att.mime} kind={att.kind} />
                         <button
                           type="button"
                           onClick={() => removePending(att.filename)}
@@ -593,11 +808,31 @@ export default function ChatPage() {
                     ))}
                   </div>
                 )}
+                <div className="flex items-center justify-between px-1 text-xs mb-1">
+                  <div className="text-muted-foreground">
+                    {uploading && <span className="animate-pulse">Uploading attachment...</span>}
+                  </div>
+                  {selectedAgentId && (
+                    <button
+                      type="button"
+                      onClick={() => setVoiceReply(!voiceReply)}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
+                        voiceReply
+                          ? "bg-primary/10 border-primary/30 text-primary font-medium shadow-sm"
+                          : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      {voiceReply ? <Volume2 size={13} className="animate-bounce" /> : <VolumeX size={13} />}
+                      <span>Voice Reply {voiceReply ? "ON" : "OFF"}</span>
+                    </button>
+                  )}
+                </div>
+
                 <form onSubmit={handleSend} className="relative">
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,audio/*,text/plain,text/markdown,text/csv,application/json,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/xml"
                     multiple
                     className="hidden"
                     onChange={handleFileChange}
@@ -610,22 +845,51 @@ export default function ChatPage() {
                       onClick={handleAttachClick}
                       disabled={!selectedAgentId || uploading || loading}
                       className="rounded-xl w-10 h-10 shrink-0 hover:bg-muted/80"
-                      aria-label="Attach image"
+                      aria-label="Attach file"
                     >
                       <Paperclip size={18} className="text-muted-foreground" />
                     </Button>
-                    <textarea
-                      ref={textareaRef}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      rows={1}
-                      placeholder={
-                        !selectedAgentId ? "Select an agent to start…" : "Message AladdinAI"
-                      }
-                      disabled={!selectedAgentId || loading}
-                      className="flex-1 resize-none bg-transparent px-1 py-2.5 text-[15px] leading-relaxed disabled:opacity-50 max-h-60 overflow-y-auto focus:outline-none placeholder:text-muted-foreground/50"
-                    />
+
+                    {isRecording ? (
+                      <div className="flex-1 flex items-center justify-between px-3 py-2 text-[15px] text-red-500 font-medium animate-pulse">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                          Recording voice message...
+                        </span>
+                        <span className="font-mono text-sm">{formatDuration(recordingSeconds)}</span>
+                      </div>
+                    ) : (
+                      <textarea
+                        ref={textareaRef}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        rows={1}
+                        placeholder={
+                          !selectedAgentId ? "Select an agent to start…" : "Message AladdinAI"
+                        }
+                        disabled={!selectedAgentId || loading}
+                        className="flex-1 resize-none bg-transparent px-1 py-2.5 text-[15px] leading-relaxed disabled:opacity-50 max-h-60 overflow-y-auto focus:outline-none placeholder:text-muted-foreground/50"
+                      />
+                    )}
+
+                    {selectedAgentId && (
+                      <Button
+                        type="button"
+                        onClick={isRecording ? stopRecording : startRecording}
+                        variant="ghost"
+                        size="icon"
+                        className={`rounded-xl w-10 h-10 shrink-0 transition-all ${
+                          isRecording
+                            ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
+                            : "hover:bg-muted/80 text-muted-foreground hover:text-foreground"
+                        }`}
+                        aria-label={isRecording ? "Stop recording" : "Record voice"}
+                      >
+                        {isRecording ? <Square size={16} /> : <Mic size={18} />}
+                      </Button>
+                    )}
+
                     <Button
                       type="submit"
                       disabled={
