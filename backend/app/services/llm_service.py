@@ -17,7 +17,8 @@ always return tool_calls=None — they fall back to text-only.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Callable
+
 
 import httpx
 from sqlalchemy import select
@@ -102,6 +103,7 @@ async def chat_completion(
     tool_choice: str | None = None,
     max_tokens: int = DEFAULT_MAX_TOKENS,
     timeout: float = DEFAULT_TIMEOUT,
+    on_token: Callable[[str], Any] | None = None,
 ) -> dict[str, Any]:
     """Send a chat-completion request and return a structured response.
 
@@ -114,7 +116,7 @@ async def chat_completion(
 
     if ptype in OPENAI_COMPATIBLE:
         return await _openai_compatible(
-            provider.base_url, api_key, model, messages, max_tokens, timeout, tools, tool_choice
+            provider.base_url, api_key, model, messages, max_tokens, timeout, tools, tool_choice, on_token
         )
 
     # Below branches don't currently support tool calling — make the loss explicit.
@@ -145,6 +147,7 @@ async def _openai_compatible(
     timeout: float,
     tools: list[dict] | None,
     tool_choice: str | None,
+    on_token: Callable[[str], Any] | None = None,
 ) -> dict[str, Any]:
     headers = {"Content-Type": "application/json"}
     if api_key:
@@ -158,6 +161,75 @@ async def _openai_compatible(
             payload["tool_choice"] = tool_choice
 
     url = f"{base_url.rstrip('/')}/v1/chat/completions"
+
+    if on_token:
+        import json
+        import inspect
+        payload["stream"] = True
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            try:
+                content_parts = []
+                tool_calls_map = {}
+                async with client.stream("POST", url, json=payload, headers=headers) as response:
+                    if response.status_code >= 400:
+                        await response.aread()
+                        response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if line.startswith("data: "):
+                            data_str = line[6:]
+                            if data_str == "[DONE]":
+                                break
+                            try:
+                                chunk = json.loads(data_str)
+                                choice = chunk["choices"][0]
+                                delta = choice.get("delta", {})
+                                
+                                content = delta.get("content")
+                                if content:
+                                    content_parts.append(content)
+                                    if inspect.iscoroutinefunction(on_token):
+                                        await on_token(content)
+                                    else:
+                                        on_token(content)
+                                        
+                                tool_calls = delta.get("tool_calls")
+                                if tool_calls:
+                                    for tc in tool_calls:
+                                        idx = tc.get("index", 0)
+                                        if idx not in tool_calls_map:
+                                            tool_calls_map[idx] = {
+                                                "id": tc.get("id"),
+                                                "type": "function",
+                                                "function": {
+                                                    "name": tc.get("function", {}).get("name", ""),
+                                                    "arguments": ""
+                                                }
+                                            }
+                                        if tc.get("id"):
+                                            tool_calls_map[idx]["id"] = tc.get("id")
+                                        fn_delta = tc.get("function", {})
+                                        if fn_delta.get("name"):
+                                            tool_calls_map[idx]["function"]["name"] = fn_delta["name"]
+                                        if fn_delta.get("arguments"):
+                                            tool_calls_map[idx]["function"]["arguments"] += fn_delta["arguments"]
+                            except Exception:
+                                pass
+                
+                final_content = "".join(content_parts) if content_parts else None
+                final_tool_calls = list(tool_calls_map.values()) if tool_calls_map else None
+                return {
+                    "content": final_content,
+                    "tool_calls": final_tool_calls,
+                    "finish_reason": "stop",
+                    "raw": {}
+                }
+            except httpx.HTTPStatusError as e:
+                raise LLMError(f"HTTP {e.response.status_code}: {e.response.text[:300]}") from e
+            except httpx.HTTPError as e:
+                raise LLMError(str(e)) from e
 
     async with httpx.AsyncClient(timeout=timeout) as client:
         try:

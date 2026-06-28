@@ -1,7 +1,7 @@
 # NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.responses import FileResponse, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -163,25 +163,36 @@ ALLOWED_AUDIO_MIMES = {
     "audio/webm", "audio/ogg", "audio/oga", "audio/mpeg", "audio/mp3",
     "audio/wav", "audio/x-wav", "audio/wave", "audio/mp4", "audio/flac",
 }
-ALLOWED_UPLOAD_MIMES = ALLOWED_IMAGE_MIMES | ALLOWED_AUDIO_MIMES
+ALLOWED_DOC_MIMES = {
+    "text/plain", "text/markdown", "text/html", "text/csv", "application/json",
+    "application/pdf", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-excel", "application/xml"
+}
+ALLOWED_UPLOAD_MIMES = ALLOWED_IMAGE_MIMES | ALLOWED_AUDIO_MIMES | ALLOWED_DOC_MIMES
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20MB, same as Telegram
 
 
 # [RCF:PROTECTED]
 def _kind_for_mime(mime: str) -> str:
     """Classify an upload so the frontend/agent knows how to handle it."""
-    return "audio" if mime in ALLOWED_AUDIO_MIMES or mime.startswith("audio/") else "image"
+    if mime in ALLOWED_AUDIO_MIMES or mime.startswith("audio/"):
+        return "audio"
+    elif mime in ALLOWED_IMAGE_MIMES or mime.startswith("image/"):
+        return "image"
+    else:
+        return "document"
 
 
 # [RCF:PROTECTED]
 @router.post("/upload")
 # [RCF:PROTECTED]
 async def upload_attachment(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Save an uploaded image or audio clip and return its handle. Client then
+    """Save an uploaded image, audio clip, or document and return its handle. Client then
     passes the returned `filename` back via ChatRequest.attachments.
 
     The cross-cycle handle is `filename` (UUID.ext): it is returned by both
@@ -196,6 +207,16 @@ async def upload_attachment(
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="File too large (max 20MB)")
     saved = await media_storage.save_bytes(db, user.id, data, mime)
+    
+    # Run the background task to parse and index the uploaded file's content in vector search
+    from app.services.memory import index_file_in_vector_search
+    background_tasks.add_task(
+        index_file_in_vector_search,
+        user_id=user.id,
+        filename=saved["filename"],
+        mime=saved["mime"],
+    )
+
     return {
         "filename": saved["filename"],
         # Stable per-backend handle: file_id (mongodb) or path (local).
@@ -241,7 +262,7 @@ async def get_media(
 # ── Send message ──────────────────────────────────────────────────────────────
 
 # [RCF:PROTECTED]
-@router.post("", response_model=ChatResponse)
+@router.post("")
 # [RCF:PROTECTED]
 async def chat(
     body: ChatRequest,
@@ -339,6 +360,85 @@ async def chat(
         "outgoing_attachments": outgoing_attachments,
     }
 
+    if body.stream:
+        async def event_generator():
+            import json
+            import asyncio
+            from fastapi.responses import StreamingResponse
+
+            queue = asyncio.Queue()
+
+            async def on_step(event):
+                await queue.put(event)
+
+            async def run_in_background():
+                try:
+                    reply = await run_agent(
+                        db, agent, messages_payload,
+                        session_id=session.id, extras=extras,
+                        on_step=on_step,
+                    )
+                    
+                    voice_atts = []
+                    if body.voice_reply and reply.strip():
+                        prov = (await db.execute(
+                            select(LLMProvider).where(LLMProvider.id == agent.llm_provider_id)
+                        )).scalar_one_or_none()
+                        if prov:
+                            try:
+                                audio_bytes, audio_mime = await speech.synthesize(prov, reply)
+                                saved = await media_storage.save_bytes(db, user.id, audio_bytes, audio_mime)
+                                voice_atts.append({
+                                    "filename": saved["filename"],
+                                    "file_id": saved.get("file_id", saved.get("path")),
+                                    "mime": saved["mime"],
+                                    "kind": "audio",
+                                    "caption": reply[:200],
+                                })
+                            except LLMError as e:
+                                import logging
+                                logging.getLogger(__name__).warning("TTS failed, returning text only: %s", e)
+
+                    # Сохраняем оба сообщения в БД
+                    now = datetime.now(timezone.utc)
+                    db.add(ChatMessage(
+                        session_id=session.id, role="user", content=effective_message,
+                        attachments=attachments or None, created_at=now,
+                    ))
+                    db.add(ChatMessage(
+                        session_id=session.id, role="assistant", content=reply, model=agent.model,
+                        attachments=(outgoing_attachments + voice_atts) or None,
+                    ))
+                    session.updated_at = datetime.now(timezone.utc)
+                    await db.commit()
+
+                    await queue.put({
+                        "type": "done",
+                        "response": reply,
+                        "agent_name": agent.name,
+                        "model": agent.model,
+                        "session_id": session.id,
+                        "attachments": (outgoing_attachments + voice_atts) or None,
+                    })
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).exception("Streaming run_agent failed")
+                    await queue.put({"type": "error", "message": str(e)})
+
+            task = asyncio.create_task(run_in_background())
+            try:
+                while True:
+                    event = await queue.get()
+                    yield json.dumps(event) + "\n"
+                    if event["type"] in ("done", "error"):
+                        break
+            finally:
+                if not task.done():
+                    task.cancel()
+
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+
     try:
         reply = await run_agent(
             db, agent, messages_payload,
@@ -395,3 +495,4 @@ async def chat(
         session_id=session.id,
         attachments=outgoing_attachments or None,
     )
+
