@@ -549,6 +549,101 @@ async def build_shared_context_block(
 # ─────────────────────────────────────────────────────────────────────────────
 
 # [RCF:PROTECTED]
+async def index_file_in_vector_search(
+    user_id: int,
+    filename: str,
+    mime: str,
+) -> None:
+    """Extract text from the uploaded file and index it in the shared context."""
+    from app.database import async_session
+    from app.services import media_storage
+    import io
+
+    async with async_session() as db:
+        handle = await media_storage.resolve(db, user_id, filename)
+        if not handle:
+            log.warning("Could not resolve file handle for indexing: %s", filename)
+            return
+
+        data = await media_storage.get_bytes(db, user_id, handle)
+        if not data:
+            log.warning("Could not read file bytes for indexing: %s", filename)
+            return
+
+        text_content = ""
+        mime_lower = mime.lower()
+        
+        # 1. Text files
+        if mime_lower.startswith("text/") or mime_lower in (
+            "application/json", "application/javascript",
+            "text/javascript", "text/csv", "application/xml",
+            "application/x-javascript"
+        ):
+            try:
+                text_content = data.decode("utf-8", errors="ignore")
+            except Exception as e:
+                log.exception("Failed to decode text file: %s", e)
+                return
+
+        # 2. Excel spreadsheets
+        elif mime_lower in (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel"
+        ):
+            try:
+                import pandas as pd
+                df = pd.read_excel(io.BytesIO(data))
+                text_content = df.to_string()
+            except Exception as e:
+                log.warning("Failed to index Excel file %s: %s", filename, e)
+                return
+
+        # 3. PDF documents (if PyPDF2 is installed/importable)
+        elif mime_lower == "application/pdf":
+            try:
+                import PyPDF2
+                reader = PyPDF2.PdfReader(io.BytesIO(data))
+                pages_text = []
+                for page in reader.pages:
+                    t = page.extract_text()
+                    if t:
+                        pages_text.append(t)
+                text_content = "\n".join(pages_text)
+            except Exception:
+                log.warning("Failed to extract PDF %s (PyPDF2 not installed/working)", filename)
+                return
+
+        if not text_content.strip():
+            log.info("No extractable text content found in file %s", filename)
+            return
+
+        # Chunk the text: 1000 chars per chunk, with 100 chars overlap
+        chunk_size = 1000
+        overlap = 100
+        chunks = []
+        i = 0
+        while i < len(text_content):
+            chunk = text_content[i : i + chunk_size]
+            chunks.append(chunk)
+            i += chunk_size - overlap
+
+        log.info("Indexing %d chunks from file %s in vector search...", len(chunks), filename)
+        for idx, chunk_text in enumerate(chunks):
+            fact_text = f"Content from uploaded file '{filename}' (part {idx+1}/{len(chunks)}):\n{chunk_text}"
+            try:
+                await store_memory(
+                    db,
+                    user_id=user_id,
+                    agent_id=None,
+                    fact=fact_text,
+                    visibility="shared",
+                    tags=["file-upload", filename],
+                )
+            except Exception as e:
+                log.exception("Failed to store memory chunk for file %s: %s", filename, e)
+
+
+# [RCF:PROTECTED]
 async def ping(db: AsyncSession, user_id: int) -> dict[str, Any]:
     """Verify the configured Atlas cluster is reachable."""
     mdb = await get_mongo_db(db, user_id)

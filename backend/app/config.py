@@ -2,6 +2,16 @@
 # [RCF:PROTECTED]
 import logging
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env variables into os.environ for non-Pydantic config usage
+for parent in [Path(__file__).resolve().parents[1], Path(__file__).resolve().parents[2]]:
+    env_path = parent / ".env"
+    if env_path.exists():
+        load_dotenv(dotenv_path=env_path)
+        break
+
 from typing import List
 
 from pydantic import Field, field_validator, model_validator

@@ -23,3 +23,6 @@ sqlparse==0.5.5
 slowapi==0.1.9
 openpyxl==3.1.5
 pandas==2.2.3
+skillspector @ git+https://github.com/NVIDIA/skillspector.git
+nvidia-riva-client==2.26.0
+PyPDF2==3.0.1

@@ -29,6 +29,7 @@ the rest of the chat flow alive and surface a clean message.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 
@@ -43,6 +44,39 @@ log = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 120.0
 DEFAULT_LANGUAGE = "en-US"
 DEFAULT_TTS_VOICE = "English-US.Female-1"
+
+# Riva ASR over gRPC expects raw PCM, not a browser container (webm/ogg/mp4).
+# Decode to 16 kHz mono signed-16-bit WAV with ffmpeg before sending.
+RIVA_TARGET_SAMPLE_RATE = 16000
+
+
+# [RCF:PROTECTED]
+async def _to_wav_pcm16(audio_bytes: bytes) -> bytes:
+    """Transcode arbitrary input audio to 16 kHz mono PCM-16 WAV via ffmpeg.
+
+    The browser's MediaRecorder produces webm/opus, which Riva's
+    ``offline_recognize`` cannot decode. ffmpeg reads the encoded bytes from
+    stdin and writes a canonical WAV to stdout — no temp files.
+    """
+    proc = await asyncio.create_subprocess_exec(
+        "ffmpeg",
+        "-hide_banner", "-loglevel", "error",
+        "-i", "pipe:0",           # read encoded audio from stdin
+        "-ac", "1",               # mono — Riva supports 1 channel only
+        "-ar", str(RIVA_TARGET_SAMPLE_RATE),
+        "-f", "wav",
+        "-acodec", "pcm_s16le",   # LINEAR_PCM
+        "pipe:1",                 # write WAV to stdout
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    out, err = await proc.communicate(input=audio_bytes)
+    if proc.returncode != 0:
+        raise LLMError(f"ffmpeg transcode failed: {err.decode('utf-8', 'ignore')[:300]}")
+    if not out:
+        raise LLMError("ffmpeg produced no audio output")
+    return out
 
 
 # [RCF:PROTECTED]
@@ -181,34 +215,60 @@ async def _transcribe_riva(
         ) from e
 
     server = os.environ.get("RIVA_GRPC_URL") or "grpc.nvcf.nvidia.com:443"
+    is_nvcf = "nvcf" in server.lower()
     function_id = os.environ.get("RIVA_ASR_FUNCTION_ID")
-    if not function_id:
-        raise LLMError("speech not configured: RIVA_ASR_FUNCTION_ID is unset")
+    if is_nvcf:
+        if not function_id or "uuid-here" in function_id:
+            raise LLMError("speech not configured: RIVA_ASR_FUNCTION_ID must be set to a valid NVCF Function ID in .env")
     api_key = _api_key(provider)
     lang = language or os.environ.get("SPEECH_LANGUAGE") or DEFAULT_LANGUAGE
 
-    metadata = [("function-id", function_id)]
+    metadata = []
+    if function_id and "uuid-here" not in function_id:
+        metadata.append(("function-id", function_id))
     if api_key:
         metadata.append(("authorization", f"Bearer {api_key}"))
+
+    use_ssl = "nvcf" in server.lower() or server.endswith(":443")
+
+    # Riva cannot decode webm/opus — transcode to 16 kHz mono PCM-16 WAV first.
+    wav_bytes = await _to_wav_pcm16(audio_bytes)
+    # Strip the 44-byte WAV header → raw PCM for streaming chunks.
+    pcm = wav_bytes[44:] if wav_bytes[:4] == b"RIFF" else wav_bytes
 
 # [RCF:PROTECTED]
     def _run() -> str:
         auth = riva.client.Auth(
-            uri=server, use_ssl=True, metadata_args=[list(m) for m in metadata]
+            uri=server, use_ssl=use_ssl, metadata_args=[list(m) for m in metadata]
         )
         asr = riva.client.ASRService(auth)
         cfg = riva.client.RecognitionConfig(
+            encoding=riva.client.AudioEncoding.LINEAR_PCM,
+            sample_rate_hertz=RIVA_TARGET_SAMPLE_RATE,
+            audio_channel_count=1,
             language_code=lang,
             max_alternatives=1,
             enable_automatic_punctuation=True,
         )
-        response = asr.offline_recognize(audio_bytes, cfg)
-        for result in response.results:
-            if result.alternatives:
-                return result.alternatives[0].transcript.strip()
-        return ""
+        # nemotron-asr-streaming (and most NVCF ASR funcs) are streaming-only —
+        # offline_recognize raises "Unavailable model ... type=offline".
+        streaming_cfg = riva.client.StreamingRecognitionConfig(
+            config=cfg, interim_results=False
+        )
+        # 0.1 s of 16 kHz mono PCM-16 per chunk = 3200 bytes.
+        chunk = RIVA_TARGET_SAMPLE_RATE // 10 * 2
+        audio_chunks = (pcm[i : i + chunk] for i in range(0, len(pcm), chunk))
 
-    import asyncio
+        parts: list[str] = []
+        for resp in asr.streaming_response_generator(
+            audio_chunks=audio_chunks, streaming_config=streaming_cfg
+        ):
+            for result in resp.results:
+                if result.is_final and result.alternatives:
+                    tr = result.alternatives[0].transcript.strip()
+                    if tr:
+                        parts.append(tr)
+        return " ".join(parts).strip()
 
     try:
         text = await asyncio.to_thread(_run)
@@ -310,21 +370,27 @@ async def _synthesize_riva(
         ) from e
 
     server = os.environ.get("RIVA_GRPC_URL") or "grpc.nvcf.nvidia.com:443"
+    is_nvcf = "nvcf" in server.lower()
     function_id = os.environ.get("RIVA_TTS_FUNCTION_ID")
-    if not function_id:
-        raise LLMError("speech not configured: RIVA_TTS_FUNCTION_ID is unset")
+    if is_nvcf:
+        if not function_id or "uuid-here" in function_id:
+            raise LLMError("speech not configured: RIVA_TTS_FUNCTION_ID must be set to a valid NVCF Function ID in .env")
     api_key = _api_key(provider)
     use_voice = voice or os.environ.get("RIVA_TTS_VOICE") or os.environ.get("TTS_VOICE") or DEFAULT_TTS_VOICE
     lang = os.environ.get("SPEECH_LANGUAGE") or DEFAULT_LANGUAGE
 
-    metadata = [("function-id", function_id)]
+    metadata = []
+    if function_id and "uuid-here" not in function_id:
+        metadata.append(("function-id", function_id))
     if api_key:
         metadata.append(("authorization", f"Bearer {api_key}"))
+
+    use_ssl = "nvcf" in server.lower() or server.endswith(":443")
 
 # [RCF:PROTECTED]
     def _run() -> bytes:
         auth = riva.client.Auth(
-            uri=server, use_ssl=True, metadata_args=[list(m) for m in metadata]
+            uri=server, use_ssl=use_ssl, metadata_args=[list(m) for m in metadata]
         )
         tts = riva.client.SpeechSynthesisService(auth)
         resp = tts.synthesize(
@@ -335,8 +401,6 @@ async def _synthesize_riva(
             encoding=riva.client.AudioEncoding.LINEAR_PCM,
         )
         return _pcm_to_wav(resp.audio, 16000)
-
-    import asyncio
 
     try:
         audio = await asyncio.to_thread(_run)

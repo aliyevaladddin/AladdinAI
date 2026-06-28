@@ -36,6 +36,8 @@ class ChatRequest(BaseModel):
     session_id: int | None = None  # если None — создаётся новая сессия
     attachments: list[dict] | None = None
     voice_reply: bool = False  # if True, the agent's reply is also synthesized to audio
+    stream: bool = False
+
 
 
 # [RCF:PROTECTED]
