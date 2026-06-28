@@ -5,7 +5,6 @@
 [![Deploy to Render](https://img.shields.io/badge/deploy%20to-render-4ecdc4?style=flat-square&logo=render&logoColor=white)](https://render.com/deploy?repo=https://github.com/aliyevaladddin/AladdinAI)
 ![Last commit](https://img.shields.io/github/last-commit/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
-[![NPM Version](https://img.shields.io/npm/v/aladdin-ai?style=flat-square&color=4ecdc4&logo=npm&logoColor=white)](https://www.npmjs.com/package/aladdin-ai)
 
 
 
@@ -35,6 +34,8 @@
 [![Node](https://img.shields.io/badge/node-18%2B-4ecdc4?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
 [![MongoDB for Startups](https://img.shields.io/badge/MongoDB-for%20Startups-4ecdc4?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/startups)
 [![Issues](https://img.shields.io/github/issues/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)](https://github.com/aliyevaladddin/AladdinAI/issues)
+[![NPM Version](https://img.shields.io/npm/v/aladdin-ai?style=flat-square&color=4ecdc4&logo=npm&logoColor=white)](https://www.npmjs.com/package/aladdin-ai)
+
 
 <br/>
 
