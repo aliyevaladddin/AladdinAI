@@ -113,25 +113,9 @@ story.
 
 ## Releasing
 
-**CLI** (this package on npm) — publish via GitHub Actions
-(`.github/workflows/cli-publish.yml`):
+**CLI** (this package on npm) and **Backend + frontend images** (to GHCR) are published automatically via GitHub Actions whenever a new GitHub Release with a tag like `vX.Y.Z` is published.
 
-```bash
-cd cli
-npm version patch                # or minor / major
-cd ..
-git commit -am "cli: bump to $(node -p "require('./cli/package.json').version")"
-git tag "cli-v$(node -p "require('./cli/package.json').version")"
-git push origin main --tags
-```
-
-**Backend + frontend images** — publish to GHCR via
-`.github/workflows/docker-publish.yml`:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
+Alternatively, you can manually trigger the CLI publish workflow (`Publish CLI`) from the Actions tab and specify the version you want to release.
 
 The workflow builds both images for linux/amd64 + linux/arm64 and pushes
 them as `ghcr.io/aliyevaladddin/aladdinai-backend:1.0.0`,
