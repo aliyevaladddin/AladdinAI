@@ -4,6 +4,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [v2.2.0] - 2026-06-29
 
+### Bug Fixes
+
+- Move shebang to first line to resolve node syntax error ([0b5baa8](https://github.com/aliyevaladddin/AladdinAI/commit/0b5baa82164e36d7712b87d6bc56795b00b03106))
+
+## [v2.2.0] - 2026-06-29
+
 ### Documentation
 
 - Update API documentation [skip ci] (#334) ([58d2ff3](https://github.com/aliyevaladddin/AladdinAI/commit/58d2ff3c5629f3920b48b59d2da5c715a8b8e422))
