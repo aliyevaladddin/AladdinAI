@@ -4,6 +4,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Documentation
+
+- Update API documentation [skip ci] (#334) ([58d2ff3](https://github.com/aliyevaladddin/AladdinAI/commit/58d2ff3c5629f3920b48b59d2da5c715a8b8e422))
+
+
 ### Features
 
 - Voice I/O, chat streaming, document indexing, security audit (#320) ([cb3e11b](https://github.com/aliyevaladddin/AladdinAI/commit/cb3e11b22993d8ac5ee76d8cbfb2265f768bef9c))
