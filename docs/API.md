@@ -835,7 +835,7 @@ Upload Attachment
 
 ##### Description:
 
-Save an uploaded image or audio clip and return its handle. Client then
+Save an uploaded image, audio clip, or document and return its handle. Client then
 passes the returned `filename` back via ChatRequest.attachments.
 
 The cross-cycle handle is `filename` (UUID.ext): it is returned by both
@@ -1225,6 +1225,29 @@ Update user's system settings.
 | ---- | ----------- |
 | 200 | Successful Response |
 | 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/settings/security-audit
+
+#### POST
+##### Summary:
+
+Security Audit
+
+##### Description:
+
+Run security audit of tools using NVIDIA SkillSpector.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
 
 ##### Security
 
@@ -3602,16 +3625,7 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | session_id |  |  | No |
 | attachments |  |  | No |
 | voice_reply | boolean |  | No |
-
-#### ChatResponse
-
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| response | string |  | Yes |
-| agent_name | string |  | Yes |
-| model | string |  | Yes |
-| session_id | integer |  | Yes |
-| attachments |  |  | No |
+| stream | boolean |  | No |
 
 #### ChatSessionResponse
 
