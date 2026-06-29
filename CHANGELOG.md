@@ -6,9 +6,9 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ### Maintenance
 
-- Bump version to 2.2.0 and update deps [skip ci] ([fc6fbc0](https://github.com/aliyevaladddin/AladdinAI/commit/fc6fbc059622a1c5d41cc0217680b7df159b38c7))
+- Update changelog [skip ci] (#341) ([a8dc0fd](https://github.com/aliyevaladddin/AladdinAI/commit/a8dc0fd8087677a1544206d16c8ed8d5aa0ad984))
 
-- Update cliff.toml to include dependency updates in changelog ([db7506b](https://github.com/aliyevaladddin/AladdinAI/commit/db7506b28984eb545013e1d13d83d87cbea3830b))
+- Update changelog [skip ci] (#342) ([9f61583](https://github.com/aliyevaladddin/AladdinAI/commit/9f61583c8c5201edb81efa916da4b8d2f7f1035e))
 
 ## [v2.2.0] - 2026-06-29
 
