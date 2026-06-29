@@ -7,7 +7,7 @@
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
 
 ---
-## GitHub Integration
+## ◈ GitHub Integration
 
 [![Install Bot](https://img.shields.io/badge/GitHub-Install%20Bot-black?style=flat-square&color=4ecdc4&label=CI&logo=GitHub&logoColor=white)](https://github.com/apps/aladdinai-bot)
 
