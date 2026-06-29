@@ -3,6 +3,11 @@
 All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
 ## [Unreleased]
+
+### Features
+
+- Voice I/O, chat streaming, document indexing, security audit (#320) ([cb3e11b](https://github.com/aliyevaladddin/AladdinAI/commit/cb3e11b22993d8ac5ee76d8cbfb2265f768bef9c))
+
 ## [v2.1.9] - 2026-06-26
 
 ### Bug Fixes
