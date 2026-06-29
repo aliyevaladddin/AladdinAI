@@ -1,5 +1,5 @@
-// NOTICE: This file is protected under RCF-PL
 #!/usr/bin/env node
+// NOTICE: This file is protected under RCF-PL
 
 import { Command } from 'commander';
 import { readFileSync } from 'node:fs';
