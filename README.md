@@ -9,7 +9,7 @@
 ---
 ## ◈ GitHub Integration
 
-[![Install Bot](https://img.shields.io/badge/GitHub-Install%20Bot-black?style=flat-square&color=4ecdc4&label=CI&logo=GitHub&logoColor=white)](https://github.com/apps/aladdinai-bot)
+[![Install Bot](https://img.shields.io/badge/GitHub-Install%20Bot-black?style=flat-square&color=4ecdc4&logo=GitHub&logoColor=white)](https://github.com/apps/aladdinai-bot)
 
 
 <div align="middle">
