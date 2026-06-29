@@ -1607,7 +1607,7 @@
           "chat"
         ],
         "summary": "Upload Attachment",
-        "description": "Save an uploaded image or audio clip and return its handle. Client then\npasses the returned `filename` back via ChatRequest.attachments.\n\nThe cross-cycle handle is `filename` (UUID.ext): it is returned by both\nstorage backends, round-tripped by the frontend, and used by `get_media`\nand the STT path to read the file back. `file_id` (mongodb) / `path`\n(local) are included for completeness but are not load-bearing \u2014 nothing\nkeys off them after upload.",
+        "description": "Save an uploaded image, audio clip, or document and return its handle. Client then\npasses the returned `filename` back via ChatRequest.attachments.\n\nThe cross-cycle handle is `filename` (UUID.ext): it is returned by both\nstorage backends, round-tripped by the frontend, and used by `get_media`\nand the STT path to read the file back. `file_id` (mongodb) / `path`\n(local) are included for completeness but are not load-bearing \u2014 nothing\nkeys off them after upload.",
         "operationId": "upload_attachment_api_chat_upload_post",
         "requestBody": {
           "content": {
@@ -1714,9 +1714,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChatResponse"
-                }
+                "schema": {}
               }
             }
           },
@@ -2296,6 +2294,31 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/settings/security-audit": {
+      "post": {
+        "tags": [
+          "settings"
+        ],
+        "summary": "Security Audit",
+        "description": "Run security audit of tools using NVIDIA SkillSpector.",
+        "operationId": "security_audit_api_settings_security_audit_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -7004,53 +7027,15 @@
             "type": "boolean",
             "title": "Voice Reply",
             "default": false
+          },
+          "stream": {
+            "type": "boolean",
+            "title": "Stream",
+            "default": false
           }
         },
         "type": "object",
         "title": "ChatRequest"
-      },
-      "ChatResponse": {
-        "properties": {
-          "response": {
-            "type": "string",
-            "title": "Response"
-          },
-          "agent_name": {
-            "type": "string",
-            "title": "Agent Name"
-          },
-          "model": {
-            "type": "string",
-            "title": "Model"
-          },
-          "session_id": {
-            "type": "integer",
-            "title": "Session Id"
-          },
-          "attachments": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": true,
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attachments"
-          }
-        },
-        "type": "object",
-        "required": [
-          "response",
-          "agent_name",
-          "model",
-          "session_id"
-        ],
-        "title": "ChatResponse"
       },
       "ChatSessionResponse": {
         "properties": {
