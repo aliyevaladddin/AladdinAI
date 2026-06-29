@@ -598,11 +598,11 @@ async def index_file_in_vector_search(
                 log.warning("Failed to index Excel file %s: %s", filename, e)
                 return
 
-        # 3. PDF documents (if PyPDF2 is installed/importable)
+        # 3. PDF documents (if pypdf is installed/importable)
         elif mime_lower == "application/pdf":
             try:
-                import PyPDF2
-                reader = PyPDF2.PdfReader(io.BytesIO(data))
+                import pypdf
+                reader = pypdf.PdfReader(io.BytesIO(data))
                 pages_text = []
                 for page in reader.pages:
                     t = page.extract_text()
@@ -610,7 +610,7 @@ async def index_file_in_vector_search(
                         pages_text.append(t)
                 text_content = "\n".join(pages_text)
             except Exception:
-                log.warning("Failed to extract PDF %s (PyPDF2 not installed/working)", filename)
+                log.warning("Failed to extract PDF %s (pypdf not installed/working)", filename)
                 return
 
         if not text_content.strip():
