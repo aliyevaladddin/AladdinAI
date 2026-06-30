@@ -1,16 +1,17 @@
 
 [![Site status](https://img.shields.io/website?url=https%3A%2F%2Faliyev.site%2FAladdinAI&style=flat-square&color=4ecdc4&logo=vercel&logoColor=white&label=live+demo)](https://aliyev.site/AladdinAI/)
-![Repo size](https://img.shields.io/github/repo-size/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
+![Repo size](https://img.shields.io/github/repo-size/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4&logo=proton%20drive&logoColor=white)
 [![CI](https://img.shields.io/github/actions/workflow/status/aliyevaladddin/AladdinAI/ci.yml?style=flat-square&color=4ecdc4&label=CI&logo=githubactions&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI/actions/workflows/ci.yml)
 [![Deploy to Render](https://img.shields.io/badge/deploy%20to-render-4ecdc4?style=flat-square&logo=render&logoColor=white)](https://render.com/deploy?repo=https://github.com/aliyevaladddin/AladdinAI)
-![Last commit](https://img.shields.io/github/last-commit/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)
+![Last commit](https://img.shields.io/github/last-commit/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4&logo=githubcopilot&logoColor=white)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4&logo=dependabot&logoColor=white)
 
 ---
 ## ◈ GitHub Integration
 
 [![Install Bot](https://img.shields.io/badge/GitHub-Install%20Bot-black?style=flat-square&color=4ecdc4&logo=GitHub&logoColor=white)](https://github.com/apps/aladdinai-bot)
 [![OpenCollective](https://img.shields.io/opencollective/all/aladdinai?style=flat-square&color=4ecdc4&logo=opencollective&logoColor=white)](https://opencollective.com/aladdinai)
+[![GitHub stars](https://img.shields.io/github/stars/aliyevaladddin/AladdinAI?style=square&color=4ecdc4&logo=git&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI)
 
 
 <div align="middle">
@@ -33,11 +34,11 @@
 
 <br/>
 
-[![License](https://img.shields.io/badge/license-Apache%202.0-4ecdc4?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-4ecdc4?style=flat-square&logo=Apache&logoColor=white)](LICENSE)
 [![Docker](https://img.shields.io/badge/docker-ready-4ecdc4?style=flat-square&logo=docker&logoColor=white)](https://ghcr.io/aliyevaladddin/aladdinai)
 [![Node](https://img.shields.io/badge/node-18%2B-4ecdc4?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
 [![MongoDB for Startups](https://img.shields.io/badge/MongoDB-for%20Startups-4ecdc4?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/startups)
-[![Issues](https://img.shields.io/github/issues/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4)](https://github.com/aliyevaladddin/AladdinAI/issues)
+[![Issues](https://img.shields.io/github/issues/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4&logo=socket&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI/issues)
 [![NPM Version](https://img.shields.io/npm/v/aladdin-ai?style=flat-square&color=4ecdc4&logo=npm&logoColor=white)](https://www.npmjs.com/package/aladdin-ai)
 
 
