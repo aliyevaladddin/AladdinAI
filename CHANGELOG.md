@@ -4,6 +4,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Dependencies
+
+- Bump lucide-react from 1.21.0 to 1.23.0 in /frontend (#353) ([2d24ac8](https://github.com/aliyevaladddin/AladdinAI/commit/2d24ac88f2690e10bebce6d05d6e7bd449f5a479))
+
+
 ### Maintenance
 
 - Update changelog [skip ci] (#341) ([a8dc0fd](https://github.com/aliyevaladddin/AladdinAI/commit/a8dc0fd8087677a1544206d16c8ed8d5aa0ad984))
@@ -15,6 +20,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#344) ([97b08fd](https://github.com/aliyevaladddin/AladdinAI/commit/97b08fd0185fa565c2c03ede3621168965c62e29))
 
 - Bump electron from 42.5.0 to 43.0.0 in /frontend (#354) ([b30fa64](https://github.com/aliyevaladddin/AladdinAI/commit/b30fa64b3d3ac69ec78390bfce9e125377e7e6fd))
+
+- Update changelog [skip ci] (#355) ([118ffe4](https://github.com/aliyevaladddin/AladdinAI/commit/118ffe4f68ff1f19bbdb1cb32126b531783a4407))
 
 ## [v2.2.0] - 2026-06-29
 
