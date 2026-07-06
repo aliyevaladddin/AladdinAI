@@ -12,6 +12,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#343) ([4b3204b](https://github.com/aliyevaladddin/AladdinAI/commit/4b3204b8c62c3d86029d5311b1375a5f1262fa0f))
 
+- Update changelog [skip ci] (#344) ([97b08fd](https://github.com/aliyevaladddin/AladdinAI/commit/97b08fd0185fa565c2c03ede3621168965c62e29))
+
+- Bump electron from 42.5.0 to 43.0.0 in /frontend (#354) ([b30fa64](https://github.com/aliyevaladddin/AladdinAI/commit/b30fa64b3d3ac69ec78390bfce9e125377e7e6fd))
+
 ## [v2.2.0] - 2026-06-29
 
 ### Bug Fixes
