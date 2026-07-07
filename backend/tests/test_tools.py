@@ -203,83 +203,46 @@ def test_all_registered_tools_are_callable():
         assert inspect.iscoroutinefunction(tool.func), f"{tool_name} func is not async"
 # [RCF:PROTECTED]
 @pytest.mark.asyncio
-async def test_ssh_tofu_first_connect_path(tmp_path, monkeypatch):
-    """Test SSH implementation for the first connection (file does not exist)."""
-    import asyncssh
-    from unittest.mock import AsyncMock
+async def test_ssh_tofu_client_writes_key_on_first_use(tmp_path):
+    """Test that TOFISSHClient writes the host key to the file when it is empty."""
+    from app.ssh_utils import TOFISSHClient
+    from unittest.mock import MagicMock
 
-    # Creamos una ruta temporal aislada simulando la del sistema ~/.aladdin/known_hosts/999
-    mock_known_hosts_dir = tmp_path / ".aladdin" / "known_hosts"
-    mock_file_path = mock_known_hosts_dir / "999"
+    mock_file_path = tmp_path / "known_hosts_test"
+    # Aseguramos archivo vacío
+    mock_file_path.touch()
 
-    # Simulamos el comportamiento de expanduser para apuntar al entorno controlado del test
-    from pathlib import Path
-    orig_expanduser = Path.expanduser
+    client = TOFISSHClient(mock_file_path)
 
-    def mock_expanduser(self):
-        # Si detecta la ruta del componente TOFU, redirige al directorio temporal del test
-        if "~/.aladdin/known_hosts" in str(self):
-            return Path(str(self).replace("~/.aladdin/known_hosts", str(mock_known_hosts_dir)))
-        return orig_expanduser(self)
+    # Simulamos el objeto de la clave que devuelve asyncssh
+    mock_key = MagicMock()
+    mock_key.get_algorithm.return_value = "ssh-ed25519"
+    mock_key.export_public_key.return_value = b"ssh-ed25519 AAAAMOCKKEY== mock"
 
-    monkeypatch.setattr(Path, "expanduser", mock_expanduser)
+    # Ejecutamos el callback del validador TOFU
+    result = client.validate_host_public_key(host="127.0.0.1", port=22, key=mock_key)
 
-    # Aseguramos que el archivo NO exista antes de la prueba
-    if mock_file_path.exists():
-        mock_file_path.unlink()
-
-    # Mockeamos el método asyncssh.connect para simular una conexión exitosa
-    mock_connect = AsyncMock()
-    monkeypatch.setattr(asyncssh, "connect", mock_connect)
-
-    # Evaluamos las condiciones simuladas que usarían nuestros endpoints
-    known_hosts_arg = str(mock_file_path) if mock_file_path.exists() else None
-    server_key_algs = ['ssh-ed25519']
-
-    # Ejecutamos la simulación de la llamada
-    await asyncssh.connect(host="127.0.0.1", known_hosts=known_hosts_arg, server_host_key_algs=server_key_algs)
-
-    # Verificaciones (Assertions)
-    assert known_hosts_arg is None, "En la primera conexión, known_hosts debe evaluar a None"
-    mock_connect.assert_called_once_with(host="127.0.0.1", known_hosts=None, server_host_key_algs=['ssh-ed25519'])
+    assert result is True
+    assert mock_file_path.stat().st_size > 0, "El cliente debió escribir la llave en el archivo"
+    assert "127.0.0.1 ssh-ed25519 AAAAMOCKKEY==" in mock_file_path.read_text()
 
 
 # [RCF:PROTECTED]
 @pytest.mark.asyncio
-async def test_ssh_tofu_happy_path_known_host(tmp_path, monkeypatch):
-    """Test SSH implementation for subsequent connections when the host key is already known."""
-    import asyncssh
-    from unittest.mock import AsyncMock
+async def test_ssh_tofu_client_accepts_known_host(tmp_path):
+    """Test that TOFISSHClient allows standard verification when the file already has content."""
+    from app.ssh_utils import TOFISSHClient
+    from unittest.mock import MagicMock
 
-    # Creamos la ruta e infraestructura temporal del test
-    mock_known_hosts_dir = tmp_path / ".aladdin" / "known_hosts"
-    mock_known_hosts_dir.mkdir(parents=True, exist_ok=True)
-    mock_file_path = mock_known_hosts_dir / "999"
+    mock_file_path = tmp_path / "known_hosts_test"
+    # Escribimos una clave previa
+    mock_file_path.write_text("127.0.0.1 ssh-ed25519 AAAAMOCKKEY==\n")
 
-    # Escribimos una clave ficticia para forzar que el archivo exista (Simula una conexión previa exitosa)
-    mock_file_path.write_text("127.0.0.1 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... mock-key")
+    client = TOFISSHClient(mock_file_path)
 
-    from pathlib import Path
-    orig_expanduser = Path.expanduser
+    mock_key = MagicMock()
+    mock_key.get_algorithm.return_value = "ssh-ed25519"
+    mock_key.export_public_key.return_value = b"ssh-ed25519 AAAAMOCKKEY== mock"
 
-    def mock_expanduser(self):
-        if "~/.aladdin/known_hosts" in str(self):
-            return Path(str(self).replace("~/.aladdin/known_hosts", str(mock_known_hosts_dir)))
-        return orig_expanduser(self)
-
-    monkeypatch.setattr(Path, "expanduser", mock_expanduser)
-
-    # Mockeamos el método asyncssh.connect
-    mock_connect = AsyncMock()
-    monkeypatch.setattr(asyncssh, "connect", mock_connect)
-
-    # Evaluamos las condiciones lógicas dinámicas (Iguales a las de los routers implementados)
-    known_hosts_arg = str(mock_file_path) if mock_file_path.exists() else None
-    server_key_algs = ['ssh-ed25519']
-
-    # Ejecutamos la simulación de la llamada
-    await asyncssh.connect(host="127.0.0.1", known_hosts=known_hosts_arg, server_host_key_algs=server_key_algs)
-
-    # Verificaciones (Assertions)
-    assert known_hosts_arg == str(mock_file_path), "Si el archivo ya existe, debe pasar la ruta completa como string"
-    mock_connect.assert_called_once_with(host="127.0.0.1", known_hosts=str(mock_file_path), server_host_key_algs=['ssh-ed25519'])
+    result = client.validate_host_public_key(host="127.0.0.1", port=22, key=mock_key)
+    assert result is True
