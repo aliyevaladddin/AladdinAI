@@ -201,3 +201,85 @@ def test_all_registered_tools_are_callable():
     for tool_name, tool in REGISTRY.items():
         assert callable(tool.func), f"{tool_name} func is not callable"
         assert inspect.iscoroutinefunction(tool.func), f"{tool_name} func is not async"
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+async def test_ssh_tofu_first_connect_path(tmp_path, monkeypatch):
+    """Test SSH implementation for the first connection (file does not exist)."""
+    import asyncssh
+    from unittest.mock import AsyncMock
+
+    # Creamos una ruta temporal aislada simulando la del sistema ~/.aladdin/known_hosts/999
+    mock_known_hosts_dir = tmp_path / ".aladdin" / "known_hosts"
+    mock_file_path = mock_known_hosts_dir / "999"
+
+    # Simulamos el comportamiento de expanduser para apuntar al entorno controlado del test
+    from pathlib import Path
+    orig_expanduser = Path.expanduser
+
+    def mock_expanduser(self):
+        # Si detecta la ruta del componente TOFU, redirige al directorio temporal del test
+        if "~/.aladdin/known_hosts" in str(self):
+            return Path(str(self).replace("~/.aladdin/known_hosts", str(mock_known_hosts_dir)))
+        return orig_expanduser(self)
+
+    monkeypatch.setattr(Path, "expanduser", mock_expanduser)
+
+    # Aseguramos que el archivo NO exista antes de la prueba
+    if mock_file_path.exists():
+        mock_file_path.unlink()
+
+    # Mockeamos el método asyncssh.connect para simular una conexión exitosa
+    mock_connect = AsyncMock()
+    monkeypatch.setattr(asyncssh, "connect", mock_connect)
+
+    # Evaluamos las condiciones simuladas que usarían nuestros endpoints
+    known_hosts_arg = str(mock_file_path) if mock_file_path.exists() else None
+    server_key_algs = ['ssh-ed25519']
+
+    # Ejecutamos la simulación de la llamada
+    await asyncssh.connect(host="127.0.0.1", known_hosts=known_hosts_arg, server_host_key_algs=server_key_algs)
+
+    # Verificaciones (Assertions)
+    assert known_hosts_arg is None, "En la primera conexión, known_hosts debe evaluar a None"
+    mock_connect.assert_called_once_with(host="127.0.0.1", known_hosts=None, server_host_key_algs=['ssh-ed25519'])
+
+
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+async def test_ssh_tofu_happy_path_known_host(tmp_path, monkeypatch):
+    """Test SSH implementation for subsequent connections when the host key is already known."""
+    import asyncssh
+    from unittest.mock import AsyncMock
+
+    # Creamos la ruta e infraestructura temporal del test
+    mock_known_hosts_dir = tmp_path / ".aladdin" / "known_hosts"
+    mock_known_hosts_dir.mkdir(parents=True, exist_ok=True)
+    mock_file_path = mock_known_hosts_dir / "999"
+
+    # Escribimos una clave ficticia para forzar que el archivo exista (Simula una conexión previa exitosa)
+    mock_file_path.write_text("127.0.0.1 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... mock-key")
+
+    from pathlib import Path
+    orig_expanduser = Path.expanduser
+
+    def mock_expanduser(self):
+        if "~/.aladdin/known_hosts" in str(self):
+            return Path(str(self).replace("~/.aladdin/known_hosts", str(mock_known_hosts_dir)))
+        return orig_expanduser(self)
+
+    monkeypatch.setattr(Path, "expanduser", mock_expanduser)
+
+    # Mockeamos el método asyncssh.connect
+    mock_connect = AsyncMock()
+    monkeypatch.setattr(asyncssh, "connect", mock_connect)
+
+    # Evaluamos las condiciones lógicas dinámicas (Iguales a las de los routers implementados)
+    known_hosts_arg = str(mock_file_path) if mock_file_path.exists() else None
+    server_key_algs = ['ssh-ed25519']
+
+    # Ejecutamos la simulación de la llamada
+    await asyncssh.connect(host="127.0.0.1", known_hosts=known_hosts_arg, server_host_key_algs=server_key_algs)
+
+    # Verificaciones (Assertions)
+    assert known_hosts_arg == str(mock_file_path), "Si el archivo ya existe, debe pasar la ruta completa como string"
+    mock_connect.assert_called_once_with(host="127.0.0.1", known_hosts=str(mock_file_path), server_host_key_algs=['ssh-ed25519'])

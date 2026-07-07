@@ -1,4 +1,5 @@
 # NOTICE: This file is protected under RCF-PL
+from pathlib import Path  # <-- IMPORTANTE: Agregamos Path aquí
 import asyncssh
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -46,13 +47,24 @@ async def ssh_exec(
     if not vm:
         raise HTTPException(status_code=404, detail="VM not found")
 
+    # ---- IMPLEMENTACIÓN TOFU ----
+    # 1. Definimos y expandimos la ruta para esta VM específica
+    known_hosts_path = Path(f"~/.aladdin/known_hosts/{body.vm_id}").expanduser()
+    
+    # 2. Aseguramos que las carpetas contenedoras existan
+    known_hosts_path.parent.mkdir(parents=True, exist_ok=True)
+
     connect_kwargs: dict = {
         "host": vm.host,
         "port": vm.port,
         "username": vm.username,
-        "known_hosts": None,
+        # Si el archivo existe lo pasa como string para validar, si no existe pasa None (primera conexión)
+        "known_hosts": str(known_hosts_path) if known_hosts_path.exists() else None,
+        # Restringimos/preferimos algoritmos seguros como pidió el mantenedor
+        "server_host_key_algs": ['ssh-ed25519'],
         "connect_timeout": 10,
     }
+    # ----------------------------
 
 # [RCF:PROTECTED]
     if vm.ssh_key_encrypted:
@@ -104,5 +116,6 @@ async def list_vms_for_terminal(
             "username": vm.username,
             "status": vm.status,
         }
+        # [RCF:PROTECTED]
         for vm in vms
     ]

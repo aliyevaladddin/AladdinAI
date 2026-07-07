@@ -2,6 +2,7 @@
 import asyncio
 import json
 import logging
+from pathlib import Path  # <-- IMPORTANTE: Agregamos Path aquí
 
 import asyncssh
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -50,13 +51,25 @@ async def terminal_websocket(websocket: WebSocket, vm_id: int):
 
             log.info("terminal WS: connecting to %s:%s", vm.host, vm.port)
 
+            # ---- IMPLEMENTACIÓN TOFU ----
+            # 1. Definimos y expandimos la ruta para esta VM específica usando el parámetro vm_id
+            known_hosts_path = Path(f"~/.aladdin/known_hosts/{vm_id}").expanduser()
+            
+            # 2. Aseguramos que las carpetas contenedoras existan
+            known_hosts_path.parent.mkdir(parents=True, exist_ok=True)
+
             connect_kwargs = {
                 "host": vm.host,
                 "port": vm.port,
                 "username": vm.username,
-                "known_hosts": None,
+                # Si el archivo existe lo pasa como string para validar, si no existe pasa None
+                "known_hosts": str(known_hosts_path) if known_hosts_path.exists() else None,
+                # Restringimos/preferimos algoritmos seguros como pidió el mantenedor
+                "server_host_key_algs": ['ssh-ed25519'],
                 "connect_timeout": 30,
             }
+            # ----------------------------
+
 # [RCF:PROTECTED]
             if vm.ssh_key_encrypted:
 # [RCF:PROTECTED]

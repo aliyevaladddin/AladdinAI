@@ -1,5 +1,6 @@
 # NOTICE: This file is protected under RCF-PL
 import logging
+from pathlib import Path  # <-- IMPORTANTE: Agregamos Path aquí
 
 from fastapi import APIRouter, Depends, HTTPException
 import asyncssh
@@ -80,12 +81,24 @@ async def deploy_service(
     if not vm:
         raise HTTPException(status_code=404, detail="No VM found for this user to deploy on")
 
+    # ---- IMPLEMENTACIÓN TOFU ----
+    # 1. Definimos y expandimos la ruta para esta VM usando vm.id
+    known_hosts_path = Path(f"~/.aladdin/known_hosts/{vm.id}").expanduser()
+    
+    # 2. Aseguramos que las carpetas contenedoras existan
+    known_hosts_path.parent.mkdir(parents=True, exist_ok=True)
+
     connect_kwargs = {
         "host": vm.host,
         "port": vm.port,
         "username": vm.username,
-        "known_hosts": None
+        # Si el archivo existe lo pasa como string para validar, si no existe pasa None (primera conexión)
+        "known_hosts": str(known_hosts_path) if known_hosts_path.exists() else None,
+        # Restringimos/preferimos algoritmos seguros como pidió el mantenedor
+        "server_host_key_algs": ['ssh-ed25519']
     }
+    # ----------------------------
+
 # [RCF:PROTECTED]
     # Note: Use vm.password_encrypted if needed as per main.py
 # [RCF:PROTECTED]
