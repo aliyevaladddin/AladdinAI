@@ -142,8 +142,6 @@ is_valid = verify_signature(
 ## References
 
 - [RCF Protocol Repository](https://github.com/rcf-protocol)
-- [Memory: RCF in AladdinAI](../../../claude-memory/project_rcf_in_aladdin.md)
-- [Memory: RCF Protocol details](../../../claude-memory/project_rcf_protocol.md)
-- [StatusBar RCF indicator](../../../frontend/src/components/shell/StatusBar.tsx#L26)
+- [StatusBar RCF indicator](../../frontend/src/components/shell/StatusBar.tsx)
 - npm: `rcf-protocol@2.0.3`
 - PyPI: `rcf-protocol`

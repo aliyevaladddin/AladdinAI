@@ -49,7 +49,12 @@ from app.services.memory import get_mongo_db
 log = logging.getLogger(__name__)
 
 TRACE_COLLECTION = "agent_traces"
-SCHEMA_VERSION = 1
+# v2 (2026-06-30): reward / quality_label are now scored at write time from the
+# loop's own outcome signals (see _score). On v1 docs both fields are always None
+# (no labeling pass existed); on v2, reward=None means an *intentionally excluded*
+# trace (infra error / blocked user input) that must NOT be used as a training
+# example — distinct from "unlabeled". Downstream training must filter reward is None.
+SCHEMA_VERSION = 2
 MAX_TEXT = 8000
 
 # Global kill-switch — disables capture for every agent regardless of config.
@@ -108,6 +113,59 @@ def _clip(value: Any) -> Any:
     return value
 
 
+# Write-time reward bounds and weights. Kept module-level so the scoring is one
+# obvious table, not magic numbers buried in a function.
+_REWARD_MIN = -1.0
+_REWARD_MAX = 1.0
+_COMPLETED_BASE = 0.5      # reached a final answer
+_TOOL_ERROR_PENALTY = 0.25  # per failed tool call
+_EGRESS_BLOCKED = -0.5     # produced unsafe output that was blocked
+_EXHAUSTED = -1.0          # gave up after max iterations
+_LABEL_GOOD_AT = 0.25      # reward > this -> "good" (so 1 tool error -> neutral)
+_LABEL_BAD_AT = -0.25      # reward <= this -> "bad"
+
+
+# [RCF:PROTECTED]
+def _score(payload: dict[str, Any]) -> tuple[float | None, str]:
+    """Map the loop's own outcome signals to (reward, quality_label).
+
+    This is a WEAK proxy for "did the process reach an answer", NOT ground truth
+    about correctness — a later labeling pass (explicit 👍/👎, follow-up signals)
+    supplies the real signal and outranks this. Pure & side-effect free so it can
+    be unit-tested without a DB or Mongo.
+
+    A reward of None means the trace is *intentionally excluded* from training
+    (the failure was not the agent's reasoning — blocked user input or an infra
+    error). Downstream dataset builders must skip `reward is None`.
+    """
+    outcome = payload.get("outcome")
+
+    # Excluded: not a signal about the agent's reasoning quality.
+    if outcome in ("ingress_blocked", "llm_error"):
+        return None, "excluded"
+
+    if outcome == "egress_blocked":
+        return _EGRESS_BLOCKED, "bad"
+
+    if outcome == "max_iterations_exhausted":
+        return _EXHAUSTED, "bad"
+
+    if outcome in ("completed_no_tools", "completed_with_tools"):
+        tool_errors = int(payload.get("tool_error_count") or 0)
+        reward = _COMPLETED_BASE - _TOOL_ERROR_PENALTY * tool_errors
+        reward = max(_REWARD_MIN, min(_REWARD_MAX, reward))
+        if reward > _LABEL_GOOD_AT:
+            label = "good"
+        elif reward <= _LABEL_BAD_AT:
+            label = "bad"
+        else:
+            label = "neutral"
+        return reward, label
+
+    # Unknown / future outcome: exclude rather than poison the dataset with a guess.
+    return None, "excluded"
+
+
 # [RCF:PROTECTED]
 def _build_doc(agent: Agent, payload: dict[str, Any], session_id: int | None) -> dict[str, Any]:
     """Assemble the agent_traces document from the loop-collected payload."""
@@ -118,6 +176,7 @@ def _build_doc(agent: Agent, payload: dict[str, Any], session_id: int | None) ->
         if isinstance(m, dict)
     ]
     tool_calls = payload.get("tool_calls") or []
+    reward, quality_label = _score(payload)
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -138,9 +197,10 @@ def _build_doc(agent: Agent, payload: dict[str, Any], session_id: int | None) ->
         "tool_error_count": int(payload.get("tool_error_count") or 0),
         "hit_max_iterations": bool(payload.get("hit_max_iterations")),
         "had_tools": bool(payload.get("had_tools")),
-        # deferred to a later labeling pass
-        "quality_label": None,
-        "reward": None,
+        # write-time score from the loop's own outcome (see _score). A later
+        # labeling pass may overwrite these with a stronger, human/explicit signal.
+        "quality_label": quality_label,
+        "reward": reward,
     }
 
 
