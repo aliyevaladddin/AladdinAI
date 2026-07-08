@@ -154,7 +154,7 @@ def _score(payload: dict[str, Any]) -> tuple[float | None, str]:
         tool_errors = int(payload.get("tool_error_count") or 0)
         reward = _COMPLETED_BASE - _TOOL_ERROR_PENALTY * tool_errors
         reward = max(_REWARD_MIN, min(_REWARD_MAX, reward))
-        if reward >= _LABEL_GOOD_AT:
+        if reward > _LABEL_GOOD_AT:
             label = "good"
         elif reward <= _LABEL_BAD_AT:
             label = "bad"
