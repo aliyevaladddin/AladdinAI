@@ -39,7 +39,7 @@ def test_completed_with_tools_clean_is_good():
 
 # [RCF:PROTECTED]
 def test_completed_with_one_tool_error_drops_to_neutral():
-    # 0.5 - 0.25 = 0.25 -> below the "good" threshold (> 0.25) -> neutral.
+    # 0.5 - 0.25 = 0.25 -> drops to neutral (< 0.25 threshold).
     reward, label = _score({"outcome": "completed_with_tools", "tool_error_count": 1})
     assert reward == 0.25
     assert label == "neutral"
