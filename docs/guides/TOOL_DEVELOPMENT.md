@@ -542,9 +542,9 @@ async def trigger_webhook(
 ## 🔗 Related
 
 - [Agent Development Guide](./AGENT_DEVELOPMENT.md)
-- [Memory System](./MEMORY.md)
+- [Memory System](../ARCHITECTURE.md#memory)
 - [API Reference](../API.md)
-- [Tool Registry Code](../../../backend/app/tools/registry.py)
+- [Tool Base & Registry Code](../../backend/app/tools/base.py)
 
 ---
 

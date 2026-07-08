@@ -80,6 +80,9 @@ AladdinAI is the platform that makes that possible — without building everythi
 | **Memory** | Private + shared stores with vector search (MongoDB Atlas + NIM embeddings). Every recall and write decision is logged via pluggable Gates |
 | **CRM** | Contacts, deals, activities. Every inbound message is auto-attributed to a contact and logged to the activity timeline |
 | **Channels** | Telegram, WhatsApp (Cloud API), SMS, IMAP/SMTP email. Outgoing webhooks for fan-out |
+| **Voice** | Speak to agents and hear replies — browser capture → NVIDIA Riva ASR, optional TTS voice responses |
+| **Documents** | Upload PDF, Excel (`.xlsx`), CSV, JSON, and text — auto-chunked and indexed into vector memory for recall |
+| **Office tools** | Agents read and write real files via tools — Excel (`excel_*`) and outbound email (`send_email` over SMTP) |
 | **Terminal** | Browser-based terminals (ttyd local shell, wetty SSH) for remote server management |
 | **Triggers** | Cron-scheduled fan-out tasks via APScheduler, per-agent model overrides, fallback chains across providers |
 | **Infrastructure** | Manage LLM providers, MongoDB clusters, cloud VMs (SSH), and BentoML deployments from the UI |
@@ -186,7 +189,7 @@ make dev-frontend      # Next.js on :3000 with --reload
 - **Marketplace** — shareable agent templates, tool packs, and gate configurations
 - **Multi-tenant SaaS mode** — deploy AladdinAI as a hosted service for your own customers, with per-tenant isolation and billing hooks
 - **Advanced observability** — full trace view per agent turn: memory reads, gate decisions, tool calls, model latency
-- **Expanded channels** — voice (WebRTC + NIM ASR/TTS), native mobile push, browser extension
+- **Expanded channels** — native mobile push, browser extension
 - **One-click cloud deploy** — pre-configured Terraform modules for AWS, GCP, and Azure. Full stack up in under 10 minutes
 
 ---

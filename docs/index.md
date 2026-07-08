@@ -1,8 +1,7 @@
 // NOTICE: This file is protected under RCF-PL
 # 📚 AladdinAI Documentation
 
-**Version**: 2.1.5  
-**Last Updated**: 2026-06-06
+
 
 Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent AI workspace.
 
@@ -30,13 +29,14 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
 ### 📚 Developer Guides
 - **[Agent Development](./guides/AGENT_DEVELOPMENT.md)** - Creating custom AI agents
 - **[Tool Development](./guides/TOOL_DEVELOPMENT.md)** - Building agent tools
-- **[Memory System](./guides/MEMORY.md)** - Understanding memory architecture *(coming soon)*
-- **[Self-Forging](./guides/SELF_FORGING.md)** - Model fine-tuning from traces *(coming soon)*
+- **[Agent Delegation](./guides/AGENT_DELEGATION.md)** - Multi-agent coordination and handoff
+- **[Memory System](./ARCHITECTURE.md#memory)** - Understanding memory architecture
+- **[Self-Forging](./adr/0001-self-forging-training.md)** - Model fine-tuning from traces (ADR-0001)
 
 ### 🚢 Deployment
-- **[Docker Deployment](./deployment/DOCKER.md)** - Production setup *(coming soon)*
-- **[Render.com](./deployment/RENDER.md)** - Cloud deployment *(coming soon)*
-- **[Environment Variables](./deployment/ENV.md)** - Configuration reference *(coming soon)*
+- **[CLI Wizard](./CLI_WIZARD.md)** - `npx aladdin-ai` setup walkthrough
+- **[Setup Complete](./SETUP_COMPLETE.md)** - Post-install checklist
+- **[Integrations](./INTEGRATIONS.md)** - Compatible external tools
 
 ## 🎯 Quick Links by Role
 
@@ -48,27 +48,29 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
 ### 🤖 AI Engineer
 1. [Agent Development Guide](./guides/AGENT_DEVELOPMENT.md)
 2. [ADR-0001: Self-Forging](./adr/0001-self-forging-training.md)
-3. [Memory System](./guides/MEMORY.md) *(coming soon)*
+3. [Memory System](./ARCHITECTURE.md#memory)
 
 ### 🔐 Security Engineer
 1. [ADR-0003: RCF Protocol](./adr/0003-rcf-webhook-auth.md)
 2. [Safety Gates Documentation](./guides/AGENT_DEVELOPMENT.md#safety-and-gates)
 
 ### 🚀 DevOps Engineer
-1. [Docker Deployment](./deployment/DOCKER.md) *(coming soon)*
-2. [Environment Variables](./deployment/ENV.md) *(coming soon)*
+1. [CLI Wizard](./CLI_WIZARD.md)
+2. [Testing Setup](./TESTING_SETUP.md)
 
 ## 🛠️ Features Overview
 
 ### ✅ Implemented
 - 🤖 **Multi-Agent System** - Create and orchestrate specialized AI agents
 - 🧠 **Persistent Memory** - Vector-based memory with per-agent isolation
-- 🛠️ **Tool Execution** - Extensible tool registry with 20+ built-in tools
+- 🛠️ **Tool Execution** - Extensible tool registry with 25+ built-in tools
 - 📊 **CRM Integration** - Full contact, deal, and activity management
 - 🔐 **Safety First** - PII detection, content filtering, audit logging
-
+- 🎙️ **Voice** - Speak to agents and hear replies via NVIDIA Riva ASR/TTS
+- 📄 **Documents** - Upload PDF, Excel, CSV, JSON, and text into vector memory
+- 📑 **Office Tools** - Agents read/write Excel and send email over SMTP
 - 🔗 **RCF Protocol** - Cryptographic webhook signing
-- 🎨 **Modern UI** - Next.js dashboard with real-time updates
+- 🎨 **Modern UI** - Next.js dashboard with real-time SSE chat streaming
 - 📦 **CLI Tool** - `npx aladdin-ai` for quick setup
 - 🐙 **GitHub Bots** - 2 automated bots for code review and issues
 - 🗄️ **GridFS Media** - MongoDB storage for files and images

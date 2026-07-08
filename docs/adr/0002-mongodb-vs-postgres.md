@@ -97,7 +97,6 @@ AladdinAI uses both MongoDB Atlas and Postgres for data storage. We needed clear
 
 ## References
 
-- [Memory: MongoDB media storage](../../../claude-memory/project_aladdinai_mongodb_media_storage.md)
-- [Memory: Render deploy gotchas](../../../claude-memory/project_aladdinai_render_deploy.md)
-- [MongoDB for Startups: $500 credits](../../../claude-memory/project_aladdinai_mongodb_startup.md)
+- [MongoDB for Startups](https://www.mongodb.com/startups)
 - Related: ADR-0001 (Self-Forging uses Postgres for traces)
+- Related: ADR-0005 (Media storage on GridFS)
