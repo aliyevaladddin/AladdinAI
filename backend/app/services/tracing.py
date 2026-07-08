@@ -121,7 +121,7 @@ _COMPLETED_BASE = 0.5      # reached a final answer
 _TOOL_ERROR_PENALTY = 0.25  # per failed tool call
 _EGRESS_BLOCKED = -0.5     # produced unsafe output that was blocked
 _EXHAUSTED = -1.0          # gave up after max iterations
-_LABEL_GOOD_AT = 0.25      # reward >= this -> "good"
+_LABEL_GOOD_AT = 0.25      # reward > this -> "good" (so 1 tool error -> neutral)
 _LABEL_BAD_AT = -0.25      # reward <= this -> "bad"
 
 
