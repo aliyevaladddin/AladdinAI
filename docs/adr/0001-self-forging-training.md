@@ -90,6 +90,5 @@ Implement a **Self-Forging** system that:
 
 ## References
 
-- [Memory: Self-Forging loop](../../../claude-memory/project_aladdinai_self_forging.md)
-- [Tracing Service](../../../backend/app/services/tracing.py)
+- [Tracing Service](../../backend/app/services/tracing.py)
 - Related: ADR-0002 (MongoDB vs Postgres for traces)

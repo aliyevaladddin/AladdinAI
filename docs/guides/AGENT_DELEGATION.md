@@ -468,7 +468,7 @@ class DelegationResult:
 
 - [Agent Development Guide](./AGENT_DEVELOPMENT.md)
 - [Tool Development Guide](./TOOL_DEVELOPMENT.md)
-- [Memory System](./MEMORY.md)
+- [Memory System](../ARCHITECTURE.md#memory)
 - [ADR-0001: Self-Forging](../adr/0001-self-forging-training.md)
 
 ---

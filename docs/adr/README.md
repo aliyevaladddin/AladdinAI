@@ -17,6 +17,10 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 | [0001](0001-self-forging-training.md) | Self-Forging Model Training from Agent Traces | ✅ Accepted | 2026-06-06 |
 | [0002](0002-mongodb-vs-postgres.md) | Data Storage Strategy - MongoDB vs Postgres | ✅ Accepted | 2026-06-04 |
 | [0003](0003-rcf-webhook-auth.md) | RCF Protocol for Webhook Authentication | ✅ Accepted | 2026-05-30 |
+| [0004](0004-nemo-guardrails-deferred.md) | NeMo Guardrails Deferred (langchain-core conflict) | ✅ Accepted | 2026-06-27 |
+| [0005](0005-media-storage-abstraction.md) | Unified Media Storage (Local FS vs GridFS) | ✅ Accepted | 2026-06-04 |
+| [0006](0006-open-core-edition-boundary.md) | Open-Core Edition Boundary via ALADDIN_EDITION | ✅ Accepted | 2026-06-06 |
+| [0007](0007-voice-pipeline-riva.md) | Voice Pipeline on NVIDIA Riva + ffmpeg | ✅ Accepted | 2026-06-27 |
 
 ## Status Definitions
 
@@ -56,15 +60,15 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 ### Backend & Infrastructure
 - [ADR-0001](0001-self-forging-training.md) - Self-Forging Training
 - [ADR-0002](0002-mongodb-vs-postgres.md) - Database Strategy
+- [ADR-0005](0005-media-storage-abstraction.md) - Media Storage (Local FS vs GridFS)
+- [ADR-0006](0006-open-core-edition-boundary.md) - Open-Core Edition Boundary
+
+### Safety & Voice
+- [ADR-0004](0004-nemo-guardrails-deferred.md) - NeMo Guardrails Deferred
+- [ADR-0007](0007-voice-pipeline-riva.md) - Voice Pipeline on NVIDIA Riva
 
 ### Security
 - [ADR-0003](0003-rcf-webhook-auth.md) - RCF Protocol
-
-### Frontend
-- (Coming soon)
-
-### DevOps
-- (Coming soon)
 
 ---
 

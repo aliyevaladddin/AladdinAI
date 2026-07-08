@@ -12,21 +12,22 @@ Comprehensive documentation for the AladdinAI multi-agent AI system.
 - **ReDoc** - Available at `http://localhost:8000/redoc` (alternative UI)
 
 ### Architecture
+- **[Architecture Overview](./ARCHITECTURE.md)** - High-level system architecture and data flow
 - **[Architecture Decision Records](./adr/)** - Important architectural decisions and their context
-- **[System Overview](./architecture/OVERVIEW.md)** - High-level system architecture
-- **[Data Flow](./architecture/DATAFLOW.md)** - How data flows through the system
+- **[Blog: Architecture Deep Dive](./blog-architecture-deep-dive.md)** - Long-form walkthrough
 
 ### Guides
 - **[Getting Started](../README.md)** - Quick start guide
 - **[Agent Development](./guides/AGENT_DEVELOPMENT.md)** - Creating custom agents
 - **[Tool Development](./guides/TOOL_DEVELOPMENT.md)** - Adding new tools
-- **[Memory System](./guides/MEMORY.md)** - Understanding the memory architecture
-- **[Self-Forging](./guides/SELF_FORGING.md)** - Model fine-tuning from traces
+- **[Agent Delegation](./guides/AGENT_DELEGATION.md)** - Multi-agent coordination and handoff
+- **[Memory System](./ARCHITECTURE.md#memory)** - Understanding the memory architecture
 
 ### Deployment
-- **[Docker Deployment](./deployment/DOCKER.md)** - Production Docker setup
-- **[Render.com](./deployment/RENDER.md)** - Deploy to Render.com
-- **[Environment Variables](./deployment/ENV.md)** - Configuration reference
+- **[CLI Wizard](./CLI_WIZARD.md)** - `npx aladdin-ai` setup walkthrough
+- **[Setup Complete](./SETUP_COMPLETE.md)** - Post-install checklist
+- **[Testing Setup](./TESTING_SETUP.md)** - Local test environment
+- **[Integrations](./INTEGRATIONS.md)** - Compatible external tools
 
 ## 🔄 Auto-Generated Documentation
 
