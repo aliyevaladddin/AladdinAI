@@ -55,6 +55,7 @@ jobs:
         run: |
           cd backend
           pip install -r requirements.txt
+          pip install "skillspector @ git+https://github.com/NVIDIA/skillspector.git@c2d09df019e358d3dc12d980b82c798b87cb9f56"
           pip install pytest pytest-asyncio pytest-cov httpx
 
       - name: Run tests
