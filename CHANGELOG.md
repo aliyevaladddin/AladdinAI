@@ -15,6 +15,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add funding field to package.json (#371) ([d63164a](https://github.com/aliyevaladddin/AladdinAI/commit/d63164a6c7670fcfb09114eab1b55a45787692a7))
 
+- Add skillspector dependency to CI workflow and requirements ([3355210](https://github.com/aliyevaladddin/AladdinAI/commit/335521069384aa16fdc3b18b112c26ea171300b6))
+
 
 ### Maintenance
 
@@ -33,6 +35,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog (#358) ([02ca99d](https://github.com/aliyevaladddin/AladdinAI/commit/02ca99d4cf5d631199e58643137122f68e0755d6))
 
 - Update changelog [skip ci] (#369) ([38db820](https://github.com/aliyevaladddin/AladdinAI/commit/38db8201b161fb18810c134303bc7565901a7b50))
+
+- Update changelog [skip ci] (#372) ([6ffea7f](https://github.com/aliyevaladddin/AladdinAI/commit/6ffea7f66a7a53a74e8209e186302af315d88878))
 
 ## [v2.2.0] - 2026-06-29
 
