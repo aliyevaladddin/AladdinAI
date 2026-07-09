@@ -13,6 +13,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Score reward/quality_label at write time from loop out come (#368) ([0c9ce25](https://github.com/aliyevaladddin/AladdinAI/commit/0c9ce250458b748e5aad9356bc0335bd9c66c34b))
 
+- Add funding field to package.json (#371) ([d63164a](https://github.com/aliyevaladddin/AladdinAI/commit/d63164a6c7670fcfb09114eab1b55a45787692a7))
+
 
 ### Maintenance
 
@@ -29,6 +31,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#355) ([118ffe4](https://github.com/aliyevaladddin/AladdinAI/commit/118ffe4f68ff1f19bbdb1cb32126b531783a4407))
 
 - Update changelog (#358) ([02ca99d](https://github.com/aliyevaladddin/AladdinAI/commit/02ca99d4cf5d631199e58643137122f68e0755d6))
+
+- Update changelog [skip ci] (#369) ([38db820](https://github.com/aliyevaladddin/AladdinAI/commit/38db8201b161fb18810c134303bc7565901a7b50))
 
 ## [v2.2.0] - 2026-06-29
 
