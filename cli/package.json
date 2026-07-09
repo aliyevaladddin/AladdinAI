@@ -1,6 +1,6 @@
 {
   "name": "aladdin-ai",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Self-hosted AI workspace — agents, memory, CRM, channels. One command to install and run.",
   "main": "index.js",
   "bin": {
