@@ -36,6 +36,10 @@
     "type": "git",
     "url": "git+https://github.com/aliyevaladddin/AladdinAI.git"
   },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/aladdin-ai"
+  },
   "bugs": {
     "url": "https://github.com/aliyevaladddin/AladdinAI/issues"
   },
