@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "🎓 Looking for a first task?"
+    url: https://github.com/aliyevaladddin/AladdinAI/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
+    about: "Browse curated good-first-issues — each one is a step-by-step mini-tutorial."
+  - name: "💬 Questions & ideas"
+    url: https://github.com/aliyevaladddin/AladdinAI/discussions
+    about: "Ask questions or propose features before filing an issue."
