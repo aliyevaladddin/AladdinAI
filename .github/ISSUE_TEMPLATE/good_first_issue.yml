@@ -1,0 +1,97 @@
+name: "🎓 Good first issue (mini-tutorial)"
+description: "A scoped, well-explained task for a first-time contributor. Every field is a teaching step."
+title: "[Good first issue]: "
+labels: ["good first issue", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping curate a great first task! This template exists so every
+        `good first issue` reads like a **mini-tutorial**: enough context that someone
+        who has never seen the codebase can open a PR without asking a single question.
+        Fill in every section — vague issues get no PRs; well-taught ones get several.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "🧩 The problem"
+      description: "What is wrong or missing today, and why it matters. Assume the reader knows nothing about this project."
+      placeholder: |
+        Four routers connect to VMs with `known_hosts=None`, which disables SSH
+        host-key verification — every connection is exposed to MITM.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "📚 Background (teach me the concept)"
+      description: "Explain the concept a newcomer needs. Link a doc if one exists. This is the 'tutorial' part."
+      placeholder: |
+        TOFU = Trust On First Use: store the server's host key on the first
+        connection, verify it on every later one, abort if it changes. It's how
+        standard `ssh` works.
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: "📂 Where to look"
+      description: "Exact files and line numbers. Give the reader a map so they don't have to grep blindly."
+      placeholder: |
+        - backend/app/routers/ssh_exec.py:53
+        - backend/app/routers/vms.py:63
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: approach
+    attributes:
+      label: "✅ Suggested approach"
+      description: "A concrete, working direction — ideally with a code sketch. Show the shape of the solution, not a full patch."
+    validations:
+      required: true
+
+  - type: textarea
+    id: antipattern
+    attributes:
+      label: "⚠️ Do NOT do this"
+      description: "The tempting-but-wrong approach and WHY it fails. This one field prevents most broken PRs."
+      placeholder: |
+        `known_hosts = str(path) if path.exists() else None` — the file is never
+        written, so .exists() is always False → verification stays off forever.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "☑️ Acceptance checklist"
+      description: "The definition of done. The contributor self-checks against this before opening the PR."
+      value: |
+        - [ ] Change implemented in the files above
+        - [ ] Unit tests added that call the real code (no mirror/tautological tests)
+        - [ ] `pytest backend/` (and/or relevant suite) green in CI
+        - [ ] No unrelated files or formatting churn in the diff
+    validations:
+      required: true
+
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: "⏱️ Estimated effort"
+      options:
+        - "~30 min (tiny)"
+        - "1–2 hours (small)"
+        - "half a day (medium)"
+    validations:
+      required: true
+
+  - type: input
+    id: mentor
+    attributes:
+      label: "🙋 Mentor"
+      description: "Who can the contributor ping if stuck?"
+      placeholder: "@aliyevaladddin"
