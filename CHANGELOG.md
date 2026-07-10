@@ -4,6 +4,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Maintenance
+
+- Bump version to 2.2.1 and update deps [skip ci] ([70a5fbd](https://github.com/aliyevaladddin/AladdinAI/commit/70a5fbdc76ad36171a83cc3597c9e94a29aff2ef))
+
+- Add good-first-issue mini-tutorial template (#374) ([6fac5dd](https://github.com/aliyevaladddin/AladdinAI/commit/6fac5ddc509dfa3242bb79d0ad2ebee3ed5ec7a9))
+
+## [v2.2.1] - 2026-07-09
+
 ### Dependencies
 
 - Bump lucide-react from 1.21.0 to 1.23.0 in /frontend (#353) ([2d24ac8](https://github.com/aliyevaladddin/AladdinAI/commit/2d24ac88f2690e10bebce6d05d6e7bd449f5a479))
@@ -37,6 +45,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#369) ([38db820](https://github.com/aliyevaladddin/AladdinAI/commit/38db8201b161fb18810c134303bc7565901a7b50))
 
 - Update changelog [skip ci] (#372) ([6ffea7f](https://github.com/aliyevaladddin/AladdinAI/commit/6ffea7f66a7a53a74e8209e186302af315d88878))
+
+- Update changelog [skip ci] (#373) ([6de7ac8](https://github.com/aliyevaladddin/AladdinAI/commit/6de7ac895cdc70c1ca03aac49b4fa7927060759f))
 
 ## [v2.2.0] - 2026-06-29
 
