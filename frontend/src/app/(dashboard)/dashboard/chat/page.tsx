@@ -21,6 +21,8 @@ import {
   Square,
   Volume2,
   VolumeX,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -121,6 +123,8 @@ export default function ChatPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  // message_id -> "thumbs_up" | "thumbs_down": which reaction the user gave
+  const [feedback, setFeedback] = useState<Record<number, string>>({});
   const [input, setInput] = useState("");
   const [selectedAgentId, setSelectedAgentId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -441,6 +445,7 @@ export default function ChatPage() {
                     idx === prev.length - 1
                       ? {
                           ...m,
+                          id: event.message_id,
                           content: event.response,
                           model: event.model,
                           attachments: event.attachments ?? null,
@@ -452,6 +457,7 @@ export default function ChatPage() {
                 setMessages((prev: Message[]) => [
                   ...prev,
                   {
+                    id: event.message_id,
                     role: "assistant",
                     content: event.response,
                     model: event.model,
@@ -499,6 +505,29 @@ export default function ChatPage() {
   const agentName = (agentId: number | string): string => {
     if (agentId === "unified") return "Unified";
     return agents.find((a: Agent) => a.id === agentId)?.name ?? `Agent #${agentId}`;
+  };
+
+  // Send a 👍/👎 on an assistant reply. Clicking the active reaction clears it.
+  const sendFeedback = async (messageId: number, value: string) => {
+    const next = feedback[messageId] === value ? undefined : value;
+    // Optimistic: reflect the click immediately, roll back on failure.
+    setFeedback((prev) => {
+      const copy = { ...prev };
+      if (next) copy[messageId] = next;
+      else delete copy[messageId];
+      return copy;
+    });
+    if (!next) return; // no clear-endpoint yet; local un-highlight only
+    try {
+      await api.post(`/chat/messages/${messageId}/feedback`, { value: next });
+    } catch {
+      setFeedback((prev) => {
+        const copy = { ...prev };
+        if (feedback[messageId]) copy[messageId] = feedback[messageId];
+        else delete copy[messageId];
+        return copy;
+      });
+    }
   };
 
 
@@ -738,6 +767,26 @@ export default function ChatPage() {
                             </div>
                           )}
                         </div>
+
+                        {/* Feedback — the strong training signal for the self-forging loop */}
+                        {msg.role === "assistant" && msg.id && (
+                          <div className="flex items-center gap-1 mt-1.5">
+                            <button
+                              onClick={() => sendFeedback(msg.id!, "thumbs_up")}
+                              aria-label="Good response"
+                              className={`p-1.5 rounded-lg transition-all hover:bg-muted ${feedback[msg.id] === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
+                            >
+                              <ThumbsUp size={14} />
+                            </button>
+                            <button
+                              onClick={() => sendFeedback(msg.id!, "thumbs_down")}
+                              aria-label="Bad response"
+                              className={`p-1.5 rounded-lg transition-all hover:bg-muted ${feedback[msg.id] === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
+                            >
+                              <ThumbsDown size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))

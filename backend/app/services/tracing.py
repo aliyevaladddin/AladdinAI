@@ -270,3 +270,83 @@ def schedule_trace_capture(
     task = loop.create_task(_run_trace_capture(agent_id, user_id, payload, session_id))
     _background_tasks.add(task)
     task.add_done_callback(_background_tasks.discard)
+
+
+# ── Human feedback labeling ────────────────────────────────────────────────
+# The strong signal. A 👍/👎 on a reply overrides the weak write-time _score:
+# it is what a human actually thought, so it outranks "the loop didn't crash".
+_HUMAN_REWARD = {"thumbs_up": 1.0, "thumbs_down": -1.0}
+_HUMAN_LABEL = {"thumbs_up": "good", "thumbs_down": "bad"}
+
+
+# [RCF:PROTECTED]
+def human_score(value: str) -> tuple[float | None, str | None]:
+    """Map a 👍/👎 feedback value to (reward, quality_label).
+
+    Pure and side-effect free so it can be unit-tested without a DB. Unknown
+    values return (None, None) — the caller should treat that as "clear the
+    human label" rather than write a guess.
+    """
+    return _HUMAN_REWARD.get(value), _HUMAN_LABEL.get(value)
+
+
+# [RCF:PROTECTED]
+async def _run_feedback_update(
+    user_id: int,
+    session_id: int,
+    value: str,
+) -> None:
+    """Body of the background task — stamp the human label onto the trace.
+
+    Traces are keyed by (user_id, session_id) but not by message_id, and a
+    session can hold several turns. We update the most recent trace for the
+    session — the one the just-rated reply belongs to. Best-effort: the
+    Postgres row is the source of truth, this only enriches the training doc.
+    """
+    reward, label = human_score(value)
+    if reward is None:
+        return
+    try:
+        async with async_session() as db:
+            try:
+                mdb = await get_mongo_db(db, user_id)
+            except MemSvcError:
+                return
+            # find-then-update by _id: update_one(sort=...) needs server 8.0+,
+            # but find_one(sort=...) works everywhere (incl. older Atlas tiers).
+            latest = await mdb[TRACE_COLLECTION].find_one(
+                {"user_id": user_id, "session_id": session_id},
+                sort=[("created_at", -1)],
+                projection={"_id": 1},
+            )
+            if latest is None:
+                return
+            await mdb[TRACE_COLLECTION].update_one(
+                {"_id": latest["_id"]},
+                {"$set": {
+                    "reward": reward,
+                    "quality_label": label,
+                    "human_labeled": True,
+                    "human_labeled_at": datetime.now(timezone.utc),
+                }},
+            )
+    except Exception as e:  # noqa: BLE001
+        log.warning("feedback trace update failed for session %s: %s", session_id, e)
+
+
+# [RCF:PROTECTED]
+def schedule_feedback_update(*, user_id: int, session_id: int, value: str) -> None:
+    """Fire-and-forget: mirror a human 👍/👎 onto the session's latest trace.
+
+    Never blocks or breaks the feedback request — the durable record already
+    lives in Postgres; this only strengthens the Mongo training doc.
+    """
+    if TRACING_KILL_SWITCH:
+        return
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+    task = loop.create_task(_run_feedback_update(user_id, session_id, value))
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)

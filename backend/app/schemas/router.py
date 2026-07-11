@@ -46,7 +46,19 @@ class ChatResponse(BaseModel):
     agent_name: str
     model: str
     session_id: int
+    message_id: int | None = None  # id of the persisted assistant reply (for feedback)
     attachments: list[dict] | None = None
+
+
+# [RCF:PROTECTED]
+class FeedbackRequest(BaseModel):
+    value: str  # thumbs_up | thumbs_down
+
+
+# [RCF:PROTECTED]
+class FeedbackResponse(BaseModel):
+    message_id: int
+    value: str
 
 
 # [RCF:PROTECTED]
