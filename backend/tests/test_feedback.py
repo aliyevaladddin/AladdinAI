@@ -11,8 +11,6 @@ endpoint tests assert only the durable Postgres side.
 """
 import asyncio
 
-import pytest
-
 from app.services.tracing import human_score
 from app.models.chat_session import ChatSession, ChatMessage
 from app.models.message_feedback import MessageFeedback
