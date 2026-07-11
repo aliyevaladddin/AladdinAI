@@ -335,8 +335,8 @@ async def _run_feedback_update(
 
 
 # [RCF:PROTECTED]
-def schedule_feedback_update(*, user_id: int, session_id: int, value: str) -> None:
-    """Fire-and-forget: mirror a human 👍/👎 onto the session's latest trace.
+def schedule_feedback_update(*, user_id: int, session_id: int, value: str, message_content: str) -> None:
+    """Fire-and-forget: mirror a human 👍/👎 onto the session's matching trace.
 
     Never blocks or breaks the feedback request — the durable record already
     lives in Postgres; this only strengthens the Mongo training doc.
@@ -347,6 +347,6 @@ def schedule_feedback_update(*, user_id: int, session_id: int, value: str) -> No
         loop = asyncio.get_running_loop()
     except RuntimeError:
         return
-    task = loop.create_task(_run_feedback_update(user_id, session_id, value))
+    task = loop.create_task(_run_feedback_update(user_id, session_id, value, message_content))
     _background_tasks.add(task)
     task.add_done_callback(_background_tasks.discard)
