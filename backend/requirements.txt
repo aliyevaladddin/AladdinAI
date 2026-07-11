@@ -14,7 +14,7 @@ aiosqlite==0.22.1
 asyncssh==2.24.0
 motor==3.7.1
 certifi>=2026.6.17
-apscheduler==3.11.2
+apscheduler==3.11.3
 croniter==6.2.3
 docker==7.1.0
 PyYAML==6.0.3
