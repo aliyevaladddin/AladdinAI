@@ -295,13 +295,15 @@ async def _run_feedback_update(
     user_id: int,
     session_id: int,
     value: str,
+    message_content: str,
 ) -> None:
     """Body of the background task — stamp the human label onto the trace.
 
     Traces are keyed by (user_id, session_id) but not by message_id, and a
-    session can hold several turns. We update the most recent trace for the
-    session — the one the just-rated reply belongs to. Best-effort: the
-    Postgres row is the source of truth, this only enriches the training doc.
+    session can hold several turns. We first try to match the exact trace whose
+    `final_text` is the rated reply; if that misses (text truncated, or an old
+    trace), we fall back to the most recent trace for the session. Best-effort:
+    the Postgres row is the source of truth, this only enriches the training doc.
     """
     reward, label = human_score(value)
     if reward is None:
@@ -312,13 +314,21 @@ async def _run_feedback_update(
                 mdb = await get_mongo_db(db, user_id)
             except MemSvcError:
                 return
-            # find-then-update by _id: update_one(sort=...) needs server 8.0+,
-            # but find_one(sort=...) works everywhere (incl. older Atlas tiers).
+            # Prefer the trace whose reply matches the rated message; fall back
+            # to the session's latest. find_one(sort=...) works on every server
+            # (update_one(sort=...) would need Mongo 8.0+).
             latest = await mdb[TRACE_COLLECTION].find_one(
-                {"user_id": user_id, "session_id": session_id},
+                {"user_id": user_id, "session_id": session_id,
+                 "final_text": _clip(message_content or "")},
                 sort=[("created_at", -1)],
                 projection={"_id": 1},
             )
+            if latest is None:
+                latest = await mdb[TRACE_COLLECTION].find_one(
+                    {"user_id": user_id, "session_id": session_id},
+                    sort=[("created_at", -1)],
+                    projection={"_id": 1},
+                )
             if latest is None:
                 return
             await mdb[TRACE_COLLECTION].update_one(
