@@ -75,7 +75,7 @@ export default function ChannelsPage() {
   const [saving, setSaving] = useState(false);
 
 
-  const loadEmails = () => api.get<EmailAccount[]>("/channels/email").then(setEmails);
+  const loadEmails = async () => { const data = await api.get<EmailAccount[]>("/channels/email"); setEmails(data); };
 
   const loadChannels = () => api.get<MessagingChannel[]>("/channels/messaging").then(setChannels);
 
@@ -112,16 +112,26 @@ export default function ChannelsPage() {
   const handleSaveEmail = async (id: number) => {
     setSaving(true);
     try {
-      const body: Record<string, any> = { email: editEmailForm.email || undefined };
-      if (editEmailForm.imap_host) body.imap_host = editEmailForm.imap_host;
-      if (editEmailForm.imap_port) body.imap_port = parseInt(editEmailForm.imap_port);
-      if (editEmailForm.smtp_host) body.smtp_host = editEmailForm.smtp_host;
-      if (editEmailForm.smtp_port) body.smtp_port = parseInt(editEmailForm.smtp_port);
-      if (editEmailForm.password) body.password = editEmailForm.password;
+      const body: Record<string, any> = {};
+      if (editEmailForm.email.trim()) body.email = editEmailForm.email.trim();
+      if (editEmailForm.imap_host.trim()) body.imap_host = editEmailForm.imap_host.trim();
+      if (editEmailForm.imap_port.trim()) body.imap_port = parseInt(editEmailForm.imap_port);
+      if (editEmailForm.smtp_host.trim()) body.smtp_host = editEmailForm.smtp_host.trim();
+      if (editEmailForm.smtp_port.trim()) body.smtp_port = parseInt(editEmailForm.smtp_port);
+      if (editEmailForm.password.trim()) body.password = editEmailForm.password;
+
+      if (Object.keys(body).length === 0) {
+        toast.error("Nothing to update — fill in at least one field.");
+        return;
+      }
+
       await api.put(`/channels/email/${id}`, body);
       setEditEmailId(null);
-      loadEmails();
+      await loadEmails();
       toast.success("Email account updated. Please re-test the connection.");
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail || err?.message || "Unknown error";
+      toast.error(`Failed to update: ${detail}`);
     } finally {
       setSaving(false);
     }
