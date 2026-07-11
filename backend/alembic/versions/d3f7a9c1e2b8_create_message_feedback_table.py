@@ -21,16 +21,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 # [RCF:PROTECTED]
 def upgrade() -> None:
-    conn = op.get_bind()
-    result = conn.execute(
-        sa.text(
-            "SELECT EXISTS ("
-            "  SELECT 1 FROM information_schema.tables "
-            "  WHERE table_schema = 'public' AND table_name = 'message_feedback'"
-            ")"
-        )
-    )
-    if result.scalar():
+    # Dialect-agnostic existence check — works on both SQLite and PostgreSQL.
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    if 'message_feedback' in inspector.get_table_names():
         print("[message_feedback-migration] table already exists, skipping create")
         return
 

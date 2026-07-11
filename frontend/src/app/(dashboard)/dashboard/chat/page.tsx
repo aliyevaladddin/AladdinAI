@@ -1,7 +1,7 @@
 // NOTICE: This file is protected under RCF-PL
 "use client";
 
-import { useEffect, useState, useRef, FormEvent, MouseEvent, KeyboardEvent } from "react";
+import { useEffect, useState, useRef, useCallback, FormEvent, MouseEvent, KeyboardEvent } from "react";
 import { api, API_URL } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +23,8 @@ import {
   VolumeX,
   ThumbsUp,
   ThumbsDown,
+  Play,
+  Pause,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -37,7 +39,139 @@ interface Attachment {
 }
 
 
-function AuthAttachment({ filename, mime, kind }: { filename: string; mime?: string; kind?: string }) {
+// ── Premium Voice Message Player (Telegram-style) ─────────────────────────
+function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const toggle = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); } else { audio.play(); }
+    setPlaying(!playing);
+  }, [playing]);
+
+  const handleTimeUpdate = () => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    setCurrentTime(audio.currentTime);
+    setProgress((audio.currentTime / audio.duration) * 100);
+  };
+  const handleLoadedMetadata = () => { if (audioRef.current) setDuration(audioRef.current.duration); };
+  const handleEnded = () => { setPlaying(false); setProgress(0); setCurrentTime(0); };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * audio.duration;
+    setProgress(ratio * 100);
+  };
+
+  const fmt = (s: number) => {
+    if (!isFinite(s) || s === 0) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  // Organic-looking waveform heights
+  const bars = [3, 6, 10, 15, 20, 14, 18, 8, 22, 16, 10, 18, 12, 20, 7, 15, 22, 11, 17, 9, 14, 20, 6, 12, 18];
+
+  return (
+    <div
+      className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl max-w-[280px] shadow-lg ${
+        isUser
+          ? "bg-white/15 backdrop-blur-md border border-white/20"
+          : "bg-gradient-to-r from-violet-500/10 via-blue-500/10 to-cyan-500/10 border border-violet-500/20 backdrop-blur-sm"
+      }`}
+    >
+      <audio
+        ref={audioRef}
+        src={src}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
+        className="hidden"
+      />
+
+      {/* Play / Pause button with glow */}
+      <button
+        onClick={toggle}
+        className={`relative w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 hover:scale-110 active:scale-95 ${
+          isUser
+            ? "bg-white/90 text-violet-600 shadow-[0_0_16px_rgba(255,255,255,0.4)]"
+            : "bg-gradient-to-br from-violet-500 to-blue-600 text-white shadow-[0_0_16px_rgba(139,92,246,0.5)]"
+        }`}
+        aria-label={playing ? "Pause" : "Play"}
+      >
+        {playing ? (
+          <Pause size={16} className="shrink-0" />
+        ) : (
+          <Play size={16} className="shrink-0 translate-x-0.5" />
+        )}
+        {/* Ripple on play */}
+        {playing && (
+          <span className={`absolute inset-0 rounded-full animate-ping opacity-30 ${
+            isUser ? "bg-white" : "bg-violet-400"
+          }`} />
+        )}
+      </button>
+
+      {/* Waveform + seeker */}
+      <div className="flex-1 min-w-0 space-y-2">
+        {/* Animated waveform bars */}
+        <div
+          className="flex items-center gap-[2px] h-6 cursor-pointer"
+          onClick={handleSeek}
+        >
+          {bars.map((h, i) => {
+            const barProgress = (i / bars.length) * 100;
+            const isPast = barProgress <= progress;
+            const isNearCurrent = Math.abs(barProgress - progress) < 8 && playing;
+            return (
+              <div
+                key={i}
+                className={`rounded-full w-[2.5px] flex-shrink-0 transition-all duration-150 ${
+                  isPast
+                    ? isUser
+                      ? "bg-white"
+                      : "bg-violet-400"
+                    : isUser
+                    ? "bg-white/35"
+                    : "bg-muted-foreground/25"
+                }`}
+                style={{
+                  height: `${h}px`,
+                  transform: isNearCurrent ? "scaleY(1.3)" : "scaleY(1)",
+                  animationDelay: `${i * 40}ms`,
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Time row */}
+        <div className={`flex items-center justify-between text-[10px] font-mono ${
+          isUser ? "text-white/70" : "text-muted-foreground"
+        }`}>
+          <span>{fmt(currentTime)}</span>
+          <span className={`text-[9px] uppercase tracking-wide font-semibold ${
+            isUser ? "text-white/50" : "text-violet-400/70"
+          }`}>Voice</span>
+          <span>{fmt(duration || 0)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function AuthAttachment({ filename, mime, kind, isUser }: { filename: string; mime?: string; kind?: string; isUser?: boolean }) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
     let revoke: string | null = null;
@@ -61,7 +195,7 @@ function AuthAttachment({ filename, mime, kind }: { filename: string; mime?: str
   }, [filename]);
 
   if (!src) {
-    return <div className="w-40 h-40 rounded-md bg-muted animate-pulse" />;
+    return <div className="w-[280px] h-16 rounded-2xl bg-muted/60 animate-pulse" />;
   }
 
   const isImg = kind === "image" || (mime && mime.startsWith("image/")) || filename.match(/\.(jpeg|jpg|gif|png|webp)$/i);
@@ -69,15 +203,11 @@ function AuthAttachment({ filename, mime, kind }: { filename: string; mime?: str
 
   if (isImg) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={filename} className="max-w-xs max-h-80 rounded-md border border-border" />;
+    return <img src={src} alt={filename} className="max-w-xs max-h-80 rounded-xl border border-border shadow-sm" />;
   }
 
   if (isAudio) {
-    return (
-      <div className="flex items-center gap-2 p-2 bg-muted/70 rounded-lg border border-border max-w-sm">
-        <audio src={src} controls className="w-full h-8" />
-      </div>
-    );
+    return <VoicePlayer src={src} isUser={isUser} />;
   }
 
   return (
@@ -702,18 +832,32 @@ export default function ChatPage() {
                           )}
                         </div>
 
-                        {/* Content */}
+                        {/* Audio attachments — rendered OUTSIDE the bubble to avoid gradient conflict */}
+                        {msg.attachments && msg.attachments.some(a => a.kind === "audio" || a.mime?.startsWith("audio/")) && (
+                          <div className={`flex flex-wrap gap-2 mb-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                            {msg.attachments
+                              .filter(a => a.kind === "audio" || a.mime?.startsWith("audio/"))
+                              .map((att) => (
+                                <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
+                              ))}
+                          </div>
+                        )}
+
+                        {/* Content bubble — only shown if there's text OR non-audio attachments */}
+                        {(msg.content || (msg.attachments && msg.attachments.some(a => a.kind !== "audio" && !a.mime?.startsWith("audio/")))) && (
                         <div
                           className={`rounded-2xl px-4 py-3 ${msg.role === "user"
                               ? "bg-gradient-to-br from-blue-500 to-violet-600 text-white shadow-md"
                               : "bg-muted/50 border border-border/50"
                             }`}
                         >
-                          {msg.attachments && msg.attachments.length > 0 && (
+                          {msg.attachments && msg.attachments.some(a => a.kind !== "audio" && !a.mime?.startsWith("audio/")) && (
                             <div className="flex flex-wrap gap-2 mb-3">
-                              {msg.attachments.map((att) => (
-                                <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} />
-                              ))}
+                              {msg.attachments
+                                .filter(a => a.kind !== "audio" && !a.mime?.startsWith("audio/"))
+                                .map((att) => (
+                                  <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
+                                ))}
                             </div>
                           )}
                           {msg.content && (
@@ -767,6 +911,7 @@ export default function ChatPage() {
                             </div>
                           )}
                         </div>
+                        )}
 
                         {/* Feedback — the strong training signal for the self-forging loop */}
                         {msg.role === "assistant" && msg.id && (
