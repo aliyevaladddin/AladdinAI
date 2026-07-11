@@ -52,7 +52,7 @@ class ChatResponse(BaseModel):
 
 # [RCF:PROTECTED]
 class FeedbackRequest(BaseModel):
-    value: str  # thumbs_up | thumbs_down
+    value: Literal["thumbs_up", "thumbs_down"]
 
 
 # [RCF:PROTECTED]
