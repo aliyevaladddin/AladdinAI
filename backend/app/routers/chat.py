@@ -207,7 +207,7 @@ async def submit_feedback(
     await db.commit()
 
     # Best-effort: strengthen the training doc. Never blocks the response.
-    schedule_feedback_update(user_id=user.id, session_id=session.id, value=body.value)
+    schedule_feedback_update(user_id=user.id, session_id=session.id, value=body.value, message_content=message.content)
 
     return FeedbackResponse(message_id=message_id, value=body.value)
 
