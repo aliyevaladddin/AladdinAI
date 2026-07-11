@@ -189,21 +189,25 @@ async def submit_feedback(
     if message.role != "assistant":
         raise HTTPException(status_code=422, detail="Can only rate assistant messages")
 
-    existing = (await db.execute(
-        select(MessageFeedback).where(
-            MessageFeedback.message_id == message_id,
-            MessageFeedback.user_id == user.id,
-        )
-    )).scalar_one_or_none()
-    if existing:
-        existing.value = body.value
-    else:
-        db.add(MessageFeedback(
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    stmt = (
+        pg_insert(MessageFeedback)
+        .values(
             message_id=message_id,
             session_id=session.id,
             user_id=user.id,
             value=body.value,
-        ))
+        )
+        .on_conflict_do_update(
+            constraint="uq_message_feedback_message_user",
+            set_={
+                "value": body.value,
+                "updated_at": datetime.now(timezone.utc),
+            },
+        )
+    )
+    await db.execute(stmt)
     await db.commit()
 
     # Best-effort: strengthen the training doc. Never blocks the response.
