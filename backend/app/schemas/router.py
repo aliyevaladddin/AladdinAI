@@ -71,6 +71,7 @@ class ChatMessageResponse(BaseModel):
     model: str | None
     attachments: list[dict] | None = None
     created_at: str
+    feedback: str | None = None  # this user's reaction: thumbs_up | thumbs_down | None
 
     model_config = {"from_attributes": True}
 
