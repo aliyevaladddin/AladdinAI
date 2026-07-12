@@ -145,6 +145,17 @@ async def get_messages(
         .order_by(ChatMessage.created_at.asc())
     )
     messages = result.scalars().all()
+
+    # This user's reactions for the session, so the UI can restore the ⭐ state.
+    fb_rows = await db.execute(
+        select(MessageFeedback.message_id, MessageFeedback.value)
+        .where(
+            MessageFeedback.session_id == session_id,
+            MessageFeedback.user_id == user.id,
+        )
+    )
+    fb_by_message = {mid: val for mid, val in fb_rows.all()}
+
     return [
         ChatMessageResponse(
             id=m.id,
@@ -153,6 +164,7 @@ async def get_messages(
             model=m.model,
             attachments=m.attachments,
             created_at=m.created_at.isoformat(),
+            feedback=fb_by_message.get(m.id),
         )
         for m in messages
     ]

@@ -246,6 +246,7 @@ interface Message {
   model?: string | null;
   attachments?: Attachment[] | null;
   created_at?: string;
+  feedback?: string | null;  // this user's saved reaction: thumbs_up | thumbs_down
 }
 
 export default function ChatPage() {
@@ -380,6 +381,12 @@ export default function ChatPage() {
     try {
       const msgs = await api.get<Message[]>(`/chat/sessions/${session.id}/messages`);
       setMessages(msgs);
+      // Restore saved 👍/👎 so the highlight survives reloads / session switches.
+      const saved: Record<number, string> = {};
+      for (const m of msgs) {
+        if (m.id && m.feedback) saved[m.id] = m.feedback;
+      }
+      setFeedback(saved);
     } finally {
       setLoadingMessages(false);
     }

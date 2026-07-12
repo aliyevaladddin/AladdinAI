@@ -106,3 +106,13 @@ def test_feedback_requires_auth(client, test_user, db_session):
     msg_id, _ = _make_assistant_message(db_session, test_user["user_id"])
     r = client.post(f"/api/chat/messages/{msg_id}/feedback", json={"value": "thumbs_up"})
     assert r.status_code == 401
+
+
+def test_get_messages_returns_saved_feedback(client, test_user, auth_headers, db_session):
+    # The reaction must survive a reload: GET messages echoes this user's value.
+    msg_id, session_id = _make_assistant_message(db_session, test_user["user_id"])
+    client.post(f"/api/chat/messages/{msg_id}/feedback", json={"value": "thumbs_up"}, headers=auth_headers)
+
+    msgs = client.get(f"/api/chat/sessions/{session_id}/messages", headers=auth_headers).json()
+    rated = next(m for m in msgs if m["id"] == msg_id)
+    assert rated["feedback"] == "thumbs_up"
