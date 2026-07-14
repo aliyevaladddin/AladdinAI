@@ -25,11 +25,13 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
   - [ADR-0001: Self-Forging Training](./adr/0001-self-forging-training.md)
   - [ADR-0002: MongoDB vs Postgres](./adr/0002-mongodb-vs-postgres.md)
   - [ADR-0003: RCF Webhook Auth](./adr/0003-rcf-webhook-auth.md)
+  - [ADR-0008: Orders Entity & Status History](./adr/0008-orders-status-history-in-activity-metadata.md)
 
 ### 📚 Developer Guides
 - **[Agent Development](./guides/AGENT_DEVELOPMENT.md)** - Creating custom AI agents
 - **[Tool Development](./guides/TOOL_DEVELOPMENT.md)** - Building agent tools
 - **[Agent Delegation](./guides/AGENT_DELEGATION.md)** - Multi-agent coordination and handoff
+- **[Orders & Sales](./guides/ORDERS.md)** - Product catalog, orders, sales/marketing metrics, and `sales`-role tools
 - **[Memory System](./ARCHITECTURE.md#memory)** - Understanding memory architecture
 - **[Self-Forging](./adr/0001-self-forging-training.md)** - Model fine-tuning from traces (ADR-0001)
 
@@ -65,6 +67,7 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
 - 🧠 **Persistent Memory** - Vector-based memory with per-agent isolation
 - 🛠️ **Tool Execution** - Extensible tool registry with 25+ built-in tools
 - 📊 **CRM Integration** - Full contact, deal, and activity management
+- 🛒 **Orders & Catalog** - Product catalog, orders with a delivery lifecycle, sales/marketing metrics, and `sales`-role agent tools
 - 🔐 **Safety First** - PII detection, content filtering, audit logging
 - 🎙️ **Voice** - Speak to agents and hear replies via NVIDIA Riva ASR/TTS
 - 📄 **Documents** - Upload PDF, Excel, CSV, JSON, and text into vector memory

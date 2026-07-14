@@ -21,6 +21,7 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 | [0005](0005-media-storage-abstraction.md) | Unified Media Storage (Local FS vs GridFS) | ✅ Accepted | 2026-06-04 |
 | [0006](0006-open-core-edition-boundary.md) | Open-Core Edition Boundary via ALADDIN_EDITION | ✅ Accepted | 2026-06-06 |
 | [0007](0007-voice-pipeline-riva.md) | Voice Pipeline on NVIDIA Riva + ffmpeg | ✅ Accepted | 2026-06-27 |
+| [0008](0008-orders-status-history-in-activity-metadata.md) | Orders as a Distinct Entity; Status History in Activity Metadata | ✅ Accepted | 2026-07-14 |
 
 ## Status Definitions
 
@@ -62,6 +63,7 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 - [ADR-0002](0002-mongodb-vs-postgres.md) - Database Strategy
 - [ADR-0005](0005-media-storage-abstraction.md) - Media Storage (Local FS vs GridFS)
 - [ADR-0006](0006-open-core-edition-boundary.md) - Open-Core Edition Boundary
+- [ADR-0008](0008-orders-status-history-in-activity-metadata.md) - Orders Entity & Status History
 
 ### Safety & Voice
 - [ADR-0004](0004-nemo-guardrails-deferred.md) - NeMo Guardrails Deferred
