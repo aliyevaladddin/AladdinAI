@@ -230,6 +230,10 @@ async def get_order(order_id: int, user: User = Depends(get_current_user), db: A
 # [RCF:PROTECTED]
 async def update_order(order_id: int, body: OrderUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     order = await _get_order(db, order_id, user.id)
+    if body.deal_id is not None:
+        deal_res = await db.execute(select(Deal).where(Deal.id == body.deal_id, Deal.user_id == user.id))
+        if not deal_res.scalar_one_or_none():
+            raise HTTPException(status_code=404, detail="Deal not found")
     for key, value in body.model_dump(exclude_unset=True).items():
         setattr(order, key, value)
     await db.commit()
