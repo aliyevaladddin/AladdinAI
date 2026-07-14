@@ -86,7 +86,7 @@ class ProductCreate(BaseModel):
     sku: str
     name: str
     description: str | None = None
-    price: float = 0.0
+    price: float = Field(default=0.0, ge=0.0)
     currency: str = "USD"
     active: bool = True
 
@@ -96,7 +96,7 @@ class ProductUpdate(BaseModel):
     sku: str | None = None
     name: str | None = None
     description: str | None = None
-    price: float | None = None
+    price: float | None = Field(default=None, ge=0.0)
     currency: str | None = None
     active: bool | None = None
 
