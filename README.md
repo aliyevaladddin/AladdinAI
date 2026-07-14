@@ -79,6 +79,7 @@ AladdinAI is the platform that makes that possible — without building everythi
 | **Agents** | Per-user agents with their own model, system prompt, tool set, and safety stack (NemoGuard / Llama-Guard, PII redaction via GLiNER) |
 | **Memory** | Private + shared stores with vector search (MongoDB Atlas + NIM embeddings). Every recall and write decision is logged via pluggable Gates |
 | **CRM** | Contacts, deals, activities. Every inbound message is auto-attributed to a contact and logged to the activity timeline |
+| **Orders & Sales** | Product catalog, orders with line items and a validated delivery lifecycle (`pending → delivered`), sales/marketing metrics (revenue, funnel, attribution), and `sales`-role agent tools that place and move orders. See [`docs/guides/ORDERS.md`](docs/guides/ORDERS.md) |
 | **Channels** | Telegram, WhatsApp (Cloud API), SMS, IMAP/SMTP email. Outgoing webhooks for fan-out |
 | **Voice** | Speak to agents and hear replies — browser capture → NVIDIA Riva ASR, optional TTS voice responses |
 | **Documents** | Upload PDF, Excel (`.xlsx`), CSV, JSON, and text — auto-chunked and indexed into vector memory for recall |
