@@ -1,6 +1,6 @@
 # NOTICE: This file is protected under RCF-PL
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # [RCF:PROTECTED]
