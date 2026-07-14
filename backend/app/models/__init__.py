@@ -19,10 +19,12 @@ from app.models.agent_trigger import AgentTrigger
 from app.models.terminal_provider import TerminalProvider
 from app.models.notification import Notification
 from app.models.system_settings import SystemSettings
+from app.models.message_feedback import MessageFeedback
 
 __all__ = [
     "User", "VMConnection", "LLMProvider", "MongoConnection", "BentoMLConnection",
     "Agent", "RouterConfig", "Contact", "Deal", "Activity", "Conversation",
     "EmailAccount", "MessagingChannel", "ChatSession", "ChatMessage", "OutgoingWebhook",
     "AgentMessage", "AgentTrigger", "TerminalProvider", "Notification", "SystemSettings",
+    "MessageFeedback",
 ]

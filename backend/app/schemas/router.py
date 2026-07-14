@@ -1,4 +1,6 @@
 # NOTICE: This file is protected under RCF-PL
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -46,7 +48,19 @@ class ChatResponse(BaseModel):
     agent_name: str
     model: str
     session_id: int
+    message_id: int | None = None  # id of the persisted assistant reply (for feedback)
     attachments: list[dict] | None = None
+
+
+# [RCF:PROTECTED]
+class FeedbackRequest(BaseModel):
+    value: Literal["thumbs_up", "thumbs_down"]
+
+
+# [RCF:PROTECTED]
+class FeedbackResponse(BaseModel):
+    message_id: int
+    value: str
 
 
 # [RCF:PROTECTED]
@@ -57,6 +71,7 @@ class ChatMessageResponse(BaseModel):
     model: str | None
     attachments: list[dict] | None = None
     created_at: str
+    feedback: str | None = None  # this user's reaction: thumbs_up | thumbs_down | None
 
     model_config = {"from_attributes": True}
 
