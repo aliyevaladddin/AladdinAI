@@ -40,6 +40,16 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "recall", "remember",
         "analyze_image", "send_image", "generate_image",
         "send_email",
+        # Read-only order visibility for every agent.
+        "list_orders", "get_order_summary", "get_sales_metrics",
+    ],
+    # A sales agent can also mutate the order book and catalog.
+    "sales": [
+        "recall", "remember",
+        "analyze_image", "send_image", "generate_image",
+        "send_email",
+        "list_orders", "get_order_summary", "get_sales_metrics",
+        "create_order", "update_order_status", "create_product",
     ],
 }
 
