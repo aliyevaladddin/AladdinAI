@@ -8,6 +8,8 @@ from app.models.agent import Agent
 from app.models.router_config import RouterConfig
 from app.models.contact import Contact
 from app.models.deal import Deal
+from app.models.product import Product
+from app.models.order import Order, OrderItem
 from app.models.activity import Activity
 from app.models.conversation import Conversation
 from app.models.email_account import EmailAccount
@@ -22,7 +24,7 @@ from app.models.system_settings import SystemSettings
 
 __all__ = [
     "User", "VMConnection", "LLMProvider", "MongoConnection", "BentoMLConnection",
-    "Agent", "RouterConfig", "Contact", "Deal", "Activity", "Conversation",
+    "Agent", "RouterConfig", "Contact", "Deal", "Product", "Order", "OrderItem", "Activity", "Conversation",
     "EmailAccount", "MessagingChannel", "ChatSession", "ChatMessage", "OutgoingWebhook",
     "AgentMessage", "AgentTrigger", "TerminalProvider", "Notification", "SystemSettings",
 ]

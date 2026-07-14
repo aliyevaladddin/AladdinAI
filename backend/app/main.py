@@ -15,7 +15,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.config import settings as app_settings
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
-    chat, crm_activities, crm_contacts, crm_deals, dashboard, digest, mongodb,
+    chat, crm_activities, crm_contacts, crm_deals, crm_orders, crm_products, dashboard, digest, mongodb,
     notifications, providers, reports as reports_router, router_config, search,
     settings, sql, ssh_exec,
     terminal_providers, terminal_ws, triggers as triggers_router, vms, webhooks,
@@ -141,6 +141,8 @@ app.include_router(channels_email.router, prefix="/api")
 app.include_router(crm_contacts.router, prefix="/api")
 app.include_router(crm_deals.router, prefix="/api")
 app.include_router(crm_activities.router, prefix="/api")
+app.include_router(crm_products.router, prefix="/api")
+app.include_router(crm_orders.router, prefix="/api")
 app.include_router(vms.router, prefix="/api/vms")
 app.include_router(mongodb.router, prefix="/api")
 app.include_router(bentoml.router, prefix="/api/bentoml", tags=["BentoML"])
