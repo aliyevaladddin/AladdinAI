@@ -4,11 +4,18 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Features
+
+- Human 👍/👎 labeling layer for the self-forging loop (#380) ([c72147f](https://github.com/aliyevaladddin/AladdinAI/commit/c72147ff3ee6dccb124ffe41e922b305ddeb4bec))
+
+
 ### Maintenance
 
 - Bump version to 2.2.1 and update deps [skip ci] ([70a5fbd](https://github.com/aliyevaladddin/AladdinAI/commit/70a5fbdc76ad36171a83cc3597c9e94a29aff2ef))
 
 - Add good-first-issue mini-tutorial template (#374) ([6fac5dd](https://github.com/aliyevaladddin/AladdinAI/commit/6fac5ddc509dfa3242bb79d0ad2ebee3ed5ec7a9))
+
+- Update changelog [skip ci] (#375) ([9a01cbc](https://github.com/aliyevaladddin/AladdinAI/commit/9a01cbcc942db1bc42fa927d7c99a9a2cffee26d))
 
 ## [v2.2.1] - 2026-07-09
 
