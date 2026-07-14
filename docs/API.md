@@ -2255,6 +2255,401 @@ draft is plain text, never auto-sent.
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/crm/products
+
+#### GET
+##### Summary:
+
+List Products
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| search | query |  | No |  |
+| active | query |  | No |  |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### POST
+##### Summary:
+
+Create Product
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/products/{product_id}
+
+#### GET
+##### Summary:
+
+Get Product
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| product_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### PUT
+##### Summary:
+
+Update Product
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| product_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### DELETE
+##### Summary:
+
+Delete Product
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| product_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/orders/metrics
+
+#### GET
+##### Summary:
+
+Order Metrics
+
+##### Description:
+
+Sales + marketing dashboard numbers, all user-scoped.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/orders
+
+#### GET
+##### Summary:
+
+List Orders
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| status | query |  | No |  |
+| assigned_agent_id | query |  | No |  |
+| mine | query | Only orders assigned to an agent (assigned_agent_id set) | No | boolean |
+| source | query |  | No |  |
+| campaign | query |  | No |  |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### POST
+##### Summary:
+
+Create Order
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/orders/{order_id}
+
+#### GET
+##### Summary:
+
+Get Order
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| order_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### PUT
+##### Summary:
+
+Update Order
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| order_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### DELETE
+##### Summary:
+
+Delete Order
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| order_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/orders/{order_id}/status
+
+#### PUT
+##### Summary:
+
+Update Order Status
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| order_id | path |  | Yes | integer |
+| status | query |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/orders/{order_id}/history
+
+#### GET
+##### Summary:
+
+Order History
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| order_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/orders/{order_id}/items
+
+#### POST
+##### Summary:
+
+Add Order Item
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| order_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/crm/orders/{order_id}/items/{item_id}
+
+#### PUT
+##### Summary:
+
+Update Order Item
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| order_id | path |  | Yes | integer |
+| item_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### DELETE
+##### Summary:
+
+Delete Order Item
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| order_id | path |  | Yes | integer |
+| item_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/vms
 
 #### GET
@@ -3936,6 +4331,83 @@ One row in the dashboard marketplace — read straight from a YAML manifest.
 | db_name | string |  | Yes |
 | status | string |  | Yes |
 
+#### OrderCreate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| contact_id | integer |  | Yes |
+| deal_id |  |  | No |
+| currency | string |  | No |
+| assigned_agent_id |  |  | No |
+| source |  |  | No |
+| campaign |  |  | No |
+| notes |  |  | No |
+| items | [ [OrderItemCreate](#orderitemcreate) ] |  | No |
+
+#### OrderItemCreate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| product_id |  |  | No |
+| product_name |  |  | No |
+| quantity | integer |  | No |
+| unit_price |  |  | No |
+
+#### OrderItemResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| id | integer |  | Yes |
+| product_id |  |  | Yes |
+| product_name | string |  | Yes |
+| quantity | integer |  | Yes |
+| unit_price | number |  | Yes |
+| line_total | number |  | Yes |
+
+#### OrderMetricsResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| realized_revenue | number |  | Yes |
+| booked_revenue | number |  | Yes |
+| order_count | integer |  | Yes |
+| count_by_status | object |  | Yes |
+| revenue_by_status | object |  | Yes |
+| pipeline_value | number |  | Yes |
+| funnel | object |  | Yes |
+| win_rate | number |  | Yes |
+| revenue_by_source | object |  | Yes |
+| revenue_by_campaign | object |  | Yes |
+
+#### OrderResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| id | integer |  | Yes |
+| contact_id | integer |  | Yes |
+| deal_id |  |  | Yes |
+| status | string |  | Yes |
+| total | number |  | Yes |
+| currency | string |  | Yes |
+| assigned_agent_id |  |  | Yes |
+| source |  |  | Yes |
+| campaign |  |  | Yes |
+| notes |  |  | Yes |
+| created_at | dateTime |  | Yes |
+| updated_at | dateTime |  | Yes |
+| items | [ [OrderItemResponse](#orderitemresponse) ] |  | No |
+
+#### OrderUpdate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| deal_id |  |  | No |
+| currency |  |  | No |
+| assigned_agent_id |  |  | No |
+| source |  |  | No |
+| campaign |  |  | No |
+| notes |  |  | No |
+
 #### OutgoingWebhookCreate
 
 | Name | Type | Description | Required |
@@ -3957,6 +4429,42 @@ One row in the dashboard marketplace — read straight from a YAML manifest.
 | is_active | boolean |  | No |
 | id | integer |  | Yes |
 | created_at | dateTime |  | Yes |
+
+#### ProductCreate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| sku | string |  | Yes |
+| name | string |  | Yes |
+| description |  |  | No |
+| price | number |  | No |
+| currency | string |  | No |
+| active | boolean |  | No |
+
+#### ProductResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| id | integer |  | Yes |
+| sku | string |  | Yes |
+| name | string |  | Yes |
+| description |  |  | Yes |
+| price | number |  | Yes |
+| currency | string |  | Yes |
+| active | boolean |  | Yes |
+| created_at | dateTime |  | Yes |
+| updated_at | dateTime |  | Yes |
+
+#### ProductUpdate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| sku |  |  | No |
+| name |  |  | No |
+| description |  |  | No |
+| price |  |  | No |
+| currency |  |  | No |
+| active |  |  | No |
 
 #### ProviderInstall
 
