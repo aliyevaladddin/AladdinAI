@@ -121,8 +121,8 @@ class ProductResponse(BaseModel):
 class OrderItemCreate(BaseModel):
     product_id: int | None = None
     product_name: str | None = None  # required if product_id is omitted
-    quantity: int = 1
-    unit_price: float | None = None  # overrides the product's catalog price when set
+    quantity: int = Field(default=1, gt=0)
+    unit_price: float | None = Field(default=None, ge=0.0)  # overrides the product's catalog price when set
 
 
 # [RCF:PROTECTED]
