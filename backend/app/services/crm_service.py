@@ -4,6 +4,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.activity import Activity
 from app.models.contact import Contact
+from app.models.order import Order
+
+# Order delivery lifecycle. cancelled/delivered are terminal — no edge leaves them.
+ORDER_STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled"]
+ALLOWED_TRANSITIONS: dict[str, list[str]] = {
+    "pending": ["processing", "cancelled"],
+    "processing": ["shipped", "cancelled"],
+    "shipped": ["delivered", "cancelled"],
+    "delivered": [],
+    "cancelled": [],
+}
 
 
 # [RCF:PROTECTED]
@@ -60,6 +71,59 @@ async def log_activity(
         channel=channel,
         subject=subject,
         content=content[:2000] if content else None,
+    )
+    db.add(activity)
+    await db.flush()
+    return activity
+
+
+# ── Order helpers (shared by the router and agent tools) ─────────────────────
+# [RCF:PROTECTED]
+def recompute_order_total(order: Order) -> float:
+    """Recompute each line's line_total and the order's denormalised total from
+    its loaded items. Caller is responsible for flushing/committing."""
+    total = 0.0
+    for item in order.items:
+        item.line_total = round((item.unit_price or 0.0) * (item.quantity or 0), 2)
+        total += item.line_total
+    order.total = round(total, 2)
+    return order.total
+
+
+# [RCF:PROTECTED]
+def can_transition(current: str, target: str) -> bool:
+    """True if `current` → `target` is a legal move in the status graph."""
+    return target in ALLOWED_TRANSITIONS.get(current, [])
+
+
+# [RCF:PROTECTED]
+async def log_order_status_change(
+    db: AsyncSession,
+    user_id: int,
+    order: Order,
+    old_status: str,
+    new_status: str,
+    agent_id: int | None = None,
+) -> Activity:
+    """Append an order status change to the CRM timeline.
+
+    The order linkage lives in metadata_json (not a column) so the RCF-PROTECTED
+    Activity model stays untouched; /history filters on metadata_json.order_id.
+    """
+    activity = Activity(
+        user_id=user_id,
+        contact_id=order.contact_id,
+        deal_id=order.deal_id,
+        agent_id=agent_id,
+        type="order_status_changed",
+        channel="crm",
+        subject=f"Order #{order.id}: {old_status} → {new_status}",
+        content=None,
+        metadata_json={
+            "order_id": order.id,
+            "old_status": old_status,
+            "new_status": new_status,
+        },
     )
     db.add(activity)
     await db.flush()

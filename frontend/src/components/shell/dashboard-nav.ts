@@ -9,6 +9,7 @@ import {
   Sparkles,
   Settings,
   Briefcase,
+  ShoppingCart,
 } from "lucide-react";
 import type { ActivityItem } from "./ActivityBar";
 
@@ -26,6 +27,7 @@ export const DASHBOARD_PRIMARY: ActivityItem[] = [
   { href: "/dashboard/mail",        title: "Mail",         icon: Mailbox },
   { href: "/dashboard/crm",         title: "CRM",          icon: Users },
   { href: "/dashboard/deals",       title: "Deals",        icon: Briefcase },
+  { href: "/dashboard/orders",      title: "Orders",       icon: ShoppingCart },
   { href: "/dashboard/chat",        title: "Playground",   icon: Sparkles },
 ];
 
