@@ -24,7 +24,7 @@
     Exceeding a limit returns HTTP 429 with a `Retry-After` header.
     
 
-## Version: 2.1.8
+## Version: 2.2.1
 
 ### Terms of service
 https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE
@@ -812,6 +812,41 @@ Get Messages
 | Name | Located in | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
 | session_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/chat/messages/{message_id}/feedback
+
+#### POST
+##### Summary:
+
+Submit Feedback
+
+##### Description:
+
+Record a human 👍/👎 on an assistant reply — the strong training signal.
+
+Upserts one row per (message, user); re-clicking flips the value. The
+durable record lives in Postgres; a fire-and-forget task mirrors the label
+onto the Mongo trace so a later fine-tune set prefers human judgment over
+the weak write-time score.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| message_id | path |  | Yes | integer |
 
 ##### Responses
 
@@ -3615,6 +3650,7 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | model |  |  | Yes |
 | attachments |  |  | No |
 | created_at | string |  | Yes |
+| feedback |  |  | No |
 
 #### ChatRequest
 
@@ -3768,6 +3804,19 @@ Lightweight PATCH — only updates the agent binding on an email account.
 | enabled |  |  | No |
 | model |  |  | No |
 | max_facts |  |  | No |
+
+#### FeedbackRequest
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| value | string |  | Yes |
+
+#### FeedbackResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| message_id | integer |  | Yes |
+| value | string |  | Yes |
 
 #### GatesUpdate
 

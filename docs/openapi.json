@@ -13,7 +13,7 @@
       "name": "Apache 2.0",
       "url": "https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE"
     },
-    "version": "2.1.8"
+    "version": "2.2.1"
   },
   "paths": {
     "/api/auth/register": {
@@ -1584,6 +1584,64 @@
                     "$ref": "#/components/schemas/ChatMessageResponse"
                   },
                   "title": "Response Get Messages Api Chat Sessions  Session Id  Messages Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/messages/{message_id}/feedback": {
+      "post": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Submit Feedback",
+        "description": "Record a human \ud83d\udc4d/\ud83d\udc4e on an assistant reply \u2014 the strong training signal.\n\nUpserts one row per (message, user); re-clicking flips the value. The\ndurable record lives in Postgres; a fire-and-forget task mirrors the label\nonto the Mongo trace so a later fine-tune set prefers human judgment over\nthe weak write-time score.",
+        "operationId": "submit_feedback_api_chat_messages__message_id__feedback_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Message Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackResponse"
                 }
               }
             }
@@ -6967,6 +7025,17 @@
           "created_at": {
             "type": "string",
             "title": "Created At"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
           }
         },
         "type": "object",
@@ -7847,6 +7916,41 @@
         },
         "type": "object",
         "title": "ExtractionUpdate"
+      },
+      "FeedbackRequest": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "enum": [
+              "thumbs_up",
+              "thumbs_down"
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "FeedbackRequest"
+      },
+      "FeedbackResponse": {
+        "properties": {
+          "message_id": {
+            "type": "integer",
+            "title": "Message Id"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "value"
+        ],
+        "title": "FeedbackResponse"
       },
       "GatesUpdate": {
         "properties": {
