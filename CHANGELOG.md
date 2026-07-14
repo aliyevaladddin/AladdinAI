@@ -4,9 +4,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Documentation
+
+- Update API documentation [skip ci] (#400) ([b7f0077](https://github.com/aliyevaladddin/AladdinAI/commit/b7f00771a1ee308a93ecf20e8da5dc3009852060))
+
+
 ### Features
 
 - Human 👍/👎 labeling layer for the self-forging loop (#380) ([c72147f](https://github.com/aliyevaladddin/AladdinAI/commit/c72147ff3ee6dccb124ffe41e922b305ddeb4bec))
+
+- Add orders, product catalog, and sales/marketing layer (#401) ([34e944a](https://github.com/aliyevaladddin/AladdinAI/commit/34e944acfbda42f4e49151b2cef695512a9bd088))
 
 
 ### Maintenance
@@ -16,6 +23,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add good-first-issue mini-tutorial template (#374) ([6fac5dd](https://github.com/aliyevaladddin/AladdinAI/commit/6fac5ddc509dfa3242bb79d0ad2ebee3ed5ec7a9))
 
 - Update changelog [skip ci] (#375) ([9a01cbc](https://github.com/aliyevaladddin/AladdinAI/commit/9a01cbcc942db1bc42fa927d7c99a9a2cffee26d))
+
+- Update changelog [skip ci] (#399) ([0ae3ca5](https://github.com/aliyevaladddin/AladdinAI/commit/0ae3ca50a7545f6acfa7c8bf71646af7d1446607))
 
 ## [v2.2.1] - 2026-07-09
 
