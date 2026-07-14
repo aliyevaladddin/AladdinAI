@@ -74,9 +74,14 @@ async def _build_item(db: AsyncSession, user_id: int, spec: OrderItemCreate) -> 
     )
 
 
+_BACKGROUND_TASKS = set()
+
+
 def _fire_webhook(user_id: int, event: str, payload: dict) -> None:
     from app.services.webhook_service import trigger_webhooks
-    asyncio.create_task(trigger_webhooks(user_id, event, payload))
+    task = asyncio.create_task(trigger_webhooks(user_id, event, payload))
+    _BACKGROUND_TASKS.add(task)
+    task.add_done_callback(_BACKGROUND_TASKS.discard)
 
 
 # ── metrics (MUST be declared before /{order_id}) ────────────────────────────
