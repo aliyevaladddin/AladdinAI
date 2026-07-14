@@ -10,6 +10,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#403) ([7c13930](https://github.com/aliyevaladddin/AladdinAI/commit/7c139306434fc3f4428702fafc0b98c906440d9e))
 
+- Add Orders & Sales module documentation to README overview ([e86ec69](https://github.com/aliyevaladddin/AladdinAI/commit/e86ec6960f8ec3ac7915d708683d0d697cc32416))
+
 
 ### Features
 
@@ -31,6 +33,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#399) ([0ae3ca5](https://github.com/aliyevaladddin/AladdinAI/commit/0ae3ca50a7545f6acfa7c8bf71646af7d1446607))
 
 - Update changelog [skip ci] (#402) ([47cae41](https://github.com/aliyevaladddin/AladdinAI/commit/47cae41c7a7a5bbb4e1a1d7157ccc1e250187942))
+
+- Update changelog [skip ci] (#404) ([1847b8e](https://github.com/aliyevaladddin/AladdinAI/commit/1847b8e4237c79ce12ff45d9c38a37b8a7748886))
 
 ## [v2.2.1] - 2026-07-09
 
