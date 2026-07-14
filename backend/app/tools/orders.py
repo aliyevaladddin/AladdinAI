@@ -233,7 +233,11 @@ async def create_order(
         if not product_name:
             return {"error": f"Could not resolve a product for item {spec}. Provide a valid sku, product_id, or product_name."}
         qty = int(spec.get("quantity") or 1)
+        if qty <= 0:
+            return {"error": f"Invalid quantity {qty}. Quantity must be greater than 0."}
         unit_price = float(unit_price or 0.0)
+        if unit_price < 0.0:
+            return {"error": f"Invalid unit price {unit_price}. Price must be non-negative."}
         order.items.append(OrderItem(
             product_id=product_id,
             product_name=product_name,
