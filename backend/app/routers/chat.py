@@ -10,12 +10,15 @@ from app.database import get_db
 from app.models.agent import Agent
 from app.models.chat_session import ChatMessage, ChatSession
 from app.models.llm_provider import LLMProvider
+from app.models.message_feedback import MessageFeedback
 from app.models.user import User
 from app.schemas.router import (
     ChatMessageResponse,
     ChatRequest,
     ChatResponse,
     ChatSessionResponse,
+    FeedbackRequest,
+    FeedbackResponse,
 )
 from app.security import get_current_user
 from app.services.agent_runner import run_agent
@@ -23,6 +26,7 @@ from app.services.llm_service import LLMError
 from app.services import media as media_service
 from app.services import media_storage
 from app.services import speech
+from app.services.tracing import schedule_feedback_update
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -141,6 +145,17 @@ async def get_messages(
         .order_by(ChatMessage.created_at.asc())
     )
     messages = result.scalars().all()
+
+    # This user's reactions for the session, so the UI can restore the ⭐ state.
+    fb_rows = await db.execute(
+        select(MessageFeedback.message_id, MessageFeedback.value)
+        .where(
+            MessageFeedback.session_id == session_id,
+            MessageFeedback.user_id == user.id,
+        )
+    )
+    fb_by_message = {mid: val for mid, val in fb_rows.all()}
+
     return [
         ChatMessageResponse(
             id=m.id,
@@ -149,9 +164,87 @@ async def get_messages(
             model=m.model,
             attachments=m.attachments,
             created_at=m.created_at.isoformat(),
+            feedback=fb_by_message.get(m.id),
         )
         for m in messages
     ]
+
+
+# [RCF:PROTECTED]
+@router.post("/messages/{message_id}/feedback", response_model=FeedbackResponse)
+# [RCF:PROTECTED]
+async def submit_feedback(
+    message_id: int,
+    body: FeedbackRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Record a human 👍/👎 on an assistant reply — the strong training signal.
+
+    Upserts one row per (message, user); re-clicking flips the value. The
+    durable record lives in Postgres; a fire-and-forget task mirrors the label
+    onto the Mongo trace so a later fine-tune set prefers human judgment over
+    the weak write-time score.
+    """
+    if body.value not in ("thumbs_up", "thumbs_down"):
+        raise HTTPException(status_code=422, detail="value must be thumbs_up or thumbs_down")
+
+    # Ownership: the message must belong to a session owned by this user.
+    msg = (await db.execute(
+        select(ChatMessage, ChatSession)
+        .join(ChatSession, ChatMessage.session_id == ChatSession.id)
+        .where(ChatMessage.id == message_id, ChatSession.user_id == user.id)
+    )).first()
+    if msg is None:
+        raise HTTPException(status_code=404, detail="Message not found")
+    message, session = msg
+    if message.role != "assistant":
+        raise HTTPException(status_code=422, detail="Can only rate assistant messages")
+
+    # Atomic upsert on Postgres (prod); portable read-then-write elsewhere
+    # (SQLite in tests doesn't support the postgres ON CONFLICT dialect).
+    if db.bind and db.bind.dialect.name == "postgresql":
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+        stmt = (
+            pg_insert(MessageFeedback)
+            .values(
+                message_id=message_id,
+                session_id=session.id,
+                user_id=user.id,
+                value=body.value,
+            )
+            .on_conflict_do_update(
+                constraint="uq_message_feedback_message_user",
+                set_={
+                    "value": body.value,
+                    "updated_at": datetime.now(timezone.utc),
+                },
+            )
+        )
+        await db.execute(stmt)
+    else:
+        existing = (await db.execute(
+            select(MessageFeedback).where(
+                MessageFeedback.message_id == message_id,
+                MessageFeedback.user_id == user.id,
+            )
+        )).scalar_one_or_none()
+        if existing:
+            existing.value = body.value
+        else:
+            db.add(MessageFeedback(
+                message_id=message_id,
+                session_id=session.id,
+                user_id=user.id,
+                value=body.value,
+            ))
+    await db.commit()
+
+    # Best-effort: strengthen the training doc. Never blocks the response.
+    schedule_feedback_update(user_id=user.id, session_id=session.id, value=body.value, message_content=message.content)
+
+    return FeedbackResponse(message_id=message_id, value=body.value)
 
 
 # ── Media upload / serving ────────────────────────────────────────────────────
@@ -404,12 +497,14 @@ async def chat(
                         session_id=session.id, role="user", content=effective_message,
                         attachments=attachments or None, created_at=now,
                     ))
-                    db.add(ChatMessage(
+                    assistant_msg = ChatMessage(
                         session_id=session.id, role="assistant", content=reply, model=agent.model,
                         attachments=(outgoing_attachments + voice_atts) or None,
-                    ))
+                    )
+                    db.add(assistant_msg)
                     session.updated_at = datetime.now(timezone.utc)
                     await db.commit()
+                    await db.refresh(assistant_msg)  # id for client-side feedback
 
                     await queue.put({
                         "type": "done",
@@ -417,6 +512,7 @@ async def chat(
                         "agent_name": agent.name,
                         "model": agent.model,
                         "session_id": session.id,
+                        "message_id": assistant_msg.id,
                         "attachments": (outgoing_attachments + voice_atts) or None,
                     })
                 except Exception as e:
@@ -477,21 +573,24 @@ async def chat(
         session_id=session.id, role="user", content=effective_message,
         attachments=attachments or None, created_at=now,
     ))
-    db.add(ChatMessage(
+    assistant_msg = ChatMessage(
         session_id=session.id, role="assistant", content=reply, model=agent.model,
         attachments=outgoing_attachments or None,
-    ))
+    )
+    db.add(assistant_msg)
 
     # Обновляем время сессии
     session.updated_at = datetime.now(timezone.utc)
 
     await db.commit()
+    await db.refresh(assistant_msg)  # populate the id so the client can rate it
 
     return ChatResponse(
         response=reply,
         agent_name=agent.name,
         model=agent.model,
         session_id=session.id,
+        message_id=assistant_msg.id,
         attachments=outgoing_attachments or None,
     )
 
