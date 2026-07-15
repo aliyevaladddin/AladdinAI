@@ -4,6 +4,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Merge two heads; guard against schema drift (#406) ([fae5de0](https://github.com/aliyevaladddin/AladdinAI/commit/fae5de0f93a7230ae26119bd311113d8e014d5a3))
+
+
 ### Documentation
 
 - Update API documentation [skip ci] (#400) ([b7f0077](https://github.com/aliyevaladddin/AladdinAI/commit/b7f00771a1ee308a93ecf20e8da5dc3009852060))
@@ -35,6 +40,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#402) ([47cae41](https://github.com/aliyevaladddin/AladdinAI/commit/47cae41c7a7a5bbb4e1a1d7157ccc1e250187942))
 
 - Update changelog [skip ci] (#404) ([1847b8e](https://github.com/aliyevaladddin/AladdinAI/commit/1847b8e4237c79ce12ff45d9c38a37b8a7748886))
+
+- Update changelog [skip ci] (#405) ([4db09f2](https://github.com/aliyevaladddin/AladdinAI/commit/4db09f218d11ddcc8a9b3c904de4faf1e8bd88c9))
 
 ## [v2.2.1] - 2026-07-09
 
