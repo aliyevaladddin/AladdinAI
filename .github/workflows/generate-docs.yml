@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - 'backend/app/**/*.py'
+      - 'backend/scripts/generate_openapi.py'
   workflow_dispatch:
 
 permissions:
