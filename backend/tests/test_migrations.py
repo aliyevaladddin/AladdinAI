@@ -52,8 +52,8 @@ def test_every_model_table_has_a_migration():
     versions_dir = _BACKEND / "alembic" / "versions"
     text = "\n".join(p.read_text(encoding="utf-8") for p in versions_dir.glob("*.py"))
     # Match create_table('name', ...) / create_table("name", ...)
-    created = set(re.findall(r"create_table\\(\\s*['\"]([a-zA-Z0-9_]+)['\"]", text))
-    renamed = set(re.findall(r"rename_table\\(\\s*['\"]([a-zA-Z0-9_]+)['\"]\\s*,\\s*['\"]([a-zA-Z0-9_]+)['\"]", text))
+    created = set(re.findall(r"create_table\(\s*['\"]([a-zA-Z0-9_]+)['\"]", text))
+    renamed = set(re.findall(r"rename_table\(\s*['\"]([a-zA-Z0-9_]+)['\"]\s*,\s*['\"]([a-zA-Z0-9_]+)['\"]", text))
     created.update(renamed)
 
     model_tables = set(Base.metadata.tables.keys())
