@@ -50,7 +50,7 @@ def test_every_model_table_has_a_migration():
     """Each table declared on Base.metadata must be created by some migration.
     Catches 'added a model but forgot to write the migration'."""
     versions_dir = _BACKEND / "alembic" / "versions"
-    text = "\n".join(p.read_text() for p in versions_dir.glob("*.py"))
+    text = "\n".join(p.read_text(encoding="utf-8") for p in versions_dir.glob("*.py"))
     # Match create_table('name', ...) / create_table("name", ...)
     created = set(re.findall(r"create_table\(\s*['\"]([a-zA-Z0-9_]+)['\"]", text))
 
