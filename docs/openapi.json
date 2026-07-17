@@ -7306,6 +7306,152 @@
         ]
       }
     },
+    "/api/forging/golden-set": {
+      "post": {
+        "tags": [
+          "forging"
+        ],
+        "summary": "Freeze Golden",
+        "description": "Freeze eligible labeled traces into the golden set (idempotent).",
+        "operationId": "freeze_golden_api_forging_golden_set_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoldenFreezeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoldenFreezeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "forging"
+        ],
+        "summary": "List Golden",
+        "description": "Return the current frozen golden examples.",
+        "operationId": "list_golden_api_forging_golden_set_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 500,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Golden Api Forging Golden Set Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/forging/harness": {
+      "post": {
+        "tags": [
+          "forging"
+        ],
+        "summary": "Harness",
+        "description": "Replay the golden set through base and forged models; report the delta.",
+        "operationId": "harness_api_forging_harness_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -8849,6 +8995,65 @@
         "type": "object",
         "title": "GatesUpdate"
       },
+      "GoldenFreezeRequest": {
+        "properties": {
+          "min_reward": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "title": "Min Reward",
+            "default": 0.5
+          },
+          "human_only": {
+            "type": "boolean",
+            "title": "Human Only",
+            "default": true
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 5000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Limit",
+            "default": 500
+          }
+        },
+        "type": "object",
+        "title": "GoldenFreezeRequest"
+      },
+      "GoldenFreezeResponse": {
+        "properties": {
+          "frozen": {
+            "type": "integer",
+            "title": "Frozen"
+          },
+          "frozen_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Frozen At"
+          },
+          "min_reward": {
+            "type": "number",
+            "title": "Min Reward"
+          },
+          "human_only": {
+            "type": "boolean",
+            "title": "Human Only"
+          },
+          "replaced": {
+            "type": "boolean",
+            "title": "Replaced"
+          }
+        },
+        "type": "object",
+        "required": [
+          "frozen",
+          "frozen_at",
+          "min_reward",
+          "human_only",
+          "replaced"
+        ],
+        "title": "GoldenFreezeResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -8861,6 +9066,137 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HarnessExample": {
+        "properties": {
+          "input": {
+            "type": "string",
+            "title": "Input"
+          },
+          "base_score": {
+            "type": "number",
+            "title": "Base Score"
+          },
+          "forged_score": {
+            "type": "number",
+            "title": "Forged Score"
+          },
+          "delta": {
+            "type": "number",
+            "title": "Delta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input",
+          "base_score",
+          "forged_score",
+          "delta"
+        ],
+        "title": "HarnessExample"
+      },
+      "HarnessRequest": {
+        "properties": {
+          "base_provider_id": {
+            "type": "integer",
+            "title": "Base Provider Id"
+          },
+          "base_model": {
+            "type": "string",
+            "title": "Base Model"
+          },
+          "forged_provider_id": {
+            "type": "integer",
+            "title": "Forged Provider Id"
+          },
+          "forged_model": {
+            "type": "string",
+            "title": "Forged Model"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Limit",
+            "default": 100
+          }
+        },
+        "type": "object",
+        "required": [
+          "base_provider_id",
+          "base_model",
+          "forged_provider_id",
+          "forged_model"
+        ],
+        "title": "HarnessRequest"
+      },
+      "HarnessResponse": {
+        "properties": {
+          "evaluated": {
+            "type": "integer",
+            "title": "Evaluated"
+          },
+          "base_model": {
+            "type": "string",
+            "title": "Base Model"
+          },
+          "forged_model": {
+            "type": "string",
+            "title": "Forged Model"
+          },
+          "mean_base": {
+            "type": "number",
+            "title": "Mean Base"
+          },
+          "mean_forged": {
+            "type": "number",
+            "title": "Mean Forged"
+          },
+          "delta": {
+            "type": "number",
+            "title": "Delta"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "examples": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessExample"
+            },
+            "type": "array",
+            "title": "Examples",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "evaluated",
+          "base_model",
+          "forged_model",
+          "mean_base",
+          "mean_forged",
+          "delta"
+        ],
+        "title": "HarnessResponse"
       },
       "InboxRequest": {
         "properties": {
