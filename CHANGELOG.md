@@ -8,6 +8,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Merge two heads; guard against schema drift (#406) ([fae5de0](https://github.com/aliyevaladddin/AladdinAI/commit/fae5de0f93a7230ae26119bd311113d8e014d5a3))
 
+- Register web_search and correct its function schema (#408) ([906212b](https://github.com/aliyevaladddin/AladdinAI/commit/906212b69c247e0b05ca2b36ad5be6d25249bf7f))
+
 
 ### Documentation
 
@@ -26,6 +28,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Implement order management system, product catalog, and status tracking in CRM docs ([9020db9](https://github.com/aliyevaladddin/AladdinAI/commit/9020db9af0b92060741ef854e2a3c12485cd776e))
 
+- Golden set + base-vs-forged harness (self-forging layers 2-3) (#410) ([14ec211](https://github.com/aliyevaladddin/AladdinAI/commit/14ec21106a937bd38b84aaf9dd23c406adf952a4))
+
 
 ### Maintenance
 
@@ -42,6 +46,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#404) ([1847b8e](https://github.com/aliyevaladddin/AladdinAI/commit/1847b8e4237c79ce12ff45d9c38a37b8a7748886))
 
 - Update changelog [skip ci] (#405) ([4db09f2](https://github.com/aliyevaladddin/AladdinAI/commit/4db09f218d11ddcc8a9b3c904de4faf1e8bd88c9))
+
+- Update changelog [skip ci] (#407) ([3f653a7](https://github.com/aliyevaladddin/AladdinAI/commit/3f653a72fd81f9e41a909dfd8432c02d041da9c6))
 
 ## [v2.2.1] - 2026-07-09
 
