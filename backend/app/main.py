@@ -15,7 +15,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.config import settings as app_settings
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
-    chat, crm_activities, crm_contacts, crm_deals, crm_orders, crm_products, dashboard, digest, mongodb,
+    chat, crm_activities, crm_contacts, crm_deals, crm_orders, crm_products, dashboard, digest, forging, mongodb,
     notifications, providers, reports as reports_router, router_config, search,
     settings, sql, ssh_exec,
     terminal_providers, terminal_ws, triggers as triggers_router, vms, webhooks,
@@ -154,6 +154,7 @@ app.include_router(search.router, prefix="/api")
 app.include_router(terminal_providers.router, prefix="/api/terminal", tags=["terminal"])
 app.include_router(reports_router.router, prefix="/api")
 app.include_router(digest.router, prefix="/api")
+app.include_router(forging.router, prefix="/api")
 
 # [RCF:PROTECTED]
 @app.get("/")
