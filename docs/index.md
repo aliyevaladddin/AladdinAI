@@ -33,7 +33,7 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
 - **[Agent Delegation](./guides/AGENT_DELEGATION.md)** - Multi-agent coordination and handoff
 - **[Orders & Sales](./guides/ORDERS.md)** - Product catalog, orders, sales/marketing metrics, and `sales`-role tools
 - **[Memory System](./ARCHITECTURE.md#memory)** - Understanding memory architecture
-- **[Self-Forging](./adr/0001-self-forging-training.md)** - Model fine-tuning from traces (ADR-0001)
+- **[Self-Forging](./guides/SELF_FORGING.md)** - Golden set + base-vs-forged harness (guide); design in ADR-0001 / ADR-0009
 
 ### 🚢 Deployment
 - **[CLI Wizard](./CLI_WIZARD.md)** - `npx aladdin-ai` setup walkthrough
