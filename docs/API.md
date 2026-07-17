@@ -3887,6 +3887,82 @@ Trigger daily digest manually for the authenticated user and send via Telegram/E
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/forging/golden-set
+
+#### POST
+##### Summary:
+
+Freeze Golden
+
+##### Description:
+
+Freeze eligible labeled traces into the golden set (idempotent).
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### GET
+##### Summary:
+
+List Golden
+
+##### Description:
+
+Return the current frozen golden examples.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| limit | query |  | No | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/forging/harness
+
+#### POST
+##### Summary:
+
+Harness
+
+##### Description:
+
+Replay the golden set through base and forged models; report the delta.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /
 
 #### GET
@@ -4220,11 +4296,62 @@ Lightweight PATCH — only updates the agent binding on an email account.
 | default_gate_model |  |  | No |
 | gates |  |  | No |
 
+#### GoldenFreezeRequest
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| min_reward | number |  | No |
+| human_only | boolean |  | No |
+| limit | integer |  | No |
+
+#### GoldenFreezeResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| frozen | integer |  | Yes |
+| frozen_at | dateTime |  | Yes |
+| min_reward | number |  | Yes |
+| human_only | boolean |  | Yes |
+| replaced | boolean |  | Yes |
+
 #### HTTPValidationError
 
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | detail | [ [ValidationError](#validationerror) ] |  | No |
+
+#### HarnessExample
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| input | string |  | Yes |
+| base_score | number |  | Yes |
+| forged_score | number |  | Yes |
+| delta | number |  | Yes |
+
+#### HarnessRequest
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| base_provider_id | integer |  | Yes |
+| base_model | string |  | Yes |
+| forged_provider_id | integer |  | Yes |
+| forged_model | string |  | Yes |
+| system_prompt |  |  | No |
+| limit | integer |  | No |
+
+#### HarnessResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| evaluated | integer |  | Yes |
+| base_model | string |  | Yes |
+| forged_model | string |  | Yes |
+| mean_base | number |  | Yes |
+| mean_forged | number |  | Yes |
+| delta | number |  | Yes |
+| message |  |  | No |
+| examples | [ [HarnessExample](#harnessexample) ] |  | No |
 
 #### InboxRequest
 
