@@ -11,6 +11,17 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Register web_search and correct its function schema (#408) ([906212b](https://github.com/aliyevaladddin/AladdinAI/commit/906212b69c247e0b05ca2b36ad5be6d25249bf7f))
 
 
+### Dependencies
+
+- Bump actions/setup-node from 6 to 7 (#413) ([ae0dcfc](https://github.com/aliyevaladddin/AladdinAI/commit/ae0dcfccc75f0036aa02154605d823d47c06d4ee))
+
+- Bump fastapi from 0.139.0 to 0.139.2 (#414) ([391709d](https://github.com/aliyevaladddin/AladdinAI/commit/391709dec71deb152ef28de07c3e1f66897fa66c))
+
+- Bump the security-patches group in /frontend with 4 updates (#415) ([ac463d3](https://github.com/aliyevaladddin/AladdinAI/commit/ac463d3080dc02821bac2e52a62dfd2724209568))
+
+- Bump lucide-react from 1.24.0 to 1.25.0 in /frontend (#416) ([91d1762](https://github.com/aliyevaladddin/AladdinAI/commit/91d17626a91b84042ce5f1e75b52bc3f63fbad3c))
+
+
 ### Documentation
 
 - Update API documentation [skip ci] (#400) ([b7f0077](https://github.com/aliyevaladddin/AladdinAI/commit/b7f00771a1ee308a93ecf20e8da5dc3009852060))
@@ -18,6 +29,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update API documentation [skip ci] (#403) ([7c13930](https://github.com/aliyevaladddin/AladdinAI/commit/7c139306434fc3f4428702fafc0b98c906440d9e))
 
 - Add Orders & Sales module documentation to README overview ([e86ec69](https://github.com/aliyevaladddin/AladdinAI/commit/e86ec6960f8ec3ac7915d708683d0d697cc32416))
+
+- Update API documentation [skip ci] (#412) ([7f0fddb](https://github.com/aliyevaladddin/AladdinAI/commit/7f0fddb696796bd0226ec0ec1410f3307b41c4aa))
 
 
 ### Features
@@ -48,6 +61,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#405) ([4db09f2](https://github.com/aliyevaladddin/AladdinAI/commit/4db09f218d11ddcc8a9b3c904de4faf1e8bd88c9))
 
 - Update changelog [skip ci] (#407) ([3f653a7](https://github.com/aliyevaladddin/AladdinAI/commit/3f653a72fd81f9e41a909dfd8432c02d041da9c6))
+
+- Update changelog [skip ci] (#411) ([b0d5134](https://github.com/aliyevaladddin/AladdinAI/commit/b0d51345582bf94ebee52743ec068f99660d7b64))
 
 ## [v2.2.1] - 2026-07-09
 
