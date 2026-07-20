@@ -305,7 +305,7 @@ async def _search_news(
 
     results: list[SearchResult] = []
     try:
-        root = ET.fromstring(resp.text)
+        root = ET.fromstring(resp.content)
         channel = root.find("channel")
         if channel is not None:
             for item in channel.findall("item")[:limit]:
