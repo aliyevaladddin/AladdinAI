@@ -3963,6 +3963,39 @@ Replay the golden set through base and forged models; report the delta.
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/websearch
+
+#### GET
+##### Summary:
+
+Web Search
+
+##### Description:
+
+Query public web sources and return merged + per-source results.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| q | query |  | Yes | string |
+| lang | query |  | No | string |
+| engines | query | Comma-separated engine list (duckduckgo,wikipedia). Defaults to all. | No |  |
+| limit | query |  | No | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /
 
 #### GET
@@ -4870,3 +4903,22 @@ ttyd adapter ignores it.
 | type | string |  | Yes |
 | input |  |  | No |
 | ctx | object |  | No |
+
+#### WebSearchResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| query | string |  | Yes |
+| results | [ [WebSearchResult](#websearchresult) ] |  | Yes |
+| by_source | object |  | Yes |
+| errors | object |  | Yes |
+| total | integer |  | Yes |
+
+#### WebSearchResult
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| title | string |  | Yes |
+| link | string |  | Yes |
+| snippet | string |  | Yes |
+| source | string |  | Yes |
