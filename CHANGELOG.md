@@ -51,6 +51,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Native Out-of-the-Box Meta-Search (ArXiv, Google News RSS, DDG HTML Fallback) (#425) ([b922729](https://github.com/aliyevaladddin/AladdinAI/commit/b922729a264aee62e8838ca98531859057869c94))
 
+- Integrate fetch_url tool with Chromium Headless Browser and UI thought process accordion ([351225b](https://github.com/aliyevaladddin/AladdinAI/commit/351225bddb2a3ebe78131dd4aaeabd19642b53b4))
+
 
 ### Maintenance
 
@@ -77,6 +79,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#423) ([66589b8](https://github.com/aliyevaladddin/AladdinAI/commit/66589b8e0e495d51404fa263e3e4bbed2804d64c))
 
 - Update changelog [skip ci] (#426) ([3595de8](https://github.com/aliyevaladddin/AladdinAI/commit/3595de80e680ec970e1e5e307ed925ef3e547e08))
+
+- Update changelog [skip ci] (#428) ([5ae2e1f](https://github.com/aliyevaladddin/AladdinAI/commit/5ae2e1f30ba9b09e73733bc2fff79b755d9d80b1))
 
 ## [v2.2.1] - 2026-07-09
 
