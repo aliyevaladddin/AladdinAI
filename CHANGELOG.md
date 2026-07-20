@@ -2,23 +2,7 @@
 
 All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
-## [Unreleased]
-
 ## [v2.2.2] - 2026-07-20
-
-### Features
-
-- Multi-Agent Swarm Orchestration tools (`create_agent`, `delegate_to_agent`, `chat_with_agent`, `broadcast_agents`, `delete_agent`)
-- Isolated Python 3 execution sandbox (`run_python_code`)
-- Generic HTTP API tools (`http_get`, `http_post`) and IMAP email reader (`read_emails`)
-- Autonomous Task Execution Stepper UI component in Chat Page
-- Point-in-time task reminder trigger tool (`create_reminder`)
-
-### Security & Maintenance
-
-- Address Dependabot vulnerabilities #124 (`brace-expansion`) and #125 (`js-yaml`) in frontend package overrides
-- Bump version to 2.2.2 across packages and documentation
-
 
 ### Bug Fixes
 
@@ -119,6 +103,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#438) ([4dd21fc](https://github.com/aliyevaladddin/AladdinAI/commit/4dd21fc39d74c66b3136067dd7030f61904d30a6))
 
 - Update dependency overrides in package.json ([dd6370f](https://github.com/aliyevaladddin/AladdinAI/commit/dd6370f02f992e0e0dadc51c4dcdfcd0698f8b74))
+
+- Update changelog [skip ci] (#439) ([17473e6](https://github.com/aliyevaladddin/AladdinAI/commit/17473e6d3c71e9fa2566f4c59cdf834309a8675b))
+
+- Bump version to 2.2.2 across packages and documentation ([0745180](https://github.com/aliyevaladddin/AladdinAI/commit/07451808ab10e0b067ace3ac9f97fa9045b430ec))
 
 ## [v2.2.1] - 2026-07-09
 
