@@ -7544,6 +7544,53 @@
         }
       }
     },
+    "/api/websearch/synthesize": {
+      "post": {
+        "tags": [
+          "websearch"
+        ],
+        "summary": "Synthesize Search",
+        "description": "Perplexity-style AI Synthesis endpoint.\n\nGathers search results from meta_search, optionally deep-scrapes top 2-3 links\nwith Chromium Headless Browser, and synthesizes a structured Markdown response\nwith inline citations [1], [2].",
+        "operationId": "synthesize_search_api_websearch_synthesize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SynthesizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SynthesizeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -11105,6 +11152,78 @@
           "agent_name"
         ],
         "title": "SuggestReplyResponse"
+      },
+      "SynthesizeRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Query"
+          },
+          "deep": {
+            "type": "boolean",
+            "title": "Deep",
+            "default": false
+          },
+          "lang": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 2,
+            "title": "Lang",
+            "default": "en"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "SynthesizeRequest"
+      },
+      "SynthesizeResponse": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "synthesis": {
+            "type": "string",
+            "title": "Synthesis"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/WebSearchResult"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "scraped_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scraped Urls"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "synthesis",
+          "sources",
+          "scraped_urls"
+        ],
+        "title": "SynthesizeResponse"
       },
       "SystemSettingsResponse": {
         "properties": {
