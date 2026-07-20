@@ -23,13 +23,15 @@ We introduced a native, asynchronous meta-search engine directly into the backen
 3. **Out-of-the-Box Zero-Key Design**: Completely free academic (ArXiv) and news (Google News RSS) integration out of the box with zero external API keys or rate-limited third-party services (Brave Search API removed).
 4. **Universal Tool Capability Heuristic**: Updated `model_supports_tools` to dynamically match modern LLM model prefixes, ensuring agents configured with modern LLM providers can autonomously invoke `web_search`.
 5. **Dashboard Web Search API & Interactive UI**: Exposed `/api/websearch` REST endpoint backing the interactive frontend Search view in `frontend/src/app/(dashboard)/dashboard/search/page.tsx` with dedicated source tabs (All, Web, Wikipedia, News, Research) and color-coded badges.
+6. **Chromium Headless Browser (`fetch_url`) & UI Thought Process Accordion**: Autonomous deep-reading capability powered by Playwright Chromium (`app/services/browser.py` & `app/tools/browser.py`) with HTTPX fallback. Enables agents to scrape and read JS-rendered web pages when URLs are sent in user messages, paired with an interactive Perplexity-style Thought Process & Tool Execution accordion rendered directly on chat message bubbles in `frontend/src/app/(dashboard)/dashboard/chat/page.tsx`.
 
 ## Consequences
 
 ### Positive
 - Zero external search gateway dependency required for base agent operation.
 - Immediate response latency improvement due to parallel multi-source querying across web, encyclopedic, academic, and news sources.
-- Autonomous web search enabled across all configured agent model families.
+- Autonomous web search and deep URL scraping enabled across all configured agent model families.
+- Transparent UI visibility into agent tool executions and thought processes across chat streaming sessions.
 - 100% out-of-the-box developer experience with zero required API keys or quota limits.
 
 ### Negative
@@ -48,11 +50,13 @@ We introduced a native, asynchronous meta-search engine directly into the backen
 
 ## Implementation Notes
 
-- Service implementation: `backend/app/services/meta_search.py`
-- Tool wrapper: `backend/app/tools/web_search.py`
+- Service implementation: `backend/app/services/meta_search.py` & `backend/app/services/browser.py`
+- Tool wrappers: `backend/app/tools/web_search.py` & `backend/app/tools/browser.py`
 - Capability discovery: `backend/app/tools/capabilities.py`
+- Agent orchestration: `backend/app/services/agent_runner.py`
 - REST endpoint: `backend/app/routers/websearch.py`
-- Unit tests: `backend/tests/test_web_search.py` (100% test coverage)
+- UI Thought Accordion: `frontend/src/app/(dashboard)/dashboard/chat/page.tsx`
+- Unit tests: `backend/tests/test_web_search.py` & `backend/tests/test_browser_tool.py` (100% test coverage)
 
 ## References
 
