@@ -125,7 +125,7 @@ async def synthesize_search(
             fetch_tasks = [fetch_url_content(url, use_chromium=True) for url in candidate_urls]
             scraped_results = await asyncio.gather(*fetch_tasks, return_exceptions=True)
             for url, res in zip(candidate_urls, scraped_results):
-                if isinstance(res, dict) and res.get("content"):
+                if isinstance(res, dict) and res.get("method") != "failed" and res.get("content"):
                     scraped_data[url] = res["content"][:2000]
                     scraped_urls.append(url)
 
