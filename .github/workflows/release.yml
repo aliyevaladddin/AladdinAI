@@ -29,8 +29,8 @@ jobs:
       - name: Update package.json versions
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
-          cd frontend && npm version $VERSION --no-git-tag-version
-          cd ../cli && npm version $VERSION --no-git-tag-version
+          cd frontend && npm version $VERSION --no-git-tag-version --allow-same-version
+          cd ../cli && npm version $VERSION --no-git-tag-version --allow-same-version
 
       - name: Install frontend dependencies
         working-directory: ./frontend
