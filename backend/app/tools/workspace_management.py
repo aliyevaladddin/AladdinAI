@@ -361,3 +361,31 @@ async def run_trigger(ctx: ToolContext, trigger_id: int) -> dict:
     except Exception as e:
         log.exception("run_trigger tool failed")
         return {"status": "error", "message": str(e)}
+
+
+# [RCF:PROTECTED]
+@tool(
+    name="delete_agent",
+    description="Delete an unneeded or temporary AI agent from the workspace by ID.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "agent_id": {"type": "integer", "description": "The ID of the agent to delete."},
+        },
+        "required": ["agent_id"],
+    },
+)
+# [RCF:PROTECTED]
+async def delete_agent(ctx: ToolContext, agent_id: int) -> dict:
+    try:
+        q = select(Agent).where(Agent.id == agent_id, Agent.user_id == ctx.user_id)
+        agent = (await ctx.db.execute(q)).scalar_one_or_none()
+        if not agent:
+            return {"status": "error", "message": f"Agent {agent_id} not found."}
+
+        await ctx.db.delete(agent)
+        await ctx.db.flush()
+        return {"status": "success", "deleted_agent_id": agent_id}
+    except Exception as e:
+        log.exception("delete_agent tool failed")
+        return {"status": "error", "message": str(e)}

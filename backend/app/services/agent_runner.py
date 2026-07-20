@@ -39,8 +39,9 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
     "_default": [
         "recall", "remember",
         "analyze_image", "send_image", "generate_image",
-        "send_email",
-        "web_search", "fetch_url",
+        "send_email", "read_emails", "send_telegram_message", "send_slack_message",
+        "web_search", "fetch_url", "http_get", "http_post",
+        "run_python_code", "read_excel", "write_excel", "create_reminder",
         # Read-only order visibility for every agent.
         "list_orders", "get_order_summary", "get_sales_metrics",
     ],
@@ -48,8 +49,9 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
     "sales": [
         "recall", "remember",
         "analyze_image", "send_image", "generate_image",
-        "send_email",
-        "web_search", "fetch_url",
+        "send_email", "read_emails", "send_telegram_message", "send_slack_message",
+        "web_search", "fetch_url", "http_get", "http_post",
+        "run_python_code", "read_excel", "write_excel", "create_reminder",
         "list_orders", "get_order_summary", "get_sales_metrics",
         "create_order", "update_order_status", "create_product",
     ],
@@ -57,7 +59,10 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
 
 # Tools that require other agents to exist — only activated when
 # tools_config explicitly sets "enable_inter_agent": true
-_INTER_AGENT_TOOLS = {"delegate", "ask_agent"}
+_INTER_AGENT_TOOLS = {
+    "delegate", "ask_agent", "broadcast_agents",
+    "delegate_to_agent", "chat_with_agent", "delete_agent",
+}
 
 
 # [RCF:PROTECTED]
@@ -216,6 +221,27 @@ async def run_agent(
                     "role": "system",
                     "content": f"{base}{url_hint}",
                 }
+
+        # Personalization & Proactive Suggestions & Autonomous Execution System Block
+        persona_block = (
+            "\n\n[USER PERSONALIZATION & AUTONOMOUS MULTI-STEP EXECUTION INSTRUCTIONS]\n"
+            "- Always be helpful, respectful, and address the user by name if known (e.g. Aladdin).\n"
+            "- Adapt to the user's communication style and preserve context.\n"
+            "- Autonomous Task Execution: When receiving a multi-part complex command (e.g., 'запланируй встречу, отправь письмо и подготовь отчёт'), automatically break down the task into numbered steps under a '🎬 Autonomous Execution Plan' header, execute each step sequentially using your available tools, and present the final status of each step.\n"
+            "- Proactive Behavior: At the end of your response, when relevant, offer 2-3 logical follow-up actions or proactive next steps under a '💡 Proactive Suggestions' section using concise bullet points."
+        )
+        sys_idx = next(
+            (i for i, m in enumerate(messages) if m.get("role") == "system"),
+            None,
+        )
+        if sys_idx is None:
+            messages = [{"role": "system", "content": persona_block}, *messages]
+        else:
+            base = _text_of(messages[sys_idx].get("content"))
+            messages[sys_idx] = {
+                "role": "system",
+                "content": f"{base}{persona_block}",
+            }
 
     allowed = [name for name in _allowed_tools(agent) if name in REGISTRY]
     if extras and extras.get("is_admin"):
