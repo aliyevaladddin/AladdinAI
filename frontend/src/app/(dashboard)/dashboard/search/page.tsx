@@ -14,8 +14,12 @@ import {
   ChevronRight,
   Newspaper,
   GraduationCap,
+  Cpu,
+  Layers,
+  Zap,
   Shield,
 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { api } from "@/lib/api";
 
 /* ── Types ───────────────────────────────────────────────────────── */
@@ -33,6 +37,14 @@ interface SearchResponse {
   by_source: Record<string, SearchResult[]>;
   errors: Record<string, string>;
   total: number;
+}
+
+interface SynthesizeResponse {
+  query: string;
+  synthesis: string;
+  sources: SearchResult[];
+  scraped_urls: string[];
+  model?: string | null;
 }
 
 type Tab = "all" | "duckduckgo" | "wikipedia" | "news" | "arxiv";
@@ -151,6 +163,9 @@ export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [draftQuery, setDraftQuery] = useState("");
   const [results, setResults] = useState<SearchResponse | null>(null);
+  const [synthesis, setSynthesis] = useState<SynthesizeResponse | null>(null);
+  const [synthesisLoading, setSynthesisLoading] = useState(false);
+  const [deepScrape, setDeepScrape] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("all");
@@ -173,6 +188,7 @@ export default function SearchPage() {
     setLoading(true);
     setError(null);
     setResults(null);
+    setSynthesis(null);
     setTab("all");
     const t0 = performance.now();
 
@@ -187,12 +203,23 @@ export default function SearchPage() {
       );
       setResults(data);
       setElapsed(Math.round(performance.now() - t0));
+
+      // Trigger AI Synthesis
+      setSynthesisLoading(true);
+      api.post<SynthesizeResponse>("/websearch/synthesize", {
+        query: q,
+        deep: deepScrape,
+        lang,
+      })
+        .then((synthData) => setSynthesis(synthData))
+        .catch((err) => console.error("AI Synthesis error:", err))
+        .finally(() => setSynthesisLoading(false));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Search failed");
     } finally {
       setLoading(false);
     }
-  }, [history, lang]);
+  }, [history, lang, deepScrape]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,12 +262,13 @@ export default function SearchPage() {
                 >
                   A
                 </div>
-                <h1 className="text-2xl font-bold" style={{ color: "var(--color-fg)" }}>
+                <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: "var(--color-fg)" }}>
                   AladdinAI Search
+                  <Shield size={16} className="text-emerald-400 opacity-80" title="RCF Protected Meta-Search Engine" />
                 </h1>
               </div>
               <p className="text-[13px]" style={{ color: "var(--color-fg-muted)" }}>
-                Native meta-search · DuckDuckGo, Wikipedia, ArXiv, News
+                Native Meta-Search & AI Synthesis Engine · Chromium Deep Scraping Enabled
               </p>
             </div>
           )}
@@ -267,11 +295,27 @@ export default function SearchPage() {
                 type="text"
                 value={draftQuery}
                 onChange={(e) => setDraftQuery(e.target.value)}
-                placeholder="Search the web…"
+                placeholder="Ask anything or search the web…"
                 className="flex-1 bg-transparent outline-none text-[14px] placeholder:text-[var(--color-fg-muted)]"
                 style={{ color: "var(--color-fg)" }}
                 autoComplete="off"
               />
+
+              {/* Deep Scrape toggle */}
+              <button
+                type="button"
+                onClick={() => setDeepScrape(!deepScrape)}
+                title="Deep Web Scraping: uses Playwright Chromium to extract full content from top links"
+                className={`flex items-center gap-1 text-[11px] font-medium rounded-lg px-2.5 py-1 border transition-all ${
+                  deepScrape
+                    ? "bg-purple-950/60 text-purple-300 border-purple-500/50 shadow-sm"
+                    : "bg-muted/40 text-muted-foreground border-border/40 hover:text-foreground"
+                }`}
+              >
+                <Cpu size={12} className={deepScrape ? "text-purple-400 animate-pulse" : ""} />
+                <span>Deep Scrape</span>
+              </button>
+
               {/* Lang selector */}
               <select
                 value={lang}
@@ -379,6 +423,58 @@ export default function SearchPage() {
                   </span>
                 )}
               </span>
+            </div>
+          )}
+
+          {/* AI Synthesis Box */}
+          {(synthesisLoading || synthesis) && tab === "all" && (
+            <div
+              className="rounded-2xl p-5 border mb-6 shadow-lg transition-all"
+              style={{
+                background: "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05), rgba(6, 182, 212, 0.05))",
+                borderColor: "var(--color-accent)",
+              }}
+            >
+              <div className="flex items-center justify-between border-b pb-3 mb-3" style={{ borderColor: "var(--color-border)" }}>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+                    <Sparkles size={13} />
+                  </div>
+                  <span className="text-[13px] font-semibold tracking-wide" style={{ color: "var(--color-fg)" }}>
+                    AI Synthesis
+                  </span>
+                  {synthesis?.model && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-medium" style={{ background: "var(--color-surface-2)", color: "var(--color-accent)" }}>
+                      {synthesis.model}
+                    </span>
+                  )}
+                  {synthesis?.scraped_urls && synthesis.scraped_urls.length > 0 && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-800/50 flex items-center gap-1">
+                      <Cpu size={10} /> Chromium Scraped ({synthesis.scraped_urls.length})
+                    </span>
+                  )}
+                </div>
+                {synthesisLoading && (
+                  <div className="flex items-center gap-2 text-xs text-indigo-400 font-medium animate-pulse">
+                    <Loader2 size={13} className="animate-spin" />
+                    Synthesizing answer...
+                  </div>
+                )}
+              </div>
+
+              {synthesisLoading && !synthesis && (
+                <div className="space-y-2 py-2">
+                  <div className="h-3.5 rounded w-full animate-pulse" style={{ background: "var(--color-surface-2)" }} />
+                  <div className="h-3.5 rounded w-5/6 animate-pulse" style={{ background: "var(--color-surface-2)" }} />
+                  <div className="h-3.5 rounded w-4/6 animate-pulse" style={{ background: "var(--color-surface-2)" }} />
+                </div>
+              )}
+
+              {synthesis && (
+                <div className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed text-[13px]">
+                  <ReactMarkdown>{synthesis.synthesis}</ReactMarkdown>
+                </div>
+              )}
             </div>
           )}
 

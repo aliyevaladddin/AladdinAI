@@ -205,3 +205,34 @@ async def test_web_search_tool_surfaces_error_when_no_results():
 
     assert out["results"] == []
     assert "error" in out
+
+
+# ── synthesize endpoint ───────────────────────────────────────────────────────
+@pytest.mark.asyncio
+async def test_synthesize_endpoint_fallback_and_deep_scrape():
+    """synthesize_search generates structured Markdown response with fallback when no LLM connected."""
+    from app.routers.websearch import SynthesizeRequest, synthesize_search
+    from app.models.user import User
+
+    fake_meta = {
+        "results": [
+            {"title": "Python 3.12 Release", "link": "https://python.org", "snippet": "New features in Python 3.12", "source": "duckduckgo"},
+        ],
+        "by_source": {},
+        "errors": {},
+        "query": "python 3.12",
+    }
+    user = User(id=1, email="aladdin@example.com")
+    db_mock = AsyncMock()
+
+    with patch("app.routers.websearch.meta_search", AsyncMock(return_value=fake_meta)), \
+         patch("app.routers.websearch.resolve_llm_provider", AsyncMock(side_effect=Exception("No LLM"))):
+        
+        req = SynthesizeRequest(query="python 3.12", deep=False, lang="en")
+        res = await synthesize_search(req, user=user, db=db_mock)
+
+    assert res.query == "python 3.12"
+    assert "Python 3.12 Release" in res.synthesis
+    assert len(res.sources) == 1
+    assert res.scraped_urls == []
+
