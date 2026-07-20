@@ -59,6 +59,7 @@ async function writeEnv(targetDir) {
     POSTGRES_PASSWORD: genSecret(16),
     JWT_SECRET: genSecret(32),
     FERNET_KEY: genFernetKey(),
+    SEARXNG_SECRET: genSecret(32),
   });
   await fs.writeFile(path.join(targetDir, '.env'), filled);
 }
