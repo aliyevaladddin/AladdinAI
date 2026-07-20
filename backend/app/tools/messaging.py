@@ -211,3 +211,158 @@ async def send_email(
     except Exception as e:  # noqa: BLE001
         log.exception("send_email failed for user=%s to=%s", ctx.user_id, to)
         return {"error": f"Failed to send email: {str(e)}"}
+
+
+# [RCF:PROTECTED]
+@tool(
+    name="send_telegram_message",
+    description="Send a text message to a specified Telegram chat_id or channel.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "chat_id": {"type": "string", "description": "Target Telegram chat ID or username (e.g., '@mychannel' or '123456789')."},
+            "message": {"type": "string", "description": "Text message content to send."},
+        },
+        "required": ["chat_id", "message"],
+    },
+)
+# [RCF:PROTECTED]
+async def send_telegram_message(
+    ctx: ToolContext,
+    chat_id: str,
+    message: str,
+) -> dict:
+    channel = (await ctx.db.execute(
+        select(MessagingChannel).where(
+            MessagingChannel.user_id == ctx.user_id,
+            MessagingChannel.channel_type == "telegram",
+            MessagingChannel.status == "connected",
+        )
+    )).scalars().first()
+
+    if not channel:
+        return {"error": "No connected Telegram channel found. Please connect Telegram in /dashboard/channels."}
+
+    try:
+        from app.services.messaging_service import send_telegram_text
+        await send_telegram_text(channel, chat_id, message)
+        return {"status": "sent", "channel": "telegram", "chat_id": chat_id}
+    except Exception as e:
+        log.exception("send_telegram_message failed")
+        return {"error": f"Telegram message failed: {str(e)}"}
+
+
+# [RCF:PROTECTED]
+@tool(
+    name="send_slack_message",
+    description="Send a text message to a Slack channel via webhook or bot token.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "channel_or_webhook": {"type": "string", "description": "Slack webhook URL or channel name."},
+            "message": {"type": "string", "description": "Message text to post to Slack."},
+        },
+        "required": ["channel_or_webhook", "message"],
+    },
+)
+# [RCF:PROTECTED]
+async def send_slack_message(
+    ctx: ToolContext,
+    channel_or_webhook: str,
+    message: str,
+) -> dict:
+    import httpx
+    if channel_or_webhook.startswith("http://") or channel_or_webhook.startswith("https://"):
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(channel_or_webhook, json={"text": message})
+                if resp.status_code == 200:
+                    return {"status": "sent", "channel": "slack_webhook"}
+                return {"error": f"Slack webhook returned HTTP {resp.status_code}: {resp.text}"}
+        except Exception as e:
+            return {"error": f"Slack webhook error: {str(e)}"}
+    return {"error": "Slack requires a valid webhook URL."}
+
+
+# [RCF:PROTECTED]
+@tool(
+    name="read_emails",
+    description="Read recent incoming or sent emails from the user's connected email account via IMAP.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "folder": {
+                "type": "string",
+                "default": "INBOX",
+                "description": "Email folder to read ('INBOX', 'Sent').",
+            },
+            "limit": {
+                "type": "integer",
+                "default": 10,
+                "description": "Number of recent messages to fetch (max 50).",
+            },
+            "search_query": {
+                "type": "string",
+                "description": "Optional search term to filter by subject or sender.",
+            },
+        },
+    },
+)
+# [RCF:PROTECTED]
+async def read_emails(
+    ctx: ToolContext,
+    folder: str = "INBOX",
+    limit: int = 10,
+    search_query: str | None = None,
+) -> dict:
+    result = await ctx.db.execute(
+        select(EmailAccount)
+        .where(
+            EmailAccount.user_id == ctx.user_id,
+            EmailAccount.status == "connected",
+        )
+        .order_by(EmailAccount.id)
+        .limit(1)
+    )
+    account = result.scalar_one_or_none()
+
+    if not account:
+        return {"error": "No connected email account found. Please connect email in Settings → Email."}
+
+    fetch_limit = max(1, min(50, int(limit)))
+
+    try:
+        from app.services.email_service import _fetch_folder_emails, _fetch_sent_emails
+        if folder.upper() == "SENT":
+            raw_msgs = await _fetch_sent_emails(account, limit=fetch_limit)
+        else:
+            raw_msgs = await _fetch_folder_emails(account, folder=folder, limit=fetch_limit)
+
+        clean_msgs = []
+        for m in raw_msgs:
+            subj = m.get("subject", "")
+            sender = f"{m.get('from_name', '')} <{m.get('from_email', '')}>".strip()
+            body_snippet = (m.get("body") or "")[:500]
+
+            if search_query and search_query.strip():
+                sq = search_query.strip().lower()
+                if sq not in subj.lower() and sq not in sender.lower() and sq not in body_snippet.lower():
+                    continue
+
+            clean_msgs.append({
+                "subject": subj,
+                "from": sender,
+                "to": f"{m.get('to_name', '')} <{m.get('to_email', '')}>".strip(),
+                "body_snippet": body_snippet,
+                "message_id": m.get("message_id", ""),
+            })
+
+        return {
+            "status": "success",
+            "folder": folder,
+            "count": len(clean_msgs),
+            "emails": clean_msgs,
+        }
+    except Exception as e:
+        log.exception("read_emails tool failed")
+        return {"error": f"Failed to read emails: {str(e)}"}
