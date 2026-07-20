@@ -19,6 +19,26 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Self-hosted metasearch engine that powers the `web_search` agent tool.
+  # No paid search API, no external gateway — the backend queries it directly
+  # at http://searxng:8080. The settings are inlined below via `configs` so a
+  # single docker-compose.yml is fully self-contained (no extra files to ship).
+  searxng:
+    image: searxng/searxng:latest
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-please-change-this-searxng-secret}
+    configs:
+      - source: searxng_settings
+        target: /etc/searxng/settings.yml
+    healthcheck:
+      # Must return 200 on the JSON endpoint — proves formats:[html,json] is on.
+      # (SearXNG disables JSON by default and 403s until it's enabled.)
+      test: ["CMD-SHELL", "wget -q -O /dev/null 'http://localhost:8080/search?q=ping&format=json' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   backend:
     image: ghcr.io/aliyevaladddin/aladdinai-backend:${ALADDINAI_VERSION:-latest}
     ports:
@@ -28,10 +48,14 @@ services:
     environment:
       # Override to point at the docker-compose Postgres service, not localhost.
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # web_search tool queries this in-stack SearXNG (GET /search?format=json).
+      ALADDINAI_SEARCH_URL: ${ALADDINAI_SEARCH_URL:-http://searxng:8080}
     volumes:
       - media:/app/media
     depends_on:
       postgres:
+        condition: service_healthy
+      searxng:
         condition: service_healthy
     restart: unless-stopped
 
@@ -51,3 +75,19 @@ services:
 volumes:
   pgdata:
   media:
+
+configs:
+  # Inlined SearXNG config. The one line that matters is `formats: [html, json]`
+  # — SearXNG ships with the JSON API disabled and returns HTTP 403 until it is
+  # enabled here, which is exactly what makes web search silently fail.
+  searxng_settings:
+    content: |
+      use_default_settings: true
+      server:
+        secret_key: "${SEARXNG_SECRET:-please-change-this-searxng-secret}"
+        limiter: false
+        image_proxy: false
+      search:
+        formats:
+          - html
+          - json

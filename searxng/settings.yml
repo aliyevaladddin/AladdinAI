@@ -1,0 +1,40 @@
+# SearXNG configuration for AladdinAI self-hosted web search.
+#
+# This engine backs the `web_search` agent tool. The backend reaches it at
+# http://searxng:8080 (compose service name) via ALADDINAI_SEARCH_URL, and
+# web_search.py calls GET /search?q=...&format=json.
+#
+# The single most important line below is `search.formats: [html, json]`.
+# SearXNG ships with JSON DISABLED by default and returns HTTP 403 on
+# ?format=json until json is added here — that 403 is exactly what makes an
+# upstream gateway report "All search providers failed".
+use_default_settings: true
+
+server:
+  # Overridden at runtime by SEARXNG_SECRET env in docker-compose.
+  secret_key: "change-me-in-env"
+  # We front this only on the internal docker network; no rate limiter needed
+  # for our own agents, and it keeps JSON calls from being throttled.
+  limiter: false
+  image_proxy: false
+
+search:
+  # Enable the JSON API the agent tool depends on. Without `json` here every
+  # ?format=json request is rejected with 403.
+  formats:
+    - html
+    - json
+  # Keep the default safe language autodetect.
+  autocomplete: ""
+
+engines:
+  # A lean, reliable set that doesn't require API keys. Trim/extend freely —
+  # web_search.py only cares about the aggregated results array.
+  - name: duckduckgo
+    disabled: false
+  - name: brave
+    disabled: false
+  - name: startpage
+    disabled: false
+  - name: wikipedia
+    disabled: false

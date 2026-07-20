@@ -15,6 +15,28 @@ services:
       timeout: 3s
       retries: 5
 
+  # Self-hosted metasearch engine backing the `web_search` agent tool.
+  # The backend reaches it at http://searxng:8080 via ALADDINAI_SEARCH_URL.
+  # No paid API keys, no external gateway — web_search.py hits it directly.
+  searxng:
+    image: searxng/searxng:latest
+    environment:
+      # settings.yml sets secret_key to a placeholder; override it here.
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-please-change-this-searxng-secret}
+      SEARXNG_SETTINGS_PATH: /etc/searxng/settings.yml
+    volumes:
+      # NOT :ro — the SearXNG entrypoint chowns /etc/searxng on boot and a
+      # read-only mount makes it fail with "Read-only file system".
+      - ./searxng:/etc/searxng
+    networks:
+      - default
+    healthcheck:
+      # JSON endpoint must answer 200 — proves formats:[html,json] is live.
+      test: [ "CMD-SHELL", "wget -q -O /dev/null 'http://localhost:8080/search?q=ping&format=json' || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./backend
     ports:
@@ -22,6 +44,9 @@ services:
     env_file:
       - .env
     environment:
+      # Point the web_search tool at the in-stack SearXNG. web_search.py reads
+      # ALADDINAI_SEARCH_URL and calls {url}/search?q=...&format=json.
+      ALADDINAI_SEARCH_URL: ${ALADDINAI_SEARCH_URL:-http://searxng:8080}
       # Dev override: Traefik in compose listens on plain HTTP at the `web`
       # entrypoint, so the URLs we hand to the iframe must match. In prod
       # these are flipped to https/websecure via .env.
@@ -32,6 +57,8 @@ services:
       ALLOW_LOCALHOST_URLS: ${ALLOW_LOCALHOST_URLS:-false}
     depends_on:
       postgres:
+        condition: service_healthy
+      searxng:
         condition: service_healthy
     volumes:
       - ./backend:/app
