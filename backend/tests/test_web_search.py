@@ -4,7 +4,6 @@
 Covers tool registration, schema validity, the DuckDuckGoParser (pure),
 and the meta_search service with mocked httpx — no real network calls.
 """
-from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
 import pytest

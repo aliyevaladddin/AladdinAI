@@ -111,7 +111,6 @@ async def _search_duckduckgo(
     # 1. Direct answer / abstract
     abstract_text = (data.get("AbstractText") or "").strip()
     abstract_url = (data.get("AbstractURL") or "").strip()
-    abstract_src = (data.get("AbstractSource") or "DuckDuckGo").strip()
     heading = (data.get("Heading") or query).strip()
     if abstract_text and abstract_url:
         results.append(SearchResult(

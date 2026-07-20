@@ -8,7 +8,6 @@ the agent ``web_search`` tool uses.
 from __future__ import annotations
 
 import logging
-from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
