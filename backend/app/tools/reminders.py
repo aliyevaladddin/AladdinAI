@@ -4,7 +4,7 @@
 Allows agents to set future reminders and automated scheduled tasks.
 """
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 from app.models.agent_trigger import AgentTrigger
 from app.services import triggers as triggers_service
