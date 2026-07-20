@@ -44,9 +44,9 @@ class WebSearchResponse(BaseModel):
 
 
 class SynthesizeRequest(BaseModel):
-    query: str
+    query: str = Field(..., min_length=1, max_length=300)
     deep: bool = False
-    lang: str = "en"
+    lang: str = Field("en", min_length=2, max_length=10)
 
 
 class SynthesizeResponse(BaseModel):
