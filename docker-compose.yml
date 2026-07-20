@@ -19,15 +19,17 @@ services:
   # The backend reaches it at http://searxng:8080 via ALADDINAI_SEARCH_URL.
   # No paid API keys, no external gateway — web_search.py hits it directly.
   searxng:
-    image: searxng/searxng:latest
+    image: searxng/searxng:2026.7.19-6da6eee26
     environment:
       # settings.yml sets secret_key to a placeholder; override it here.
       SEARXNG_SECRET: ${SEARXNG_SECRET:-please-change-this-searxng-secret}
-      SEARXNG_SETTINGS_PATH: /etc/searxng/settings.yml
+      # Point at a path SearXNG doesn't chown. The entrypoint chowns its
+      # settings dir on boot; if that's the bind-mount it rewrites the owner
+      # of ./searxng on the host (needs sudo to edit afterwards) and breaks a
+      # :ro mount. Reading from a separate dir lets us mount read-only.
+      SEARXNG_SETTINGS_PATH: /etc/searxng-custom/settings.yml
     volumes:
-      # NOT :ro — the SearXNG entrypoint chowns /etc/searxng on boot and a
-      # read-only mount makes it fail with "Read-only file system".
-      - ./searxng:/etc/searxng
+      - ./searxng:/etc/searxng-custom:ro
     networks:
       - default
     healthcheck:

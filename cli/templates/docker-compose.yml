@@ -24,7 +24,7 @@ services:
   # at http://searxng:8080. The settings are inlined below via `configs` so a
   # single docker-compose.yml is fully self-contained (no extra files to ship).
   searxng:
-    image: searxng/searxng:latest
+    image: searxng/searxng:2026.7.19-6da6eee26
     environment:
       SEARXNG_SECRET: ${SEARXNG_SECRET:-please-change-this-searxng-secret}
     configs:
