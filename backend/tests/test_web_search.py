@@ -115,6 +115,62 @@ async def test_meta_search_empty_query():
     assert result["errors"] == {}
 
 
+@pytest.mark.asyncio
+async def test_meta_search_arxiv_and_news():
+    """meta_search parses ArXiv Atom XML and News RSS XML."""
+    from app.services.meta_search import meta_search
+
+    arxiv_xml = """<?xml version="1.0" encoding="UTF-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <entry>
+        <id>http://arxiv.org/abs/2101.00001</id>
+        <title>Quantum Computing Advances</title>
+        <summary>A study on quantum algorithms.</summary>
+      </entry>
+    </feed>
+    """
+
+    news_xml = """<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0">
+      <channel>
+        <item>
+          <title>AI Revolution 2026</title>
+          <link>https://news.example.com/ai</link>
+          <pubDate>Mon, 20 Jul 2026 12:00:00 GMT</pubDate>
+          <description>New breakthroughs in autonomous AI.</description>
+        </item>
+      </channel>
+    </rss>
+    """
+
+    class _FakeTextResp:
+        def __init__(self, text):
+            self.text = text
+            self.content = text.encode("utf-8")
+            self.status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+    async def fake_get(url, **kwargs):
+        if "arxiv" in url:
+            return _FakeTextResp(arxiv_xml)
+        return _FakeTextResp(news_xml)
+
+    with patch("httpx.AsyncClient") as mock_cls:
+        instance = AsyncMock()
+        instance.get = AsyncMock(side_effect=fake_get)
+        mock_cls.return_value.__aenter__ = AsyncMock(return_value=instance)
+        mock_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        res = await meta_search("quantum AI", engines=["arxiv", "news"])
+
+    assert len(res["results"]) == 2
+    sources = [r["source"] for r in res["results"]]
+    assert "arxiv" in sources
+    assert "news" in sources
+
+
 # ── web_search tool delegates to meta_search ─────────────────────────────────
 @pytest.mark.asyncio
 async def test_web_search_tool_returns_results():

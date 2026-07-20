@@ -18,25 +18,25 @@ Agents in AladdinAI require real-time web research capabilities to solve user ta
 We introduced a native, asynchronous meta-search engine directly into the backend core (`app/services/meta_search.py`) along with an expanded universal model capability heuristic in `app/tools/capabilities.py`.
 
 ### Architecture Highlights
-1. **Parallel Multi-Source Orchestrator**: The native meta-search engine queries DuckDuckGo (HTML/API) and Wikipedia in parallel using `httpx.AsyncClient` with non-blocking concurrency (`asyncio.gather`).
-2. **Resilient Provider Fallback & Error Handling**: Source failures (e.g. transient DNS resolution or upstream rate limits) are logged as `INFO` if at least one search provider succeeds, avoiding noise in production logs.
-3. **Optional API Extensions**: Support for paid/higher-tier providers (such as Brave Search API via `BRAVE_API_KEY`) is built-in as an optional enhancement.
+1. **Parallel Multi-Source Orchestrator**: The native meta-search engine queries **DuckDuckGo**, **Wikipedia**, **ArXiv**, and **Google News RSS** in parallel using `httpx.AsyncClient` with non-blocking concurrency (`asyncio.gather`).
+2. **DuckDuckGo Dual-Tier & HTML Fallback**: DuckDuckGo uses Instant Answer API zero-click definitions first, automatically falling back to DDG HTML scraping via `DuckDuckGoParser` if zero answers are returned.
+3. **Out-of-the-Box Zero-Key Design**: Completely free academic (ArXiv) and news (Google News RSS) integration out of the box with zero external API keys or rate-limited third-party services (Brave Search API removed).
 4. **Universal Tool Capability Heuristic**: Updated `model_supports_tools` to dynamically match modern LLM model prefixes, ensuring agents configured with modern LLM providers can autonomously invoke `web_search`.
-5. **Dashboard Web Search API**: Exposed `/api/websearch` REST endpoint (`app/routers/websearch.py`) backing the interactive frontend Search view in `frontend/src/app/(dashboard)/dashboard/search/page.tsx`.
+5. **Dashboard Web Search API & Interactive UI**: Exposed `/api/websearch` REST endpoint backing the interactive frontend Search view in `frontend/src/app/(dashboard)/dashboard/search/page.tsx` with dedicated source tabs (All, Web, Wikipedia, News, Research) and color-coded badges.
 
 ## Consequences
 
 ### Positive
 - Zero external search gateway dependency required for base agent operation.
-- Immediate response latency improvement due to parallel multi-source querying.
+- Immediate response latency improvement due to parallel multi-source querying across web, encyclopedic, academic, and news sources.
 - Autonomous web search enabled across all configured agent model families.
-- Seamless developer experience out of the box with zero required API keys.
+- 100% out-of-the-box developer experience with zero required API keys or quota limits.
 
 ### Negative
 - Direct HTML scraping fallback for DuckDuckGo depends on upstream DOM structure stability.
 
 ### Neutral
-- Brave Search remains optional for users seeking higher query volume or specialized web results.
+- Academic research (ArXiv Atom XML) and news items (Google News RSS) are formatted cleanly with dates and snippets into a unified `SearchResult` schema.
 
 ## Alternatives Considered
 

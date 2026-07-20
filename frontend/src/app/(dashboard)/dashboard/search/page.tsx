@@ -12,6 +12,9 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
+  Newspaper,
+  GraduationCap,
+  Shield,
 } from "lucide-react";
 import { api } from "@/lib/api";
 
@@ -21,7 +24,7 @@ interface SearchResult {
   title: string;
   link: string;
   snippet: string;
-  source: "duckduckgo" | "wikipedia";
+  source: "duckduckgo" | "wikipedia" | "arxiv" | "news";
 }
 
 interface SearchResponse {
@@ -32,7 +35,7 @@ interface SearchResponse {
   total: number;
 }
 
-type Tab = "all" | "duckduckgo" | "wikipedia";
+type Tab = "all" | "duckduckgo" | "wikipedia" | "news" | "arxiv";
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
 
@@ -45,17 +48,30 @@ function hostname(url: string): string {
 }
 
 function SourceBadge({ source }: { source: string }) {
-  const isWiki = source === "wikipedia";
+  const getBadgeStyle = () => {
+    switch (source) {
+      case "wikipedia":
+        return { bg: "var(--color-surface-2)", color: "var(--color-fg-muted)", icon: <BookOpen size={9} />, label: "Wikipedia" };
+      case "arxiv":
+        return { bg: "rgba(168, 85, 247, 0.12)", color: "#a855f7", icon: <GraduationCap size={9} />, label: "ArXiv" };
+      case "news":
+        return { bg: "rgba(239, 68, 68, 0.12)", color: "#ef4444", icon: <Newspaper size={9} />, label: "News" };
+      default:
+        return { bg: "rgba(var(--color-accent-rgb, 99,102,241), 0.12)", color: "var(--color-accent)", icon: <Globe size={9} />, label: "Web" };
+    }
+  };
+
+  const style = getBadgeStyle();
   return (
     <span
       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide"
       style={{
-        background: isWiki ? "var(--color-surface-2)" : "rgba(var(--color-accent-rgb, 99,102,241), 0.12)",
-        color: isWiki ? "var(--color-fg-muted)" : "var(--color-accent)",
+        background: style.bg,
+        color: style.color,
       }}
     >
-      {isWiki ? <BookOpen size={9} /> : <Globe size={9} />}
-      {isWiki ? "Wikipedia" : "Web"}
+      {style.icon}
+      {style.label}
     </span>
   );
 }
@@ -194,6 +210,8 @@ export default function SearchPage() {
     { key: "all", label: "All", icon: <Sparkles size={12} /> },
     { key: "duckduckgo", label: "Web", icon: <Globe size={12} /> },
     { key: "wikipedia", label: "Wikipedia", icon: <BookOpen size={12} /> },
+    { key: "news", label: "News", icon: <Newspaper size={12} /> },
+    { key: "arxiv", label: "Research", icon: <GraduationCap size={12} /> },
   ];
 
   return (
@@ -222,7 +240,7 @@ export default function SearchPage() {
                 </h1>
               </div>
               <p className="text-[13px]" style={{ color: "var(--color-fg-muted)" }}>
-                Native meta-search · DuckDuckGo + Wikipedia · No external gateway
+                Native meta-search · DuckDuckGo, Wikipedia, ArXiv, News
               </p>
             </div>
           )}

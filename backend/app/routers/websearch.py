@@ -46,7 +46,7 @@ async def web_search(
     lang: str = Query("en", min_length=2, max_length=10),
     engines: str | None = Query(
         None,
-        description="Comma-separated engine list (duckduckgo,wikipedia). Defaults to all.",
+        description="Comma-separated engine list (duckduckgo,wikipedia,arxiv,news). Defaults to all.",
     ),
     limit: int = Query(10, ge=1, le=25),
     user: User = Depends(get_current_user),
