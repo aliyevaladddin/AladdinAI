@@ -3996,6 +3996,34 @@ Query public web sources and return merged + per-source results.
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/websearch/synthesize
+
+#### POST
+##### Summary:
+
+Synthesize Search
+
+##### Description:
+
+Perplexity-style AI Synthesis endpoint.
+
+Gathers search results from meta_search, optionally deep-scrapes top 2-3 links
+with Chromium Headless Browser, and synthesizes a structured Markdown response
+with inline citations [1], [2].
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /
 
 #### GET
@@ -4806,6 +4834,24 @@ ttyd adapter ignores it.
 | draft | string |  | Yes |
 | agent_id | integer |  | Yes |
 | agent_name | string |  | Yes |
+
+#### SynthesizeRequest
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| query | string |  | Yes |
+| deep | boolean |  | No |
+| lang | string |  | No |
+
+#### SynthesizeResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| query | string |  | Yes |
+| synthesis | string |  | Yes |
+| sources | [ [WebSearchResult](#websearchresult) ] |  | Yes |
+| scraped_urls | [ string ] |  | Yes |
+| model |  |  | No |
 
 #### SystemSettingsResponse
 
