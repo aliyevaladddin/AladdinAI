@@ -192,7 +192,7 @@ async def _search_duckduckgo(
                     results.append(SearchResult(
                         title=item["title"],
                         link=item["link"],
-                        snippet=item["snippet"][:300],
+                        snippet=(item.get("snippet") or "")[:300],
                         source="duckduckgo",
                     ))
         except Exception as exc:
