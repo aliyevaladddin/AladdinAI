@@ -40,7 +40,7 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "recall", "remember",
         "analyze_image", "send_image", "generate_image",
         "send_email",
-        "web_search",
+        "web_search", "fetch_url",
         # Read-only order visibility for every agent.
         "list_orders", "get_order_summary", "get_sales_metrics",
     ],
@@ -49,7 +49,7 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "recall", "remember",
         "analyze_image", "send_image", "generate_image",
         "send_email",
-        "web_search",
+        "web_search", "fetch_url",
         "list_orders", "get_order_summary", "get_sales_metrics",
         "create_order", "update_order_status", "create_product",
     ],
@@ -86,6 +86,10 @@ def _allowed_tools(agent: Agent) -> list[str]:
     cfg = agent.tools_config or {}
     if isinstance(cfg, dict) and "allowed" in cfg:
         tools = list(cfg["allowed"])
+        if "web_search" in tools and "fetch_url" not in tools:
+            tools.append("fetch_url")
+        if "fetch_url" not in tools:
+            tools.append("fetch_url")
     else:
         role = (agent.role or "").lower()
         tools = DEFAULT_TOOLS_BY_ROLE.get(role, DEFAULT_TOOLS_BY_ROLE["_default"])
@@ -193,6 +197,26 @@ async def run_agent(
                 messages[sys_idx] = {
                     "role": "system",
                     "content": f"{base}\n\n{shared_block}" if base else shared_block,
+                }
+
+        # URL detection hint for agent
+        if "http://" in last_user or "https://" in last_user:
+            url_hint = (
+                "\n\n[URL DETECTED IN USER MESSAGE]\n"
+                "The user provided a web URL/link in their message. "
+                "You MUST call the 'fetch_url' tool with the link to read its web page content before answering."
+            )
+            sys_idx = next(
+                (i for i, m in enumerate(messages) if m.get("role") == "system"),
+                None,
+            )
+            if sys_idx is None:
+                messages = [{"role": "system", "content": url_hint}, *messages]
+            else:
+                base = _text_of(messages[sys_idx].get("content"))
+                messages[sys_idx] = {
+                    "role": "system",
+                    "content": f"{base}{url_hint}",
                 }
 
     allowed = [name for name in _allowed_tools(agent) if name in REGISTRY]
