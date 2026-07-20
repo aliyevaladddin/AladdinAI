@@ -88,8 +88,6 @@ def _allowed_tools(agent: Agent) -> list[str]:
         tools = list(cfg["allowed"])
         if "web_search" in tools and "fetch_url" not in tools:
             tools.append("fetch_url")
-        if "fetch_url" not in tools:
-            tools.append("fetch_url")
     else:
         role = (agent.role or "").lower()
         tools = DEFAULT_TOOLS_BY_ROLE.get(role, DEFAULT_TOOLS_BY_ROLE["_default"])
