@@ -146,6 +146,7 @@ async def test_meta_search_arxiv_and_news():
     class _FakeTextResp:
         def __init__(self, text):
             self.text = text
+            self.content = text.encode("utf-8")
             self.status_code = 200
 
         def raise_for_status(self):
