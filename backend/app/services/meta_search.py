@@ -258,7 +258,7 @@ async def _search_arxiv(
 
     results: list[SearchResult] = []
     try:
-        root = ET.fromstring(resp.text)
+        root = ET.fromstring(resp.content)
         ns = {"atom": "http://www.w3.org/2005/Atom"}
         for entry in root.findall("atom:entry", ns)[:limit]:
             title_elem = entry.find("atom:title", ns)
