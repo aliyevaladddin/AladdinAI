@@ -104,6 +104,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update dependency overrides in package.json ([dd6370f](https://github.com/aliyevaladddin/AladdinAI/commit/dd6370f02f992e0e0dadc51c4dcdfcd0698f8b74))
 
+- Update changelog [skip ci] (#439) ([17473e6](https://github.com/aliyevaladddin/AladdinAI/commit/17473e6d3c71e9fa2566f4c59cdf834309a8675b))
+
 ## [v2.2.1] - 2026-07-09
 
 ### Dependencies
