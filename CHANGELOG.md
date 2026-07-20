@@ -53,6 +53,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Integrate fetch_url tool with Chromium Headless Browser and UI thought process accordion ([351225b](https://github.com/aliyevaladddin/AladdinAI/commit/351225bddb2a3ebe78131dd4aaeabd19642b53b4))
 
+- Implement Playwright-based URL scraping and agent thought process visualization in chat UI ([108c02d](https://github.com/aliyevaladddin/AladdinAI/commit/108c02d6a5933bce1bd6d9f0cfaa4e2984f2f550))
+
 
 ### Maintenance
 
@@ -81,6 +83,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#426) ([3595de8](https://github.com/aliyevaladddin/AladdinAI/commit/3595de80e680ec970e1e5e307ed925ef3e547e08))
 
 - Update changelog [skip ci] (#428) ([5ae2e1f](https://github.com/aliyevaladddin/AladdinAI/commit/5ae2e1f30ba9b09e73733bc2fff79b755d9d80b1))
+
+- Update changelog [skip ci] (#429) ([b27d933](https://github.com/aliyevaladddin/AladdinAI/commit/b27d9331e2037fc8ca03a8147738caf53a888599))
 
 ## [v2.2.1] - 2026-07-09
 
