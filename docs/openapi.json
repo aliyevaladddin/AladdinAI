@@ -7502,10 +7502,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Comma-separated engine list (duckduckgo,wikipedia). Defaults to all.",
+              "description": "Comma-separated engine list (duckduckgo,wikipedia,arxiv,news). Defaults to all.",
               "title": "Engines"
             },
-            "description": "Comma-separated engine list (duckduckgo,wikipedia). Defaults to all."
+            "description": "Comma-separated engine list (duckduckgo,wikipedia,arxiv,news). Defaults to all."
           },
           {
             "name": "limit",
