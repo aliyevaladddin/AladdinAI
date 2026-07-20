@@ -27,6 +27,7 @@ import {
   Pause,
   Download,
   Search,
+  Zap,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
