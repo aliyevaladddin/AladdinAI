@@ -235,18 +235,22 @@ async def _search_wikipedia(
     )
     resp.raise_for_status()
     data = resp.json()
-    hits = data.get("query", {}).get("search", [])
+    if not isinstance(data, dict):
+        return []
+    query_data = data.get("query") or {}
+    hits = query_data.get("search") or []
     results: list[SearchResult] = []
     for hit in hits:
-        title = hit.get("title", "")
-        snippet = _strip_html(hit.get("snippet", ""))
-        slug = title.replace(" ", "_")
-        results.append(SearchResult(
-            title=title,
-            link=f"https://{lang}.wikipedia.org/wiki/{slug}",
-            snippet=snippet,
-            source="wikipedia",
-        ))
+        if isinstance(hit, dict):
+            title = hit.get("title", "")
+            snippet = _strip_html(hit.get("snippet", ""))
+            slug = title.replace(" ", "_")
+            results.append(SearchResult(
+                title=title,
+                link=f"https://{lang}.wikipedia.org/wiki/{slug}",
+                snippet=snippet,
+                source="wikipedia",
+            ))
     return results
 
 
