@@ -1107,7 +1107,7 @@ export default function ChatPage() {
                                 <div className="mt-3 pt-2.5 border-t border-border/40 space-y-2">
                                   <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
                                     <Sparkles size={12} className="text-primary" />
-                                    <span>Предложенные действия (нажми для выбора):</span>
+                                    <span>Suggested Actions (click to select):</span>
                                   </p>
                                   <div className="flex flex-wrap gap-2">
                                     {suggestions.map((sug, sIdx) => (
