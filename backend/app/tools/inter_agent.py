@@ -191,3 +191,91 @@ async def ask_agent(ctx: ToolContext, target: str, question: str) -> dict:
         log.completed_at = datetime.now(timezone.utc)
         await ctx.db.flush()
         return {"error": str(e)}
+
+
+# [RCF:PROTECTED]
+@tool(
+    name="broadcast_agents",
+    description=(
+        "Broadcast a task or announcement to ALL active agents in the workspace. "
+        "Each agent will receive a queued task message to process asynchronously."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "message": {
+                "type": "string",
+                "description": "Task description or notification text for all agents.",
+            },
+        },
+        "required": ["message"],
+    },
+)
+# [RCF:PROTECTED]
+async def broadcast_agents(ctx: ToolContext, message: str) -> dict:
+    q = select(Agent).where(Agent.user_id == ctx.user_id, Agent.status == "running")
+    if ctx.agent_id is not None:
+        q = q.where(Agent.id != ctx.agent_id)
+
+    target_agents = (await ctx.db.execute(q)).scalars().all()
+    if not target_agents:
+        return {"status": "skipped", "message": "No other active agents found to broadcast to."}
+
+    created_ids = []
+    agent_names = []
+    for ag in target_agents:
+        msg = AgentMessage(
+            user_id=ctx.user_id,
+            from_agent_id=ctx.agent_id,
+            to_agent_id=ag.id,
+            parent_session_id=ctx.session_id,
+            task=message,
+            status="pending",
+        )
+        ctx.db.add(msg)
+        created_ids.append(ag.id)
+        agent_names.append(ag.name)
+
+    await ctx.db.flush()
+
+    return {
+        "status": "success",
+        "broadcast_count": len(target_agents),
+        "target_agent_names": agent_names,
+    }
+
+
+# [RCF:PROTECTED]
+@tool(
+    name="delegate_to_agent",
+    description="Delegate a task to a specific agent by ID or role for asynchronous handling.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "agent_id": {"type": "string", "description": "Numeric target agent ID or role string."},
+            "task_description": {"type": "string", "description": "Detailed description of the task to delegate."},
+        },
+        "required": ["agent_id", "task_description"],
+    },
+)
+# [RCF:PROTECTED]
+async def delegate_to_agent(ctx: ToolContext, agent_id: str, task_description: str) -> dict:
+    return await delegate(ctx, target=str(agent_id), task=task_description)
+
+
+# [RCF:PROTECTED]
+@tool(
+    name="chat_with_agent",
+    description="Synchronously ask another agent a question by ID or role and get an immediate reply.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "agent_id": {"type": "string", "description": "Numeric target agent ID or role string."},
+            "message": {"type": "string", "description": "Message or question to send."},
+        },
+        "required": ["agent_id", "message"],
+    },
+)
+# [RCF:PROTECTED]
+async def chat_with_agent(ctx: ToolContext, agent_id: str, message: str) -> dict:
+    return await ask_agent(ctx, target=str(agent_id), question=message)

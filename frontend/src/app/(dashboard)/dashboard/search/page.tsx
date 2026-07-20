@@ -18,7 +18,14 @@ import {
   Layers,
   Zap,
   Shield,
+  Copy,
+  Check,
+  Trash2,
+  MessageSquare,
+  Bot,
+  X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { api } from "@/lib/api";
 
@@ -89,6 +96,17 @@ function SourceBadge({ source }: { source: string }) {
 }
 
 function ResultCard({ r }: { r: SearchResult }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyCitation = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const text = `[${r.title}](${r.link}) - ${r.snippet}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <a
       href={r.link}
@@ -126,11 +144,21 @@ function ResultCard({ r }: { r: SearchResult }) {
             </p>
           )}
         </div>
-        <ExternalLink
-          size={13}
-          className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ color: "var(--color-accent)" }}
-        />
+        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+          <button
+            type="button"
+            onClick={copyCitation}
+            title="Copy link and citation to clipboard"
+            className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-muted/60 text-muted-foreground hover:text-foreground"
+          >
+            {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+          </button>
+          <ExternalLink
+            size={13}
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ color: "var(--color-accent)" }}
+          />
+        </div>
       </div>
     </a>
   );
@@ -160,12 +188,14 @@ function EmptyState({ query }: { query: string }) {
 /* ── Main Page ───────────────────────────────────────────────────── */
 
 export default function SearchPage() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [draftQuery, setDraftQuery] = useState("");
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [synthesis, setSynthesis] = useState<SynthesizeResponse | null>(null);
   const [synthesisLoading, setSynthesisLoading] = useState(false);
   const [deepScrape, setDeepScrape] = useState(false);
+  const [synthCopied, setSynthCopied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("all");
@@ -180,6 +210,33 @@ export default function SearchPage() {
     const saved = JSON.parse(localStorage.getItem("aladdin_search_history") || "[]");
     setHistory(saved.slice(0, 6));
   }, []);
+
+  const deleteHistoryItem = (hToRemove: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = history.filter((h) => h !== hToRemove);
+    setHistory(updated);
+    localStorage.setItem("aladdin_search_history", JSON.stringify(updated));
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem("aladdin_search_history");
+  };
+
+  const sendToChat = () => {
+    if (!query) return;
+    const summaryText = synthesis?.synthesis || results?.results.slice(0, 3).map((r) => `- [${r.title}](${r.link}): ${r.snippet}`).join("\n") || "";
+    const initialPrompt = `Analyze web search results for "${query}":\n\n${summaryText}`;
+    sessionStorage.setItem("aladdin_pending_chat_prompt", initialPrompt);
+    router.push("/dashboard/chat");
+  };
+
+  const copySynthText = () => {
+    if (!synthesis?.synthesis) return;
+    navigator.clipboard.writeText(synthesis.synthesis);
+    setSynthCopied(true);
+    setTimeout(() => setSynthCopied(false), 2000);
+  };
 
   const doSearch = useCallback(async (q: string) => {
     if (!q.trim()) return;
@@ -353,24 +410,41 @@ export default function SearchPage() {
 
           {/* History chips (shown when no results yet) */}
           {!results && !loading && history.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-4">
-              <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--color-fg-muted)" }}>
-                <Clock size={11} /> Recent:
-              </span>
-              {history.map((h) => (
-                <button
-                  key={h}
-                  onClick={() => doSearch(h)}
-                  className="px-3 py-1 rounded-full text-[11px] border transition-all hover:border-[var(--color-accent)]"
-                  style={{
-                    background: "var(--color-surface)",
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-fg-muted)",
-                  }}
-                >
-                  {h}
-                </button>
-              ))}
+            <div className="flex items-center justify-between flex-wrap gap-2 mt-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1 text-[11px]" style={{ color: "var(--color-fg-muted)" }}>
+                  <Clock size={11} /> Recent:
+                </span>
+                {history.map((h) => (
+                  <div
+                    key={h}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] border transition-all hover:border-[var(--color-accent)]"
+                    style={{
+                      background: "var(--color-surface)",
+                      borderColor: "var(--color-border)",
+                      color: "var(--color-fg-muted)",
+                    }}
+                  >
+                    <button onClick={() => doSearch(h)} className="hover:underline">
+                      {h}
+                    </button>
+                    <button
+                      onClick={(e) => deleteHistoryItem(h, e)}
+                      title="Remove from history"
+                      className="ml-0.5 hover:text-red-400 opacity-60 hover:opacity-100 transition-opacity"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={clearHistory}
+                className="text-[10px] text-muted-foreground hover:text-red-400 flex items-center gap-1 transition-colors"
+                title="Clear all search history"
+              >
+                <Trash2 size={10} /> Clear history
+              </button>
             </div>
           )}
         </div>
@@ -415,14 +489,24 @@ export default function SearchPage() {
                   );
                 })}
               </div>
-              <span className="text-[11px]" style={{ color: "var(--color-fg-muted)" }}>
-                {results.total} results · {elapsed}ms
-                {Object.keys(results.errors).length > 0 && (
-                  <span className="ml-2 text-yellow-500">
-                    ⚠ {Object.keys(results.errors).join(", ")} failed
-                  </span>
-                )}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px]" style={{ color: "var(--color-fg-muted)" }}>
+                  {results.total} results · {elapsed}ms
+                  {Object.keys(results.errors).length > 0 && (
+                    <span className="ml-2 text-yellow-500">
+                      ⚠ {Object.keys(results.errors).join(", ")} failed
+                    </span>
+                  )}
+                </span>
+                <button
+                  onClick={sendToChat}
+                  title="Transfer query and search findings directly into Agent Chat"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border bg-indigo-500/10 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20 transition-all"
+                >
+                  <Bot size={12} />
+                  <span>Send to Agent</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -454,12 +538,34 @@ export default function SearchPage() {
                     </span>
                   )}
                 </div>
-                {synthesisLoading && (
-                  <div className="flex items-center gap-2 text-xs text-indigo-400 font-medium animate-pulse">
-                    <Loader2 size={13} className="animate-spin" />
-                    Synthesizing answer...
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {synthesis?.synthesis && (
+                    <>
+                      <button
+                        onClick={copySynthText}
+                        title="Copy AI Synthesis answer"
+                        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-surface border text-muted-foreground hover:text-foreground transition-all"
+                      >
+                        {synthCopied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                        <span>{synthCopied ? "Copied" : "Copy"}</span>
+                      </button>
+                      <button
+                        onClick={sendToChat}
+                        title="Discuss this synthesis with an AI Agent in Chat"
+                        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition-all shadow-sm"
+                      >
+                        <MessageSquare size={11} />
+                        <span>Discuss with Agent</span>
+                      </button>
+                    </>
+                  )}
+                  {synthesisLoading && (
+                    <div className="flex items-center gap-2 text-xs text-indigo-400 font-medium animate-pulse">
+                      <Loader2 size={13} className="animate-spin" />
+                      Synthesizing answer...
+                    </div>
+                  )}
+                </div>
               </div>
 
               {synthesisLoading && !synthesis && (

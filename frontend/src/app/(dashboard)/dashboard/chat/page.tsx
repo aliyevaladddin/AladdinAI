@@ -25,6 +25,8 @@ import {
   ThumbsDown,
   Play,
   Pause,
+  Download,
+  Search,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -253,6 +255,7 @@ interface Message {
 export default function ChatPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionQuery, setSessionQuery] = useState("");
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   // message_id -> "thumbs_up" | "thumbs_down": which reaction the user gave
@@ -360,6 +363,11 @@ export default function ChatPage() {
   useEffect(() => {
     api.get<Agent[]>("/agents").then(setAgents);
     loadSessions();
+    const pending = sessionStorage.getItem("aladdin_pending_chat_prompt");
+    if (pending) {
+      setInput(pending);
+      sessionStorage.removeItem("aladdin_pending_chat_prompt");
+    }
   }, []);
 
   useEffect(() => {
@@ -680,6 +688,50 @@ export default function ChatPage() {
   };
 
 
+  const exportChat = () => {
+    if (!messages.length) return;
+    const title = activeSession?.title || (isGeneralChat ? "General Chat" : "AladdinAI Chat");
+    const dateStr = new Date().toISOString().split("T")[0];
+    
+    let mdContent = `# ${title}\n*Exported on ${dateStr} from AladdinAI*\n\n---\n\n`;
+
+    messages.forEach((m, idx) => {
+      const sender = m.role === "user" ? "👤 **User**" : `🤖 **Assistant**${m.model ? ` (${m.model})` : ""}`;
+      mdContent += `### ${sender}\n\n`;
+      
+      if (m.thoughts && m.thoughts.length > 0) {
+        mdContent += `<details><summary>Thought Process</summary>\n\n`;
+        m.thoughts.forEach((t) => {
+          mdContent += `- ${t}\n`;
+        });
+        mdContent += `\n</details>\n\n`;
+      }
+      
+      mdContent += `${m.content}\n\n`;
+      
+      if (m.attachments && m.attachments.length > 0) {
+        mdContent += `**Attachments:**\n`;
+        m.attachments.forEach((att) => {
+          mdContent += `- [${att.filename}](${att.path})\n`;
+        });
+        mdContent += `\n`;
+      }
+      
+      mdContent += `---\n\n`;
+    });
+
+    const blob = new Blob([mdContent], { type: "text/markdown;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    link.setAttribute("download", `${safeTitle}_${dateStr}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const formatTime = (iso: string) => {
     const d = new Date(iso);
     const now = new Date();
@@ -696,7 +748,7 @@ export default function ChatPage() {
         className={`${sidebarOpen ? "w-64" : "w-0"
           } border-r border-border/50 flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden bg-muted/10`}
       >
-        <div className="p-4 border-b border-border/50">
+        <div className="p-4 border-b border-border/50 space-y-2">
           <Button
             size="sm"
             variant="ghost"
@@ -706,6 +758,26 @@ export default function ChatPage() {
             <Plus size={18} />
             <span className="text-sm">New chat</span>
           </Button>
+
+          {/* Quick Session Search */}
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={sessionQuery}
+              onChange={(e) => setSessionQuery(e.target.value)}
+              placeholder="Search chats..."
+              className="w-full pl-8 pr-7 py-1.5 text-xs bg-muted/40 border border-border/40 rounded-xl outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground transition-all"
+            />
+            {sessionQuery && (
+              <button
+                onClick={() => setSessionQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
@@ -723,32 +795,34 @@ export default function ChatPage() {
           {sessions.length > 0 && (
             <div className="pt-4 pb-2">
               <p className="text-[10px] font-bold text-muted-foreground px-3 py-1 uppercase tracking-wider">
-                Recent
+                Recent ({sessions.filter((s) => s.title.toLowerCase().includes(sessionQuery.toLowerCase())).length})
               </p>
             </div>
           )}
 
-          {sessions.map((s) => (
-            <div
-              key={s.id}
-              onClick={() => openSession(s)}
-              className={`w-full text-left px-3 py-2.5 rounded-xl transition-all group cursor-pointer relative ${activeSession?.id === s.id
-                  ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
-                  : "hover:bg-muted/50 border border-transparent"
-                }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm truncate flex-1">{s.title}</p>
-                <button
-                  onClick={(e) => deleteSession(s.id, e)}
-                  className="p-1.5 rounded-lg hover:bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                  aria-label="Delete chat"
-                >
-                  <Trash2 size={14} />
-                </button>
+          {sessions
+            .filter((s) => s.title.toLowerCase().includes(sessionQuery.toLowerCase()))
+            .map((s) => (
+              <div
+                key={s.id}
+                onClick={() => openSession(s)}
+                className={`w-full text-left px-3 py-2.5 rounded-xl transition-all group cursor-pointer relative ${activeSession?.id === s.id
+                    ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
+                    : "hover:bg-muted/50 border border-transparent"
+                  }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm truncate flex-1">{s.title}</p>
+                  <button
+                    onClick={(e) => deleteSession(s.id, e)}
+                    className="p-1.5 rounded-lg hover:bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    aria-label="Delete chat"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </div>
       </aside>
 
@@ -774,6 +848,19 @@ export default function ChatPage() {
               </span>
             </div>
           </div>
+
+          {messages.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={exportChat}
+              className="h-8 text-xs gap-1.5 rounded-lg border-border/60 hover:bg-muted/80 transition-all"
+              title="Export conversation history to Markdown"
+            >
+              <Download size={13} />
+              <span>Export Chat</span>
+            </Button>
+          )}
         </header>
 
         {!activeSession && !isGeneralChat && !composingNew ? (
@@ -947,6 +1034,99 @@ export default function ChatPage() {
                                 {msg.content}
                               </ReactMarkdown>
                             </div>
+                          )}
+
+                          {/* Autonomous Execution Plan Stepper */}
+                          {msg.role === "assistant" && msg.content && (
+                            (() => {
+                              const text = msg.content;
+                              const planMatch = text.match(/(?:🎬\s*Autonomous Execution Plan|Autonomous Execution Plan|План выполнения:?|План автономного выполнения:?)[\s\n]*([\s\S]*?)(?=\n\n(?:[#💡💡]|$)|$)/i);
+                              if (!planMatch) return null;
+                              const rawSteps = planMatch[1].split("\n").map(l => l.trim()).filter(l => l.length > 0 && /^[-*•\d.✓✅🎬]/.test(l));
+                              if (rawSteps.length === 0) return null;
+                              return (
+                                <div className="mt-3 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2">
+                                  <p className="text-[12px] font-semibold text-primary flex items-center gap-1.5">
+                                    <Zap size={14} className="animate-pulse" />
+                                    <span>Автономный план выполнения (Autonomous Execution Plan):</span>
+                                  </p>
+                                  <div className="space-y-1.5 text-xs text-foreground/90">
+                                    {rawSteps.map((step, idx) => {
+                                      const isDone = /✓|✅|готово|completed|done/i.test(step);
+                                      return (
+                                        <div key={idx} className="flex items-center gap-2">
+                                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${isDone ? "bg-emerald-500 text-white" : "bg-primary/20 text-primary"}`}>
+                                            {isDone ? "✓" : idx + 1}
+                                          </span>
+                                          <span className={isDone ? "line-through text-muted-foreground" : "font-medium"}>
+                                            {step.replace(/^[-*•\d.\s✓✅]+/, "")}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })()
+                          )}
+
+                          {/* Interactive Proactive Suggestion Chips */}
+                          {msg.role === "assistant" && msg.content && (
+                            (() => {
+                              const text = msg.content;
+                              const headerMatch = text.match(/(?:💡\s*Proactive Suggestions|Proactive Suggestions|Что дальше\??(?:\s*Может:?)?|Что предложишь\??|Варианты:?|Дальнейшие шаги:?|Следующие шаги:?)[\s\n]*([\s\S]*?)$/i);
+                              let targetBlock = headerMatch ? headerMatch[1] : "";
+                              
+                              if (!targetBlock) {
+                                const parts = text.trim().split(/\n\n+/);
+                                const lastPart = parts[parts.length - 1];
+                                if (lastPart && /^[\s]*[-*•\d.🔧🧪📝💡🚀📌❓👉]/m.test(lastPart)) {
+                                  targetBlock = lastPart;
+                                }
+                              }
+
+                              if (!targetBlock) return null;
+
+                              const rawLines = targetBlock.split("\n");
+                              const suggestions: string[] = [];
+                              for (const line of rawLines) {
+                                const trimmed = line.trim();
+                                if (!trimmed || trimmed.toLowerCase().startsWith("что дальше")) continue;
+                                // Strip leading bullets, numbers, and emojis
+                                const cleaned = trimmed
+                                  .replace(/^[-*•\d.\s]+/, "")
+                                  .replace(/^(?:🔧|🧪|📝|💡|🚀|📌|❓|👉|✅|🤝)\s*/, "")
+                                  .trim();
+                                if (cleaned.length >= 3 && cleaned.length < 120) {
+                                  suggestions.push(cleaned);
+                                }
+                              }
+
+                              if (suggestions.length === 0) return null;
+                              return (
+                                <div className="mt-3 pt-2.5 border-t border-border/40 space-y-2">
+                                  <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                                    <Sparkles size={12} className="text-primary" />
+                                    <span>Предложенные действия (нажми для выбора):</span>
+                                  </p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {suggestions.map((sug, sIdx) => (
+                                      <button
+                                        key={sIdx}
+                                        onClick={() => {
+                                          setInput(sug);
+                                          textareaRef.current?.focus();
+                                        }}
+                                        className="text-xs px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground transition-all flex items-center gap-1.5 text-left font-medium shadow-sm hover:scale-[1.01] active:scale-[0.99]"
+                                      >
+                                        <Sparkles size={11} className="text-primary shrink-0 opacity-70" />
+                                        <span>{sug}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()
                           )}
                         </div>
                         )}
