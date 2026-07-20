@@ -43,6 +43,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Golden set + base-vs-forged harness (self-forging layers 2-3) (#410) ([14ec211](https://github.com/aliyevaladddin/AladdinAI/commit/14ec21106a937bd38b84aaf9dd23c406adf952a4))
 
+- Integrate native meta-search and agent tool calling capabilities (#422) ([7b2109d](https://github.com/aliyevaladddin/AladdinAI/commit/7b2109dc16853a0db7cbf300679c3f1f3725f485))
+
 
 ### Maintenance
 
@@ -63,6 +65,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#407) ([3f653a7](https://github.com/aliyevaladddin/AladdinAI/commit/3f653a72fd81f9e41a909dfd8432c02d041da9c6))
 
 - Update changelog [skip ci] (#411) ([b0d5134](https://github.com/aliyevaladddin/AladdinAI/commit/b0d51345582bf94ebee52743ec068f99660d7b64))
+
+- Update changelog [skip ci] (#420) ([46276c8](https://github.com/aliyevaladddin/AladdinAI/commit/46276c88dc183e3cf03a5f382f6f32c29f1d55d8))
 
 ## [v2.2.1] - 2026-07-09
 
