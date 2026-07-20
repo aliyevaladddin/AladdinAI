@@ -24,6 +24,7 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 | [0008](0008-orders-status-history-in-activity-metadata.md) | Orders as a Distinct Entity; Status History in Activity Metadata | ✅ Accepted | 2026-07-14 |
 | [0009](0009-golden-set-and-harness.md) | Golden Set + Evaluation Harness (Self-Forging Layers 2 & 3) | ✅ Accepted | 2026-07-14 |
 | [0010](0010-native-agent-meta-search.md) | Native Agent Meta-Search Engine & Universal Tool Discovery | ✅ Accepted | 2026-07-20 |
+| [0011](0011-multi-agent-swarm-and-tools.md) | Multi-Agent Swarm Orchestration & Autonomous Tools Architecture | ✅ Accepted | 2026-07-20 |
 
 ## Status Definitions
 
