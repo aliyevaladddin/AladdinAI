@@ -34,6 +34,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#424) ([8af800d](https://github.com/aliyevaladddin/AladdinAI/commit/8af800d3ceca7e2913a56fac16e70f58800cf774))
 
+- Update API documentation [skip ci] (#427) ([e9177e2](https://github.com/aliyevaladddin/AladdinAI/commit/e9177e224e2ab0c85debe2d84efa062923e2e09c))
+
 
 ### Features
 
@@ -73,6 +75,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#420) ([46276c8](https://github.com/aliyevaladddin/AladdinAI/commit/46276c88dc183e3cf03a5f382f6f32c29f1d55d8))
 
 - Update changelog [skip ci] (#423) ([66589b8](https://github.com/aliyevaladddin/AladdinAI/commit/66589b8e0e495d51404fa263e3e4bbed2804d64c))
+
+- Update changelog [skip ci] (#426) ([3595de8](https://github.com/aliyevaladddin/AladdinAI/commit/3595de80e680ec970e1e5e307ed925ef3e547e08))
 
 ## [v2.2.1] - 2026-07-09
 
