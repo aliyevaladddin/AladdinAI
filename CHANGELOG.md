@@ -4,6 +4,22 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+## [v2.2.2] - 2026-07-20
+
+### Features
+
+- Multi-Agent Swarm Orchestration tools (`create_agent`, `delegate_to_agent`, `chat_with_agent`, `broadcast_agents`, `delete_agent`)
+- Isolated Python 3 execution sandbox (`run_python_code`)
+- Generic HTTP API tools (`http_get`, `http_post`) and IMAP email reader (`read_emails`)
+- Autonomous Task Execution Stepper UI component in Chat Page
+- Point-in-time task reminder trigger tool (`create_reminder`)
+
+### Security & Maintenance
+
+- Address Dependabot vulnerabilities #124 (`brace-expansion`) and #125 (`js-yaml`) in frontend package overrides
+- Bump version to 2.2.2 across packages and documentation
+
+
 ### Bug Fixes
 
 - Merge two heads; guard against schema drift (#406) ([fae5de0](https://github.com/aliyevaladddin/AladdinAI/commit/fae5de0f93a7230ae26119bd311113d8e014d5a3))
