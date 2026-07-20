@@ -87,11 +87,10 @@ function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) {
 
   return (
     <div
-      className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl max-w-[280px] shadow-lg ${
-        isUser
+      className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl max-w-[280px] shadow-lg ${isUser
           ? "bg-white/15 backdrop-blur-md border border-white/20"
           : "bg-gradient-to-r from-violet-500/10 via-blue-500/10 to-cyan-500/10 border border-violet-500/20 backdrop-blur-sm"
-      }`}
+        }`}
     >
       <audio
         ref={audioRef}
@@ -105,11 +104,10 @@ function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) {
       {/* Play / Pause button with glow */}
       <button
         onClick={toggle}
-        className={`relative w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 hover:scale-110 active:scale-95 ${
-          isUser
+        className={`relative w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 hover:scale-110 active:scale-95 ${isUser
             ? "bg-white/90 text-violet-600 shadow-[0_0_16px_rgba(255,255,255,0.4)]"
             : "bg-gradient-to-br from-violet-500 to-blue-600 text-white shadow-[0_0_16px_rgba(139,92,246,0.5)]"
-        }`}
+          }`}
         aria-label={playing ? "Pause" : "Play"}
       >
         {playing ? (
@@ -119,9 +117,8 @@ function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) {
         )}
         {/* Ripple on play */}
         {playing && (
-          <span className={`absolute inset-0 rounded-full animate-ping opacity-30 ${
-            isUser ? "bg-white" : "bg-violet-400"
-          }`} />
+          <span className={`absolute inset-0 rounded-full animate-ping opacity-30 ${isUser ? "bg-white" : "bg-violet-400"
+            }`} />
         )}
       </button>
 
@@ -139,15 +136,14 @@ function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) {
             return (
               <div
                 key={i}
-                className={`rounded-full w-[2.5px] flex-shrink-0 transition-all duration-150 ${
-                  isPast
+                className={`rounded-full w-[2.5px] flex-shrink-0 transition-all duration-150 ${isPast
                     ? isUser
                       ? "bg-white"
                       : "bg-violet-400"
                     : isUser
-                    ? "bg-white/35"
-                    : "bg-muted-foreground/25"
-                }`}
+                      ? "bg-white/35"
+                      : "bg-muted-foreground/25"
+                  }`}
                 style={{
                   height: `${h}px`,
                   transform: isNearCurrent ? "scaleY(1.3)" : "scaleY(1)",
@@ -159,13 +155,11 @@ function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) {
         </div>
 
         {/* Time row */}
-        <div className={`flex items-center justify-between text-[10px] font-mono ${
-          isUser ? "text-white/70" : "text-muted-foreground"
-        }`}>
+        <div className={`flex items-center justify-between text-[10px] font-mono ${isUser ? "text-white/70" : "text-muted-foreground"
+          }`}>
           <span>{fmt(currentTime)}</span>
-          <span className={`text-[9px] uppercase tracking-wide font-semibold ${
-            isUser ? "text-white/50" : "text-violet-400/70"
-          }`}>Voice</span>
+          <span className={`text-[9px] uppercase tracking-wide font-semibold ${isUser ? "text-white/50" : "text-violet-400/70"
+            }`}>Voice</span>
           <span>{fmt(duration || 0)}</span>
         </div>
       </div>
@@ -600,13 +594,13 @@ export default function ChatPage() {
                   prev.map((m, idx) =>
                     idx === prev.length - 1
                       ? {
-                          ...m,
-                          id: event.message_id,
-                          content: event.response,
-                          model: event.model,
-                          attachments: event.attachments ?? null,
-                          thoughts: activeThoughts.length > 0 ? [...activeThoughts] : m.thoughts,
-                        }
+                        ...m,
+                        id: event.message_id,
+                        content: event.response,
+                        model: event.model,
+                        attachments: event.attachments ?? null,
+                        thoughts: activeThoughts.length > 0 ? [...activeThoughts] : m.thoughts,
+                      }
                       : m
                   )
                 );
@@ -693,13 +687,13 @@ export default function ChatPage() {
     if (!messages.length) return;
     const title = activeSession?.title || (isGeneralChat ? "General Chat" : "AladdinAI Chat");
     const dateStr = new Date().toISOString().split("T")[0];
-    
+
     let mdContent = `# ${title}\n*Exported on ${dateStr} from AladdinAI*\n\n---\n\n`;
 
     messages.forEach((m, idx) => {
       const sender = m.role === "user" ? "👤 **User**" : `🤖 **Assistant**${m.model ? ` (${m.model})` : ""}`;
       mdContent += `### ${sender}\n\n`;
-      
+
       if (m.thoughts && m.thoughts.length > 0) {
         mdContent += `<details><summary>Thought Process</summary>\n\n`;
         m.thoughts.forEach((t) => {
@@ -707,9 +701,9 @@ export default function ChatPage() {
         });
         mdContent += `\n</details>\n\n`;
       }
-      
+
       mdContent += `${m.content}\n\n`;
-      
+
       if (m.attachments && m.attachments.length > 0) {
         mdContent += `**Attachments:**\n`;
         m.attachments.forEach((att) => {
@@ -717,7 +711,7 @@ export default function ChatPage() {
         });
         mdContent += `\n`;
       }
-      
+
       mdContent += `---\n\n`;
     });
 
@@ -785,8 +779,8 @@ export default function ChatPage() {
           <button
             onClick={openGeneralChat}
             className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all text-sm ${isGeneralChat
-                ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
-                : "hover:bg-muted/50"
+              ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
+              : "hover:bg-muted/50"
               }`}
           >
             <Globe size={16} className="shrink-0 opacity-70" />
@@ -808,8 +802,8 @@ export default function ChatPage() {
                 key={s.id}
                 onClick={() => openSession(s)}
                 className={`w-full text-left px-3 py-2.5 rounded-xl transition-all group cursor-pointer relative ${activeSession?.id === s.id
-                    ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
-                    : "hover:bg-muted/50 border border-transparent"
+                  ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
+                  : "hover:bg-muted/50 border border-transparent"
                   }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -952,184 +946,184 @@ export default function ChatPage() {
 
                         {/* Content bubble — only shown if there's text OR non-audio attachments */}
                         {(msg.content || (msg.attachments && msg.attachments.some(a => a.kind !== "audio" && !a.mime?.startsWith("audio/")))) && (
-                        <div
-                          className={`rounded-2xl px-4 py-3 ${msg.role === "user"
+                          <div
+                            className={`rounded-2xl px-4 py-3 ${msg.role === "user"
                               ? "bg-gradient-to-br from-blue-500 to-violet-600 text-white shadow-md"
                               : "bg-muted/50 border border-border/50"
-                            }`}
-                        >
-                          {msg.attachments && msg.attachments.some(a => a.kind !== "audio" && !a.mime?.startsWith("audio/")) && (
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {msg.attachments
-                                .filter(a => a.kind !== "audio" && !a.mime?.startsWith("audio/"))
-                                .map((att) => (
-                                  <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
-                                ))}
-                            </div>
-                          )}
-                          {msg.role === "assistant" && msg.thoughts && msg.thoughts.length > 0 && (
-                            <details className="mb-3 rounded-xl bg-background/60 dark:bg-background/40 border border-border/60 text-xs overflow-hidden group">
-                              <summary className="px-3 py-2 cursor-pointer font-mono text-[11px] text-muted-foreground hover:text-foreground flex items-center justify-between select-none">
-                                <span className="flex items-center gap-1.5 font-medium">
-                                  <Sparkles size={13} className="text-primary" />
-                                  Thought Process & Tool Execution ({msg.thoughts.length} step{msg.thoughts.length > 1 ? "s" : ""})
-                                </span>
-                                <span className="text-[10px] text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
-                              </summary>
-                              <div className="px-3.5 pb-2.5 pt-1.5 space-y-1 font-mono border-t border-border/40 bg-background/50 text-[11px]">
-                                {msg.thoughts.map((t, idx) => (
-                                  <div key={idx} className="flex items-start gap-1.5 text-muted-foreground">
-                                    <span className="text-emerald-500 font-bold">✓</span>
-                                    <span>{t}</span>
-                                  </div>
-                                ))}
+                              }`}
+                          >
+                            {msg.attachments && msg.attachments.some(a => a.kind !== "audio" && !a.mime?.startsWith("audio/")) && (
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {msg.attachments
+                                  .filter(a => a.kind !== "audio" && !a.mime?.startsWith("audio/"))
+                                  .map((att) => (
+                                    <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
+                                  ))}
                               </div>
-                            </details>
-                          )}
-                          {msg.content && (
-                            <div className={`prose prose-sm max-w-none ${msg.role === "user"
+                            )}
+                            {msg.role === "assistant" && msg.thoughts && msg.thoughts.length > 0 && (
+                              <details className="mb-3 rounded-xl bg-background/60 dark:bg-background/40 border border-border/60 text-xs overflow-hidden group">
+                                <summary className="px-3 py-2 cursor-pointer font-mono text-[11px] text-muted-foreground hover:text-foreground flex items-center justify-between select-none">
+                                  <span className="flex items-center gap-1.5 font-medium">
+                                    <Sparkles size={13} className="text-primary" />
+                                    Thought Process & Tool Execution ({msg.thoughts.length} step{msg.thoughts.length > 1 ? "s" : ""})
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
+                                </summary>
+                                <div className="px-3.5 pb-2.5 pt-1.5 space-y-1 font-mono border-t border-border/40 bg-background/50 text-[11px]">
+                                  {msg.thoughts.map((t, idx) => (
+                                    <div key={idx} className="flex items-start gap-1.5 text-muted-foreground">
+                                      <span className="text-emerald-500 font-bold">✓</span>
+                                      <span>{t}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            )}
+                            {msg.content && (
+                              <div className={`prose prose-sm max-w-none ${msg.role === "user"
                                 ? "prose-invert prose-headings:text-white prose-p:text-white/95 prose-strong:text-white prose-code:text-white/90"
                                 : "dark:prose-invert"
-                              } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
-                              <ReactMarkdown
-                                components={{
-                                  code({ node, className, children, ...props }) {
-                                    const match = /language-(\w+)/.exec(className || "");
-                                    const codeString = String(children).replace(/\n$/, "");
-                                    const isCopied = copiedCode === codeString;
-                                    // Блочный код имеет language-класс; без него — инлайн
-                                    const isBlock = Boolean(match);
+                                } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
+                                <ReactMarkdown
+                                  components={{
+                                    code({ node, className, children, ...props }) {
+                                      const match = /language-(\w+)/.exec(className || "");
+                                      const codeString = String(children).replace(/\n$/, "");
+                                      const isCopied = copiedCode === codeString;
+                                      // Блочный код имеет language-класс; без него — инлайн
+                                      const isBlock = Boolean(match);
 
-                                    return isBlock ? (
-                                      <div className="relative group my-3 not-prose">
-                                        <div className="absolute top-3 right-3 z-10">
-                                          <button
-                                            onClick={() => copyToClipboard(codeString)}
-                                            className="p-2 rounded-lg bg-background/90 hover:bg-background text-foreground transition-all shadow-sm border border-border/50"
-                                            aria-label="Copy code"
+                                      return isBlock ? (
+                                        <div className="relative group my-3 not-prose">
+                                          <div className="absolute top-3 right-3 z-10">
+                                            <button
+                                              onClick={() => copyToClipboard(codeString)}
+                                              className="p-2 rounded-lg bg-background/90 hover:bg-background text-foreground transition-all shadow-sm border border-border/50"
+                                              aria-label="Copy code"
+                                            >
+                                              {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                                            </button>
+                                          </div>
+                                          <SyntaxHighlighter
+                                            style={oneDark}
+                                            language={match![1]}
+                                            PreTag="div"
+                                            className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
+                                            {...(props as object)}
                                           >
-                                            {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                                          </button>
+                                            {codeString}
+                                          </SyntaxHighlighter>
                                         </div>
-                                        <SyntaxHighlighter
-                                          style={oneDark}
-                                          language={match![1]}
-                                          PreTag="div"
-                                          className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
-                                          {...(props as object)}
-                                        >
-                                          {codeString}
-                                        </SyntaxHighlighter>
-                                      </div>
-                                    ) : (
-                                      <code className={`${msg.role === "user"
+                                      ) : (
+                                        <code className={`${msg.role === "user"
                                           ? "bg-white/20 text-white"
                                           : "bg-muted/80 dark:bg-muted/60 text-foreground"
-                                        } px-1.5 py-0.5 rounded text-[13px] font-mono`} {...props}>
-                                        {children}
-                                      </code>
-                                    );
-                                  },
-                                }}
-                              >
-                                {msg.content}
-                              </ReactMarkdown>
-                            </div>
-                          )}
-
-                          {/* Autonomous Execution Plan Stepper */}
-                          {msg.role === "assistant" && msg.content && (
-                            (() => {
-                              const text = msg.content;
-                              const planMatch = text.match(/(?:🎬\s*Autonomous Execution Plan|Autonomous Execution Plan|План выполнения:?|План автономного выполнения:?)[\s\n]*([\s\S]*?)(?=\n\n(?:[#💡💡]|$)|$)/i);
-                              if (!planMatch) return null;
-                              const rawSteps = planMatch[1].split("\n").map(l => l.trim()).filter(l => l.length > 0 && /^[-*•\d.✓✅🎬]/.test(l));
-                              if (rawSteps.length === 0) return null;
-                              return (
-                                <div className="mt-3 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2">
-                                  <p className="text-[12px] font-semibold text-primary flex items-center gap-1.5">
-                                    <Zap size={14} className="animate-pulse" />
-                                    <span>Автономный план выполнения (Autonomous Execution Plan):</span>
-                                  </p>
-                                  <div className="space-y-1.5 text-xs text-foreground/90">
-                                    {rawSteps.map((step, idx) => {
-                                      const isDone = /✓|✅|готово|completed|done/i.test(step);
-                                      return (
-                                        <div key={idx} className="flex items-center gap-2">
-                                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${isDone ? "bg-emerald-500 text-white" : "bg-primary/20 text-primary"}`}>
-                                            {isDone ? "✓" : idx + 1}
-                                          </span>
-                                          <span className={isDone ? "line-through text-muted-foreground" : "font-medium"}>
-                                            {step.replace(/^[-*•\d.\s✓✅]+/, "")}
-                                          </span>
-                                        </div>
+                                          } px-1.5 py-0.5 rounded text-[13px] font-mono`} {...props}>
+                                          {children}
+                                        </code>
                                       );
-                                    })}
+                                    },
+                                  }}
+                                >
+                                  {msg.content}
+                                </ReactMarkdown>
+                              </div>
+                            )}
+
+                            {/* Autonomous Execution Plan Stepper */}
+                            {msg.role === "assistant" && msg.content && (
+                              (() => {
+                                const text = msg.content;
+                                const planMatch = text.match(/(?:🎬\s*Autonomous Execution Plan|Autonomous Execution Plan|План выполнения:?|План автономного выполнения:?)[\s\n]*([\s\S]*?)(?=\n\n(?:[#💡💡]|$)|$)/i);
+                                if (!planMatch) return null;
+                                const rawSteps = planMatch[1].split("\n").map(l => l.trim()).filter(l => l.length > 0 && /^[-*•\d.✓✅🎬]/.test(l));
+                                if (rawSteps.length === 0) return null;
+                                return (
+                                  <div className="mt-3 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2">
+                                    <p className="text-[12px] font-semibold text-primary flex items-center gap-1.5">
+                                      <Zap size={14} className="animate-pulse" />
+                                      <span> (Autonomous Execution Plan):</span>
+                                    </p>
+                                    <div className="space-y-1.5 text-xs text-foreground/90">
+                                      {rawSteps.map((step, idx) => {
+                                        const isDone = /✓|✅|completed|done/i.test(step);
+                                        return (
+                                          <div key={idx} className="flex items-center gap-2">
+                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${isDone ? "bg-emerald-500 text-white" : "bg-primary/20 text-primary"}`}>
+                                              {isDone ? "✓" : idx + 1}
+                                            </span>
+                                            <span className={isDone ? "line-through text-muted-foreground" : "font-medium"}>
+                                              {step.replace(/^[-*•\d.\s✓✅]+/, "")}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })()
-                          )}
+                                );
+                              })()
+                            )}
 
-                          {/* Interactive Proactive Suggestion Chips */}
-                          {msg.role === "assistant" && msg.content && (
-                            (() => {
-                              const text = msg.content;
-                              const headerMatch = text.match(/(?:💡\s*Proactive Suggestions|Proactive Suggestions|Что дальше\??(?:\s*Может:?)?|Что предложишь\??|Варианты:?|Дальнейшие шаги:?|Следующие шаги:?)[\s\n]*([\s\S]*?)$/i);
-                              let targetBlock = headerMatch ? headerMatch[1] : "";
-                              
-                              if (!targetBlock) {
-                                const parts = text.trim().split(/\n\n+/);
-                                const lastPart = parts[parts.length - 1];
-                                if (lastPart && /^[\s]*[-*•\d.🔧🧪📝💡🚀📌❓👉]/m.test(lastPart)) {
-                                  targetBlock = lastPart;
+                            {/* Interactive Proactive Suggestion Chips */}
+                            {msg.role === "assistant" && msg.content && (
+                              (() => {
+                                const text = msg.content;
+                                const headerMatch = text.match(/(?:💡\s*Proactive Suggestions|Proactive Suggestions|Что дальше\??(?:\s*Может:?)?|Что предложишь\??|Варианты:?|Дальнейшие шаги:?|Следующие шаги:?)[\s\n]*([\s\S]*?)$/i);
+                                let targetBlock = headerMatch ? headerMatch[1] : "";
+
+                                if (!targetBlock) {
+                                  const parts = text.trim().split(/\n\n+/);
+                                  const lastPart = parts[parts.length - 1];
+                                  if (lastPart && /^[\s]*[-*•\d.🔧🧪📝💡🚀📌❓👉]/m.test(lastPart)) {
+                                    targetBlock = lastPart;
+                                  }
                                 }
-                              }
 
-                              if (!targetBlock) return null;
+                                if (!targetBlock) return null;
 
-                              const rawLines = targetBlock.split("\n");
-                              const suggestions: string[] = [];
-                              for (const line of rawLines) {
-                                const trimmed = line.trim();
-                                if (!trimmed || trimmed.toLowerCase().startsWith("что дальше")) continue;
-                                // Strip leading bullets, numbers, and emojis
-                                const cleaned = trimmed
-                                  .replace(/^[-*•\d.\s]+/, "")
-                                  .replace(/^(?:🔧|🧪|📝|💡|🚀|📌|❓|👉|✅|🤝)\s*/, "")
-                                  .trim();
-                                if (cleaned.length >= 3 && cleaned.length < 120) {
-                                  suggestions.push(cleaned);
+                                const rawLines = targetBlock.split("\n");
+                                const suggestions: string[] = [];
+                                for (const line of rawLines) {
+                                  const trimmed = line.trim();
+                                  if (!trimmed || trimmed.toLowerCase().startsWith("что дальше")) continue;
+                                  // Strip leading bullets, numbers, and emojis
+                                  const cleaned = trimmed
+                                    .replace(/^[-*•\d.\s]+/, "")
+                                    .replace(/^(?:🔧|🧪|📝|💡|🚀|📌|❓|👉|✅|🤝)\s*/, "")
+                                    .trim();
+                                  if (cleaned.length >= 3 && cleaned.length < 120) {
+                                    suggestions.push(cleaned);
+                                  }
                                 }
-                              }
 
-                              if (suggestions.length === 0) return null;
-                              return (
-                                <div className="mt-3 pt-2.5 border-t border-border/40 space-y-2">
-                                  <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
-                                    <Sparkles size={12} className="text-primary" />
-                                    <span>Suggested Actions (click to select):</span>
-                                  </p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {suggestions.map((sug, sIdx) => (
-                                      <button
-                                        key={sIdx}
-                                        onClick={() => {
-                                          setInput(sug);
-                                          textareaRef.current?.focus();
-                                        }}
-                                        className="text-xs px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground transition-all flex items-center gap-1.5 text-left font-medium shadow-sm hover:scale-[1.01] active:scale-[0.99]"
-                                      >
-                                        <Sparkles size={11} className="text-primary shrink-0 opacity-70" />
-                                        <span>{sug}</span>
-                                      </button>
-                                    ))}
+                                if (suggestions.length === 0) return null;
+                                return (
+                                  <div className="mt-3 pt-2.5 border-t border-border/40 space-y-2">
+                                    <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                                      <Sparkles size={12} className="text-primary" />
+                                      <span>Suggested Actions (click to select):</span>
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {suggestions.map((sug, sIdx) => (
+                                        <button
+                                          key={sIdx}
+                                          onClick={() => {
+                                            setInput(sug);
+                                            textareaRef.current?.focus();
+                                          }}
+                                          className="text-xs px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground transition-all flex items-center gap-1.5 text-left font-medium shadow-sm hover:scale-[1.01] active:scale-[0.99]"
+                                        >
+                                          <Sparkles size={11} className="text-primary shrink-0 opacity-70" />
+                                          <span>{sug}</span>
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })()
-                          )}
-                        </div>
+                                );
+                              })()
+                            )}
+                          </div>
                         )}
 
                         {/* Feedback — the strong training signal for the self-forging loop */}
@@ -1166,7 +1160,7 @@ export default function ChatPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xs font-semibold text-foreground">AladdinAI</span>
                       </div>
-                      
+
                       <div className="rounded-2xl p-4 bg-muted/30 border border-border/50 max-w-xl space-y-2 text-xs font-mono">
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold border-b border-border/40 pb-1.5 mb-1.5 flex items-center justify-between">
                           <span>Agent Thought Process</span>
@@ -1229,11 +1223,10 @@ export default function ChatPage() {
                     <button
                       type="button"
                       onClick={() => setVoiceReply(!voiceReply)}
-                      className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
-                        voiceReply
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${voiceReply
                           ? "bg-primary/10 border-primary/30 text-primary font-medium shadow-sm"
                           : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60"
-                      }`}
+                        }`}
                     >
                       {voiceReply ? <Volume2 size={13} className="animate-bounce" /> : <VolumeX size={13} />}
                       <span>Voice Reply {voiceReply ? "ON" : "OFF"}</span>
@@ -1292,11 +1285,10 @@ export default function ChatPage() {
                         onClick={isRecording ? stopRecording : startRecording}
                         variant="ghost"
                         size="icon"
-                        className={`rounded-xl w-10 h-10 shrink-0 transition-all ${
-                          isRecording
+                        className={`rounded-xl w-10 h-10 shrink-0 transition-all ${isRecording
                             ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
                             : "hover:bg-muted/80 text-muted-foreground hover:text-foreground"
-                        }`}
+                          }`}
                         aria-label={isRecording ? "Stop recording" : "Record voice"}
                       >
                         {isRecording ? <Square size={16} /> : <Mic size={18} />}
