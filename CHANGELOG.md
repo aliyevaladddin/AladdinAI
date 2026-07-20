@@ -100,6 +100,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump axios from 1.17.0 to 1.18.1 in /frontend (#437) ([a817d2a](https://github.com/aliyevaladddin/AladdinAI/commit/a817d2aacb402a5553d68143bcf850caf13f3ad2))
 
+- Update changelog [skip ci] (#438) ([4dd21fc](https://github.com/aliyevaladddin/AladdinAI/commit/4dd21fc39d74c66b3136067dd7030f61904d30a6))
+
+- Update dependency overrides in package.json ([dd6370f](https://github.com/aliyevaladddin/AladdinAI/commit/dd6370f02f992e0e0dadc51c4dcdfcd0698f8b74))
+
 ## [v2.2.1] - 2026-07-09
 
 ### Dependencies
