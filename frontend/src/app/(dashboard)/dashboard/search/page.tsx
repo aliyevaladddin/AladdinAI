@@ -66,18 +66,10 @@ function ResultCard({ r }: { r: SearchResult }) {
       href={r.link}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block rounded-xl p-4 border transition-all duration-200 hover:shadow-md"
+      className="group block rounded-xl p-4 border transition-all duration-200 hover:shadow-md hover:border-[var(--color-accent)] hover:bg-[var(--color-surface-2)]"
       style={{
         background: "var(--color-surface)",
         borderColor: "var(--color-border)",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--color-accent)";
-        (e.currentTarget as HTMLElement).style.background = "var(--color-surface-2)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.borderColor = "var(--color-border)";
-        (e.currentTarget as HTMLElement).style.background = "var(--color-surface)";
       }}
     >
       <div className="flex items-start justify-between gap-3">
