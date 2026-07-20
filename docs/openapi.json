@@ -7452,6 +7452,98 @@
         ]
       }
     },
+    "/api/websearch": {
+      "get": {
+        "tags": [
+          "websearch"
+        ],
+        "summary": "Web Search",
+        "description": "Query public web sources and return merged + per-source results.",
+        "operationId": "web_search_api_websearch_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300,
+              "title": "Q"
+            }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 10,
+              "default": "en",
+              "title": "Lang"
+            }
+          },
+          {
+            "name": "engines",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated engine list (duckduckgo,wikipedia). Defaults to all.",
+              "title": "Engines"
+            },
+            "description": "Comma-separated engine list (duckduckgo,wikipedia). Defaults to all."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 25,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebSearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -11438,6 +11530,79 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WebSearchResponse": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/WebSearchResult"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "by_source": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/WebSearchResult"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "By Source"
+          },
+          "errors": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Errors"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "results",
+          "by_source",
+          "errors",
+          "total"
+        ],
+        "title": "WebSearchResponse"
+      },
+      "WebSearchResult": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "link": {
+            "type": "string",
+            "title": "Link"
+          },
+          "snippet": {
+            "type": "string",
+            "title": "Snippet"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "link",
+          "snippet",
+          "source"
+        ],
+        "title": "WebSearchResult"
       }
     },
     "securitySchemes": {
