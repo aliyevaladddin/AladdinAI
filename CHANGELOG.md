@@ -36,6 +36,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#427) ([e9177e2](https://github.com/aliyevaladddin/AladdinAI/commit/e9177e224e2ab0c85debe2d84efa062923e2e09c))
 
+- Update API documentation [skip ci] (#434) ([7ba7504](https://github.com/aliyevaladddin/AladdinAI/commit/7ba750455504b22f5014a4e8410f57aa69a2e943))
+
 
 ### Features
 
@@ -56,6 +58,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Implement Playwright-based URL scraping and agent thought process visualization in chat UI ([108c02d](https://github.com/aliyevaladddin/AladdinAI/commit/108c02d6a5933bce1bd6d9f0cfaa4e2984f2f550))
 
 - Add AI response synthesis endpoint with optional deep web scraping and frontend integration (#432) ([ac58e8e](https://github.com/aliyevaladddin/AladdinAI/commit/ac58e8e24af45ced96fe468e768050280ec555e4))
+
+- Add multi-agent swarm orchestrator, python sandbox, http tools, and autonomous task execution stepper (#435) ([e566b06](https://github.com/aliyevaladddin/AladdinAI/commit/e566b0636f1207a27d8595bcb4aeba1ed8394363))
 
 
 ### Maintenance
@@ -89,6 +93,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#429) ([b27d933](https://github.com/aliyevaladddin/AladdinAI/commit/b27d9331e2037fc8ca03a8147738caf53a888599))
 
 - Update changelog [skip ci] (#431) ([276bef2](https://github.com/aliyevaladddin/AladdinAI/commit/276bef22d5e3fb040e7dc9e2c24b1e858719e5b1))
+
+- Update changelog [skip ci] (#433) ([bbc49ee](https://github.com/aliyevaladddin/AladdinAI/commit/bbc49ee4d9c08147db09fb44ebe947882d37c955))
 
 ## [v2.2.1] - 2026-07-09
 
