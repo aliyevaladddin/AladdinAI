@@ -28,6 +28,9 @@ services:
     environment:
       # Override to point at the docker-compose Postgres service, not localhost.
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      # Optional: set BRAVE_API_KEY for richer web search results (2 000 req/month free).
+      # Register at https://api.search.brave.com/register
+      # BRAVE_API_KEY: ${BRAVE_API_KEY:-}
     volumes:
       - media:/app/media
     depends_on:

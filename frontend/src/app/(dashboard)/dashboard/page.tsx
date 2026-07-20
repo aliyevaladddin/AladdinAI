@@ -17,6 +17,7 @@ import {
   Mail,
   History,
   Inbox,
+  Search,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
@@ -157,6 +158,11 @@ export default function DashboardPage() {
           <Link href="/dashboard/channels">
             <Button variant="outline" size="sm" className="gap-2">
               <Network size={14} /> Connect Channel
+            </Button>
+          </Link>
+          <Link href="/dashboard/search">
+            <Button variant="outline" size="sm" className="gap-2">
+              <Search size={14} /> Web Search
             </Button>
           </Link>
           <Link href="/dashboard/mail">
