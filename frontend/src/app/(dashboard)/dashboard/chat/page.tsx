@@ -247,6 +247,7 @@ interface Message {
   attachments?: Attachment[] | null;
   created_at?: string;
   feedback?: string | null;  // this user's saved reaction: thumbs_up | thumbs_down
+  thoughts?: string[];
 }
 
 export default function ChatPage() {
@@ -533,6 +534,7 @@ export default function ChatPage() {
       setAssistantStreaming(false);
       let streamedReply = "";
       let assistantMessageAdded = false;
+      const activeThoughts: string[] = [];
 
       while (true) {
         const { value, done } = await reader.read();
@@ -548,6 +550,7 @@ export default function ChatPage() {
             const event = JSON.parse(line);
             if (event.type === "thought") {
               setCurrentThought(event.message);
+              activeThoughts.push(event.message);
             } else if (event.type === "token") {
               streamedReply += event.text;
               setAssistantStreaming(true);
@@ -558,22 +561,29 @@ export default function ChatPage() {
                     role: "assistant",
                     content: streamedReply,
                     model: null,
+                    thoughts: [...activeThoughts],
                   },
                 ]);
                 assistantMessageAdded = true;
               } else {
                 setMessages((prev: Message[]) =>
                   prev.map((m, idx) =>
-                    idx === prev.length - 1 ? { ...m, content: streamedReply } : m
+                    idx === prev.length - 1
+                      ? { ...m, content: streamedReply, thoughts: [...activeThoughts] }
+                      : m
                   )
                 );
               }
             } else if (event.type === "tool_start") {
               const argStr = event.arguments ? JSON.stringify(event.arguments) : "";
-              setCurrentThought(`Running tool '${event.name}' ${argStr.length > 50 ? argStr.slice(0, 50) + "..." : argStr}`);
+              const stepMsg = `Tool '${event.name}' called ${argStr.length > 50 ? argStr.slice(0, 50) + "..." : argStr}`;
+              setCurrentThought(stepMsg);
+              activeThoughts.push(stepMsg);
             } else if (event.type === "tool_end") {
               const name = event.name;
-              setThoughtHistory((prev) => [...prev, `Tool '${name}' executed successfully.`]);
+              const stepMsg = `Tool '${name}' completed successfully`;
+              setThoughtHistory((prev) => [...prev, stepMsg]);
+              activeThoughts.push(stepMsg);
             } else if (event.type === "done") {
               setAssistantStreaming(false);
               if (assistantMessageAdded) {
@@ -586,6 +596,7 @@ export default function ChatPage() {
                           content: event.response,
                           model: event.model,
                           attachments: event.attachments ?? null,
+                          thoughts: activeThoughts.length > 0 ? [...activeThoughts] : m.thoughts,
                         }
                       : m
                   )
@@ -599,6 +610,7 @@ export default function ChatPage() {
                     content: event.response,
                     model: event.model,
                     attachments: event.attachments ?? null,
+                    thoughts: [...activeThoughts],
                   },
                 ]);
               }
@@ -866,6 +878,25 @@ export default function ChatPage() {
                                   <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
                                 ))}
                             </div>
+                          )}
+                          {msg.role === "assistant" && msg.thoughts && msg.thoughts.length > 0 && (
+                            <details className="mb-3 rounded-xl bg-background/60 dark:bg-background/40 border border-border/60 text-xs overflow-hidden group">
+                              <summary className="px-3 py-2 cursor-pointer font-mono text-[11px] text-muted-foreground hover:text-foreground flex items-center justify-between select-none">
+                                <span className="flex items-center gap-1.5 font-medium">
+                                  <Sparkles size={13} className="text-primary" />
+                                  Thought Process & Tool Execution ({msg.thoughts.length} step{msg.thoughts.length > 1 ? "s" : ""})
+                                </span>
+                                <span className="text-[10px] text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
+                              </summary>
+                              <div className="px-3.5 pb-2.5 pt-1.5 space-y-1 font-mono border-t border-border/40 bg-background/50 text-[11px]">
+                                {msg.thoughts.map((t, idx) => (
+                                  <div key={idx} className="flex items-start gap-1.5 text-muted-foreground">
+                                    <span className="text-emerald-500 font-bold">✓</span>
+                                    <span>{t}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
                           )}
                           {msg.content && (
                             <div className={`prose prose-sm max-w-none ${msg.role === "user"
