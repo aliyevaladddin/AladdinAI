@@ -14,6 +14,9 @@ TOOL_CAPABLE_PREFIXES: tuple[str, ...] = (
     "meta/llama-3.1-",
     "meta/llama-3.2-",
     "meta/llama-3.3-",
+    "llama-3.1-",
+    "llama-3.2-",
+    "llama-3.3-",
     # NVIDIA Nemotron family — built on Llama, tools-capable
     "nvidia/llama-3.1-nemotron-",
     "nvidia/llama-3.3-nemotron-",
@@ -22,30 +25,36 @@ TOOL_CAPABLE_PREFIXES: tuple[str, ...] = (
     "nvidia/nemotron-mini-",
     "nvidia/llama3-chatqa-",
     "nvidia/mistral-nemo-minitron-",
+    # Abacus AI & Kiro
+    "abacusai/",
+    "kiro/",
     # Mistral family — most instruct models support tools
-    "mistralai/mistral-large",
-    "mistralai/mistral-medium",
-    "mistralai/mistral-small",
-    "mistralai/ministral-",
-    "mistralai/devstral-",
-    "mistralai/mistral-nemotron",
-    "mistralai/mixtral-8x22b-instruct",
-    # Qwen 2.5+ instruct
-    "qwen/qwen2.5-",
-    "qwen/qwen3-",
-    "qwen/qwen3.5-",
-    # DeepSeek v4
-    "deepseek-ai/deepseek-v4",
+    "mistralai/",
+    "mistral-",
+    # Qwen family (qwen/, qwen2, qwen3, qwen3.7 etc.)
+    "qwen/",
+    "qwen2",
+    "qwen3",
+    # DeepSeek family
+    "deepseek",
     # Moonshot Kimi K2
-    "moonshotai/kimi-",
-    # OpenAI gpt-oss
-    "openai/gpt-oss-",
+    "moonshotai/",
+    "kimi-",
+    # OpenAI & GPT family
+    "openai/",
+    "gpt-",
+    # Anthropic Claude family
+    "anthropic/",
+    "claude-",
+    # Google Gemini family
+    "google/",
+    "gemini-",
     # IBM Granite 3+
     "ibm/granite-3",
     # ByteDance / MiniMax / Step
     "bytedance/seed-",
-    "minimaxai/minimax-",
-    "stepfun-ai/step-",
+    "minimaxai/",
+    "stepfun-ai/",
     # Z-AI GLM
     "z-ai/glm",
 )
@@ -59,9 +68,16 @@ TOOL_INCAPABLE_SUBSTRINGS: tuple[str, ...] = (
 
 # [RCF:PROTECTED]
 def model_supports_tools(model: str | None) -> bool:
-    """Return True if the model id is in the tool-capable whitelist."""
+    """Return True if the model id supports function calling."""
     if not model:
         return False
     if any(s in model for s in TOOL_INCAPABLE_SUBSTRINGS):
         return False
-    return model.startswith(TOOL_CAPABLE_PREFIXES)
+    model_lower = model.lower()
+    if model_lower.startswith(TOOL_CAPABLE_PREFIXES):
+        return True
+    # Default to True for instruct/chat models unless explicitly excluded
+    if any(k in model_lower for k in ("instruct", "chat", "max", "pro", "sonnet", "haiku", "opus", "turbo", "flash")):
+        return True
+    return False
+

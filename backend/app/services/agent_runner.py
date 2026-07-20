@@ -40,6 +40,7 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "recall", "remember",
         "analyze_image", "send_image", "generate_image",
         "send_email",
+        "web_search",
         # Read-only order visibility for every agent.
         "list_orders", "get_order_summary", "get_sales_metrics",
     ],
@@ -48,6 +49,7 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "recall", "remember",
         "analyze_image", "send_image", "generate_image",
         "send_email",
+        "web_search",
         "list_orders", "get_order_summary", "get_sales_metrics",
         "create_order", "update_order_status", "create_product",
     ],

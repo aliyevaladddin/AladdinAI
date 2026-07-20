@@ -13,6 +13,7 @@ import {
   Settings,
   Sparkles,
   BarChart2,
+  Search,
 } from "lucide-react";
 
 type NavItem = {
@@ -23,6 +24,7 @@ type NavItem = {
 
 const mainNav: NavItem[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/search", label: "Search", icon: Search },
   { href: "/dashboard/comms", label: "Conversations", icon: MessageSquare },
   { href: "/dashboard/mail", label: "Mail", icon: Mailbox },
   { href: "/dashboard/agents", label: "Agents", icon: Bot },

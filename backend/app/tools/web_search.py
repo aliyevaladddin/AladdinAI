@@ -2,11 +2,9 @@
 # [RCF:PROTECTED]
 from __future__ import annotations
 
-import os
 import logging
 from typing import Any
 from html.parser import HTMLParser
-import httpx
 
 from app.tools.base import ToolContext, tool
 
@@ -93,75 +91,29 @@ class DuckDuckGoParser(HTMLParser):
 )
 async def web_search(ctx: ToolContext, query: str) -> dict[str, Any]:
     """Search the web for the given query.
-    
-    Queries your own self-hosted search service (e.g. AladdinAI Search)
-    if ALADDINAI_SEARCH_URL or ALADDIN_SEARCH_URL is configured, otherwise falls back to DuckDuckGo HTML scraping.
+
+    Uses the native meta-search service (app.services.meta_search): DuckDuckGo
+    and Wikipedia queried directly and in parallel. No self-hosted engine and
+    no external gateway.
     """
-    search_url = os.getenv("ALADDINAI_SEARCH_URL") or os.getenv("ALADDIN_SEARCH_URL")
-    
-    # 1. Try custom self-hosted search service if configured
-    if search_url:
-        # Strip trailing slash if present
-        search_url = search_url.rstrip("/")
-        logger.info(f"Performing web search using AladdinAI Search at: {search_url}")
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                headers = {}
-                api_key = os.getenv("ALADDINAI_SEARCH_API_KEY")
-                if api_key:
-                    headers["X-API-KEY"] = api_key
+    # Imported lazily to avoid a circular import: meta_search imports the
+    # DuckDuckGoParser defined above in this module.
+    from app.services.meta_search import meta_search
 
-                resp = await client.get(
-                    f"{search_url}/search",
-                    params={"q": query, "format": "json"},
-                    headers=headers
-                )
-                if resp.status_code == 200:
-                    data = resp.json()
-                    results = []
-                    for item in data.get("results", []):
-                        results.append({
-                            "title": item.get("title", ""),
-                            "link": item.get("url", ""),
-                            "snippet": item.get("content", "")
-                        })
-                    return {"query": query, "results": results}
-                else:
-                    logger.warning(f"Search service returned status {resp.status_code}: {resp.text}")
-        except Exception as e:
-            logger.error(f"Error performing search with custom search service: {e}")
-
-    # 2. Fallback to DuckDuckGo HTML Scraper (used in tests and local-dev)
-    logger.info("Performing web search using DuckDuckGo HTML scraping.")
-    headers = {
-        "User-Agent": USER_AGENT,
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    }
-    
+    logger.info("Performing web search via native meta-search: %s", query)
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(
-                "https://html.duckduckgo.com/html/",
-                data={"q": query},
-                headers=headers
+        data = await meta_search(query)
+        results = [
+            {"title": r["title"], "link": r["link"], "snippet": r["snippet"]}
+            for r in data["results"]
+        ]
+        out: dict[str, Any] = {"query": query, "results": results}
+        # Surface an error only when every source failed and nothing came back.
+        if not results and data["errors"]:
+            out["error"] = "; ".join(
+                f"{eng}: {msg}" for eng, msg in data["errors"].items()
             )
-            if resp.status_code != 200:
-                logger.warning(f"DuckDuckGo search failed with status {resp.status_code}")
-                return {"query": query, "results": [], "error": f"Search engine returned status {resp.status_code}"}
-                
-            parser = DuckDuckGoParser()
-            parser.feed(resp.text)
-            results = parser.get_results()
-            
-            if not results:
-                if "ddg-captcha" in resp.text or "Turnstile" in resp.text or "One last step" in resp.text:
-                    err_msg = "Search failed because the search engine blocked the request (Captcha/Turnstile challenge)."
-                    logger.warning(err_msg)
-                    return {"query": query, "results": [], "error": err_msg}
-            
-            return {"query": query, "results": results}
-            
-    except Exception as e:
-        logger.error(f"Error performing DuckDuckGo scraping: {e}")
+        return out
+    except Exception as e:  # pragma: no cover - defensive
+        logger.error("Error performing web search: %s", e)
         return {"query": query, "results": [], "error": str(e)}

@@ -19,6 +19,7 @@ from app.routers import (
     notifications, providers, reports as reports_router, router_config, search,
     settings, sql, ssh_exec,
     terminal_providers, terminal_ws, triggers as triggers_router, vms, webhooks,
+    websearch,
 )
 from app.services import triggers as triggers_service
 from app.services import telegram_poller
@@ -155,6 +156,7 @@ app.include_router(terminal_providers.router, prefix="/api/terminal", tags=["ter
 app.include_router(reports_router.router, prefix="/api")
 app.include_router(digest.router, prefix="/api")
 app.include_router(forging.router, prefix="/api")
+app.include_router(websearch.router, prefix="/api")
 
 # [RCF:PROTECTED]
 @app.get("/")
