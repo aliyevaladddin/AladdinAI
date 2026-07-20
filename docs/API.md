@@ -3980,7 +3980,7 @@ Query public web sources and return merged + per-source results.
 | ---- | ---------- | ----------- | -------- | ---- |
 | q | query |  | Yes | string |
 | lang | query |  | No | string |
-| engines | query | Comma-separated engine list (duckduckgo,wikipedia). Defaults to all. | No |  |
+| engines | query | Comma-separated engine list (duckduckgo,wikipedia,arxiv,news). Defaults to all. | No |  |
 | limit | query |  | No | integer |
 
 ##### Responses
