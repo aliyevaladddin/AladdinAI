@@ -78,6 +78,7 @@ async def run_python_code(
         except asyncio.TimeoutError:
             try:
                 proc.kill()
+                await proc.wait()  # Reap the process to avoid zombie processes
             except Exception:
                 pass
             return {
