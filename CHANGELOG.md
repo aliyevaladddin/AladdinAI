@@ -11,9 +11,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add python3 make g++ build tools to frontend Dockerfile.prod deps stage ([4172737](https://github.com/aliyevaladddin/AladdinAI/commit/4172737e856f1000b0050de3a94b3dc8f6c0dad4))
 
 
+### Dependencies
+
+- Bump body-parser from 2.2.2 to 2.3.0 in /frontend (#447) ([f32cbae](https://github.com/aliyevaladddin/AladdinAI/commit/f32cbaef9ae38f454c35cba11a4f2b44acf3cea9))
+
+
 ### Maintenance
 
 - Bump tar from 7.5.16 to 7.5.20 in /frontend (#445) ([e920f2a](https://github.com/aliyevaladddin/AladdinAI/commit/e920f2a112032ac5730472db2d2123caeb258b71))
+
+- Update changelog [skip ci] (#446) ([c8b1214](https://github.com/aliyevaladddin/AladdinAI/commit/c8b12147c59811112503a29160582834d0c19b27))
 
 ## [v2.2.2] - 2026-07-20
 
