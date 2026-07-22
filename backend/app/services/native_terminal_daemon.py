@@ -1,5 +1,4 @@
 # NOTICE: This file is protected under RCF-PL
-import asyncio
 import logging
 import os
 import subprocess

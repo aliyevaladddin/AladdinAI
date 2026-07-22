@@ -1,19 +1,18 @@
 # NOTICE: This file is protected under RCF-PL
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+import subprocess
+from typing import Optional
+
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from app.models.user import User
 from app.security import get_current_user
-from app.tools.terminal_tools import PENDING_APPROVALS
+from app.tools.terminal_tools import PENDING_APPROVALS, mask_secrets, set_rlimits
 
 router = APIRouter(prefix="/terminal/approval", tags=["Terminal"])
 log = logging.getLogger(__name__)
 
-
-import subprocess
-from typing import Optional
-from app.tools.terminal_tools import set_rlimits, mask_secrets
 
 class ApprovalPayload(BaseModel):
     command: Optional[str] = None
