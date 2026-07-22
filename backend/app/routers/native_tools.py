@@ -33,7 +33,18 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
     if not GREP_BIN.exists():
         raise HTTPException(status_code=500, detail="Native grep C binary not compiled")
 
-    target_dir = os.path.abspath(path)
+    if ".." in path or path.startswith("/") or path.startswith("\\"):
+        raise HTTPException(status_code=400, detail="Invalid path: path traversal detected")
+    
+    workspace_root = Path(__file__).resolve().parent.parent.parent.parent
+    resolved_path = (workspace_root / path).resolve()
+    
+    try:
+        resolved_path.relative_to(workspace_root)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Search path is outside allowed workspace directory")
+
+    target_dir = str(resolved_path)
     try:
         proc = await asyncio.create_subprocess_exec(
             str(GREP_BIN), "--path", target_dir, "--query", query,
@@ -66,7 +77,11 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
     if filter_str:
         args.extend(["--filter", filter_str])
     if log_path:
-        resolved_log_path = Path(log_path).expanduser().resolve()
+        # Prevent path traversal vulnerabilities (SAST uncontrolled data warning)
+        if ".." in log_path or log_path.startswith("/") or log_path.startswith("\\"):
+            raise HTTPException(status_code=400, detail="Invalid log_path: path traversal detected")
+            
+        resolved_log_path = (LOGS_ROOT / log_path).resolve()
         try:
             resolved_log_path.relative_to(LOGS_ROOT)
         except ValueError:
