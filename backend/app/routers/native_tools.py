@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import os
 import subprocess
 from pathlib import Path
 from fastapi import APIRouter, Depends, Query, HTTPException
@@ -44,7 +45,6 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
         raise HTTPException(status_code=400, detail="Invalid path: path traversal detected")
 
     user_path = Path(normalized_path)
-        raise HTTPException(status_code=400, detail="Invalid path: path traversal detected")
 
     workspace_root = Path(__file__).resolve().parent.parent.parent.parent.resolve()
     resolved_path = (workspace_root / user_path).resolve()
