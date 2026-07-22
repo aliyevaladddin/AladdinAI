@@ -27,7 +27,7 @@
 ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝
 ```
 
-### Your AI agents. *Your infrastructure.* Your rules.
+### My AI agents. *My infrastructure.* My rules.
 
 *AladdinAI is an open-source, self-hosted AI workspace —*
 *agents, memory, CRM, and multi-channel messaging running entirely in your own infrastructure.*
@@ -64,7 +64,7 @@
 
 ## ◈ What is AladdinAI?
 
-We believe the next wave of AI adoption won't happen in shared clouds. It will happen in companies that need **control over their data, their models, and their customer relationships.**
+I believe the next wave of AI adoption won't happen in shared clouds. It will happen in companies that need **control over their data, their models, and their customer relationships.**
 
 AladdinAI is the platform that makes that possible — without building everything from scratch.
 
