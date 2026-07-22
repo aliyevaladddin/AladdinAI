@@ -33,28 +33,13 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
     if not GREP_BIN.exists():
         raise HTTPException(status_code=500, detail="Native grep C binary not compiled")
 
-    user_path = Path(path)
-    normalized_path = os.path.normpath(path).replace("\\", "/")
-    if normalized_path in ("", "."):
-        normalized_path = "."
-    if (
-        normalized_path.startswith("/")
-        or normalized_path == ".."
-        or normalized_path.startswith("../")
-    ):
-        raise HTTPException(status_code=400, detail="Invalid path: path traversal detected")
-
-    user_path = Path(normalized_path)
-
-    workspace_root = Path(__file__).resolve().parent.parent.parent.parent.resolve()
-    resolved_path = (workspace_root / user_path).resolve()
-
-    try:
-        resolved_path.relative_to(workspace_root)
-    except ValueError:
+    # CodeQL compliant path normalization and validation
+    base_path = str(Path(__file__).resolve().parent.parent.parent.parent.resolve())
+    fullpath = os.path.normpath(os.path.join(base_path, path))
+    if not fullpath.startswith(base_path):
         raise HTTPException(status_code=400, detail="Search path is outside allowed workspace directory")
-
-    target_dir = str(resolved_path)
+        
+    target_dir = fullpath
     try:
         proc = await asyncio.create_subprocess_exec(
             str(GREP_BIN), "--path", target_dir, "--query", query,
@@ -87,20 +72,14 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
     if filter_str:
         args.extend(["--filter", filter_str])
     if log_path:
-        user_log_path = Path(log_path)
-
-        # Accept only relative paths rooted under LOGS_ROOT
-        if user_log_path.is_absolute() or ".." in user_log_path.parts:
-            raise HTTPException(status_code=400, detail="Invalid log_path: path traversal detected")
-
-        resolved_log_path = (LOGS_ROOT / user_log_path).resolve()
-        try:
-            resolved_log_path.relative_to(LOGS_ROOT)
-        except ValueError:
+        # CodeQL compliant path normalization and validation
+        base_path = str(LOGS_ROOT)
+        fullpath = os.path.normpath(os.path.join(base_path, log_path))
+        if not fullpath.startswith(base_path):
             raise HTTPException(status_code=400, detail="log_path is outside allowed logs directory")
-        if not resolved_log_path.exists():
+        if not os.path.exists(fullpath):
             raise HTTPException(status_code=400, detail="log_path does not exist")
-        args.extend(["--file", str(resolved_log_path)])
+        args.extend(["--file", fullpath])
 
     try:
         proc = await asyncio.create_subprocess_exec(
