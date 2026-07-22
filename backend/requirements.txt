@@ -25,5 +25,9 @@ openpyxl==3.1.5
 pandas==2.2.3
 nvidia-riva-client==2.26.0
 pypdf==6.14.2
+# Headless browser for services/browser.py (fetch_url tool + /websearch/synthesize
+# deep-scrape). The chromium binary is installed in the Dockerfile; without it the
+# code degrades to the httpx fallback. Local dev: playwright install chromium
+playwright==1.55.0
 # skillspector requires Python >=3.12 — install separately on CI with Python 3.12:
 # pip install "skillspector @ git+https://github.com/NVIDIA/skillspector.git@c2d09df019e358d3dc12d980b82c798b87cb9f56"
