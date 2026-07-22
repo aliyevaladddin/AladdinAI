@@ -54,6 +54,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#462) ([7d10262](https://github.com/aliyevaladddin/AladdinAI/commit/7d10262ab5c92dbd9e86c5188d467162081452f0))
 
+- Update changelog [skip ci] (#463) ([a5fd5c5](https://github.com/aliyevaladddin/AladdinAI/commit/a5fd5c5914d8686fb9f3e4c35f562dffbf05acbd))
+
+- Add axios, dotenv, ink, prompts, rcf-protocol, react, and zod dependencies to package.json ([f0fc601](https://github.com/aliyevaladddin/AladdinAI/commit/f0fc601ac10f78b19a9815093ddefcdde46d5e24))
+
 ## [v2.2.2] - 2026-07-20
 
 ### Bug Fixes
