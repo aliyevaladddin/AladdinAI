@@ -36,6 +36,68 @@ aladdin@aliyev.site
 
 **License:** [Apache 2.0](https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE)
 
+### /api/native/search
+
+#### GET
+##### Summary:
+
+Fast Native Search
+
+##### Description:
+
+Fast native C project code search using mmap memory mapping.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| query | query |  | Yes | string |
+| path | query |  | No | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/native/logs/filter
+
+#### GET
+##### Summary:
+
+Filter Log Stream
+
+##### Description:
+
+High-speed C log stream filtering engine.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| filter_str | query |  | No | string |
+| log_path | query |  | No | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/auth/register
 
 #### POST
