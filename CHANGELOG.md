@@ -28,6 +28,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update readme modules to include multi-agent swarm, meta-search, evaluation harness, UI features, and revised voice/order documentation ([b38092d](https://github.com/aliyevaladddin/AladdinAI/commit/b38092d32e8fbaecf5481b1596ecbd3e2663e116))
 
+- Update API documentation [skip ci] (#467) ([18c66e9](https://github.com/aliyevaladddin/AladdinAI/commit/18c66e9f12a6d65272f6019f4c2834fb99c89cf6))
+
 
 ### Features
 
@@ -36,6 +38,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Implement system-wide Command Palette with keyboard shortcut registry and documentation settings tab (#457) ([03b922d](https://github.com/aliyevaladddin/AladdinAI/commit/03b922d88e7bea8a6d6ec5bb6744b61bf6e5f5bb))
 
 - Implement native log/grep utilities and improve terminal UX with clipboard support and render safety patches (#465) ([3e90908](https://github.com/aliyevaladddin/AladdinAI/commit/3e909089b3c0cb5e77ce35645cb91ec7f0135747))
+
+- Add @hono/node-server to frontend dependencies ([77ed1fa](https://github.com/aliyevaladddin/AladdinAI/commit/77ed1fa28234ec51f26cfb1398abe1b8aae0fa61))
 
 
 ### Maintenance
@@ -59,6 +63,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#463) ([a5fd5c5](https://github.com/aliyevaladddin/AladdinAI/commit/a5fd5c5914d8686fb9f3e4c35f562dffbf05acbd))
 
 - Add axios, dotenv, ink, prompts, rcf-protocol, react, and zod dependencies to package.json ([f0fc601](https://github.com/aliyevaladddin/AladdinAI/commit/f0fc601ac10f78b19a9815093ddefcdde46d5e24))
+
+- Update changelog [skip ci] (#466) ([cc7f57a](https://github.com/aliyevaladddin/AladdinAI/commit/cc7f57a2a1bc5c2864774e089664821d243158de))
 
 ## [v2.2.2] - 2026-07-20
 
