@@ -11,13 +11,15 @@ import { RouterSettings } from "@/components/settings/RouterSettings";
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 import { StorageSettings } from "@/components/settings/StorageSettings";
 import { SecuritySettings } from "@/components/settings/SecuritySettings";
-import { Cpu, Cloud, Database, Server, Network, Palette, HardDrive, Shield } from "lucide-react";
+import { ShortcutsSettings } from "@/components/settings/ShortcutsSettings";
+import { Cpu, Cloud, Database, Server, Network, Palette, HardDrive, Shield, Keyboard } from "lucide-react";
 
 
-type TabId = "appearance" | "storage" | "providers" | "vms" | "mongo" | "bento" | "router" | "security";
+type TabId = "appearance" | "storage" | "shortcuts" | "providers" | "vms" | "mongo" | "bento" | "router" | "security";
 
 const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
   { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "shortcuts", label: "Shortcuts & Commands", icon: Keyboard },
   { id: "storage", label: "Storage", icon: HardDrive },
   { id: "providers", label: "LLM Providers", icon: Cpu },
   { id: "vms", label: "Cloud VMs", icon: Cloud },
@@ -94,6 +96,7 @@ export default function SettingsPage() {
         {/* Content panel — fills remaining space */}
         <div className="flex-1 min-w-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 overflow-y-auto">
           {activeTab === "appearance" && <AppearanceSettings />}
+          {activeTab === "shortcuts" && <ShortcutsSettings />}
           {activeTab === "storage" && <StorageSettings />}
           {activeTab === "providers" && <ProvidersSettings />}
           {activeTab === "vms" && <VmsSettings />}

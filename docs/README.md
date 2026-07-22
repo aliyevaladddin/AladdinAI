@@ -18,6 +18,7 @@ Comprehensive documentation for the AladdinAI multi-agent AI system.
 
 ### Guides
 - **[Getting Started](../README.md)** - Quick start guide
+- **[UI/UX & Command Palette Guide](./UI_FEATURE_GUIDE.md)** - Command palette, hotkeys registry & chat refactoring
 - **[Agent Development](./guides/AGENT_DEVELOPMENT.md)** - Creating custom agents
 - **[Tool Development](./guides/TOOL_DEVELOPMENT.md)** - Adding new tools
 - **[Agent Delegation](./guides/AGENT_DELEGATION.md)** - Multi-agent coordination and handoff
