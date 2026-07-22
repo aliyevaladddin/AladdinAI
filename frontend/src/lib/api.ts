@@ -106,6 +106,14 @@ export async function fetchDeals() {
   return res.json();
 }
 
+/* ── In-Memory SWR Cache ─────────────────────────────────────────── */
+interface CacheEntry<T = any> {
+  data: T;
+  timestamp: number;
+}
+const apiCache = new Map<string, CacheEntry>();
+const DEFAULT_CACHE_TTL = 15000; // 15 seconds default
+
 /* ── Main API object ─────────────────────────────────────────────── */
 export const api = {
   getStats: fetchStats,
@@ -121,8 +129,26 @@ export const api = {
   removeToken: () => {
     if (typeof window !== "undefined") localStorage.removeItem("access_token");
   },
+  clearCache: (pathPattern?: string) => {
+    if (!pathPattern) {
+      apiCache.clear();
+      return;
+    }
+    for (const key of apiCache.keys()) {
+      if (key.includes(pathPattern)) apiCache.delete(key);
+    }
+  },
 
-  get: async <T = any>(path: string): Promise<T> => {
+  get: async <T = any>(path: string, options?: { bypassCache?: boolean; ttlMs?: number }): Promise<T> => {
+    const ttl = options?.ttlMs ?? DEFAULT_CACHE_TTL;
+    const now = Date.now();
+    if (!options?.bypassCache && apiCache.has(path)) {
+      const entry = apiCache.get(path)!;
+      if (now - entry.timestamp < ttl) {
+        return entry.data as T;
+      }
+    }
+
     const res = await apiFetch(`${API_URL}${path}`);
     if (!res.ok) {
       const errorText = await res.text().catch(() => "No error body");
@@ -131,7 +157,9 @@ export const api = {
     }
     const text = await res.text();
     try {
-      return JSON.parse(text) as T;
+      const data = JSON.parse(text) as T;
+      apiCache.set(path, { data, timestamp: now });
+      return data;
     } catch (parseErr) {
       console.error(`[API PARSE ERROR] GET ${path} failed to parse JSON. Raw body (length ${text.length}):`, text);
       throw new Error(`Failed to parse GET ${path} JSON response (length ${text.length}): ${parseErr instanceof Error ? parseErr.message : String(parseErr)} | Raw: ${text.slice(0, 500)}`);

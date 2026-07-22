@@ -227,7 +227,24 @@ export default function ContactsPage() {
       </div>
 
       {loading ? (
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-xl border border-border/50 p-4 bg-muted/20 animate-pulse"
+            >
+              <div className="space-y-2 flex-1">
+                <div className="h-4 bg-muted/80 rounded w-1/3" />
+                <div className="h-3 bg-muted/60 rounded w-1/2" />
+                <div className="flex gap-1.5 pt-1">
+                  <div className="h-4 bg-muted/60 rounded-full w-12" />
+                  <div className="h-4 bg-muted/60 rounded-full w-16" />
+                </div>
+              </div>
+              <div className="h-8 bg-muted/70 rounded-lg w-16 shrink-0" />
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="space-y-3">
           {filtered.map((c) => (
