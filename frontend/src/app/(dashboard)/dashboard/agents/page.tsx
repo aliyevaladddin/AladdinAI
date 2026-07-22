@@ -120,7 +120,27 @@ export default function AgentsPage() {
       </div>
 
       {loading ? (
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl border border-border/50 p-5 bg-muted/20 animate-pulse space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-5 bg-muted/80 rounded w-36" />
+                  <div className="h-4 bg-muted/60 rounded-full w-16" />
+                  <div className="h-4 bg-muted/60 rounded-full w-20" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="h-8 bg-muted/70 rounded-lg w-16" />
+                  <div className="h-8 bg-muted/70 rounded-lg w-8" />
+                </div>
+              </div>
+              <div className="h-3 bg-muted/50 rounded w-3/4" />
+            </div>
+          ))}
+        </div>
       ) : agents.length === 0 ? (
         <div className="rounded-lg border border-border p-8 text-center">
           <p className="text-muted-foreground text-sm mb-4">

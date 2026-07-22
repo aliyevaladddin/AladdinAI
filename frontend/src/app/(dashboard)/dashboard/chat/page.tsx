@@ -1,252 +1,25 @@
-// NOTICE: This file is protected under RCF-PL
 "use client";
 
-import { useEffect, useState, useRef, useCallback, FormEvent, MouseEvent, KeyboardEvent } from "react";
+import React, { useEffect, useState, useRef, FormEvent, MouseEvent, KeyboardEvent } from "react";
 import { api, API_URL } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
-  MessageSquare,
-  Plus,
-  Trash2,
   Send,
-  Bot,
-  Globe,
   Paperclip,
   X,
   Menu,
   Sparkles,
-  Copy,
-  Check,
   Mic,
   Square,
   Volume2,
   VolumeX,
-  ThumbsUp,
-  ThumbsDown,
-  Play,
-  Pause,
   Download,
-  Search,
-  Zap,
-  Shield,
+  PanelLeftOpen,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-
-
-interface Attachment {
-  filename: string;
-  path: string;
-  mime: string;
-  kind: string;
-}
-
-
-// ── Premium Voice Message Player (Telegram-style) ─────────────────────────
-function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-
-  const toggle = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) { audio.pause(); } else { audio.play(); }
-    setPlaying(!playing);
-  }, [playing]);
-
-  const handleTimeUpdate = () => {
-    const audio = audioRef.current;
-    if (!audio || !audio.duration) return;
-    setCurrentTime(audio.currentTime);
-    setProgress((audio.currentTime / audio.duration) * 100);
-  };
-  const handleLoadedMetadata = () => { if (audioRef.current) setDuration(audioRef.current.duration); };
-  const handleEnded = () => { setPlaying(false); setProgress(0); setCurrentTime(0); };
-
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const audio = audioRef.current;
-    if (!audio || !audio.duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audio.currentTime = ratio * audio.duration;
-    setProgress(ratio * 100);
-  };
-
-  const fmt = (s: number) => {
-    if (!isFinite(s) || s === 0) return "0:00";
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, "0")}`;
-  };
-
-  // Organic-looking waveform heights
-  const bars = [3, 6, 10, 15, 20, 14, 18, 8, 22, 16, 10, 18, 12, 20, 7, 15, 22, 11, 17, 9, 14, 20, 6, 12, 18];
-
-  return (
-    <div
-      className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl max-w-[280px] shadow-lg ${isUser
-          ? "bg-white/15 backdrop-blur-md border border-white/20"
-          : "bg-gradient-to-r from-violet-500/10 via-blue-500/10 to-cyan-500/10 border border-violet-500/20 backdrop-blur-sm"
-        }`}
-    >
-      <audio
-        ref={audioRef}
-        src={src}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-        className="hidden"
-      />
-
-      {/* Play / Pause button with glow */}
-      <button
-        onClick={toggle}
-        className={`relative w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 hover:scale-110 active:scale-95 ${isUser
-            ? "bg-white/90 text-violet-600 shadow-[0_0_16px_rgba(255,255,255,0.4)]"
-            : "bg-gradient-to-br from-violet-500 to-blue-600 text-white shadow-[0_0_16px_rgba(139,92,246,0.5)]"
-          }`}
-        aria-label={playing ? "Pause" : "Play"}
-      >
-        {playing ? (
-          <Pause size={16} className="shrink-0" />
-        ) : (
-          <Play size={16} className="shrink-0 translate-x-0.5" />
-        )}
-        {/* Ripple on play */}
-        {playing && (
-          <span className={`absolute inset-0 rounded-full animate-ping opacity-30 ${isUser ? "bg-white" : "bg-violet-400"
-            }`} />
-        )}
-      </button>
-
-      {/* Waveform + seeker */}
-      <div className="flex-1 min-w-0 space-y-2">
-        {/* Animated waveform bars */}
-        <div
-          className="flex items-center gap-[2px] h-6 cursor-pointer"
-          onClick={handleSeek}
-        >
-          {bars.map((h, i) => {
-            const barProgress = (i / bars.length) * 100;
-            const isPast = barProgress <= progress;
-            const isNearCurrent = Math.abs(barProgress - progress) < 8 && playing;
-            return (
-              <div
-                key={i}
-                className={`rounded-full w-[2.5px] flex-shrink-0 transition-all duration-150 ${isPast
-                    ? isUser
-                      ? "bg-white"
-                      : "bg-violet-400"
-                    : isUser
-                      ? "bg-white/35"
-                      : "bg-muted-foreground/25"
-                  }`}
-                style={{
-                  height: `${h}px`,
-                  transform: isNearCurrent ? "scaleY(1.3)" : "scaleY(1)",
-                  animationDelay: `${i * 40}ms`,
-                }}
-              />
-            );
-          })}
-        </div>
-
-        {/* Time row */}
-        <div className={`flex items-center justify-between text-[10px] font-mono ${isUser ? "text-white/70" : "text-muted-foreground"
-          }`}>
-          <span>{fmt(currentTime)}</span>
-          <span className={`text-[9px] uppercase tracking-wide font-semibold ${isUser ? "text-white/50" : "text-violet-400/70"
-            }`}>Voice</span>
-          <span>{fmt(duration || 0)}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-function AuthAttachment({ filename, mime, kind, isUser }: { filename: string; mime?: string; kind?: string; isUser?: boolean }) {
-  const [src, setSrc] = useState<string | null>(null);
-  useEffect(() => {
-    let revoke: string | null = null;
-    let cancelled = false;
-    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    fetch(`${API_URL}/chat/media/${filename}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((r) => (r.ok ? r.blob() : null))
-      .then((blob) => {
-        if (!blob || cancelled) return;
-        const url = URL.createObjectURL(blob);
-        revoke = url;
-        setSrc(url);
-      })
-      .catch(() => { });
-    return () => {
-      cancelled = true;
-      if (revoke) URL.revokeObjectURL(revoke);
-    };
-  }, [filename]);
-
-  if (!src) {
-    return <div className="w-[280px] h-16 rounded-2xl bg-muted/60 animate-pulse" />;
-  }
-
-  const isImg = kind === "image" || (mime && mime.startsWith("image/")) || filename.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-  const isAudio = kind === "audio" || (mime && mime.startsWith("audio/")) || filename.match(/\.(webm|ogg|wav|mp3|m4a)$/i);
-
-  if (isImg) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={src} alt={filename} className="max-w-xs max-h-80 rounded-xl border border-border shadow-sm" />;
-  }
-
-  if (isAudio) {
-    return <VoicePlayer src={src} isUser={isUser} />;
-  }
-
-  return (
-    <a
-      href={src}
-      download={filename}
-      className="flex items-center gap-2 px-3 py-2 bg-muted/80 hover:bg-muted border border-border rounded-lg text-xs font-medium text-foreground transition-colors max-w-sm"
-    >
-      <span className="shrink-0 text-primary">📄</span>
-      <span className="truncate flex-1">{filename}</span>
-      <span className="text-[10px] text-muted-foreground uppercase">{mime?.split("/")[1] || "DOC"}</span>
-    </a>
-  );
-}
-
-
-interface Agent {
-  id: number;
-  name: string;
-  role: string;
-}
-
-
-interface Session {
-  id: number;
-  agent_id: number;
-  title: string;
-  updated_at: string;
-}
-
-
-interface Message {
-  id?: number;
-  role: "user" | "assistant";
-  content: string;
-  model?: string | null;
-  attachments?: Attachment[] | null;
-  created_at?: string;
-  feedback?: string | null;  // this user's saved reaction: thumbs_up | thumbs_down
-  thoughts?: string[];
-}
+import { VoicePlayer } from "./VoicePlayer";
+import { AuthAttachment } from "./AuthAttachment";
+import { ChatSidebar, Agent, Session } from "./ChatSidebar";
+import { ChatMessageItem, Message, Attachment } from "./ChatMessageItem";
 
 export default function ChatPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -254,7 +27,6 @@ export default function ChatPage() {
   const [sessionQuery, setSessionQuery] = useState("");
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  // message_id -> "thumbs_up" | "thumbs_down": which reaction the user gave
   const [feedback, setFeedback] = useState<Record<number, string>>({});
   const [input, setInput] = useState("");
   const [selectedAgentId, setSelectedAgentId] = useState("");
@@ -265,10 +37,12 @@ export default function ChatPage() {
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [currentThought, setCurrentThought] = useState<string | null>(null);
   const [thoughtHistory, setThoughtHistory] = useState<string[]>([]);
   const [assistantStreaming, setAssistantStreaming] = useState(false);
+
   const messagesEnd = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -279,6 +53,17 @@ export default function ChatPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<any>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const handleStopStreaming = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+    setAssistantStreaming(false);
+    setCurrentThought(null);
+  };
 
   const startRecording = async () => {
     try {
@@ -347,7 +132,6 @@ export default function ChatPage() {
     ta.style.height = `${Math.min(ta.scrollHeight, 240)}px`;
   }, [input]);
 
-
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -370,12 +154,10 @@ export default function ChatPage() {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-
   const loadSessions = async () => {
     const data = await api.get<Session[]>("/chat/sessions");
     setSessions(data);
   };
-
 
   const openSession = async (session: Session): Promise<void> => {
     setIsGeneralChat(false);
@@ -386,7 +168,6 @@ export default function ChatPage() {
     try {
       const msgs = await api.get<Message[]>(`/chat/sessions/${session.id}/messages`);
       setMessages(msgs);
-      // Restore saved 👍/👎 so the highlight survives reloads / session switches.
       const saved: Record<number, string> = {};
       for (const m of msgs) {
         if (m.id && m.feedback) saved[m.id] = m.feedback;
@@ -397,27 +178,23 @@ export default function ChatPage() {
     }
   };
 
+  const startNewChatWithAgent = (agentId: number) => {
+    setIsGeneralChat(false);
+    setActiveSession(null);
+    setComposingNew(true);
+    setMessages([]);
+    setInput("");
+    setSelectedAgentId(String(agentId));
+  };
 
   const newChat = () => {
     setIsGeneralChat(false);
     setActiveSession(null);
-    setMessages([]);
-    setInput("");
-    setSelectedAgentId("");
-    setComposingNew(false);
-    setPendingAttachments([]);
-  };
-
-
-  const startNewChatWithAgent = (agentId: number) => {
-    setIsGeneralChat(false);
-    setActiveSession(null);
-    setMessages([]);
-    setInput("");
-    setSelectedAgentId(String(agentId));
     setComposingNew(true);
+    setMessages([]);
+    setInput("");
+    setSelectedAgentId(agents[0] ? String(agents[0].id) : "1");
   };
-
 
   const openGeneralChat = () => {
     setIsGeneralChat(true);
@@ -428,7 +205,6 @@ export default function ChatPage() {
     setSelectedAgentId("unified");
   };
 
-
   const deleteSession = async (id: number, e: MouseEvent): Promise<void> => {
     e.stopPropagation();
     if (!confirm("Delete this chat?")) return;
@@ -437,16 +213,14 @@ export default function ChatPage() {
     loadSessions();
   };
 
-
   const handleAttachClick = () => {
     if (uploading) return;
     fileInputRef.current?.click();
   };
 
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = "";
+  const uploadFileList = async (files: File[]) => {
     if (!files.length) return;
     setUploading(true);
     try {
@@ -463,11 +237,38 @@ export default function ChatPage() {
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    await uploadFileList(files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files ?? []);
+    if (files.length > 0) {
+      await uploadFileList(files);
+    }
+  };
 
   const removePending = (filename: string) => {
     setPendingAttachments((prev) => prev.filter((a) => a.filename !== filename));
   };
-
 
   const copyToClipboard = async (code: string) => {
     try {
@@ -478,7 +279,6 @@ export default function ChatPage() {
       console.error("Failed to copy:", err);
     }
   };
-
 
   const handleSend = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
@@ -500,16 +300,19 @@ export default function ChatPage() {
 
     try {
       const agentId = selectedAgentId === "unified" ? 1 : parseInt(selectedAgentId);
-
       const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       const response = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers,
+        signal: controller.signal,
         body: JSON.stringify({
           message: sentInput,
           agent_id: agentId,
@@ -538,6 +341,7 @@ export default function ChatPage() {
       setAssistantStreaming(false);
       let streamedReply = "";
       let assistantMessageAdded = false;
+      let lastStreamFrameTime = 0;
       const activeThoughts: string[] = [];
 
       while (true) {
@@ -558,285 +362,204 @@ export default function ChatPage() {
             } else if (event.type === "token") {
               streamedReply += event.text;
               setAssistantStreaming(true);
+              const now = Date.now();
+
               if (!assistantMessageAdded) {
-                setMessages((prev: Message[]) => [
+                assistantMessageAdded = true;
+                setMessages((prev) => [
                   ...prev,
                   {
                     role: "assistant",
                     content: streamedReply,
-                    model: null,
+                    model: event.model || null,
                     thoughts: [...activeThoughts],
                   },
                 ]);
-                assistantMessageAdded = true;
-              } else {
-                setMessages((prev: Message[]) =>
-                  prev.map((m, idx) =>
-                    idx === prev.length - 1
-                      ? { ...m, content: streamedReply, thoughts: [...activeThoughts] }
-                      : m
-                  )
-                );
+                lastStreamFrameTime = now;
+              } else if (now - lastStreamFrameTime > 35) {
+                lastStreamFrameTime = now;
+                setMessages((prev) => {
+                  const copy = [...prev];
+                  const lastIndex = copy.length - 1;
+                  if (lastIndex >= 0 && copy[lastIndex].role === "assistant") {
+                    copy[lastIndex] = {
+                      ...copy[lastIndex],
+                      content: streamedReply,
+                      thoughts: [...activeThoughts],
+                    };
+                  }
+                  return copy;
+                });
               }
-            } else if (event.type === "tool_start") {
-              const argStr = event.arguments ? JSON.stringify(event.arguments) : "";
-              const stepMsg = `Tool '${event.name}' called ${argStr.length > 50 ? argStr.slice(0, 50) + "..." : argStr}`;
-              setCurrentThought(stepMsg);
-              activeThoughts.push(stepMsg);
-            } else if (event.type === "tool_end") {
-              const name = event.name;
-              const stepMsg = `Tool '${name}' completed successfully`;
-              setThoughtHistory((prev) => [...prev, stepMsg]);
-              activeThoughts.push(stepMsg);
             } else if (event.type === "done") {
-              setAssistantStreaming(false);
-              if (assistantMessageAdded) {
-                setMessages((prev: Message[]) =>
-                  prev.map((m, idx) =>
-                    idx === prev.length - 1
-                      ? {
-                        ...m,
-                        id: event.message_id,
-                        content: event.response,
-                        model: event.model,
-                        attachments: event.attachments ?? null,
-                        thoughts: activeThoughts.length > 0 ? [...activeThoughts] : m.thoughts,
-                      }
-                      : m
-                  )
-                );
-              } else {
-                setMessages((prev: Message[]) => [
-                  ...prev,
-                  {
-                    id: event.message_id,
-                    role: "assistant",
-                    content: event.response,
-                    model: event.model,
-                    attachments: event.attachments ?? null,
-                    thoughts: [...activeThoughts],
-                  },
-                ]);
-              }
-
-              if (!activeSession && selectedAgentId !== "unified") {
-                const next = await api.get<Session[]>("/chat/sessions");
-                setSessions(next);
-                const newSession = next.find((s) => s.id === event.session_id);
-                if (newSession) {
-                  setActiveSession(newSession);
-                  setComposingNew(false);
-                }
-              } else {
+              if (event.session_id && (!activeSession || activeSession.id !== event.session_id)) {
+                setActiveSession({
+                  id: event.session_id,
+                  title: sentInput.slice(0, 30) || "New Chat",
+                  agent_id: agentId,
+                  created_at: new Date().toISOString(),
+                });
                 loadSessions();
               }
+              if (event.message_id) {
+                setMessages((prev) => {
+                  const copy = [...prev];
+                  const lastIndex = copy.length - 1;
+                  if (lastIndex >= 0 && copy[lastIndex].role === "assistant") {
+                    copy[lastIndex] = {
+                      ...copy[lastIndex],
+                      id: event.message_id,
+                      content: streamedReply || copy[lastIndex].content,
+                      thoughts: [...activeThoughts],
+                    };
+                  }
+                  return copy;
+                });
+              }
               setCurrentThought(null);
+              setAssistantStreaming(false);
             } else if (event.type === "error") {
               throw new Error(event.message);
             }
-          } catch (jsonErr) {
-            console.error("Failed to parse stream line:", line, jsonErr);
+          } catch (e) {
+            // Ignore partial lines
           }
         }
       }
-    } catch (err) {
-      setMessages((prev: Message[]) => [
+
+      if (streamedReply) {
+        setMessages((prev) => {
+          const copy = [...prev];
+          const lastIndex = copy.length - 1;
+          if (lastIndex >= 0 && copy[lastIndex].role === "assistant") {
+            copy[lastIndex] = {
+              ...copy[lastIndex],
+              content: streamedReply,
+              thoughts: [...activeThoughts],
+            };
+          }
+          return copy;
+        });
+      }
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        console.log("Chat generation stopped by user");
+        return;
+      }
+      console.error(err);
+      setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `Error: ${err instanceof Error ? err.message : "Unknown error"}`,
+          content: `Error: ${err.message || "Failed to communicate with AladdinAI"}`,
         },
       ]);
     } finally {
       setLoading(false);
       setAssistantStreaming(false);
       setCurrentThought(null);
+      abortControllerRef.current = null;
     }
   };
 
-
-  const agentName = (agentId: number | string): string => {
-    if (agentId === "unified") return "Unified";
-    return agents.find((a: Agent) => a.id === agentId)?.name ?? `Agent #${agentId}`;
-  };
-
-  // Send a 👍/👎 on an assistant reply. Clicking the active reaction clears it.
-  const sendFeedback = async (messageId: number, value: string) => {
-    const next = feedback[messageId] === value ? undefined : value;
-    // Optimistic: reflect the click immediately, roll back on failure.
-    setFeedback((prev) => {
-      const copy = { ...prev };
-      if (next) copy[messageId] = next;
-      else delete copy[messageId];
-      return copy;
-    });
-    if (!next) return; // no clear-endpoint yet; local un-highlight only
+  const sendFeedback = async (messageId: number, type: "thumbs_up" | "thumbs_down") => {
+    setFeedback((prev) => ({ ...prev, [messageId]: type }));
     try {
-      await api.post(`/chat/messages/${messageId}/feedback`, { value: next });
-    } catch {
-      setFeedback((prev) => {
-        const copy = { ...prev };
-        if (feedback[messageId]) copy[messageId] = feedback[messageId];
-        else delete copy[messageId];
-        return copy;
-      });
+      await api.post(`/chat/messages/${messageId}/feedback`, { type });
+    } catch (err) {
+      console.error("Failed to post feedback:", err);
     }
   };
-
 
   const exportChat = () => {
     if (!messages.length) return;
     const title = activeSession?.title || (isGeneralChat ? "General Chat" : "AladdinAI Chat");
-    const dateStr = new Date().toISOString().split("T")[0];
+    let markdown = `# ${title}\n*Exported on ${new Date().toLocaleString()}*\n\n---\n\n`;
 
-    let mdContent = `# ${title}\n*Exported on ${dateStr} from AladdinAI*\n\n---\n\n`;
+    for (const msg of messages) {
+      const sender = msg.role === "user" ? "User" : "AladdinAI";
+      const timeStr = msg.created_at ? ` (${new Date(msg.created_at).toLocaleTimeString()})` : "";
+      markdown += `### **${sender}**${timeStr}\n${msg.content}\n\n`;
+    }
 
-    messages.forEach((m, idx) => {
-      const sender = m.role === "user" ? "👤 **User**" : `🤖 **Assistant**${m.model ? ` (${m.model})` : ""}`;
-      mdContent += `### ${sender}\n\n`;
-
-      if (m.thoughts && m.thoughts.length > 0) {
-        mdContent += `<details><summary>Thought Process</summary>\n\n`;
-        m.thoughts.forEach((t) => {
-          mdContent += `- ${t}\n`;
-        });
-        mdContent += `\n</details>\n\n`;
-      }
-
-      mdContent += `${m.content}\n\n`;
-
-      if (m.attachments && m.attachments.length > 0) {
-        mdContent += `**Attachments:**\n`;
-        m.attachments.forEach((att) => {
-          mdContent += `- [${att.filename}](${att.path})\n`;
-        });
-        mdContent += `\n`;
-      }
-
-      mdContent += `---\n\n`;
-    });
-
-    const blob = new Blob([mdContent], { type: "text/markdown;charset=utf-8;" });
+    const blob = new Blob([markdown], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    const safeTitle = title.toLowerCase().replace(/[^a-z0-9]/g, "_");
-    link.setAttribute("download", `${safeTitle}_${dateStr}.md`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_export.md`;
+    a.click();
     URL.revokeObjectURL(url);
   };
 
-  const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    const now = new Date();
-    const isToday = d.toDateString() === now.toDateString();
-    return isToday
-      ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-      : d.toLocaleDateString([], { month: "short", day: "numeric" });
+  const formatTime = (ts?: string) => {
+    if (!ts) return "";
+    try {
+      return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    } catch {
+      return "";
+    }
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] -mx-8 -my-6 overflow-hidden bg-background">
-      {/* Premium Sidebar */}
-      <aside
-        className={`${sidebarOpen ? "w-64" : "w-0"
-          } border-r border-border/50 flex flex-col shrink-0 transition-all duration-300 ease-in-out overflow-hidden bg-muted/10`}
-      >
-        <div className="p-4 border-b border-border/50 space-y-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={newChat}
-            className="w-full justify-start gap-2.5 h-10 rounded-xl hover:bg-muted/80 font-medium"
-          >
-            <Plus size={18} />
-            <span className="text-sm">New chat</span>
-          </Button>
-
-          {/* Quick Session Search */}
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              value={sessionQuery}
-              onChange={(e) => setSessionQuery(e.target.value)}
-              placeholder="Search chats..."
-              className="w-full pl-8 pr-7 py-1.5 text-xs bg-muted/40 border border-border/40 rounded-xl outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground transition-all"
-            />
-            {sessionQuery && (
-              <button
-                onClick={() => setSessionQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X size={12} />
-              </button>
-            )}
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className="flex h-[calc(100vh-80px)] bg-background relative overflow-hidden rounded-2xl border border-border/50 shadow-sm"
+    >
+      {/* Drag & Drop File Upload Overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-background/90 backdrop-blur-md flex flex-col items-center justify-center border-2 border-dashed border-primary animate-in fade-in-50 duration-200">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 text-primary animate-bounce">
+            <Paperclip size={32} />
           </div>
+          <p className="text-lg font-semibold text-foreground mb-1">Drop files here to upload</p>
+          <p className="text-xs text-muted-foreground">Supports images, audio, docs, code & text</p>
         </div>
+      )}
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
-          <button
-            onClick={openGeneralChat}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-left transition-all text-sm ${isGeneralChat
-              ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
-              : "hover:bg-muted/50"
-              }`}
-          >
-            <Globe size={16} className="shrink-0 opacity-70" />
-            <span className="truncate">General Chat</span>
-          </button>
+      {/* Sidebar Component */}
+      <ChatSidebar
+        sidebarOpen={sidebarOpen}
+        sidebarCollapsed={sidebarCollapsed}
+        sessions={sessions}
+        agents={agents}
+        sessionQuery={sessionQuery}
+        activeSession={activeSession}
+        selectedAgentId={selectedAgentId}
+        isGeneralChat={isGeneralChat}
+        onSetSidebarOpen={setSidebarOpen}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onSetSessionQuery={setSessionQuery}
+        onNewChat={newChat}
+        onOpenGeneralChat={openGeneralChat}
+        onOpenSession={openSession}
+        onDeleteSession={deleteSession}
+        onSelectAgent={setSelectedAgentId}
+      />
 
-          {sessions.length > 0 && (
-            <div className="pt-4 pb-2">
-              <p className="text-[10px] font-bold text-muted-foreground px-3 py-1 uppercase tracking-wider">
-                Recent ({sessions.filter((s) => s.title.toLowerCase().includes(sessionQuery.toLowerCase())).length})
-              </p>
-            </div>
-          )}
-
-          {sessions
-            .filter((s) => s.title.toLowerCase().includes(sessionQuery.toLowerCase()))
-            .map((s) => (
-              <div
-                key={s.id}
-                onClick={() => openSession(s)}
-                className={`w-full text-left px-3 py-2.5 rounded-xl transition-all group cursor-pointer relative ${activeSession?.id === s.id
-                  ? "bg-muted/80 font-semibold shadow-sm border border-border/50"
-                  : "hover:bg-muted/50 border border-transparent"
-                  }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm truncate flex-1">{s.title}</p>
-                  <button
-                    onClick={(e) => deleteSession(s.id, e)}
-                    className="p-1.5 rounded-lg hover:bg-background/80 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                    aria-label="Delete chat"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
-        </div>
-      </aside>
-
-      {/* Main Content - Centered Gemini Layout */}
-      <div className="flex-1 flex flex-col relative">
-        {/* Minimal Header */}
-        <header className="h-14 px-6 flex items-center justify-between shrink-0 border-b border-border/40 bg-background/80 backdrop-blur-sm">
+      {/* Main Chat Content */}
+      <div className="flex-1 flex flex-col min-w-0 bg-background">
+        {/* Header bar */}
+        <header className="h-14 border-b border-border/50 px-6 flex items-center justify-between shrink-0 bg-background/95 backdrop-blur-sm z-10">
           <div className="flex items-center gap-3">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="rounded-xl w-9 h-9 hover:bg-muted/80"
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 text-muted-foreground hover:text-foreground rounded-lg"
             >
               <Menu size={18} />
-            </Button>
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
+            </button>
+            {sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                className="hidden lg:flex p-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-xl transition-colors shrink-0"
+                title="Show history sidebar"
+              >
+                <PanelLeftOpen size={18} />
+              </button>
+            )}
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Sparkles size={14} className="text-primary" />
               </div>
               <span className="font-semibold text-sm">
@@ -860,7 +583,7 @@ export default function ChatPage() {
         </header>
 
         {!activeSession && !isGeneralChat && !composingNew ? (
-          /* Empty State - Premium style */
+          /* Empty State */
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-3xl mx-auto w-full">
             <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center mb-8 shadow-sm">
               <Sparkles size={40} className="text-primary" />
@@ -891,7 +614,7 @@ export default function ChatPage() {
           </div>
         ) : (
           <>
-            {/* Messages - Premium Chat Style */}
+            {/* Messages Feed */}
             <div className="flex-1 overflow-y-auto">
               <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
                 {loadingMessages ? (
@@ -900,356 +623,30 @@ export default function ChatPage() {
                   </p>
                 ) : (
                   messages.map((msg, i) => (
-                    <div
+                    <ChatMessageItem
                       key={i}
-                      className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
-                    >
-                      {/* Avatar */}
-                      <div className="shrink-0 mt-1">
-                        {msg.role === "user" ? (
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-sm">
-                            <span className="text-[11px] text-white font-semibold">You</span>
-                          </div>
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 flex items-center justify-center">
-                            <Sparkles size={16} className="text-primary" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Message bubble */}
-                      <div className={`flex-1 min-w-0 ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
-                        {/* Header */}
-                        <div className={`flex items-center gap-2 mb-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                          <span className="text-xs font-semibold text-foreground">
-                            {msg.role === "user" ? "You" : "AladdinAI"}
-                          </span>
-                          {msg.model && (
-                            <span className="text-[10px] text-muted-foreground">· {msg.model}</span>
-                          )}
-                          {msg.created_at && (
-                            <span className="text-[10px] text-muted-foreground">
-                              · {formatTime(msg.created_at)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Audio attachments — rendered OUTSIDE the bubble to avoid gradient conflict */}
-                        {msg.attachments && msg.attachments.some(a => a.kind === "audio" || a.mime?.startsWith("audio/")) && (
-                          <div className={`flex flex-wrap gap-2 mb-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                            {msg.attachments
-                              .filter(a => a.kind === "audio" || a.mime?.startsWith("audio/"))
-                              .map((att) => (
-                                <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
-                              ))}
-                          </div>
-                        )}
-
-                        {/* Content bubble — only shown if there's text OR thoughts OR non-audio attachments */}
-                        {(Boolean(msg.content) || Boolean(msg.thoughts?.length) || (msg.attachments && msg.attachments.some(a => a.kind !== "audio" && !a.mime?.startsWith("audio/")))) && (
-                          <div
-                            className={`rounded-2xl px-4 py-3 ${msg.role === "user"
-                              ? "bg-gradient-to-br from-blue-500 to-violet-600 text-white shadow-md"
-                              : "bg-muted/50 border border-border/50"
-                              }`}
-                          >
-                            {msg.attachments && msg.attachments.some(a => a.kind !== "audio" && !a.mime?.startsWith("audio/")) && (
-                              <div className="flex flex-wrap gap-2 mb-3">
-                                {msg.attachments
-                                  .filter(a => a.kind !== "audio" && !a.mime?.startsWith("audio/"))
-                                  .map((att) => (
-                                    <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
-                                  ))}
-                              </div>
-                            )}
-                            {(() => {
-                              const thinkMatch = msg.role === "assistant" && msg.content ? msg.content.match(/<think>([\s\S]*?)<\/think>/i) : null;
-                              const parsedThoughts = thinkMatch ? thinkMatch[1].trim().split("\n").filter(l => l.trim()) : [];
-                              const displayThoughts = (msg.thoughts && msg.thoughts.length > 0) ? msg.thoughts : parsedThoughts;
-                              const cleanText = msg.content ? msg.content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim() : "";
-
-                              return (
-                                <>
-                                  {msg.role === "assistant" && displayThoughts.length > 0 && (
-                                    <details className="mb-3 rounded-xl bg-background/60 dark:bg-background/40 border border-border/60 text-xs overflow-hidden group">
-                                      <summary className="px-3 py-2 cursor-pointer font-mono text-[11px] text-muted-foreground hover:text-foreground flex items-center justify-between select-none">
-                                        <span className="flex items-center gap-1.5 font-medium">
-                                          <Sparkles size={13} className="text-primary" />
-                                          Thought Process & Tool Execution ({displayThoughts.length} step{displayThoughts.length > 1 ? "s" : ""})
-                                        </span>
-                                        <span className="text-[10px] text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
-                                      </summary>
-                                      <div className="px-3.5 pb-2.5 pt-1.5 space-y-1 font-mono border-t border-border/40 bg-background/50 text-[11px]">
-                                        {displayThoughts.map((t, idx) => (
-                                          <div key={idx} className="flex items-start gap-1.5 text-muted-foreground">
-                                            <span className="text-emerald-500 font-bold">✓</span>
-                                            <span>{t}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </details>
-                                  )}
-                                  {(cleanText || msg.role === "assistant") && (
-                                    <div className={`prose prose-sm max-w-none ${msg.role === "user"
-                                      ? "prose-invert prose-headings:text-white prose-p:text-white/95 prose-strong:text-white prose-code:text-white/90"
-                                      : "dark:prose-invert"
-                                      } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
-                                      <ReactMarkdown
-                                        components={{
-                                          code({ node, className, children, ...props }) {
-                                            const match = /language-(\w+)/.exec(className || "");
-                                            const codeString = String(children).replace(/\n$/, "");
-                                            const isCopied = copiedCode === codeString;
-                                            // Блочный код имеет language-класс; без него — инлайн
-                                            const isBlock = Boolean(match);
-
-                                            return isBlock ? (
-                                              <div className="relative group my-3 not-prose">
-                                                <div className="absolute top-3 right-3 z-10">
-                                                  <button
-                                                    onClick={() => copyToClipboard(codeString)}
-                                                    className="p-2 rounded-lg bg-background/90 hover:bg-background text-foreground transition-all shadow-sm border border-border/50"
-                                                    aria-label="Copy code"
-                                                  >
-                                                    {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                                                  </button>
-                                                </div>
-                                                <SyntaxHighlighter
-                                                  style={oneDark}
-                                                  language={match![1]}
-                                                  PreTag="div"
-                                                  className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
-                                                  {...(props as object)}
-                                                >
-                                                  {codeString}
-                                                </SyntaxHighlighter>
-                                              </div>
-                                            ) : (
-                                              <code className={`${msg.role === "user"
-                                                ? "bg-white/20 text-white"
-                                                : "bg-muted/80 dark:bg-muted/60 text-foreground"
-                                                } px-1.5 py-0.5 rounded text-[13px] font-mono`} {...props}>
-                                                {children}
-                                              </code>
-                                            );
-                                          },
-                                        }}
-                                      >
-                                        {cleanText || (msg.role === "assistant" ? "*Response completed*" : "")}
-                                      </ReactMarkdown>
-                                    </div>
-                                  )}
-                                </>
-                              );
-                            })()}
-
-                            {/* Human-in-the-Loop Terminal Approval Card */}
-                            {msg.role === "assistant" && msg.content && (
-                              (() => {
-                                const msgText: string = msg.content;
-                                const hasRequest = msgText.includes("Terminal Execution Request") ||
-                                                   msgText.includes("approval_required") ||
-                                                   msgText.includes("Approve & Execute") ||
-                                                   msgText.includes("Approve!") ||
-                                                   msgText.includes("нужно твоё") ||
-                                                   /gcc\s+|-o\s+|mkdir\s+-p/i.test(msgText);
-                                if (!hasRequest) return null;
-
-                                const codeBlockMatch: RegExpMatchArray | null = msgText.match(/```(?:bash|sh|c)?\n([\s\S]*?)\n```/i);
-                                const rawCmd = (codeBlockMatch ? codeBlockMatch[1].trim() : null) ||
-                                               (msgText.match(/(?:Command|Команда):\s*`?([^`\n]+)`?/i)?.[1]?.trim()) ||
-                                               (msgText.match(/`([^`]+)`/)?.[1]?.trim());
-
-                                // Ensure cmd is valid shell syntax (not Russian explanatory text with arrows)
-                                const isRealCode = rawCmd && !/[а-яА-Я]/.test(rawCmd) && !rawCmd.includes("->");
-                                const cmd = isRealCode ? rawCmd : "mkdir -p backend/native && gcc -O3 -march=native -o backend/native/process backend/native/process.c -lm && ./backend/native/process";
-                                const ratMatch = msgText.match(/(?:Rationale|Reason|Причина|Что будет выполнено):\s*([^\n]+)/i);
-                                const reqIdMatch = msgText.match(/request_id:\s*([a-f0-9\-]+)/i);
-                                const rationale = ratMatch ? ratMatch[1].trim() : "Execution of native C compilation pipeline in backend/native";
-                                const requestId = reqIdMatch ? reqIdMatch[1] : null;
-
-                                return (
-                                  <div className="mt-3 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs font-sans space-y-3 shadow-sm">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-2 font-semibold text-foreground">
-                                        <Shield size={15} className="text-amber-500 shrink-0" />
-                                        <span>Terminal Execution Request</span>
-                                      </div>
-                                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/80">Pending Approval</span>
-                                    </div>
-                                    <div className="space-y-1 font-mono text-[11px] bg-background/80 p-2.5 rounded-lg border border-border/40">
-                                      <div><span className="text-muted-foreground select-none">Command:   </span><span className="text-emerald-400 font-semibold">{cmd}</span></div>
-                                      <div><span className="text-muted-foreground select-none">Rationale: </span><span className="text-foreground/90">{rationale}</span></div>
-                                    </div>
-                                    <div className="flex items-center gap-2 pt-0.5">
-                                      <button
-                                        onClick={async (e) => {
-                                          const btn = e.currentTarget;
-                                          btn.disabled = true;
-                                          btn.innerText = "Approved & Executing...";
-                                          btn.className = "px-3.5 py-1.5 rounded-lg bg-emerald-700 text-white font-medium text-xs opacity-80 cursor-wait flex items-center gap-1.5";
-                                          try {
-                                            let res: any;
-                                            if (requestId) {
-                                              res = await api.post(`/terminal/approval/${requestId}/approve`);
-                                            } else {
-                                              res = await api.post(`/terminal/approval/approve_latest`, { command: cmd });
-                                            }
-                                            if (res && res.output) {
-                                              btn.innerText = "Execution Completed ✓";
-                                              btn.className = "px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white font-medium text-xs flex items-center gap-1.5";
-                                            }
-                                          } catch (err) {
-                                            console.error("Failed to approve terminal execution:", err);
-                                          }
-                                        }}
-                                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-all shadow-sm flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                                      >
-                                        Approve & Execute
-                                      </button>
-                                      <button
-                                        onClick={async (e) => {
-                                          const btn = e.currentTarget;
-                                          btn.disabled = true;
-                                          btn.innerText = "Rejected";
-                                          try {
-                                            if (requestId) {
-                                              await api.post(`/terminal/approval/${requestId}/reject`);
-                                            } else {
-                                              await api.post(`/terminal/approval/reject_latest`);
-                                            }
-                                          } catch (err) {
-                                            console.error("Failed to reject terminal execution:", err);
-                                          }
-                                        }}
-                                        className="px-3.5 py-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground font-medium text-xs transition-all active:scale-95 cursor-pointer"
-                                      >
-                                        Reject
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })()
-                            )}
-
-                            {/* Autonomous Execution Plan Stepper */}
-                            {msg.role === "assistant" && msg.content && (
-                              (() => {
-                                const text = msg.content;
-                                const planMatch = text.match(/(?:🎬\s*Autonomous Execution Plan|Autonomous Execution Plan|План выполнения:?|План автономного выполнения:?)[\s\n]*([\s\S]*?)(?=\n\n(?:[#💡💡]|$)|$)/i);
-                                if (!planMatch) return null;
-                                const rawSteps = planMatch[1].split("\n").map(l => l.trim()).filter(l => l.length > 0 && /^[-*•\d.✓✅🎬]/.test(l));
-                                if (rawSteps.length === 0) return null;
-                                return (
-                                  <div className="mt-3 p-3 rounded-lg border border-primary/20 bg-primary/5 space-y-2">
-                                    <p className="text-[12px] font-semibold text-primary flex items-center gap-1.5">
-                                      <Zap size={14} className="animate-pulse" />
-                                      <span> (Autonomous Execution Plan):</span>
-                                    </p>
-                                    <div className="space-y-1.5 text-xs text-foreground/90">
-                                      {rawSteps.map((step, idx) => {
-                                        const isDone = /✓|✅|completed|done/i.test(step);
-                                        return (
-                                          <div key={idx} className="flex items-center gap-2">
-                                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${isDone ? "bg-emerald-500 text-white" : "bg-primary/20 text-primary"}`}>
-                                              {isDone ? "✓" : idx + 1}
-                                            </span>
-                                            <span className={isDone ? "line-through text-muted-foreground" : "font-medium"}>
-                                              {step.replace(/^[-*•\d.\s✓✅]+/, "")}
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                );
-                              })()
-                            )}
-
-                            {/* Interactive Proactive Suggestion Chips */}
-                            {msg.role === "assistant" && msg.content && (
-                              (() => {
-                                const text = msg.content;
-                                const headerMatch = text.match(/(?:💡\s*Proactive Suggestions|Proactive Suggestions|Что дальше\??(?:\s*Может:?)?|Что предложишь\??|Варианты:?|Дальнейшие шаги:?|Следующие шаги:?)[\s\n]*([\s\S]*?)$/i);
-                                let targetBlock = headerMatch ? headerMatch[1] : "";
-
-                                if (!targetBlock) {
-                                  const parts = text.trim().split(/\n\n+/);
-                                  const lastPart = parts[parts.length - 1];
-                                  if (lastPart && /^[\s]*[-*•\d.🔧🧪📝💡🚀📌❓👉]/m.test(lastPart)) {
-                                    targetBlock = lastPart;
-                                  }
-                                }
-
-                                if (!targetBlock) return null;
-
-                                const rawLines = targetBlock.split("\n");
-                                const suggestions: string[] = [];
-                                for (const line of rawLines) {
-                                  const trimmed = line.trim();
-                                  if (!trimmed || trimmed.toLowerCase().startsWith("что дальше")) continue;
-                                  // Strip leading bullets, numbers, and emojis
-                                  const cleaned = trimmed
-                                    .replace(/^[-*•\d.\s]+/, "")
-                                    .replace(/^(?:🔧|🧪|📝|💡|🚀|📌|❓|👉|✅|🤝)\s*/, "")
-                                    .trim();
-                                  if (cleaned.length >= 3 && cleaned.length < 120) {
-                                    suggestions.push(cleaned);
-                                  }
-                                }
-
-                                if (suggestions.length === 0) return null;
-                                return (
-                                  <div className="mt-3 pt-2.5 border-t border-border/40 space-y-2">
-                                    <p className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
-                                      <Sparkles size={12} className="text-primary" />
-                                      <span>Suggested Actions (click to select):</span>
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                      {suggestions.map((sug, sIdx) => (
-                                        <button
-                                          key={sIdx}
-                                          onClick={() => {
-                                            setInput(sug);
-                                            textareaRef.current?.focus();
-                                          }}
-                                          className="text-xs px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 border border-primary/20 text-foreground transition-all flex items-center gap-1.5 text-left font-medium shadow-sm hover:scale-[1.01] active:scale-[0.99]"
-                                        >
-                                          <Sparkles size={11} className="text-primary shrink-0 opacity-70" />
-                                          <span>{sug}</span>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                );
-                              })()
-                            )}
-                          </div>
-                        )}
-
-                        {/* Feedback — the strong training signal for the self-forging loop */}
-                        {msg.role === "assistant" && msg.id && (
-                          <div className="flex items-center gap-1 mt-1.5">
-                            <button
-                              onClick={() => sendFeedback(msg.id!, "thumbs_up")}
-                              aria-label="Good response"
-                              className={`p-1.5 rounded-lg transition-all hover:bg-muted ${feedback[msg.id] === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
-                            >
-                              <ThumbsUp size={14} />
-                            </button>
-                            <button
-                              onClick={() => sendFeedback(msg.id!, "thumbs_down")}
-                              aria-label="Bad response"
-                              className={`p-1.5 rounded-lg transition-all hover:bg-muted ${feedback[msg.id] === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
-                            >
-                              <ThumbsDown size={14} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      msg={msg}
+                      index={i}
+                      isLast={i === messages.length - 1}
+                      assistantStreaming={assistantStreaming}
+                      copiedCode={copiedCode}
+                      feedback={feedback}
+                      onCopy={copyToClipboard}
+                      onEditPrompt={(text) => {
+                        setInput(text);
+                        textareaRef.current?.focus();
+                      }}
+                      onSendFeedback={sendFeedback}
+                      onSelectSuggestion={(sug) => {
+                        setInput(sug);
+                        textareaRef.current?.focus();
+                      }}
+                      formatTime={formatTime}
+                    />
                   ))
                 )}
+
+                {/* Active Thinking Indicator */}
                 {loading && !assistantStreaming && (
                   <div className="flex gap-4" style={{ animation: "mpIn 200ms ease-out both" }}>
                     <div className="shrink-0 mt-1">
@@ -1262,32 +659,16 @@ export default function ChatPage() {
                         <span className="text-xs font-semibold text-foreground">AladdinAI</span>
                       </div>
 
-                      <div className="rounded-2xl p-4 bg-muted/30 border border-border/50 max-w-xl space-y-2 text-xs font-mono">
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold border-b border-border/40 pb-1.5 mb-1.5 flex items-center justify-between">
-                          <span>Agent Thought Process</span>
-                          <span className="flex gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
-                          </span>
-                        </div>
-                        {thoughtHistory.map((step, idx) => (
-                          <div key={idx} className="text-muted-foreground flex items-start gap-1.5">
-                            <span className="text-emerald-500 font-bold">✓</span>
-                            <span>{step}</span>
-                          </div>
-                        ))}
-                        {currentThought && (
-                          <div className="text-foreground font-medium animate-pulse flex items-start gap-1.5">
-                            <span className="text-blue-500 font-bold">▶</span>
-                            <span>{currentThought}</span>
-                          </div>
-                        )}
-                        {!currentThought && thoughtHistory.length === 0 && (
-                          <div className="flex gap-1.5 py-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.3s]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.15s]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce" />
-                          </div>
-                        )}
+                      <div className="flex items-center gap-2 py-1.5 px-3 rounded-full bg-card/90 border border-border/80 text-xs font-mono max-w-fit shadow-xs transition-all">
+                        <span className="relative flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                        </span>
+                        <span className="text-foreground font-sans font-semibold text-[11px]">Thinking</span>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="text-muted-foreground truncate max-w-sm text-[11px]">
+                          {currentThought || (thoughtHistory.length > 0 ? thoughtHistory[thoughtHistory.length - 1] : "Analyzing prompt & tools...")}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1296,14 +677,14 @@ export default function ChatPage() {
               </div>
             </div>
 
-            {/* Input Area - Premium Style */}
+            {/* Input Area */}
             <div className="px-6 py-4 border-t border-border/50 bg-background/95 backdrop-blur-sm">
               <div className="max-w-4xl mx-auto space-y-3">
                 {pendingAttachments.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {pendingAttachments.map((att) => (
                       <div key={att.filename} className="relative group">
-                        <AuthAttachment filename={att.filename} mime={att.mime} kind={att.kind} />
+                        <AuthAttachment filename={att.filename} mime={att.mime} kind={att.kind} compact />
                         <button
                           type="button"
                           onClick={() => removePending(att.filename)}
@@ -1396,18 +777,30 @@ export default function ChatPage() {
                       </Button>
                     )}
 
-                    <Button
-                      type="submit"
-                      disabled={
-                        loading ||
-                        !selectedAgentId ||
-                        (!input.trim() && pendingAttachments.length === 0)
-                      }
-                      size="icon"
-                      className="rounded-xl w-10 h-10 shrink-0 bg-gradient-to-br from-blue-500 to-violet-600 hover:from-blue-600 hover:to-violet-700 shadow-md disabled:opacity-50 disabled:from-muted disabled:to-muted"
-                    >
-                      <Send size={18} />
-                    </Button>
+                    {loading || assistantStreaming ? (
+                      <Button
+                        type="button"
+                        onClick={handleStopStreaming}
+                        size="icon"
+                        className="rounded-xl w-10 h-10 shrink-0 bg-red-500 hover:bg-red-600 text-white shadow-md transition-all animate-pulse"
+                        title="Stop generating response"
+                        aria-label="Stop generating"
+                      >
+                        <Square size={16} className="fill-current" />
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={
+                          !selectedAgentId ||
+                          (!input.trim() && pendingAttachments.length === 0)
+                        }
+                        size="icon"
+                        className="rounded-xl w-10 h-10 shrink-0 bg-gradient-to-br from-blue-500 to-violet-600 hover:from-blue-600 hover:to-violet-700 shadow-md disabled:opacity-50 disabled:from-muted disabled:to-muted"
+                      >
+                        <Send size={18} />
+                      </Button>
+                    )}
                   </div>
                 </form>
                 <p className="text-[10px] text-center text-muted-foreground/50">
