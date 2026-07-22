@@ -17,6 +17,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump fast-uri from 3.1.2 to 3.1.4 in /frontend (#455) ([95c0e93](https://github.com/aliyevaladddin/AladdinAI/commit/95c0e936d57966214462984c2e62aa9150fad04b))
 
+- Bump hono from 4.12.25 to 4.12.31 in /frontend (#459) ([53998cc](https://github.com/aliyevaladddin/AladdinAI/commit/53998cc5d49f9969ae2e4a797f4be66c7a92fc2c))
+
 
 ### Documentation
 
@@ -26,6 +28,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 ### Features
 
 - Implement voice playback, markdown parsing, and chat UI improvements (#453) ([3bbd3be](https://github.com/aliyevaladddin/AladdinAI/commit/3bbd3be56aada254a7904d43f02f2e440839b243))
+
+- Implement system-wide Command Palette with keyboard shortcut registry and documentation settings tab (#457) ([03b922d](https://github.com/aliyevaladddin/AladdinAI/commit/03b922d88e7bea8a6d6ec5bb6744b61bf6e5f5bb))
 
 
 ### Maintenance
@@ -37,6 +41,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#448) ([39ce49a](https://github.com/aliyevaladddin/AladdinAI/commit/39ce49aef1dd72e89dcd960660990fe5a7698d30))
 
 - Update changelog [skip ci] (#450) ([bdd9ecd](https://github.com/aliyevaladddin/AladdinAI/commit/bdd9ecd79921b9f9552b9487dfe3378ecc3cd193))
+
+- Update changelog [skip ci] (#456) ([df6c89a](https://github.com/aliyevaladddin/AladdinAI/commit/df6c89a5c74b58bf9194dfee7813fb335072a72f))
+
+- Update changelog [skip ci] (#458) ([416d031](https://github.com/aliyevaladddin/AladdinAI/commit/416d0316010db8e668b3e00d07b92e7a0ec70d72))
 
 ## [v2.2.2] - 2026-07-20
 
