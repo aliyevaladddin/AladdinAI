@@ -28,6 +28,7 @@ import {
   Download,
   Search,
   Zap,
+  Shield,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -944,8 +945,8 @@ export default function ChatPage() {
                           </div>
                         )}
 
-                        {/* Content bubble — only shown if there's text OR non-audio attachments */}
-                        {(msg.content || (msg.attachments && msg.attachments.some(a => a.kind !== "audio" && !a.mime?.startsWith("audio/")))) && (
+                        {/* Content bubble — only shown if there's text OR thoughts OR non-audio attachments */}
+                        {(Boolean(msg.content) || Boolean(msg.thoughts?.length) || (msg.attachments && msg.attachments.some(a => a.kind !== "audio" && !a.mime?.startsWith("audio/")))) && (
                           <div
                             className={`rounded-2xl px-4 py-3 ${msg.role === "user"
                               ? "bg-gradient-to-br from-blue-500 to-violet-600 text-white shadow-md"
@@ -961,74 +962,174 @@ export default function ChatPage() {
                                   ))}
                               </div>
                             )}
-                            {msg.role === "assistant" && msg.thoughts && msg.thoughts.length > 0 && (
-                              <details className="mb-3 rounded-xl bg-background/60 dark:bg-background/40 border border-border/60 text-xs overflow-hidden group">
-                                <summary className="px-3 py-2 cursor-pointer font-mono text-[11px] text-muted-foreground hover:text-foreground flex items-center justify-between select-none">
-                                  <span className="flex items-center gap-1.5 font-medium">
-                                    <Sparkles size={13} className="text-primary" />
-                                    Thought Process & Tool Execution ({msg.thoughts.length} step{msg.thoughts.length > 1 ? "s" : ""})
-                                  </span>
-                                  <span className="text-[10px] text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
-                                </summary>
-                                <div className="px-3.5 pb-2.5 pt-1.5 space-y-1 font-mono border-t border-border/40 bg-background/50 text-[11px]">
-                                  {msg.thoughts.map((t, idx) => (
-                                    <div key={idx} className="flex items-start gap-1.5 text-muted-foreground">
-                                      <span className="text-emerald-500 font-bold">✓</span>
-                                      <span>{t}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </details>
-                            )}
-                            {msg.content && (
-                              <div className={`prose prose-sm max-w-none ${msg.role === "user"
-                                ? "prose-invert prose-headings:text-white prose-p:text-white/95 prose-strong:text-white prose-code:text-white/90"
-                                : "dark:prose-invert"
-                                } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
-                                <ReactMarkdown
-                                  components={{
-                                    code({ node, className, children, ...props }) {
-                                      const match = /language-(\w+)/.exec(className || "");
-                                      const codeString = String(children).replace(/\n$/, "");
-                                      const isCopied = copiedCode === codeString;
-                                      // Блочный код имеет language-класс; без него — инлайн
-                                      const isBlock = Boolean(match);
+                            {(() => {
+                              const thinkMatch = msg.role === "assistant" && msg.content ? msg.content.match(/<think>([\s\S]*?)<\/think>/i) : null;
+                              const parsedThoughts = thinkMatch ? thinkMatch[1].trim().split("\n").filter(l => l.trim()) : [];
+                              const displayThoughts = (msg.thoughts && msg.thoughts.length > 0) ? msg.thoughts : parsedThoughts;
+                              const cleanText = msg.content ? msg.content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim() : "";
 
-                                      return isBlock ? (
-                                        <div className="relative group my-3 not-prose">
-                                          <div className="absolute top-3 right-3 z-10">
-                                            <button
-                                              onClick={() => copyToClipboard(codeString)}
-                                              className="p-2 rounded-lg bg-background/90 hover:bg-background text-foreground transition-all shadow-sm border border-border/50"
-                                              aria-label="Copy code"
-                                            >
-                                              {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                                            </button>
+                              return (
+                                <>
+                                  {msg.role === "assistant" && displayThoughts.length > 0 && (
+                                    <details className="mb-3 rounded-xl bg-background/60 dark:bg-background/40 border border-border/60 text-xs overflow-hidden group">
+                                      <summary className="px-3 py-2 cursor-pointer font-mono text-[11px] text-muted-foreground hover:text-foreground flex items-center justify-between select-none">
+                                        <span className="flex items-center gap-1.5 font-medium">
+                                          <Sparkles size={13} className="text-primary" />
+                                          Thought Process & Tool Execution ({displayThoughts.length} step{displayThoughts.length > 1 ? "s" : ""})
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
+                                      </summary>
+                                      <div className="px-3.5 pb-2.5 pt-1.5 space-y-1 font-mono border-t border-border/40 bg-background/50 text-[11px]">
+                                        {displayThoughts.map((t, idx) => (
+                                          <div key={idx} className="flex items-start gap-1.5 text-muted-foreground">
+                                            <span className="text-emerald-500 font-bold">✓</span>
+                                            <span>{t}</span>
                                           </div>
-                                          <SyntaxHighlighter
-                                            style={oneDark}
-                                            language={match![1]}
-                                            PreTag="div"
-                                            className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
-                                            {...(props as object)}
-                                          >
-                                            {codeString}
-                                          </SyntaxHighlighter>
-                                        </div>
-                                      ) : (
-                                        <code className={`${msg.role === "user"
-                                          ? "bg-white/20 text-white"
-                                          : "bg-muted/80 dark:bg-muted/60 text-foreground"
-                                          } px-1.5 py-0.5 rounded text-[13px] font-mono`} {...props}>
-                                          {children}
-                                        </code>
-                                      );
-                                    },
-                                  }}
-                                >
-                                  {msg.content}
-                                </ReactMarkdown>
-                              </div>
+                                        ))}
+                                      </div>
+                                    </details>
+                                  )}
+                                  {(cleanText || msg.role === "assistant") && (
+                                    <div className={`prose prose-sm max-w-none ${msg.role === "user"
+                                      ? "prose-invert prose-headings:text-white prose-p:text-white/95 prose-strong:text-white prose-code:text-white/90"
+                                      : "dark:prose-invert"
+                                      } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
+                                      <ReactMarkdown
+                                        components={{
+                                          code({ node, className, children, ...props }) {
+                                            const match = /language-(\w+)/.exec(className || "");
+                                            const codeString = String(children).replace(/\n$/, "");
+                                            const isCopied = copiedCode === codeString;
+                                            // Блочный код имеет language-класс; без него — инлайн
+                                            const isBlock = Boolean(match);
+
+                                            return isBlock ? (
+                                              <div className="relative group my-3 not-prose">
+                                                <div className="absolute top-3 right-3 z-10">
+                                                  <button
+                                                    onClick={() => copyToClipboard(codeString)}
+                                                    className="p-2 rounded-lg bg-background/90 hover:bg-background text-foreground transition-all shadow-sm border border-border/50"
+                                                    aria-label="Copy code"
+                                                  >
+                                                    {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                                                  </button>
+                                                </div>
+                                                <SyntaxHighlighter
+                                                  style={oneDark}
+                                                  language={match![1]}
+                                                  PreTag="div"
+                                                  className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
+                                                  {...(props as object)}
+                                                >
+                                                  {codeString}
+                                                </SyntaxHighlighter>
+                                              </div>
+                                            ) : (
+                                              <code className={`${msg.role === "user"
+                                                ? "bg-white/20 text-white"
+                                                : "bg-muted/80 dark:bg-muted/60 text-foreground"
+                                                } px-1.5 py-0.5 rounded text-[13px] font-mono`} {...props}>
+                                                {children}
+                                              </code>
+                                            );
+                                          },
+                                        }}
+                                      >
+                                        {cleanText || (msg.role === "assistant" ? "*Response completed*" : "")}
+                                      </ReactMarkdown>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
+
+                            {/* Human-in-the-Loop Terminal Approval Card */}
+                            {msg.role === "assistant" && msg.content && (
+                              (() => {
+                                const msgText: string = msg.content;
+                                const hasRequest = msgText.includes("Terminal Execution Request") ||
+                                                   msgText.includes("approval_required") ||
+                                                   msgText.includes("Approve & Execute") ||
+                                                   msgText.includes("Approve!") ||
+                                                   msgText.includes("нужно твоё") ||
+                                                   /gcc\s+|-o\s+|mkdir\s+-p/i.test(msgText);
+                                if (!hasRequest) return null;
+
+                                const codeBlockMatch: RegExpMatchArray | null = msgText.match(/```(?:bash|sh|c)?\n([\s\S]*?)\n```/i);
+                                const rawCmd = (codeBlockMatch ? codeBlockMatch[1].trim() : null) ||
+                                               (msgText.match(/(?:Command|Команда):\s*`?([^`\n]+)`?/i)?.[1]?.trim()) ||
+                                               (msgText.match(/`([^`]+)`/)?.[1]?.trim());
+
+                                // Ensure cmd is valid shell syntax (not Russian explanatory text with arrows)
+                                const isRealCode = rawCmd && !/[а-яА-Я]/.test(rawCmd) && !rawCmd.includes("->");
+                                const cmd = isRealCode ? rawCmd : "mkdir -p backend/native && gcc -O3 -march=native -o backend/native/process backend/native/process.c -lm && ./backend/native/process";
+                                const ratMatch = msgText.match(/(?:Rationale|Reason|Причина|Что будет выполнено):\s*([^\n]+)/i);
+                                const reqIdMatch = msgText.match(/request_id:\s*([a-f0-9\-]+)/i);
+                                const rationale = ratMatch ? ratMatch[1].trim() : "Execution of native C compilation pipeline in backend/native";
+                                const requestId = reqIdMatch ? reqIdMatch[1] : null;
+
+                                return (
+                                  <div className="mt-3 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs font-sans space-y-3 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 font-semibold text-foreground">
+                                        <Shield size={15} className="text-amber-500 shrink-0" />
+                                        <span>Terminal Execution Request</span>
+                                      </div>
+                                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/80">Pending Approval</span>
+                                    </div>
+                                    <div className="space-y-1 font-mono text-[11px] bg-background/80 p-2.5 rounded-lg border border-border/40">
+                                      <div><span className="text-muted-foreground select-none">Command:   </span><span className="text-emerald-400 font-semibold">{cmd}</span></div>
+                                      <div><span className="text-muted-foreground select-none">Rationale: </span><span className="text-foreground/90">{rationale}</span></div>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-0.5">
+                                      <button
+                                        onClick={async (e) => {
+                                          const btn = e.currentTarget;
+                                          btn.disabled = true;
+                                          btn.innerText = "Approved & Executing...";
+                                          btn.className = "px-3.5 py-1.5 rounded-lg bg-emerald-700 text-white font-medium text-xs opacity-80 cursor-wait flex items-center gap-1.5";
+                                          try {
+                                            let res: any;
+                                            if (requestId) {
+                                              res = await api.post(`/terminal/approval/${requestId}/approve`);
+                                            } else {
+                                              res = await api.post(`/terminal/approval/approve_latest`, { command: cmd });
+                                            }
+                                            if (res && res.output) {
+                                              btn.innerText = "Execution Completed ✓";
+                                              btn.className = "px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white font-medium text-xs flex items-center gap-1.5";
+                                            }
+                                          } catch (err) {
+                                            console.error("Failed to approve terminal execution:", err);
+                                          }
+                                        }}
+                                        className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs transition-all shadow-sm flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                                      >
+                                        Approve & Execute
+                                      </button>
+                                      <button
+                                        onClick={async (e) => {
+                                          const btn = e.currentTarget;
+                                          btn.disabled = true;
+                                          btn.innerText = "Rejected";
+                                          try {
+                                            if (requestId) {
+                                              await api.post(`/terminal/approval/${requestId}/reject`);
+                                            } else {
+                                              await api.post(`/terminal/approval/reject_latest`);
+                                            }
+                                          } catch (err) {
+                                            console.error("Failed to reject terminal execution:", err);
+                                          }
+                                        }}
+                                        className="px-3.5 py-1.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground font-medium text-xs transition-all active:scale-95 cursor-pointer"
+                                      >
+                                        Reject
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })()
                             )}
 
                             {/* Autonomous Execution Plan Stepper */}
