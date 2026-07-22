@@ -53,10 +53,15 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
+    "@monaco-editor/react": "^4.7.0",
+    "@tanstack/react-table": "^8.21.3",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "electron-serve": "^3.0.1",
+    "framer-motion": "^12.42.2",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.25.0",
@@ -78,6 +83,7 @@
     "xterm-addon-fit": "^0.8.0"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@swc/jest": "^0.2.39",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
