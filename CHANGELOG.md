@@ -26,6 +26,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#451) ([71b42d5](https://github.com/aliyevaladddin/AladdinAI/commit/71b42d5bf05b4067ca8819d689fcce905bd8d97d))
 
+- Update readme modules to include multi-agent swarm, meta-search, evaluation harness, UI features, and revised voice/order documentation ([b38092d](https://github.com/aliyevaladddin/AladdinAI/commit/b38092d32e8fbaecf5481b1596ecbd3e2663e116))
+
 
 ### Features
 
@@ -49,6 +51,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#458) ([416d031](https://github.com/aliyevaladddin/AladdinAI/commit/416d0316010db8e668b3e00d07b92e7a0ec70d72))
 
 - Update changelog [skip ci] (#460) ([bebaffb](https://github.com/aliyevaladddin/AladdinAI/commit/bebaffb8f27afd6f01acfe6b1011329bce4f2f7b))
+
+- Update changelog [skip ci] (#462) ([7d10262](https://github.com/aliyevaladddin/AladdinAI/commit/7d10262ab5c92dbd9e86c5188d467162081452f0))
 
 ## [v2.2.2] - 2026-07-20
 
