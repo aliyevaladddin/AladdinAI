@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "recharts", "@base-ui/react"],
+  },
   // API proxying is handled by src/app/api/[...path]/route.ts at runtime,
   // so BACKEND_INTERNAL_URL is read per-request (not baked in at build time).
 

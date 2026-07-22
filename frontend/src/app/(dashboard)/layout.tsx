@@ -54,7 +54,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         status={<StatusBar rightExtra={<TerminalLauncherButton />} />}
         bodyOverlay={<TerminalDrawer />}
       >
-        <main className="h-full overflow-y-auto px-8 py-6">{children}</main>
+        <main className="h-full overflow-y-auto px-8 py-6 smooth-fade-in">{children}</main>
       </AppShell>
       <Toaster theme="dark" richColors position="top-right" />
     </TerminalProvider>
