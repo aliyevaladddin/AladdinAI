@@ -16,7 +16,7 @@ from app.config import settings as app_settings
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
     chat, crm_activities, crm_contacts, crm_deals, crm_orders, crm_products, dashboard, digest, forging, mongodb,
-    notifications, providers, reports as reports_router, router_config, search,
+    notifications, native_tools, providers, reports as reports_router, router_config, search,
     settings, sql, ssh_exec,
     terminal_approval, terminal_providers, terminal_ws, triggers as triggers_router, vms, webhooks,
     websearch,
@@ -132,6 +132,7 @@ app.add_middleware(
 )
 
 app.include_router(terminal_ws.router, prefix="/api")
+app.include_router(native_tools.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(agents.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
