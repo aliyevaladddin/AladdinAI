@@ -35,6 +35,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Implement system-wide Command Palette with keyboard shortcut registry and documentation settings tab (#457) ([03b922d](https://github.com/aliyevaladddin/AladdinAI/commit/03b922d88e7bea8a6d6ec5bb6744b61bf6e5f5bb))
 
+- Implement native log/grep utilities and improve terminal UX with clipboard support and render safety patches (#465) ([3e90908](https://github.com/aliyevaladddin/AladdinAI/commit/3e909089b3c0cb5e77ce35645cb91ec7f0135747))
+
 
 ### Maintenance
 
@@ -53,6 +55,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#460) ([bebaffb](https://github.com/aliyevaladddin/AladdinAI/commit/bebaffb8f27afd6f01acfe6b1011329bce4f2f7b))
 
 - Update changelog [skip ci] (#462) ([7d10262](https://github.com/aliyevaladddin/AladdinAI/commit/7d10262ab5c92dbd9e86c5188d467162081452f0))
+
+- Update changelog [skip ci] (#463) ([a5fd5c5](https://github.com/aliyevaladddin/AladdinAI/commit/a5fd5c5914d8686fb9f3e4c35f562dffbf05acbd))
+
+- Add axios, dotenv, ink, prompts, rcf-protocol, react, and zod dependencies to package.json ([f0fc601](https://github.com/aliyevaladddin/AladdinAI/commit/f0fc601ac10f78b19a9815093ddefcdde46d5e24))
 
 ## [v2.2.2] - 2026-07-20
 
