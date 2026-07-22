@@ -3833,6 +3833,113 @@ session cookie.
 | ---- | ----------- |
 | 200 | Successful Response |
 
+### /api/terminal/approval/approve_latest
+
+#### POST
+##### Summary:
+
+Approve Latest Request
+
+##### Description:
+
+Approve the most recent pending terminal execution request.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/terminal/approval/reject_latest
+
+#### POST
+##### Summary:
+
+Reject Latest Request
+
+##### Description:
+
+Reject the most recent pending terminal execution request.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/terminal/approval/{request_id}/approve
+
+#### POST
+##### Summary:
+
+Approve Request
+
+##### Description:
+
+Approve a pending terminal execution request.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| request_id | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/terminal/approval/{request_id}/reject
+
+#### POST
+##### Summary:
+
+Reject Request
+
+##### Description:
+
+Reject a pending terminal execution request.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| request_id | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/reports/excel
 
 #### GET
@@ -4144,6 +4251,20 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | tools_config |  |  | No |
 | llm_provider_id |  |  | No |
 | port |  |  | No |
+
+#### ApprovalPayload
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| command |  |  | No |
+
+#### ApprovalResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| request_id | string |  | Yes |
+| status | string |  | Yes |
+| output |  |  | No |
 
 #### BentoMLCreate
 
