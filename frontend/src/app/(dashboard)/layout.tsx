@@ -16,6 +16,7 @@ import {
   TerminalDrawer,
   TerminalLauncherButton,
 } from "@/components/terminal/TerminalDrawer";
+import { CommandPalette } from "@/components/CommandPalette";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -56,6 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       >
         <main className="h-full overflow-y-auto px-8 py-6 smooth-fade-in">{children}</main>
       </AppShell>
+      <CommandPalette />
       <Toaster theme="dark" richColors position="top-right" />
     </TerminalProvider>
   );

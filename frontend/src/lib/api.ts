@@ -235,3 +235,7 @@ export const api = {
     return res.json();
   },
 };
+
+export function clearApiCache(pathPattern?: string) {
+  api.clearCache(pathPattern);
+}
