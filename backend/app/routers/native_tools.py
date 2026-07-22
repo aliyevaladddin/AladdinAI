@@ -33,7 +33,17 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
         raise HTTPException(status_code=500, detail="Native grep C binary not compiled")
 
     user_path = Path(path)
-    if user_path.is_absolute() or ".." in user_path.parts:
+    normalized_path = os.path.normpath(path).replace("\\", "/")
+    if normalized_path in ("", "."):
+        normalized_path = "."
+    if (
+        normalized_path.startswith("/")
+        or normalized_path == ".."
+        or normalized_path.startswith("../")
+    ):
+        raise HTTPException(status_code=400, detail="Invalid path: path traversal detected")
+
+    user_path = Path(normalized_path)
         raise HTTPException(status_code=400, detail="Invalid path: path traversal detected")
 
     workspace_root = Path(__file__).resolve().parent.parent.parent.parent.resolve()
