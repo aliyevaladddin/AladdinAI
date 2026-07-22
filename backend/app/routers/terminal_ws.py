@@ -92,6 +92,7 @@ async def local_terminal_websocket(websocket: WebSocket):
     master_fd, slave_fd = pty.openpty()
     env = dict(os.environ)
     env["TERM"] = "xterm-256color"
+    env["COLORTERM"] = "truecolor"
 
     proc = await asyncio.create_subprocess_exec(
         "/bin/bash",
