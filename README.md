@@ -77,16 +77,20 @@ AladdinAI is the platform that makes that possible — without building everythi
 | Module | Description |
 |---|---|
 | **Agents** | Per-user agents with their own model, system prompt, tool set, and safety stack (NemoGuard / Llama-Guard, PII redaction via GLiNER) |
+| **Multi-Agent Swarm** | Orchestration of autonomous sub-agents collaborating to resolve complex multi-step user intents. See [`docs/adr/0011-multi-agent-swarm-and-tools.md`](docs/adr/0011-multi-agent-swarm-and-tools.md) |
 | **Memory** | Private + shared stores with vector search (MongoDB Atlas + NIM embeddings). Every recall and write decision is logged via pluggable Gates |
 | **CRM** | Contacts, deals, activities. Every inbound message is auto-attributed to a contact and logged to the activity timeline |
-| **Orders & Sales** | Product catalog, orders with line items and a validated delivery lifecycle (`pending → delivered`), sales/marketing metrics (revenue, funnel, attribution), and `sales`-role agent tools that place and move orders. See [`docs/guides/ORDERS.md`](docs/guides/ORDERS.md) |
+| **Orders & Sales** | Product catalog, orders with validated delivery lifecycle, and status history tracked in activity metadata. See [`docs/guides/ORDERS.md`](docs/guides/ORDERS.md) and [`docs/adr/0008`](docs/adr/0008-orders-status-history-in-activity-metadata.md) |
 | **Channels** | Telegram, WhatsApp (Cloud API), SMS, IMAP/SMTP email. Outgoing webhooks for fan-out |
-| **Voice** | Speak to agents and hear replies — browser capture → NVIDIA Riva ASR, optional TTS voice responses |
+| **Voice** | Speak to agents and hear replies — browser capture → NVIDIA Riva ASR + ffmpeg transcoding. See [`docs/adr/0007`](docs/adr/0007-voice-pipeline-riva.md) |
 | **Documents** | Upload PDF, Excel (`.xlsx`), CSV, JSON, and text — auto-chunked and indexed into vector memory for recall |
 | **Office tools** | Agents read and write real files via tools — Excel (`excel_*`) and outbound email (`send_email` over SMTP) |
+| **Meta-Search Engine** | Native agent meta-search engine and universal tool discovery routing queries. See [`docs/adr/0010-native-agent-meta-search.md`](docs/adr/0010-native-agent-meta-search.md) |
 | **Terminal** | Browser-based terminals (ttyd local shell, wetty SSH) for remote server management |
 | **Triggers** | Cron-scheduled fan-out tasks via APScheduler, per-agent model overrides, fallback chains across providers |
+| **Evaluation Harness** | Golden Set testing framework for self-forging agent layers to prevent regressions. See [`docs/adr/0009-golden-set-and-harness.md`](docs/adr/0009-golden-set-and-harness.md) |
 | **Infrastructure** | Manage LLM providers, MongoDB clusters, cloud VMs (SSH), and BentoML deployments from the UI |
+| **UI & Command Palette** | Fluid chat interface, Telegram-style audio player, global fuzzy search Command Palette (`Cmd+K`), and 14 universal layout-agnostic `Alt+*` keyboard shortcuts. See [`docs/UI_FEATURE_GUIDE.md`](docs/UI_FEATURE_GUIDE.md) |
 
 ---
 ## ◈ How memory works
