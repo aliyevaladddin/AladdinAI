@@ -1,10 +1,11 @@
 # NOTICE: This file is protected under RCF-PL
-"""Native meta-search: no external gateway, no self-hosted engine.
+"""Native meta-search: no external gateway, no self-hosted engine, no API keys.
 
-Engines:
-  - duckduckgo  — DDG Instant Answer API (free, no key, zero-click + topics).
-  - brave       — Brave Search API (free 2000 req/month, needs BRAVE_API_KEY).
-  - wikipedia   — Wikipedia public search API (always free, no key).
+Engines (all free, zero-key):
+  - duckduckgo  — DDG Instant Answer API (zero-click + topics), HTML fallback.
+  - wikipedia   — Wikipedia public search API.
+  - arxiv       — arXiv Atom API for academic papers.
+  - news        — Google News RSS.
 
 Sources run concurrently via ``asyncio.gather`` so the total latency is that
 of the slowest source, not their sum. Each source fails independently: if one
@@ -12,10 +13,6 @@ raises or times out its slice is simply empty, and the others still return.
 
 The backend web_search tool and the /api/websearch route both call
 ``meta_search`` — this module is the single source of truth for web results.
-
-Environment variables:
-  BRAVE_API_KEY   — optional. Enables the ``brave`` engine. Get a free key at
-                    https://api.search.brave.com/register (2 000 req/month free).
 """
 
 from __future__ import annotations
