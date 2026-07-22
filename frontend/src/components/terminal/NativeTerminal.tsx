@@ -252,20 +252,113 @@ export const NativeTerminal = forwardRef<NativeTerminalRef, NativeTerminalProps>
       const fitAddon = new FitAddon();
       term.loadAddon(fitAddon);
       term.open(containerRef.current);
-      
+
+      // Custom key handler for Copy/Paste
+      term.attachCustomKeyEventHandler((arg: KeyboardEvent) => {
+        if (arg.type !== "keydown") return true;
+        const key = arg.key.toLowerCase();
+
+        // Copy: Cmd+C or Ctrl+C
+        if ((arg.metaKey || arg.ctrlKey) && key === "c") {
+          if (term.hasSelection()) {
+            const text = term.getSelection();
+            
+            // Try modern API
+            if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).catch(() => {});
+            }
+
+            // Always synchronously execute fallback. If modern API is blocked or fails async,
+            // this synchronous call (which is valid inside a keyboard event) will succeed.
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.select();
+            try { document.execCommand("copy"); } catch (e) {}
+            document.body.removeChild(textArea);
+
+            term.clearSelection(); // Clear selection to indicate copy success
+            return false; // Prevent sending SIGINT if it was Ctrl+C
+          }
+          return true; // No selection, allow SIGINT or native browser copy
+        }
+
+        // Paste: Cmd+V or Ctrl+V
+        if ((arg.metaKey || arg.ctrlKey) && key === "v") {
+          if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.readText) {
+            navigator.clipboard.readText().then((text) => {
+              if (text && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({ type: "data", data: text }));
+              }
+            }).catch(() => {});
+            return false;
+          }
+          return true; // Fallback to native browser paste event in xterm
+        }
+
+        return true;
+      });
+
+
+      // Patch xterm renderService & viewport to prevent uncaught dimensions crash on unrendered tabs
+      const core = (term as any)._core;
+      if (core) {
+        if (core._renderService) {
+          const rs = core._renderService;
+          const proto = Object.getPrototypeOf(rs);
+          const descriptor = Object.getOwnPropertyDescriptor(proto, "dimensions");
+          if (descriptor && descriptor.get) {
+            const origGet = descriptor.get;
+            Object.defineProperty(rs, "dimensions", {
+              configurable: true,
+              get() {
+                try {
+                  const res = origGet.call(this);
+                  if (res) return res;
+                } catch { /* fallback below */ }
+                return {
+                  css: { cell: { width: 9, height: 17 }, canvas: { width: 800, height: 600 } },
+                  device: { cell: { width: 9, height: 17 }, canvas: { width: 800, height: 600 } },
+                };
+              },
+            });
+          }
+        }
+        if (core._viewport) {
+          const vp = core._viewport;
+          const origRefresh = vp._innerRefresh?.bind(vp);
+          if (origRefresh) {
+            vp._innerRefresh = () => {
+              try {
+                origRefresh();
+              } catch { /* ignore refresh error when DOM container is unmounted or hidden */ }
+            };
+          }
+        }
+      }
+
+      const safeFit = () => {
+        if (!containerRef.current || containerRef.current.clientWidth === 0 || containerRef.current.clientHeight === 0) return;
+        if (fitAddonRef.current && terminalRef.current) {
+          try {
+            fitAddonRef.current.fit();
+          } catch { /* ignore if renderer uninitialized */ }
+        }
+      };
+
       // Delay fit slightly to ensure DOM dimensions are ready
       setTimeout(() => {
-        try {
-          fitAddon.fit();
-        } catch { /* ignore */ }
-      }, 50);
+        safeFit();
+      }, 100);
 
       terminalRef.current = term;
       fitAddonRef.current = fitAddon;
 
       const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : "";
       const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      
+
       let wsHost = window.location.host;
       try {
         const url = new URL(API_URL);
@@ -287,10 +380,14 @@ export const NativeTerminal = forwardRef<NativeTerminalRef, NativeTerminalProps>
           term.focus();
         }, 100);
 
-        // Send initial size
-        const dims = fitAddon.proposeDimensions();
-        if (dims) {
-          ws.send(JSON.stringify({ type: "resize", cols: dims.cols, rows: dims.rows }));
+        // Send initial size safely
+        if (containerRef.current && containerRef.current.clientWidth > 0 && containerRef.current.clientHeight > 0) {
+          try {
+            const dims = fitAddon.proposeDimensions();
+            if (dims && dims.cols > 0 && dims.rows > 0) {
+              ws.send(JSON.stringify({ type: "resize", cols: dims.cols, rows: dims.rows }));
+            }
+          } catch { /* ignore uninitialized renderer */ }
         }
       };
 
@@ -348,10 +445,11 @@ export const NativeTerminal = forwardRef<NativeTerminalRef, NativeTerminalProps>
       connect();
 
       const handleResize = () => {
+        if (!containerRef.current || containerRef.current.clientWidth === 0 || containerRef.current.clientHeight === 0) return;
         if (fitAddonRef.current && terminalRef.current) {
           try {
             fitAddonRef.current.fit();
-          } catch { /* ignore if unmounted */ }
+          } catch { /* ignore if unmounted or renderer uninitialized */ }
         }
       };
 
@@ -376,13 +474,13 @@ export const NativeTerminal = forwardRef<NativeTerminalRef, NativeTerminalProps>
     const activeBg = TERMINAL_THEMES[themePreset]?.theme.background || "#0b0d14";
 
     return (
-      <div 
+      <div
         className="relative w-full h-full overflow-hidden flex flex-col justify-center items-center cursor-text"
         style={{ backgroundColor: activeBg }}
         onClick={focusTerminal}
       >
         {status === "connecting" && (
-          <div 
+          <div
             className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-sm text-slate-400 gap-2"
             style={{ backgroundColor: `${activeBg}e6` }}
           >
@@ -392,7 +490,7 @@ export const NativeTerminal = forwardRef<NativeTerminalRef, NativeTerminalProps>
         )}
 
         {status === "error" && (
-          <div 
+          <div
             className="absolute inset-0 z-10 flex flex-col items-center justify-center text-red-400 p-4 gap-3 text-center"
             style={{ backgroundColor: activeBg }}
           >
