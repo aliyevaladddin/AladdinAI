@@ -17,6 +17,7 @@ router = APIRouter(prefix="/native", tags=["Native Tools"])
 NATIVE_DIR = Path(__file__).resolve().parent.parent.parent / "native"
 GREP_BIN = NATIVE_DIR / "aladdin-grep"
 LOG_BIN = NATIVE_DIR / "aladdin-log-stream"
+LOGS_ROOT = (Path(__file__).resolve().parent.parent.parent / "logs").resolve()
 
 def ensure_binaries():
     if not (GREP_BIN.exists() and LOG_BIN.exists()):
@@ -64,8 +65,15 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
     args = [str(LOG_BIN)]
     if filter_str:
         args.extend(["--filter", filter_str])
-    if log_path and os.path.exists(log_path):
-        args.extend(["--file", log_path])
+    if log_path:
+        resolved_log_path = Path(log_path).expanduser().resolve()
+        try:
+            resolved_log_path.relative_to(LOGS_ROOT)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="log_path is outside allowed logs directory")
+        if not resolved_log_path.exists():
+            raise HTTPException(status_code=400, detail="log_path does not exist")
+        args.extend(["--file", str(resolved_log_path)])
 
     try:
         proc = await asyncio.create_subprocess_exec(
