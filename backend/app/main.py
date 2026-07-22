@@ -18,13 +18,14 @@ from app.routers import (
     chat, crm_activities, crm_contacts, crm_deals, crm_orders, crm_products, dashboard, digest, forging, mongodb,
     notifications, providers, reports as reports_router, router_config, search,
     settings, sql, ssh_exec,
-    terminal_providers, terminal_ws, triggers as triggers_router, vms, webhooks,
+    terminal_approval, terminal_providers, terminal_ws, triggers as triggers_router, vms, webhooks,
     websearch,
 )
 from app.services import triggers as triggers_service
 from app.services import telegram_poller
 from app.services import terminal_health
 from app.services import autonomous_bot_scheduler
+from app.services import native_terminal_daemon
 from app.tools import excel as _excel_tools  # noqa: F401 — registers excel tools
 
 log = logging.getLogger(__name__)
@@ -35,8 +36,8 @@ log = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 # Read version from CLI package.json (single source of truth)
-cli_package_path = Path(__file__).parent.parent.parent / "cli" / "package.json"
 try:
+    cli_package_path = Path(__file__).resolve().parent.parent.parent / "cli" / "package.json"
     with open(cli_package_path) as f:
         cli_package = json.load(f)
         VERSION = cli_package.get("version", "2.1.5")
@@ -54,8 +55,10 @@ async def lifespan(app: FastAPI):
     await telegram_poller.start()
     terminal_health.start()
     autonomous_bot_scheduler.start_scheduler()
+    native_terminal_daemon.start_daemon()
     yield
     log.info("AladdinAI shutting down")
+    native_terminal_daemon.stop_daemon()
     await triggers_service.shutdown()
     await telegram_poller.stop()
     terminal_health.stop()
@@ -107,7 +110,7 @@ app = FastAPI(
         {"name": "providers", "description": "LLM provider management"},
         {"name": "settings", "description": "System and user settings"},
         {"name": "webhooks", "description": "Webhook endpoints for external integrations"},
-        {"name": "terminal", "description": "Terminal and SSH session management"},
+        {"name": "Terminal", "description": "Terminal, PTY C-Daemon & Remote SSH session management"},
     ],
 )
 
@@ -128,7 +131,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
-app.include_router(terminal_ws.router)
+app.include_router(terminal_ws.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(agents.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
@@ -152,7 +155,8 @@ app.include_router(ssh_exec.router, prefix="/api")
 app.include_router(triggers_router.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(search.router, prefix="/api")
-app.include_router(terminal_providers.router, prefix="/api/terminal", tags=["terminal"])
+app.include_router(terminal_providers.router, prefix="/api/terminal")
+app.include_router(terminal_approval.router, prefix="/api")
 app.include_router(reports_router.router, prefix="/api")
 app.include_router(digest.router, prefix="/api")
 app.include_router(forging.router, prefix="/api")

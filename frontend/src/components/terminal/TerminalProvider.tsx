@@ -87,6 +87,7 @@ export interface TerminalSlot {
   error: string | null;
 }
 
+import type { TerminalThemePreset } from "./NativeTerminal";
 
 interface TerminalCtx {
   open: boolean;
@@ -94,6 +95,8 @@ interface TerminalCtx {
   sessions: TerminalSession[];
   activeId: string | null;
   slot: TerminalSlot;
+  themePreset: TerminalThemePreset;
+  setThemePreset: (preset: TerminalThemePreset) => void;
   setHeight: (h: number) => void;
   toggle: () => void;
   show: () => void;
@@ -125,6 +128,7 @@ const MIN_HEIGHT = 160;
 const MAX_HEIGHT_RATIO = 0.8;
 const DEFAULT_HEIGHT = 320;
 const HEIGHT_KEY = "aladdin-terminal-height";
+const THEME_KEY = "aladdin-terminal-theme";
 
 let slotCounter = 0;
 
@@ -151,13 +155,14 @@ function readInitialHeight(): number {
   return DEFAULT_HEIGHT;
 }
 
-/**
- * Try to bootstrap a session URL from the backend. The endpoint is not live yet
- * (the SOA agent is implementing it in parallel) so we treat any non-2xx as
- * "no provider configured" and surface the empty-state placeholder. We do NOT
- * fall back to `xterm` — the whole point of this refactor is that we don't
- * own the terminal anymore.
- */
+function readInitialTheme(): TerminalThemePreset {
+  if (typeof window === "undefined") return "aladdin";
+  try {
+    const raw = window.localStorage.getItem(THEME_KEY) as TerminalThemePreset;
+    if (raw && ["aladdin", "dracula", "monokai", "cyberpunk", "jetbrains", "matrix"].includes(raw)) return raw;
+  } catch { /* ignore */ }
+  return "aladdin";
+}
 
 async function bootstrapSession(vm: VM | null): Promise<TerminalSessionResponse> {
   const body = vm ? { vm_id: vm.id } : {};
@@ -173,8 +178,6 @@ async function bootstrapSession(vm: VM | null): Promise<TerminalSessionResponse>
       body: JSON.stringify(body),
     });
     if (res.status === 404 || res.status === 503) {
-      // 404 — endpoint not deployed yet (we're ahead of the backend).
-      // 503 — endpoint exists but no provider is installed in this dashboard.
       return { url: "about:blank", expires_at: null, provider_type: "none", provider_session_id: null };
     }
     if (!res.ok) {
@@ -184,7 +187,6 @@ async function bootstrapSession(vm: VM | null): Promise<TerminalSessionResponse>
     return (await res.json()) as TerminalSessionResponse;
   } catch (e) {
     if (e instanceof Error && e.message.startsWith("Bootstrap failed")) throw e;
-    // Network error / endpoint missing — degrade to placeholder, not a hard error.
     return { url: "about:blank", expires_at: null, provider_type: "none", provider_session_id: null };
   }
 }
@@ -193,14 +195,17 @@ async function bootstrapSession(vm: VM | null): Promise<TerminalSessionResponse>
 export function TerminalProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [height, setHeightState] = useState<number>(readInitialHeight);
+  const [themePreset, setThemePresetState] = useState<TerminalThemePreset>(readInitialTheme);
   const [sessions, setSessions] = useState<TerminalSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Mutable mirror of `sessions` for closures that fire long after their
-  // creation (e.g. iframe onload, reconnect callbacks). Reading state through
-  // a ref avoids stale closures without adding the array to every effect dep.
   const sessionsRef = useRef<TerminalSession[]>([]);
   useEffect(() => { sessionsRef.current = sessions; }, [sessions]);
+
+  const setThemePreset = useCallback((preset: TerminalThemePreset) => {
+    setThemePresetState(preset);
+    try { window.localStorage.setItem(THEME_KEY, preset); } catch { /* ignore */ }
+  }, []);
 
   const setHeight = useCallback((h: number) => {
     const max = typeof window !== "undefined"
@@ -211,20 +216,12 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
     try { window.localStorage.setItem(HEIGHT_KEY, String(clamped)); } catch { /* ignore */ }
   }, []);
 
-  const toggle = useCallback(() => setOpen((v) => !v), []);
-  const show = useCallback(() => setOpen(true), []);
-  const hide = useCallback(() => setOpen(false), []);
-  const setActive = useCallback((id: string) => setActiveId(id), []);
-
   const patchSession = useCallback((id: string, patch: Partial<TerminalSession>) => {
     setSessions((cur) => cur.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   }, []);
 
   const markReady = useCallback((id: string) => {
     const cur = sessionsRef.current.find((s) => s.id === id);
-    // Only flip loading -> ready. If the iframe fires onload AFTER we already
-    // marked it as error (e.g. cross-origin frame's about:blank load event)
-    // we keep the error state visible.
     if (cur && cur.status === "loading") patchSession(id, { status: "ready", errorMessage: null });
   }, [patchSession]);
 
@@ -236,45 +233,40 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
     const id = nextId();
     const initial: TerminalSession = {
       id,
-      title: vm ? vm.name : "local",
+      title: vm ? vm.name : "local shell",
       vm,
-      status: "loading",
-      url: "about:blank",
+      status: "ready",
+      url: "native",
       expiresAt: null,
       providerSessionId: null,
-      providerType: "none",
+      providerType: "custom",
       errorMessage: null,
     };
     setSessions((cur) => [...cur, initial]);
     setActiveId(id);
     setOpen(true);
-
-    try {
-      let resp: TerminalSessionResponse;
-      try {
-        resp = await bootstrapSession(vm);
-      } catch (e) {
-        if (e instanceof Error && /\b409\b/.test(e.message)) {
-          await quickSetupDefault("ttyd");
-          resp = await bootstrapSession(vm);
-        } else {
-          throw e;
-        }
-      }
-      patchSession(id, {
-        url: resp.url,
-        expiresAt: resp.expires_at,
-        providerType: resp.provider_type,
-        providerSessionId: resp.provider_session_id ?? null,
-        // When the backend returned the "none" placeholder we go straight to
-        // "ready" — the drawer renders the empty-state pane, not a spinner.
-        status: resp.provider_type === "none" ? "ready" : "loading",
-      });
-    } catch (e) {
-      markError(id, e instanceof Error ? e.message : "Failed to start session");
-    }
     return id;
-  }, [patchSession, markError]);
+  }, []);
+
+  const toggle = useCallback(() => {
+    setOpen((v) => {
+      const next = !v;
+      if (next && sessionsRef.current.length === 0) {
+        void openSession(null);
+      }
+      return next;
+    });
+  }, [openSession]);
+
+  const show = useCallback(() => {
+    setOpen(true);
+    if (sessionsRef.current.length === 0) {
+      void openSession(null);
+    }
+  }, [openSession]);
+
+  const hide = useCallback(() => setOpen(false), []);
+  const setActive = useCallback((id: string) => setActiveId(id), []);
 
   const newSSH = useCallback((vm: VM) => openSession(vm), [openSession]);
   const newLocal = useCallback(() => openSession(null), [openSession]);
@@ -282,9 +274,6 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
   const closeSession = useCallback((id: string) => {
     const target = sessionsRef.current.find((s) => s.id === id);
     if (target?.providerSessionId) {
-      // Best-effort: tell the provider to drop the PTY. We don't await — the
-      // user already clicked close and shouldn't wait for the round-trip.
-      // Ignore failures: stale provider sessions are GC'd by the backend.
       api.delete(`/terminal/session/${target.providerSessionId}`).catch(() => { /* ignore */ });
     }
     setSessions((cur) => {
@@ -307,9 +296,6 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
       try {
         resp = await bootstrapSession(target.vm);
       } catch (e) {
-        // 409 = provider exists+active but its container died. Re-run the
-        // quick-setup chain (install → start → activate, skipping satisfied
-        // steps) to bring the container back, then retry the bootstrap.
         if (e instanceof Error && /\b409\b/.test(e.message)) {
           await quickSetupDefault("ttyd");
           resp = await bootstrapSession(target.vm);
@@ -339,7 +325,6 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
 
   // Ctrl+` / Cmd+` — toggle drawer; spawn a session if none exist.
   useEffect(() => {
-
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "`") {
         e.preventDefault();
@@ -354,8 +339,6 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [openSession]);
 
-  // On provider unmount (logout / nav away) tell the backend to clean up any
-  // provider-side sessions we left dangling.
   useEffect(() => {
     return () => {
       for (const s of sessionsRef.current) {
@@ -385,6 +368,8 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
       sessions,
       activeId,
       slot,
+      themePreset,
+      setThemePreset,
       setHeight,
       toggle,
       show,
@@ -400,8 +385,8 @@ export function TerminalProvider({ children }: { children: ReactNode }) {
       listVMs,
     }),
     [
-      open, height, sessions, activeId, slot,
-      setHeight, toggle, show, hide, setActive,
+      open, height, sessions, activeId, slot, themePreset,
+      setThemePreset, setHeight, toggle, show, hide, setActive,
       openSession, newSSH, newLocal, closeSession, reconnect,
       markReady, markError, listVMs,
     ],
