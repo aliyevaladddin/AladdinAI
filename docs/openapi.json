@@ -6767,8 +6767,7 @@
     "/api/terminal/marketplace": {
       "get": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "Marketplace",
         "description": "Catalogue of builtin manifests this backend can install.",
@@ -6799,8 +6798,7 @@
     "/api/terminal/providers": {
       "get": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "List Providers",
         "operationId": "list_providers_api_terminal_providers_get",
@@ -6828,8 +6826,7 @@
       },
       "post": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "Install Provider",
         "operationId": "install_provider_api_terminal_providers_post",
@@ -6875,8 +6872,7 @@
     "/api/terminal/providers/{provider_id}": {
       "delete": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "Delete Provider",
         "operationId": "delete_provider_api_terminal_providers__provider_id__delete",
@@ -6916,8 +6912,7 @@
     "/api/terminal/providers/{provider_id}/start": {
       "post": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "Start Provider",
         "operationId": "start_provider_api_terminal_providers__provider_id__start_post",
@@ -6964,8 +6959,7 @@
     "/api/terminal/providers/{provider_id}/stop": {
       "post": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "Stop Provider",
         "operationId": "stop_provider_api_terminal_providers__provider_id__stop_post",
@@ -7012,8 +7006,7 @@
     "/api/terminal/providers/{provider_id}/set_active": {
       "post": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "Set Active Provider",
         "operationId": "set_active_provider_api_terminal_providers__provider_id__set_active_post",
@@ -7060,8 +7053,7 @@
     "/api/terminal/providers/{provider_id}/logs": {
       "get": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "Provider Logs",
         "description": "Last `tail` lines of combined stdout/stderr from this provider's\ncontainer. Useful when a provider stops with `last_error` set and the\nuser wants to know what crashed inside. Soft-fails to a string body if\ndocker is unreachable \u2014 the UI just renders whatever we return.",
@@ -7121,8 +7113,7 @@
     "/api/terminal/session": {
       "post": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "Issue Session",
         "description": "Drawer entry point: hand back a URL the iframe can navigate to.\n\nProvider selection logic:\n  - If vm_id is provided: find a running SSH-capable provider (wetty) with\n    that vm_id in its config. If multiple match, prefer is_active=True.\n  - If vm_id is None: find a running local-shell provider (ttyd). If\n    multiple exist, prefer is_active=True.",
@@ -7169,8 +7160,7 @@
     "/api/terminal/session/{provider_session_id}": {
       "delete": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "End Session",
         "operationId": "end_session_api_terminal_session__provider_session_id__delete",
@@ -7210,8 +7200,7 @@
     "/api/terminal/auth": {
       "get": {
         "tags": [
-          "terminal",
-          "terminal-providers"
+          "Terminal"
         ],
         "summary": "Forward Auth",
         "description": "Auth probe for Traefik's forward-auth middleware.\n\nWired in Traefik via:\n    traefik.http.middlewares.aladdin-auth.forwardauth.address=\n        http://backend:8000/api/terminal/auth\n    traefik.http.middlewares.aladdin-auth.forwardauth.authResponseHeaders=\n        Set-Cookie,X-Aladdin-User,X-Aladdin-Provider\n\n`authResponseHeaders` is critical \u2014 without it Traefik strips our\n`Set-Cookie` from the response and the iframe never picks up the\nsession cookie.",
@@ -7222,6 +7211,183 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/terminal/approval/approve_latest": {
+      "post": {
+        "tags": [
+          "Terminal"
+        ],
+        "summary": "Approve Latest Request",
+        "description": "Approve the most recent pending terminal execution request.",
+        "operationId": "approve_latest_request_api_terminal_approval_approve_latest_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ApprovalPayload"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/terminal/approval/reject_latest": {
+      "post": {
+        "tags": [
+          "Terminal"
+        ],
+        "summary": "Reject Latest Request",
+        "description": "Reject the most recent pending terminal execution request.",
+        "operationId": "reject_latest_request_api_terminal_approval_reject_latest_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/terminal/approval/{request_id}/approve": {
+      "post": {
+        "tags": [
+          "Terminal"
+        ],
+        "summary": "Approve Request",
+        "description": "Approve a pending terminal execution request.",
+        "operationId": "approve_request_api_terminal_approval__request_id__approve_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/terminal/approval/{request_id}/reject": {
+      "post": {
+        "tags": [
+          "Terminal"
+        ],
+        "summary": "Reject Request",
+        "description": "Reject a pending terminal execution request.",
+        "operationId": "reject_request_api_terminal_approval__request_id__reject_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -8058,6 +8224,52 @@
         },
         "type": "object",
         "title": "AgentUpdate"
+      },
+      "ApprovalPayload": {
+        "properties": {
+          "command": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Command"
+          }
+        },
+        "type": "object",
+        "title": "ApprovalPayload"
+      },
+      "ApprovalResponse": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id",
+          "status"
+        ],
+        "title": "ApprovalResponse"
       },
       "BentoMLCreate": {
         "properties": {
@@ -11766,8 +11978,8 @@
       "description": "Webhook endpoints for external integrations"
     },
     {
-      "name": "terminal",
-      "description": "Terminal and SSH session management"
+      "name": "Terminal",
+      "description": "Terminal, PTY C-Daemon & Remote SSH session management"
     }
   ]
 }
