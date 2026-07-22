@@ -169,6 +169,7 @@ async def _openai_compatible(
         async with httpx.AsyncClient(timeout=timeout) as client:
             try:
                 content_parts = []
+                reasoning_parts = []
                 tool_calls_map = {}
                 async with client.stream("POST", url, json=payload, headers=headers) as response:
                     if response.status_code >= 400:
@@ -188,6 +189,11 @@ async def _openai_compatible(
                                 delta = choice.get("delta", {})
                                 
                                 content = delta.get("content")
+                                reasoning = delta.get("reasoning_content") or delta.get("reasoning")
+
+                                if reasoning:
+                                    reasoning_parts.append(reasoning)
+
                                 if content:
                                     content_parts.append(content)
                                     res = on_token(content)
@@ -218,6 +224,13 @@ async def _openai_compatible(
                                 pass
                 
                 final_content = "".join(content_parts) if content_parts else None
+                if not final_content and reasoning_parts:
+                    final_content = "".join(reasoning_parts)
+                    if on_token and final_content:
+                        res = on_token(final_content)
+                        if inspect.iscoroutine(res):
+                            await res
+
                 final_tool_calls = list(tool_calls_map.values()) if tool_calls_map else None
                 return {
                     "content": final_content,
@@ -243,8 +256,11 @@ async def _openai_compatible(
     try:
         choice = data["choices"][0]
         msg = choice.get("message", {})
+        content = msg.get("content")
+        if not content:
+            content = msg.get("reasoning_content") or msg.get("reasoning")
         return {
-            "content": msg.get("content"),
+            "content": content,
             "tool_calls": msg.get("tool_calls"),
             "finish_reason": choice.get("finish_reason", "stop"),
             "raw": data,

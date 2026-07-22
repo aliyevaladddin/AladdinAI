@@ -41,7 +41,7 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "analyze_image", "send_image", "generate_image",
         "send_email", "read_emails", "send_telegram_message", "send_slack_message",
         "web_search", "fetch_url", "http_get", "http_post",
-        "run_python_code", "read_excel", "write_excel", "create_reminder",
+        "run_python_code", "execute_terminal_command", "read_excel", "write_excel", "create_reminder",
         # Read-only order visibility for every agent.
         "list_orders", "get_order_summary", "get_sales_metrics",
     ],
@@ -51,7 +51,7 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "analyze_image", "send_image", "generate_image",
         "send_email", "read_emails", "send_telegram_message", "send_slack_message",
         "web_search", "fetch_url", "http_get", "http_post",
-        "run_python_code", "read_excel", "write_excel", "create_reminder",
+        "run_python_code", "execute_terminal_command", "read_excel", "write_excel", "create_reminder",
         "list_orders", "get_order_summary", "get_sales_metrics",
         "create_order", "update_order_status", "create_product",
     ],
@@ -317,19 +317,23 @@ async def run_agent(
             last_content = content
 
         if not tool_calls:
-            final = content or ""
-            if final:
-                egress = await safety_egress(db, agent=agent, text=final)
-                if not egress["safe"]:
-                    log.info("Agent %s egress blocked: %s", agent.id, egress.get("reason"))
-                    _capture("egress_blocked", final)
-                    return block_response(agent)
-                schedule_extraction(
-                    agent_id=agent.id,
-                    user_text=last_user,
-                    assistant_text=final,
-                    session_id=session_id,
-                )
+            final = (content or "").strip()
+            if not final and last_content:
+                final = last_content.strip()
+            if not final:
+                final = "Agent completed execution."
+            
+            egress = await safety_egress(db, agent=agent, text=final)
+            if not egress["safe"]:
+                log.info("Agent %s egress blocked: %s", agent.id, egress.get("reason"))
+                _capture("egress_blocked", final)
+                return block_response(agent)
+            schedule_extraction(
+                agent_id=agent.id,
+                user_text=last_user,
+                assistant_text=final,
+                session_id=session_id,
+            )
             _capture("completed_with_tools" if tool_events else "completed_no_tools", final)
             return final
 

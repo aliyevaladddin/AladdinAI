@@ -209,12 +209,30 @@ function DrawerInner() {
   }, [t]);
 
   const active = t.sessions.find((s) => s.id === t.activeId);
-  const title = t.slot.providerType ?? "Terminal";
+  const activeTermRef = useRef<import("./NativeTerminal").NativeTerminalRef | null>(null);
+
+  const sendCommand = (cmd: string) => {
+    if (activeTermRef.current) {
+      activeTermRef.current.sendInput(cmd + "\r");
+    }
+  };
+
+  const handleClear = () => {
+    if (activeTermRef.current) {
+      activeTermRef.current.clear();
+    }
+  };
+
+  const handleCopy = () => {
+    if (activeTermRef.current) {
+      activeTermRef.current.copySelection();
+    }
+  };
 
   return (
     <div
       ref={drawerRef}
-      className="term-drawer"
+      className="term-drawer flex flex-col bg-[#0b0d14] border-t border-slate-800 text-slate-200"
       style={{ height: t.height }}
       role="region"
       aria-label="Terminal drawer"
@@ -223,28 +241,75 @@ function DrawerInner() {
         <GripHorizontal size={12} />
       </div>
 
-      <div className="term-drawer__head">
-        <div className="term-drawer__title">
-          <TerminalIcon size={13} />
-          <span>Terminal</span>
+      <div className="term-drawer__head flex items-center justify-between px-3 py-1.5 bg-[#121520] border-b border-slate-800/80 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="term-drawer__title flex items-center gap-1.5 font-semibold text-sky-400">
+            <TerminalIcon size={14} />
+            <span>Aladdin Terminal</span>
+          </div>
+
+          {/* Quick preset commands toolbar */}
+          <div className="hidden sm:flex items-center gap-1 ml-3 border-l border-slate-700/50 pl-3">
+            <button
+              type="button"
+              onClick={() => sendCommand("ls -la")}
+              className="px-2 py-0.5 text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 rounded border border-slate-700/50 transition-colors"
+              title="Run ls -la"
+            >
+              ls -la
+            </button>
+            <button
+              type="button"
+              onClick={() => sendCommand("docker ps")}
+              className="px-2 py-0.5 text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 rounded border border-slate-700/50 transition-colors"
+              title="Run docker ps"
+            >
+              docker ps
+            </button>
+            <button
+              type="button"
+              onClick={() => sendCommand("htop")}
+              className="px-2 py-0.5 text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 rounded border border-slate-700/50 transition-colors"
+              title="Run htop"
+            >
+              htop
+            </button>
+            <button
+              type="button"
+              onClick={() => sendCommand("git status")}
+              className="px-2 py-0.5 text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 rounded border border-slate-700/50 transition-colors"
+              title="Run git status"
+            >
+              git status
+            </button>
+            <button
+              type="button"
+              onClick={() => sendCommand("clear")}
+              className="px-2 py-0.5 text-[11px] bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 rounded border border-slate-700/50 transition-colors"
+              title="Run clear"
+            >
+              clear
+            </button>
+          </div>
         </div>
 
-        <div className="term-drawer__tabs" role="tablist">
+        <div className="term-drawer__tabs flex items-center gap-1 overflow-x-auto" role="tablist">
           {t.sessions.map((s) => (
             <button
               key={s.id}
               type="button"
               role="tab"
               aria-selected={s.id === active?.id}
-              className={`term-tab ${s.id === active?.id ? "is-active" : ""}`}
+              className={`term-tab flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-all ${
+                s.id === active?.id ? "bg-slate-800 text-sky-300 font-medium shadow-sm" : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              }`}
               onClick={() => t.setActive(s.id)}
-              title={s.providerType !== "none" ? `via ${s.providerType}` : undefined}
             >
               <SessionDot status={s.status} vm={s.vm} />
               <span className="term-tab__label">{s.title}</span>
               {s.status === "error" && (
                 <span
-                  className="term-tab__action"
+                  className="term-tab__action text-red-400 hover:text-red-300"
                   role="button"
                   aria-label={`Reconnect ${s.title}`}
                   title="Reconnect"
@@ -254,7 +319,7 @@ function DrawerInner() {
                 </span>
               )}
               <span
-                className="term-tab__close"
+                className="term-tab__close text-slate-400 hover:text-slate-100"
                 role="button"
                 aria-label={`Close ${s.title}`}
                 onClick={(ev) => { ev.stopPropagation(); t.closeSession(s.id); }}
@@ -267,7 +332,7 @@ function DrawerInner() {
           <button
             ref={plusBtnRef}
             type="button"
-            className="term-iconbtn"
+            className="term-iconbtn px-2 py-1 text-slate-400 hover:text-sky-400 transition-colors"
             title="New terminal"
             onClick={togglePicker}
           >
@@ -275,11 +340,26 @@ function DrawerInner() {
           </button>
         </div>
 
-        <div className="term-drawer__actions">
+        <div className="term-drawer__actions flex items-center gap-1.5">
+          {/* Theme Selector */}
+          <select
+            value={t.themePreset}
+            onChange={(e) => t.setThemePreset(e.target.value as any)}
+            className="bg-slate-900 text-slate-300 border border-slate-700 text-[11px] rounded px-1.5 py-0.5 focus:outline-none focus:border-sky-500 cursor-pointer"
+            title="Terminal Theme"
+          >
+            <option value="aladdin">Aladdin Dark</option>
+            <option value="dracula">Dracula</option>
+            <option value="monokai">Monokai</option>
+            <option value="cyberpunk">Cyberpunk</option>
+            <option value="jetbrains">JetBrains Dark</option>
+            <option value="matrix">Matrix</option>
+          </select>
+
           {active?.status === "ready" && (
             <button
               type="button"
-              className="term-iconbtn"
+              className="term-iconbtn p-1 text-slate-400 hover:text-slate-200 transition-colors"
               title="Reload session"
               onClick={() => void t.reconnect(active.id)}
             >
@@ -287,40 +367,46 @@ function DrawerInner() {
             </button>
           )}
 
-          <Link href="/dashboard/settings/terminal" className="term-iconbtn" title="Terminal settings">
+          <Link href="/dashboard/settings/terminal" className="term-iconbtn p-1 text-slate-400 hover:text-slate-200 transition-colors" title="Terminal settings">
             <Settings size={13} />
           </Link>
 
-          <button type="button" className="term-iconbtn" title="Collapse" onClick={t.hide}>
+          <button type="button" className="term-iconbtn p-1 text-slate-400 hover:text-slate-200 transition-colors" title="Collapse" onClick={t.hide}>
             <ChevronDown size={14} />
           </button>
         </div>
       </div>
 
-      <div className="term-drawer__body">
+      <div className="term-drawer__body flex-1 relative overflow-hidden">
         {t.sessions.map((s) => (
-          <IframePane key={s.id} session={s} visible={s.id === active?.id} />
+          <NativeTerminalPane
+            key={s.id}
+            session={s}
+            themePreset={t.themePreset}
+            visible={s.id === active?.id}
+            ref={s.id === active?.id ? activeTermRef : undefined}
+          />
         ))}
       </div>
 
       {pickerOpen && pickerPos && typeof document !== "undefined" && createPortal(
         <div
           ref={popupRef}
-          className="term-newmenu__pop"
+          className="term-newmenu__pop absolute z-50 bg-[#121520] border border-slate-800 rounded-lg shadow-xl p-1 text-xs"
           role="menu"
           style={{ left: pickerPos.left, bottom: pickerPos.bottom }}
         >
           <button
             type="button"
-            className="term-newmenu__row"
+            className="term-newmenu__row w-full flex items-center gap-2 px-3 py-1.5 text-left text-slate-200 hover:bg-slate-800 rounded transition-colors"
             onClick={() => { void t.newLocal(); setPickerOpen(false); }}
           >
             <TerminalIcon size={12} />
             Local shell
           </button>
-          {vms.length > 0 && <div className="term-newmenu__sep">SSH sessions</div>}
+          {vms.length > 0 && <div className="term-newmenu__sep border-t border-slate-800 my-1 pt-1 text-[10px] text-slate-500 px-3 uppercase tracking-wider">SSH sessions</div>}
           {vms.length === 0 && (
-            <div className="term-newmenu__empty">
+            <div className="term-newmenu__empty px-3 py-1.5 text-slate-500 text-[11px]">
               No VMs configured. Add one in Settings → Cloud VMs.
             </div>
           )}
@@ -328,12 +414,12 @@ function DrawerInner() {
             <button
               key={vm.id}
               type="button"
-              className="term-newmenu__row"
+              className="term-newmenu__row w-full flex items-center gap-2 px-3 py-1.5 text-left text-slate-200 hover:bg-slate-800 rounded transition-colors"
               onClick={() => { void t.newSSH(vm); setPickerOpen(false); }}
             >
               <Shield size={12} />
               {vm.name}
-              <span className="term-newmenu__hint">{vm.username}@{vm.host}</span>
+              <span className="term-newmenu__hint text-slate-500 text-[11px] ml-auto">{vm.username}@{vm.host}</span>
             </button>
           ))}
         </div>,
@@ -345,104 +431,45 @@ function DrawerInner() {
 
 
 function SessionDot({ status, vm }: { status: SessionStatus; vm: VM | null }) {
-  let color = "var(--fg-4)";
-  if (status === "ready") color = "var(--ok, #5ec27a)";
-  else if (status === "loading") color = "var(--amber, #d8a25c)";
-  else if (status === "error") color = "var(--err, #c25e63)";
-  else if (vm === null) color = "var(--violet)";
+  let color = "#94a3b8";
+  if (status === "ready") color = "#4ade80";
+  else if (status === "loading") color = "#facc15";
+  else if (status === "error") color = "#f87171";
+  else if (vm === null) color = "#c084fc";
   return <Circle size={7} fill={color} stroke="none" style={{ flexShrink: 0 }} />;
 }
 
-/* ------------------------------------------------------------------ */
-/* IframePane — one iframe per session, kept mounted while backgrounded */
-/* ------------------------------------------------------------------ */
+import dynamic from "next/dynamic";
+import type { NativeTerminalRef, TerminalThemePreset } from "./NativeTerminal";
+import React from "react";
 
-/**
- * Sandbox flags rationale:
- *   - allow-scripts          — ttyd/Wetty need JS to render the terminal
- *   - allow-same-origin      — required for clipboard/cookies on a same-origin provider
- *   - allow-forms            — Guacamole login form posts back to itself
- *   - allow-clipboard-*      — paste into the terminal, copy selection out
- * We deliberately omit allow-top-navigation, allow-popups, allow-modals, etc.
- * `referrerpolicy="no-referrer"` keeps the dashboard URL out of provider logs.
- */
-const IFRAME_SANDBOX = "allow-scripts allow-same-origin allow-forms";
-const IFRAME_ALLOW = "clipboard-read; clipboard-write";
+const NativeTerminal = dynamic(
+  () => import("./NativeTerminal").then((m) => m.NativeTerminal),
+  { ssr: false }
+);
 
-
-function IframePane({ session, visible }: { session: TerminalSession; visible: boolean }) {
+const NativeTerminalPane = React.forwardRef<
+  NativeTerminalRef,
+  { session: TerminalSession; themePreset: TerminalThemePreset; visible: boolean }
+>(({ session, themePreset, visible }, ref) => {
   const t = useTerminal();
-  // `display: none` instead of unmount — keeps the iframe's PTY warm when the
-  // user switches to a different tab and comes back.
-  const style: React.CSSProperties = visible
-    ? { display: "block" }
-    : { display: "none" };
-
-  const onLoad = useCallback(() => {
-    // A cross-origin iframe always fires `load` once the navigation completes,
-
-    // even if the provider then renders an error page — we can only verify
-    // network-level success. Token-expiry / auth errors must come back as
-    // 5xx from `POST /api/terminal/session` (handled in the provider) so the
-    // tab flips to "error" before we ever render the iframe.
-    if (session.url === "about:blank") return;
-    t.markReady(session.id);
-  }, [session.id, session.url, t]);
-
-  const onError = useCallback(() => {
-    t.markError(session.id, "Provider iframe failed to load");
-  }, [session.id, t]);
-
-  // No provider installed yet → big Play button that installs+starts+activates
-  // ttyd in one go, then refreshes the session so the iframe takes over.
-  if (session.providerType === "none" && session.status === "ready") {
-    return (
-      <div className={`term-pane ${visible ? "is-visible" : "is-hidden"}`} style={style}>
-        <QuickSetupPanel sessionId={session.id} />
-      </div>
-    );
-  }
-
-  if (session.status === "error") {
-    return (
-      <div className={`term-pane ${visible ? "is-visible" : "is-hidden"}`} style={style}>
-        <div className="term-empty">
-          <RefreshCw size={18} />
-          <div className="term-empty__title">Session unavailable</div>
-          <div className="term-empty__hint">{session.errorMessage ?? "The provider returned an error."}</div>
-          <button type="button" className="term-iconbtn" onClick={() => void t.reconnect(session.id)}>
-            <RefreshCw size={12} /> Reconnect
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const style: React.CSSProperties = visible ? { display: "block", height: "100%", width: "100%" } : { display: "none" };
 
   return (
     <div className={`term-pane ${visible ? "is-visible" : "is-hidden"}`} style={style}>
-      {session.status === "loading" && (
-        <div className="term-pane__overlay" aria-hidden>
-          <div className="term-spinner" />
-          <span>Connecting…</span>
-        </div>
-      )}
-      <iframe
-        // Keying on (id, url) — when reconnect() refreshes the URL we want a
-        // hard reload of the iframe even if the new URL string happens to
-        // match the old one.
-        key={`${session.id}:${session.url}`}
-        src={session.url}
-        title={session.title}
-        className="term-iframe"
-        sandbox={IFRAME_SANDBOX}
-        referrerPolicy="no-referrer"
-        allow={IFRAME_ALLOW}
-        onLoad={onLoad}
-        onError={onError}
+      <NativeTerminal
+        ref={ref}
+        vmId={session.vm?.id}
+        themePreset={themePreset}
+        onConnected={() => t.markReady(session.id)}
+        onError={(err) => t.markError(session.id, err)}
       />
     </div>
   );
-}
+});
+
+NativeTerminalPane.displayName = "NativeTerminalPane";
+
 
 /* ------------------------------------------------------------------ */
 /* Quick Setup — one-click install + start + activate (default: ttyd) */
