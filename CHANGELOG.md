@@ -27,8 +27,6 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Implement voice playback, markdown parsing, and chat UI improvements (#453) ([3bbd3be](https://github.com/aliyevaladddin/AladdinAI/commit/3bbd3be56aada254a7904d43f02f2e440839b243))
 
-- Implement system-wide Command Palette with keyboard shortcut registry and documentation settings tab (#457) ([03b922d](https://github.com/aliyevaladddin/AladdinAI/commit/03b922d88e7bea8a6d6ec5bb6744b61bf6e5f5bb))
-
 
 ### Maintenance
 
