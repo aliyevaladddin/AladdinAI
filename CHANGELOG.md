@@ -19,6 +19,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump hono from 4.12.25 to 4.12.31 in /frontend (#459) ([53998cc](https://github.com/aliyevaladddin/AladdinAI/commit/53998cc5d49f9969ae2e4a797f4be66c7a92fc2c))
 
+- Bump dompurify from 3.4.11 to 3.4.12 in /frontend (#461) ([6417526](https://github.com/aliyevaladddin/AladdinAI/commit/64175266dd20b6dbe82d72bf22182bd3f146bce7))
+
 
 ### Documentation
 
@@ -45,6 +47,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#456) ([df6c89a](https://github.com/aliyevaladddin/AladdinAI/commit/df6c89a5c74b58bf9194dfee7813fb335072a72f))
 
 - Update changelog [skip ci] (#458) ([416d031](https://github.com/aliyevaladddin/AladdinAI/commit/416d0316010db8e668b3e00d07b92e7a0ec70d72))
+
+- Update changelog [skip ci] (#460) ([bebaffb](https://github.com/aliyevaladddin/AladdinAI/commit/bebaffb8f27afd6f01acfe6b1011329bce4f2f7b))
 
 ## [v2.2.2] - 2026-07-20
 
