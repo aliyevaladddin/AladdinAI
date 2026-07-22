@@ -106,6 +106,7 @@ Thumbs.db
 backend/traefik-dynamic/*.yaml
 backend/traefik-dynamic/*.yml
 backend/terminal-manifests/terminal*
+backend/native/aladdin-term
 
 # Guacamole config (may contain credentials)
 backend/guacamole-config/user-mapping.xml

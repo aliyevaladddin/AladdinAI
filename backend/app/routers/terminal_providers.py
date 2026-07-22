@@ -51,7 +51,7 @@ from app.services.terminal_token_broker import (
     verify_session_cookie,
 )
 
-router = APIRouter(tags=["terminal-providers"])
+router = APIRouter(tags=["Terminal"])
 
 
 # ── manifest loader ─────────────────────────────────────────────────────
