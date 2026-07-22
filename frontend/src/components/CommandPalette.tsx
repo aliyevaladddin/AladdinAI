@@ -110,8 +110,8 @@ export function CommandPalette() {
         return;
       }
 
-      // Check shortcuts if ANY modifier key (Cmd, Ctrl, Alt, Option, Shift) is pressed
-      if (isCmdOrCtrl || e.altKey) {
+      // Check shortcuts if Cmd/Ctrl+Shift or Alt is pressed (to prevent breaking native Cmd+C, Cmd+V, Cmd+A, etc)
+      if ((isCmdOrCtrl && e.shiftKey) || e.altKey) {
         let matchedCmd: PaletteCommand | undefined;
 
         if (code === "Digit1" || key === "1" || key === "!") matchedCmd = COMMANDS_REGISTRY.find((c) => c.id === "nav-chat");
@@ -123,7 +123,6 @@ export function CommandPalette() {
         else if (code === "KeyT" || key === "t" || key === "е") matchedCmd = COMMANDS_REGISTRY.find((c) => c.id === "dev-toggle-terminal");
         else if (code === "KeyC" || key === "c" || key === "с") matchedCmd = COMMANDS_REGISTRY.find((c) => c.id === "util-confetti");
         else if (code === "KeyR" || key === "r" || key === "к") matchedCmd = COMMANDS_REGISTRY.find((c) => c.id === "dev-clear-cache");
-        else if (code === "KeyK" || key === "k" || key === "л") matchedCmd = COMMANDS_REGISTRY.find((c) => c.id === "dev-copy-token");
         else if (code === "KeyH" || key === "h" || key === "р") matchedCmd = COMMANDS_REGISTRY.find((c) => c.id === "util-shortcuts-doc");
         else if (code === "KeyL" || key === "l" || key === "д") matchedCmd = COMMANDS_REGISTRY.find((c) => c.id === "crm-add-lead");
         else if (code === "KeyA" || key === "a" || key === "ф") matchedCmd = COMMANDS_REGISTRY.find((c) => c.id === "ai-create-agent");
