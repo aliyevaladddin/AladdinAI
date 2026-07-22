@@ -78,11 +78,13 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
     if filter_str:
         args.extend(["--filter", filter_str])
     if log_path:
-        # Prevent path traversal vulnerabilities (SAST uncontrolled data warning)
-        if ".." in log_path or log_path.startswith("/") or log_path.startswith("\\"):
+        user_log_path = Path(log_path)
+
+        # Accept only relative paths rooted under LOGS_ROOT
+        if user_log_path.is_absolute() or ".." in user_log_path.parts:
             raise HTTPException(status_code=400, detail="Invalid log_path: path traversal detected")
-            
-        resolved_log_path = (LOGS_ROOT / log_path).resolve()
+
+        resolved_log_path = (LOGS_ROOT / user_log_path).resolve()
         try:
             resolved_log_path.relative_to(LOGS_ROOT)
         except ValueError:
