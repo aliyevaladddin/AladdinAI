@@ -166,8 +166,9 @@ def test_forget_tool_parameters():
 # [RCF:PROTECTED]
 def test_tool_context_structure():
     """Test ToolContext dataclass structure."""
-    from sqlalchemy.ext.asyncio import AsyncSession
     from unittest.mock import MagicMock
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
     mock_db = MagicMock(spec=AsyncSession)
     ctx = ToolContext(db=mock_db, user_id=123, agent_id=456, session_id=789)
@@ -182,8 +183,9 @@ def test_tool_context_structure():
 # [RCF:PROTECTED]
 def test_tool_context_with_extra():
     """Test ToolContext with extra metadata."""
-    from sqlalchemy.ext.asyncio import AsyncSession
     from unittest.mock import MagicMock
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
     mock_db = MagicMock(spec=AsyncSession)
     extra = {"channel_type": "telegram", "channel_id": "123"}

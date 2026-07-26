@@ -1,5 +1,5 @@
-# NOTICE: This file is protected under RCF-PL
 #!/usr/bin/env python3
+# NOTICE: This file is protected under RCF-PL
 """Generate OpenAPI schema from FastAPI app."""
 import json
 from pathlib import Path

@@ -4,6 +4,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Dependencies
+
+- Bump actions/setup-python from 6 to 7 (#469) ([9f7d12b](https://github.com/aliyevaladddin/AladdinAI/commit/9f7d12b3b7a45392ae17bdd849210a672d8a94f1))
+
+## [v2.2.3] - 2026-07-22
+
 ### Bug Fixes
 
 - Add --allow-same-version to npm version steps in release workflow ([4c5074f](https://github.com/aliyevaladddin/AladdinAI/commit/4c5074f740d38e83fe54ed68c157374f8a2547ec))
@@ -65,6 +71,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add axios, dotenv, ink, prompts, rcf-protocol, react, and zod dependencies to package.json ([f0fc601](https://github.com/aliyevaladddin/AladdinAI/commit/f0fc601ac10f78b19a9815093ddefcdde46d5e24))
 
 - Update changelog [skip ci] (#466) ([cc7f57a](https://github.com/aliyevaladddin/AladdinAI/commit/cc7f57a2a1bc5c2864774e089664821d243158de))
+
+- Update changelog [skip ci] (#468) ([f52345e](https://github.com/aliyevaladddin/AladdinAI/commit/f52345ea5668b68d2cf80e133254fe27780b7164))
 
 ## [v2.2.2] - 2026-07-20
 

@@ -1,6 +1,5 @@
 # NOTICE: This file is protected under RCF-PL
 import logging
-import subprocess
 from typing import Optional
 
 from fastapi import APIRouter, Depends
@@ -8,7 +7,7 @@ from pydantic import BaseModel
 
 from app.models.user import User
 from app.security import get_current_user
-from app.tools.terminal_tools import PENDING_APPROVALS, mask_secrets, set_rlimits
+from app.tools.terminal_tools import PENDING_APPROVALS, run_approved_command
 
 router = APIRouter(prefix="/terminal/approval", tags=["Terminal"])
 log = logging.getLogger(__name__)
@@ -35,18 +34,11 @@ async def approve_latest_request(payload: Optional[ApprovalPayload] = None, user
             log.info("Latest terminal execution request APPROVED [%s]", request_id)
             return ApprovalResponse(request_id=request_id, status="approved")
     
-    # Fallback: if command is provided directly in request body, execute safely
+    # Fallback: if a command is provided directly in the request body, execute
+    # it through the same sandbox-first path as the agent tool.
     if payload and payload.command:
         try:
-            res = subprocess.run(
-                ["bash", "-c", payload.command],
-                capture_output=True,
-                text=True,
-                timeout=15,
-                preexec_fn=set_rlimits,
-                cwd="/workspaces/AladdinAI",
-            )
-            out = mask_secrets((res.stdout or "") + ("\n" + res.stderr if res.stderr else ""))
+            out = await run_approved_command(payload.command, user_id=user.id)
             return ApprovalResponse(request_id="direct", status="approved_and_executed", output=out)
         except Exception as e:
             return ApprovalResponse(request_id="direct", status="failed", output=str(e))
