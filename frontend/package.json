@@ -65,7 +65,7 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.25.0",
-    "next": "16.2.10",
+    "next": "16.2.11",
     "rcf-protocol": "^2.1.8",
     "react": "19.2.7",
     "react-dom": "19.2.7",
