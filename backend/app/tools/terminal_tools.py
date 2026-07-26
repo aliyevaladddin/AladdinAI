@@ -5,15 +5,15 @@ import re
 import resource
 import subprocess
 import uuid
-from typing import Any, Dict
+from typing import Any
 
-from app.tools.base import tool, ToolContext
+from app.tools.base import ToolContext, tool
 
 log = logging.getLogger(__name__)
 
 # In-memory store for pending approval requests
 # Key: request_id, Value: Future or dict with event/data
-PENDING_APPROVALS: Dict[str, Dict[str, Any]] = {}
+PENDING_APPROVALS: dict[str, dict[str, Any]] = {}
 
 SECRET_PATTERNS = [
     re.compile(r"(?:api[_-]?key|secret|token|password|auth|bearer)[\s:=]+['\"]?([a-zA-Z0-9_\-\.]{8,})['\"]?", re.IGNORECASE),
@@ -42,7 +42,7 @@ def set_rlimits():
         resource.setrlimit(resource.RLIMIT_NPROC, (16, 32))
         # Max file output size: 10MB
         resource.setrlimit(resource.RLIMIT_FSIZE, (10 * 1024 * 1024, 20 * 1024 * 1024))
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         log.warning("Could not set rlimits: %s", e)
 
 
@@ -88,7 +88,7 @@ async def execute_terminal_command(ctx: ToolContext, command: str, rationale: st
                 "rationale": rationale,
                 "text": f"Terminal Execution Request (request_id: {request_id})\nCommand: `{command}`\nRationale: {rationale}",
             })
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
     log.info("Terminal execution approval requested [%s]: %s", request_id, command)
@@ -127,7 +127,7 @@ async def run_approved_command(
     # 1. Preferred path: run inside the agent's isolated sandbox.
     try:
         container_id = await agent_sandbox.ensure_sandbox(user_id, agent_id)
-    except Exception:
+    except Exception:  # noqa: BLE001
         container_id = None
 
     if container_id:
@@ -142,13 +142,14 @@ async def run_approved_command(
 
     # 2. Fallback: host subprocess under rlimits (no docker daemon available).
     try:
-        res = subprocess.run(
+        res = subprocess.run(  # noqa: ASYNC221
             ["bash", "-c", command],
             capture_output=True,
             text=True,
             timeout=15,
             preexec_fn=set_rlimits,
             cwd="/workspaces/AladdinAI",
+            check=False,
         )
         stdout = mask_secrets(res.stdout or "")
         stderr = mask_secrets(res.stderr or "")
@@ -158,5 +159,5 @@ async def run_approved_command(
         )
     except subprocess.TimeoutExpired:
         return "Execution timed out (exceeded 15 seconds limit)."
-    except Exception as e:
-        return f"Execution failed: {str(e)}"
+    except Exception as e:  # noqa: BLE001
+        return f"Execution failed: {e!s}"

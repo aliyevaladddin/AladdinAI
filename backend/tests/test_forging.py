@@ -7,6 +7,8 @@ so we test them against a tiny in-memory fake Mongo collection instead of the
 real driver — enough to prove selection, freezing (idempotent replace), and the
 base-vs-forged delta wiring.
 """
+from datetime import datetime, timezone
+
 import pytest
 
 from app.services.forging import (
@@ -16,7 +18,6 @@ from app.services.forging import (
     run_harness,
     score_response,
 )
-from datetime import datetime, timezone
 
 
 # ── score_response (pure) ────────────────────────────────────────────────────
@@ -107,14 +108,12 @@ class _FakeCollection:
             for k, v in query.items():
                 if k == "user_id" and d.get("user_id") != v:
                     return False
-                if k == "reward" and isinstance(v, dict):
-                    if d.get("reward") is None or d["reward"] < v["$gte"]:
-                        return False
+                if k == "reward" and isinstance(v, dict) and (d.get("reward") is None or d["reward"] < v["$gte"]):
+                    return False
                 if k == "human_labeled" and d.get("human_labeled") is not v:
                     return False
-                if k in ("final_text", "input_user_text") and isinstance(v, dict):
-                    if d.get(k) in v["$nin"]:
-                        return False
+                if k in ("final_text", "input_user_text") and isinstance(v, dict) and d.get(k) in v["$nin"]:
+                    return False
             return True
         return _FakeCursor([d for d in self.docs if match(d)])
 

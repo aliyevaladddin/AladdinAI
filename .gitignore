@@ -50,6 +50,7 @@ fix-stale-containers.sql
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.*
+*pytest.ini
 
 # Environment files
 .env
