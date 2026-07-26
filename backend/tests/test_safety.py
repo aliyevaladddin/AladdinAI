@@ -94,12 +94,12 @@ class TestRegexRedact:
 
 # [RCF:PROTECTED]
     def test_credit_card_redacted(self):
-        text, labels = _regex_redact("Card: 4111111111111111")
+        _text, labels = _regex_redact("Card: 4111111111111111")
         assert "CREDIT_CARD" in labels
 
 # [RCF:PROTECTED]
     def test_multiple_pii(self):
-        text, labels = _regex_redact("Email: foo@bar.com, SSN: 987-65-4321")
+        _text, labels = _regex_redact("Email: foo@bar.com, SSN: 987-65-4321")
         assert "EMAIL" in labels
         assert "SSN" in labels
 

@@ -211,8 +211,8 @@ async def test_web_search_tool_surfaces_error_when_no_results():
 @pytest.mark.asyncio
 async def test_synthesize_endpoint_fallback_and_deep_scrape():
     """synthesize_search generates structured Markdown response with fallback when no LLM connected."""
-    from app.routers.websearch import SynthesizeRequest, synthesize_search
     from app.models.user import User
+    from app.routers.websearch import SynthesizeRequest, synthesize_search
 
     fake_meta = {
         "results": [
