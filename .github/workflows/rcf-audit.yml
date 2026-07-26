@@ -22,7 +22,7 @@ jobs:
           node-version: '20'
 
       - name: Install RCF Protocol
-        run: npm install -g rcf-protocol@lates
+        run: npm install -g rcf-protocol@2.1.8
 
       - name: Run RCF Compliance Audit
         env:
