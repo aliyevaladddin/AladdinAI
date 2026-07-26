@@ -10,6 +10,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump builder-util-runtime and electron-builder in /frontend (#502) ([327a094](https://github.com/aliyevaladddin/AladdinAI/commit/327a094f0b8ab6f4b712981ad30f6100474dd189))
 
+- Bump x402 and x402-fetch in /frontend (#504) ([612d0ae](https://github.com/aliyevaladddin/AladdinAI/commit/612d0ae19a67e4ab6273fe2ec803fc84917ae445))
+
 
 ### Features
 
@@ -19,6 +21,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 ### Maintenance
 
 - Update changelog (#483) ([3344414](https://github.com/aliyevaladddin/AladdinAI/commit/3344414bc0aa67d3784e8631d1986e83678bd2ab))
+
+- Update changelog [skip ci] (#503) ([741159b](https://github.com/aliyevaladddin/AladdinAI/commit/741159b81f48c68cd2866e3cd76408edf6078a12))
 
 ## [v2.2.3] - 2026-07-22
 
