@@ -104,7 +104,8 @@
     "jest-environment-jsdom": "^30.4.1",
     "tailwindcss": "^4",
     "typescript": "^6",
-    "wait-on": "^9.0.10"
+    "wait-on": "^9.0.10",
+    "@swc/core": "^1.10.0"
   },
   "overrides": {
     "brace-expansion": "^2.1.2",
