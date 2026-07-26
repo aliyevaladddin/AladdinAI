@@ -221,6 +221,17 @@ async def delete_agent(agent_id: int, user: User = Depends(get_current_user), db
     agent = result.scalar_one_or_none()
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
+    # Tear down the agent's Docker sandbox (container + its private /workspace
+    # volume) so deleted agents don't leak isolated environments. Best-effort:
+    # never block agent deletion on a docker hiccup.
+    try:
+        from app.services import agent_sandbox
+        await agent_sandbox.teardown(user.id, agent_id, remove_volume=True)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning(
+            "sandbox teardown failed for agent %s during delete", agent_id, exc_info=True
+        )
     await db.delete(agent)
     await db.commit()
 

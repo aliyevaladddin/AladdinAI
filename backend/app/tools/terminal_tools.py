@@ -105,7 +105,42 @@ async def execute_terminal_command(ctx: ToolContext, command: str, rationale: st
     if not approved:
         return "Terminal Execution Request was REJECTED by user."
 
-    # Execute command safely under rlimit
+    return await run_approved_command(command, user_id=ctx.user_id, agent_id=ctx.agent_id)
+
+
+# [RCF:PROTECTED]
+async def run_approved_command(
+    command: str,
+    *,
+    user_id: int,
+    agent_id: int | None = None,
+) -> str:
+    """Execute an already-approved command, preferring the agent's Docker sandbox.
+
+    In the sandbox the command runs inside the agent's container against its
+    private /workspace volume — never the backend host. When Docker is
+    unavailable it falls back to a host subprocess under strict rlimits (the
+    original behaviour), so local dev without a daemon still works.
+    """
+    from app.services import agent_sandbox
+
+    # 1. Preferred path: run inside the agent's isolated sandbox.
+    try:
+        container_id = await agent_sandbox.ensure_sandbox(user_id, agent_id)
+    except Exception:
+        container_id = None
+
+    if container_id:
+        res = await agent_sandbox.exec_in_sandbox(container_id, command, timeout=15.0)
+        stdout = mask_secrets(res.stdout or "")
+        stderr = mask_secrets(res.stderr or "")
+        loc = "sandbox"
+        return (
+            f"Execution Exit Code: {res.exit_code} ({loc})\n"
+            f"STDOUT:\n{stdout}\nSTDERR:\n{stderr}"
+        )
+
+    # 2. Fallback: host subprocess under rlimits (no docker daemon available).
     try:
         res = subprocess.run(
             ["bash", "-c", command],
@@ -113,12 +148,14 @@ async def execute_terminal_command(ctx: ToolContext, command: str, rationale: st
             text=True,
             timeout=15,
             preexec_fn=set_rlimits,
-            cwd=str(ctx.extra.get("cwd", "/workspaces/AladdinAI")),
+            cwd="/workspaces/AladdinAI",
         )
         stdout = mask_secrets(res.stdout or "")
         stderr = mask_secrets(res.stderr or "")
-        code = res.returncode
-        return f"Execution Exit Code: {code}\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}"
+        return (
+            f"Execution Exit Code: {res.returncode} (host-fallback)\n"
+            f"STDOUT:\n{stdout}\nSTDERR:\n{stderr}"
+        )
     except subprocess.TimeoutExpired:
         return "Execution timed out (exceeded 15 seconds limit)."
     except Exception as e:
