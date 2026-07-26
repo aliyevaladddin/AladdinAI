@@ -5,16 +5,16 @@ Revision ID: 66adfe6c7cf3
 Revises: 4d80430a55ae
 Create Date: 2026-05-08 14:14:20.259445
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
+from typing import Union
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision: str = '66adfe6c7cf3'
-down_revision: Union[str, None] = '4d80430a55ae'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = '4d80430a55ae'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 # [RCF:PROTECTED]
