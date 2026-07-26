@@ -96,7 +96,7 @@
     "@types/react-dom": "^19",
     "concurrently": "^10.0.3",
     "electron": "^43.1.1",
-    "electron-builder": "^26.11.1",
+    "electron-builder": "^26.15.3",
     "eslint": "^10",
     "eslint-config-next": "^0.2.4",
     "identity-obj-proxy": "^3.0.0",
