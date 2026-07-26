@@ -8,6 +8,18 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump actions/setup-python from 6 to 7 (#469) ([9f7d12b](https://github.com/aliyevaladddin/AladdinAI/commit/9f7d12b3b7a45392ae17bdd849210a672d8a94f1))
 
+- Bump builder-util-runtime and electron-builder in /frontend (#502) ([327a094](https://github.com/aliyevaladddin/AladdinAI/commit/327a094f0b8ab6f4b712981ad30f6100474dd189))
+
+
+### Features
+
+- Docker-per-agent isolated execution environment (#485) ([2314bc5](https://github.com/aliyevaladddin/AladdinAI/commit/2314bc5297388019741430081cfb08d5bbe73850))
+
+
+### Maintenance
+
+- Update changelog (#483) ([3344414](https://github.com/aliyevaladddin/AladdinAI/commit/3344414bc0aa67d3784e8631d1986e83678bd2ab))
+
 ## [v2.2.3] - 2026-07-22
 
 ### Bug Fixes
