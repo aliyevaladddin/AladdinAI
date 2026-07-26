@@ -2,9 +2,9 @@
 # [RCF:PROTECTED]
 from __future__ import annotations
 
+from html.parser import HTMLParser
 import logging
 from typing import Any
-from html.parser import HTMLParser
 
 from app.tools.base import ToolContext, tool
 
@@ -114,6 +114,6 @@ async def web_search(ctx: ToolContext, query: str) -> dict[str, Any]:
                 f"{eng}: {msg}" for eng, msg in data["errors"].items()
             )
         return out
-    except Exception as e:  # pragma: no cover - defensive
+    except Exception as e:  # noqa: BLE001  # pragma: no cover - defensive
         logger.error("Error performing web search: %s", e)
         return {"query": query, "results": [], "error": str(e)}

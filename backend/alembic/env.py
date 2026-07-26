@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.config import settings
 from app.database import Base
-from app.models import *  # noqa: F401,F403
+from app.models import *  # noqa: F403
 
 config = context.config
 # Use ALEMBIC_DATABASE_URL for migrations (sync), fallback to settings.database_url
