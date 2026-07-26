@@ -13,7 +13,6 @@ Revises: d3f7a9c1e2b8, e5a1b7c93f24
 Create Date: 2026-07-14 17:11:24.370010
 """
 from collections.abc import Sequence
-from typing import Union
 
 revision: str = '895e21cc3c3c'
 down_revision: str | Sequence[str] | None = ('d3f7a9c1e2b8', 'e5a1b7c93f24')

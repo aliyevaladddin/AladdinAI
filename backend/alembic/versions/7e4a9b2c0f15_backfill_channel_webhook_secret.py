@@ -16,7 +16,6 @@ can copy it.
 from __future__ import annotations
 
 import secrets
-from typing import Union
 
 import sqlalchemy as sa
 from alembic import op

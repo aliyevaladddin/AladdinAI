@@ -6,7 +6,6 @@ Revises: b2c3d4e5f6a1
 Create Date: 2026-06-04 15:49:48.442956
 """
 from collections.abc import Sequence
-from typing import Union
 
 import sqlalchemy as sa
 from alembic import op
