@@ -12,13 +12,12 @@ Revision ID: 895e21cc3c3c
 Revises: d3f7a9c1e2b8, e5a1b7c93f24
 Create Date: 2026-07-14 17:11:24.370010
 """
-from typing import Sequence, Union
-
+from collections.abc import Sequence
 
 revision: str = '895e21cc3c3c'
-down_revision: Union[str, Sequence[str], None] = ('d3f7a9c1e2b8', 'e5a1b7c93f24')
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = ('d3f7a9c1e2b8', 'e5a1b7c93f24')
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 # [RCF:PROTECTED]

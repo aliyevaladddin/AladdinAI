@@ -16,12 +16,15 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
       - name: Install deps
-        run: pip install ruff
+        # Pin the Ruff version — an unpinned install lets the default rule set
+        # drift between releases and turn CI red without a code change. Bump
+        # deliberately alongside backend/ruff.toml.
+        run: pip install ruff==0.16.0
 
       - name: Lint
         run: ruff check backend/
@@ -46,7 +49,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: 'pip'
