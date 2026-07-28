@@ -1,10 +1,25 @@
 // NOTICE: This file is protected under RCF-PL
 import type { NextConfig } from "next";
+import os from "os";
+
+function getLocalIPs() {
+  const interfaces = os.networkInterfaces();
+  const ips: string[] = [];
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] || []) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        ips.push(iface.address);
+      }
+    }
+  }
+  return ips;
+}
 
 const nextConfig: NextConfig = {
   // Emits a minimal self-contained server in .next/standalone for Docker images.
   // No effect on dev (`next dev`) or non-Docker workflows.
   output: "standalone",
+  allowedDevOrigins: getLocalIPs(),
   images: {
     unoptimized: true,
   },

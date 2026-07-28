@@ -71,6 +71,7 @@ export default function RootLayout({
       lang="en"
       className={`${fontClasses} h-full antialiased`}
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
     >
       <head>
         {/* Apply persisted theme before paint to avoid a flash of the default. */}
