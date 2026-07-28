@@ -26,6 +26,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#505) ([a7a88d5](https://github.com/aliyevaladddin/AladdinAI/commit/a7a88d563c1c0cf5db2547bbb7884361f343c132))
 
+- Update changelog [skip ci] (#508) ([3f1ffca](https://github.com/aliyevaladddin/AladdinAI/commit/3f1ffca2d5601ba3917b565e8e2f3150ccab3ac4))
+
+- Add uuid and ws dependencies to frontend package.json ([2614a46](https://github.com/aliyevaladddin/AladdinAI/commit/2614a4624727aec75f0be58ae66705704c286f27))
+
 ## [v2.2.3] - 2026-07-22
 
 ### Bug Fixes
