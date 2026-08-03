@@ -10,14 +10,14 @@ migration. That is enough to catch the two failure modes we've actually hit:
   * two heads after parallel branches merge into main (breaks `upgrade head`);
   * a new model shipped without a matching migration (schema drift).
 """
-import re
 from pathlib import Path
+import re
 
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
-from app.database import Base
 import app.models  # noqa: F401  — registers every model on Base.metadata
+from app.database import Base
 
 _BACKEND = Path(__file__).resolve().parent.parent
 

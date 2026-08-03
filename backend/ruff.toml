@@ -1,0 +1,23 @@
+# Ruff configuration for the AladdinAI backend.
+#
+# We pin the *rule set* explicitly rather than relying on Ruff's built-in
+# default, which expands between releases (e.g. 0.16 pulled in flake8-bugbear,
+# isort, bandit, …). Without this file a routine `pip install ruff` in CI would
+# silently start enforcing ~800 new findings across the whole codebase. The set
+# below is the classic default (pyflakes + a focused slice of pycodestyle) that
+# this project was written and kept green against.
+#
+# The CI workflow also pins the Ruff *version* — the two together make linting
+# deterministic. To adopt more rules (bugbear, isort, …), add them here in a
+# dedicated PR and fix the fallout in that same change, not by accident.
+
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# Alembic autogenerates these with a boilerplate `from typing import ... Union`
+# import that individual revisions may not use.
+"alembic/versions/*" = ["F401"]
