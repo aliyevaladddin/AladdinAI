@@ -17,6 +17,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump x402 and x402-fetch in /frontend (#504) ([612d0ae](https://github.com/aliyevaladddin/AladdinAI/commit/612d0ae19a67e4ab6273fe2ec803fc84917ae445))
 
+- Bump lucide-react from 1.26.0 to 1.27.0 in /frontend (#518) ([1665464](https://github.com/aliyevaladddin/AladdinAI/commit/16654647ad3de73825552f916d58e22ad1f77d41))
+
 
 ### Features
 
@@ -36,6 +38,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add uuid and ws dependencies to frontend package.json ([2614a46](https://github.com/aliyevaladddin/AladdinAI/commit/2614a4624727aec75f0be58ae66705704c286f27))
 
 - Update axios dependency, add scroll behavior attribute, and configure allowed dev origins in next config ([6249c61](https://github.com/aliyevaladddin/AladdinAI/commit/6249c61743359a4816e2e65c4d0b2c3c4db3c1a0))
+
+- Update changelog [skip ci] (#511) ([c5b4807](https://github.com/aliyevaladddin/AladdinAI/commit/c5b4807a9a9c15f297b0d8f9acd7161f2e6f0f0f))
 
 ## [v2.2.3] - 2026-07-22
 
