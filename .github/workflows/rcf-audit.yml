@@ -22,11 +22,11 @@ jobs:
           node-version: '20'
 
       - name: Install RCF Protocol
-        run: npm install -g rcf-protocol@2.0.3
+        run: npm install -g rcf-protocol@2.1.8
 
       - name: Run RCF Compliance Audit
         env:
           RCF_LICENSE_KEY: ${{ secrets.RCF_LICENSE_KEY }}
         run: |
           # Perform security audit using Restricted Correlation Framework (NPM version)
-          rcf-protocol audit . --license-key "$RCF_LICENSE_KEY"
+          rcf-protocol audit . 

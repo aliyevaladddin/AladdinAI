@@ -1,10 +1,11 @@
 # NOTICE: This file is protected under RCF-PL
 """Test configuration and fixtures."""
 import os
-import pytest
-import pytest_asyncio
+
 # [RCF:PROTECTED]
 from cryptography.fernet import Fernet
+import pytest
+import pytest_asyncio
 
 # Set up test environment variables before importing app
 # [RCF:PROTECTED]
@@ -14,19 +15,19 @@ if not os.environ.get("FERNET_KEY"):
 if not os.environ.get("SECRET_KEY"):
     os.environ["SECRET_KEY"] = "test-secret-key-for-testing-only"
 
-import sys
 from pathlib import Path
+import sys
+import uuid
+
+from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 # Add backend directory to path so pytest can find app module
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.pool import StaticPool
-import uuid
-
-from app.main import app
 from app.database import Base, get_db
+from app.main import app
 
 # Test database - use aiosqlite for async
 SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

@@ -7,11 +7,12 @@ to specialized agents for different aspects of research.
 """
 
 import asyncio
+
 from app.services.delegation import (
-    delegate_to_agent,
     delegate_parallel,
     delegate_sequential,
-    format_delegation_summary
+    delegate_to_agent,
+    format_delegation_summary,
 )
 
 

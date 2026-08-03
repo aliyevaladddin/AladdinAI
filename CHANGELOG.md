@@ -6,6 +6,41 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ### Bug Fixes
 
+- Update package overrides for axios, ws, uuid and hono node-server ([c41809b](https://github.com/aliyevaladddin/AladdinAI/commit/c41809b32b05a014a6e714094d10ad52d6dfc4d8))
+
+
+### Dependencies
+
+- Bump actions/setup-python from 6 to 7 (#469) ([9f7d12b](https://github.com/aliyevaladddin/AladdinAI/commit/9f7d12b3b7a45392ae17bdd849210a672d8a94f1))
+
+- Bump builder-util-runtime and electron-builder in /frontend (#502) ([327a094](https://github.com/aliyevaladddin/AladdinAI/commit/327a094f0b8ab6f4b712981ad30f6100474dd189))
+
+- Bump x402 and x402-fetch in /frontend (#504) ([612d0ae](https://github.com/aliyevaladddin/AladdinAI/commit/612d0ae19a67e4ab6273fe2ec803fc84917ae445))
+
+
+### Features
+
+- Docker-per-agent isolated execution environment (#485) ([2314bc5](https://github.com/aliyevaladddin/AladdinAI/commit/2314bc5297388019741430081cfb08d5bbe73850))
+
+
+### Maintenance
+
+- Update changelog (#483) ([3344414](https://github.com/aliyevaladddin/AladdinAI/commit/3344414bc0aa67d3784e8631d1986e83678bd2ab))
+
+- Update changelog [skip ci] (#503) ([741159b](https://github.com/aliyevaladddin/AladdinAI/commit/741159b81f48c68cd2866e3cd76408edf6078a12))
+
+- Update changelog [skip ci] (#505) ([a7a88d5](https://github.com/aliyevaladddin/AladdinAI/commit/a7a88d563c1c0cf5db2547bbb7884361f343c132))
+
+- Update changelog [skip ci] (#508) ([3f1ffca](https://github.com/aliyevaladddin/AladdinAI/commit/3f1ffca2d5601ba3917b565e8e2f3150ccab3ac4))
+
+- Add uuid and ws dependencies to frontend package.json ([2614a46](https://github.com/aliyevaladddin/AladdinAI/commit/2614a4624727aec75f0be58ae66705704c286f27))
+
+- Update axios dependency, add scroll behavior attribute, and configure allowed dev origins in next config ([6249c61](https://github.com/aliyevaladddin/AladdinAI/commit/6249c61743359a4816e2e65c4d0b2c3c4db3c1a0))
+
+## [v2.2.3] - 2026-07-22
+
+### Bug Fixes
+
 - Add --allow-same-version to npm version steps in release workflow ([4c5074f](https://github.com/aliyevaladddin/AladdinAI/commit/4c5074f740d38e83fe54ed68c157374f8a2547ec))
 
 - Add python3 make g++ build tools to frontend Dockerfile.prod deps stage ([4172737](https://github.com/aliyevaladddin/AladdinAI/commit/4172737e856f1000b0050de3a94b3dc8f6c0dad4))
@@ -65,6 +100,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add axios, dotenv, ink, prompts, rcf-protocol, react, and zod dependencies to package.json ([f0fc601](https://github.com/aliyevaladddin/AladdinAI/commit/f0fc601ac10f78b19a9815093ddefcdde46d5e24))
 
 - Update changelog [skip ci] (#466) ([cc7f57a](https://github.com/aliyevaladddin/AladdinAI/commit/cc7f57a2a1bc5c2864774e089664821d243158de))
+
+- Update changelog [skip ci] (#468) ([f52345e](https://github.com/aliyevaladddin/AladdinAI/commit/f52345ea5668b68d2cf80e133254fe27780b7164))
 
 ## [v2.2.2] - 2026-07-20
 
