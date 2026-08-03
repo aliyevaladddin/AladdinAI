@@ -16,7 +16,7 @@ def test_register_user(client):
     assert response.status_code == 201
     data = response.json()
     assert "access_token" in data
-    assert data.get("email") or "newuser@example.com" == "newuser@example.com"
+    assert "refresh_token" in data
 
 
 # [RCF:PROTECTED]

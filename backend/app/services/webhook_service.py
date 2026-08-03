@@ -32,7 +32,7 @@ async def trigger_webhooks(user_id: int, event_type: str, payload: Any):
         result = await db.execute(
             select(OutgoingWebhook).where(
                 OutgoingWebhook.user_id == user_id,
-                OutgoingWebhook.is_active == True,  # noqa: E712
+                OutgoingWebhook.is_active.is_(True),
             )
         )
         webhooks = result.scalars().all()
