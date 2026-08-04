@@ -105,7 +105,7 @@
     "tailwindcss": "^4",
     "typescript": "^6",
     "wait-on": "^9.0.10",
-    "@swc/core": "^1.15.46"
+    "@swc/core": "^1.15.47"
   },
   "overrides": {
     "brace-expansion": "^2.1.2",
