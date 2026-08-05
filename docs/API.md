@@ -3904,14 +3904,13 @@ Approve Latest Request
 
 ##### Description:
 
-Approve the most recent pending terminal execution request.
+Approve this user's most recent pending terminal execution request.
 
 ##### Responses
 
 | Code | Description |
 | ---- | ----------- |
 | 200 | Successful Response |
-| 422 | Validation Error |
 
 ##### Security
 
@@ -3928,7 +3927,7 @@ Reject Latest Request
 
 ##### Description:
 
-Reject the most recent pending terminal execution request.
+Reject this user's most recent pending terminal execution request.
 
 ##### Responses
 
@@ -4314,19 +4313,13 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | llm_provider_id |  |  | No |
 | port |  |  | No |
 
-#### ApprovalPayload
-
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| command |  |  | No |
-
 #### ApprovalResponse
 
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | request_id | string |  | Yes |
 | status | string |  | Yes |
-| output |  |  | No |
+| command |  |  | No |
 
 #### BentoMLCreate
 
