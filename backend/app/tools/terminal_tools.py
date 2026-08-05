@@ -21,6 +21,35 @@ SECRET_PATTERNS = [
 ]
 
 
+# [RCF:PROTECTED]
+def find_pending(request_id: str, user_id: int) -> dict[str, Any] | None:
+    """Return a pending request only if `user_id` owns it.
+
+    Scoping the lookup by owner is what stops one user settling a command the
+    agent asked somebody else about — the request_id is a bearer token otherwise.
+    """
+    item = PENDING_APPROVALS.get(request_id)
+    if item is None or item.get("user_id") != user_id:
+        return None
+    return item
+
+
+# [RCF:PROTECTED]
+def latest_pending(user_id: int) -> tuple[str, dict[str, Any]] | None:
+    """Return this user's most recent pending request, or None.
+
+    Used when the UI could not carry the request_id back. It resolves only
+    against requests the agent actually raised for this user — never a command
+    supplied by the caller.
+    """
+    for request_id in reversed(list(PENDING_APPROVALS)):
+        item = PENDING_APPROVALS[request_id]
+        if item.get("user_id") == user_id:
+            return request_id, item
+    return None
+
+
+# [RCF:PROTECTED]
 def mask_secrets(text: str) -> str:
     """Mask secrets and tokens in stdout/stderr before returning to LLM context."""
     if not text:
