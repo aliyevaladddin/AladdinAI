@@ -107,7 +107,9 @@ Thumbs.db
 backend/traefik-dynamic/*.yaml
 backend/traefik-dynamic/*.yml
 backend/terminal-manifests/terminal*
-backend/native/aladdin-term
+# Compiled native daemons — built by backend/native/Makefile at startup.
+# Pattern, not a list: the sources are `aladdin_*.c`, the binaries `aladdin-*`.
+backend/native/aladdin-*
 
 # Guacamole config (may contain credentials)
 backend/guacamole-config/user-mapping.xml

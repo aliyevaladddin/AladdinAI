@@ -385,16 +385,20 @@ export function ChatMessageItem({
                   /gcc\s+|-o\s+|mkdir\s+-p/i.test(msgText);
                 if (!hasRequest) return null;
 
+                // The command shown here is display-only: the server executes the
+                // command the agent registered against request_id, never one this
+                // card sends back. Do not substitute a default — approving a
+                // command nobody asked for is worse than showing nothing.
                 const codeBlockMatch: RegExpMatchArray | null = msgText.match(/```(?:bash|sh|c)?\n([\s\S]*?)\n```/i);
                 const rawCmd = (codeBlockMatch ? codeBlockMatch[1].trim() : null) ||
                   (msgText.match(/(?:Command|Команда):\s*`?([^`\n]+)`?/i)?.[1]?.trim()) ||
                   (msgText.match(/`([^`]+)`/)?.[1]?.trim());
 
                 const isRealCode = rawCmd && !/[а-яА-Я]/.test(rawCmd) && !rawCmd.includes("->");
-                const cmd = isRealCode ? rawCmd : "mkdir -p backend/native && gcc -O3 -march=native -o backend/native/process backend/native/process.c -lm && ./backend/native/process";
+                const cmd = isRealCode ? rawCmd : null;
                 const ratMatch = msgText.match(/(?:Rationale|Reason|Причина|Что будет выполнено):\s*([^\n]+)/i);
                 const reqIdMatch = msgText.match(/request_id:\s*([a-f0-9\-]+)/i);
-                const rationale = ratMatch ? ratMatch[1].trim() : "Execution of native C compilation pipeline in backend/native";
+                const rationale = ratMatch ? ratMatch[1].trim() : null;
                 const requestId = reqIdMatch ? reqIdMatch[1] : null;
 
                 return (
@@ -407,8 +411,8 @@ export function ChatMessageItem({
                       <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted/80">Pending Approval</span>
                     </div>
                     <div className="space-y-1 font-mono text-[11px] bg-background/80 p-2.5 rounded-lg border border-border/40">
-                      <div><span className="text-muted-foreground select-none">Command:   </span><span className="text-emerald-400 font-semibold">{cmd}</span></div>
-                      <div><span className="text-muted-foreground select-none">Rationale: </span><span className="text-foreground/90">{rationale}</span></div>
+                      <div><span className="text-muted-foreground select-none">Command:   </span><span className="text-emerald-400 font-semibold">{cmd ?? "— see the message above"}</span></div>
+                      <div><span className="text-muted-foreground select-none">Rationale: </span><span className="text-foreground/90">{rationale ?? "— not stated"}</span></div>
                     </div>
                     <div className="flex items-center gap-2 pt-0.5">
                       <button
@@ -418,18 +422,24 @@ export function ChatMessageItem({
                           btn.innerText = "Approved & Executing...";
                           btn.className = "px-3.5 py-1.5 rounded-lg bg-emerald-700 text-white font-medium text-xs opacity-80 cursor-wait flex items-center gap-1.5";
                           try {
-                            let res: any;
-                            if (requestId) {
-                              res = await api.post(`/terminal/approval/${requestId}/approve`);
-                            } else {
-                              res = await api.post(`/terminal/approval/approve_latest`, { command: cmd });
-                            }
-                            if (res && res.output) {
-                              btn.innerText = "Execution Completed ✓";
+                            // No command in the body: the server runs what the agent
+                            // registered, so a stale card cannot smuggle one in.
+                            const res: any = requestId
+                              ? await api.post(`/terminal/approval/${requestId}/approve`)
+                              : await api.post(`/terminal/approval/approve_latest`);
+                            if (res?.status === "approved") {
+                              btn.innerText = "Approved ✓";
                               btn.className = "px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white font-medium text-xs flex items-center gap-1.5";
+                            } else {
+                              btn.innerText = res?.status === "no_pending_requests"
+                                ? "Request expired"
+                                : "Already handled";
+                              btn.className = "px-3.5 py-1.5 rounded-lg bg-muted text-muted-foreground font-medium text-xs flex items-center gap-1.5";
                             }
                           } catch (err) {
                             console.error("Failed to approve terminal execution:", err);
+                            btn.innerText = "Approval failed";
+                            btn.className = "px-3.5 py-1.5 rounded-lg bg-red-600/80 text-white font-medium text-xs flex items-center gap-1.5";
                           }
                         }}
                         className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-medium text-xs transition-colors flex items-center gap-1.5 shadow-sm active:scale-95"
