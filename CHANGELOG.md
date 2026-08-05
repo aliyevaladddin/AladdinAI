@@ -8,6 +8,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update package overrides for axios, ws, uuid and hono node-server ([c41809b](https://github.com/aliyevaladddin/AladdinAI/commit/c41809b32b05a014a6e714094d10ad52d6dfc4d8))
 
+- Update package-lock.json ([89ba7cf](https://github.com/aliyevaladddin/AladdinAI/commit/89ba7cf8d3824315851f671379b42058f270df4c))
+
+- Close approval-gate bypass and scope approvals by owner (#529) ([a547adb](https://github.com/aliyevaladddin/AladdinAI/commit/a547adb4095adf10ecf1fa4b3caafacbe6d3df2a))
+
 
 ### Dependencies
 
@@ -16,6 +20,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump builder-util-runtime and electron-builder in /frontend (#502) ([327a094](https://github.com/aliyevaladddin/AladdinAI/commit/327a094f0b8ab6f4b712981ad30f6100474dd189))
 
 - Bump x402 and x402-fetch in /frontend (#504) ([612d0ae](https://github.com/aliyevaladddin/AladdinAI/commit/612d0ae19a67e4ab6273fe2ec803fc84917ae445))
+
+- Bump lucide-react from 1.26.0 to 1.27.0 in /frontend (#518) ([1665464](https://github.com/aliyevaladddin/AladdinAI/commit/16654647ad3de73825552f916d58e22ad1f77d41))
+
+- Bump uvicorn from 0.51.0 to 0.52.0 (#512) ([33d0466](https://github.com/aliyevaladddin/AladdinAI/commit/33d0466f4e0b3d09cf20c7f3b7df68fab8705751))
+
+- Bump fastapi from 0.140.0 to 0.141.0 (#513) ([5ca0bf6](https://github.com/aliyevaladddin/AladdinAI/commit/5ca0bf6a1224167a1f1b23fac98ca0887a385a73))
+
+- Bump shadcn from 4.15.0 to 4.16.0 in /frontend (#515) ([1ae4aae](https://github.com/aliyevaladddin/AladdinAI/commit/1ae4aaebfab9e3b59983b01c497b879c960012c4))
+
+- Bump framer-motion from 12.42.2 to 12.43.0 in /frontend (#516) ([05e588d](https://github.com/aliyevaladddin/AladdinAI/commit/05e588d23728a1e3b65ef5cf0bc2730de28f03b8))
 
 
 ### Features
@@ -36,6 +50,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add uuid and ws dependencies to frontend package.json ([2614a46](https://github.com/aliyevaladddin/AladdinAI/commit/2614a4624727aec75f0be58ae66705704c286f27))
 
 - Update axios dependency, add scroll behavior attribute, and configure allowed dev origins in next config ([6249c61](https://github.com/aliyevaladddin/AladdinAI/commit/6249c61743359a4816e2e65c4d0b2c3c4db3c1a0))
+
+- Update changelog [skip ci] (#511) ([c5b4807](https://github.com/aliyevaladddin/AladdinAI/commit/c5b4807a9a9c15f297b0d8f9acd7161f2e6f0f0f))
+
+- Update dependencies in package-lock.json ([e1f6d83](https://github.com/aliyevaladddin/AladdinAI/commit/e1f6d83d0939969a18290ebe4ac718da110f643f))
+
+- Bump the security-patches group (#514) ([e57fbf6](https://github.com/aliyevaladddin/AladdinAI/commit/e57fbf60160c62e2fe43545bf63df5cfa9f8be12))
+
+- Bump eslint-config-next in /frontend (#517) ([154be83](https://github.com/aliyevaladddin/AladdinAI/commit/154be833699079d72ba6d9114a68087f44567169))
 
 ## [v2.2.3] - 2026-07-22
 
