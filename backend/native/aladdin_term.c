@@ -8,6 +8,35 @@
 
 static const char *g_socket_path = NULL;
 
+/*
+ * Only the user running the daemon may open a shell through it.
+ *
+ * The socket is mode 0600, which is the real barrier; SO_PEERCRED is the second
+ * one, because a permissive umask or a bind mount can widen a mode after the
+ * fact and accept() would then hand out bash. root is allowed through so a
+ * container that runs the backend as root still works. A gate that only looks
+ * like a gate is worse than none: this one refuses.
+ */
+static int peer_is_permitted(int client_fd) {
+    struct ucred cred;
+    socklen_t len = sizeof(cred);
+
+    if (getsockopt(client_fd, SOL_SOCKET, SO_PEERCRED, &cred, &len) < 0) {
+        perror("SO_PEERCRED failed");
+        return 0;
+    }
+
+    uid_t self = geteuid();
+    if (cred.uid == self || cred.uid == 0) {
+        return 1;
+    }
+
+    fprintf(stderr,
+            "[Aladdin-Term] refused connection from uid %u (daemon runs as %u)\n",
+            (unsigned)cred.uid, (unsigned)self);
+    return 0;
+}
+
 static void cleanup_and_exit(int sig) {
     (void)sig;
     if (g_socket_path) {
@@ -156,7 +185,11 @@ int main(int argc, char *argv[]) {
         perror("unix bind failed");
         exit(EXIT_FAILURE);
     }
-    chmod(socket_path, 0777);
+    /* 0600, not 0777: reaching this socket is reaching a shell. */
+    if (chmod(socket_path, 0600) < 0) {
+        perror("unix chmod failed");
+        exit(EXIT_FAILURE);
+    }
 
     if (listen(server_fd, 5) < 0) {
         perror("unix listen failed");
@@ -167,6 +200,11 @@ int main(int argc, char *argv[]) {
     while (1) {
         int client_fd = accept(server_fd, NULL, NULL);
         if (client_fd < 0) continue;
+
+        if (!peer_is_permitted(client_fd)) {
+            close(client_fd);
+            continue;
+        }
 
         // Spawn PTY for client
         int pty_master;
