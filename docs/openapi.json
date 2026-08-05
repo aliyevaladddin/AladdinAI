@@ -7337,25 +7337,8 @@
           "Terminal"
         ],
         "summary": "Approve Latest Request",
-        "description": "Approve the most recent pending terminal execution request.",
+        "description": "Approve this user's most recent pending terminal execution request.",
         "operationId": "approve_latest_request_api_terminal_approval_approve_latest_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/ApprovalPayload"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Payload"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -7363,16 +7346,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApprovalResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -7391,7 +7364,7 @@
           "Terminal"
         ],
         "summary": "Reject Latest Request",
-        "description": "Reject the most recent pending terminal execution request.",
+        "description": "Reject this user's most recent pending terminal execution request.",
         "operationId": "reject_latest_request_api_terminal_approval_reject_latest_post",
         "responses": {
           "200": {
@@ -8339,23 +8312,6 @@
         "type": "object",
         "title": "AgentUpdate"
       },
-      "ApprovalPayload": {
-        "properties": {
-          "command": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Command"
-          }
-        },
-        "type": "object",
-        "title": "ApprovalPayload"
-      },
       "ApprovalResponse": {
         "properties": {
           "request_id": {
@@ -8366,7 +8322,7 @@
             "type": "string",
             "title": "Status"
           },
-          "output": {
+          "command": {
             "anyOf": [
               {
                 "type": "string"
@@ -8375,7 +8331,7 @@
                 "type": "null"
               }
             ],
-            "title": "Output"
+            "title": "Command"
           }
         },
         "type": "object",
