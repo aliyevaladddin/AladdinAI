@@ -1,6 +1,7 @@
 # NOTICE: This file is protected under RCF-PL
 CC = gcc
-CFLAGS = -O2 -Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE
+# _GNU_SOURCE: struct ucred / SO_PEERCRED for the socket peer check in aladdin_term.c
+CFLAGS = -O2 -Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE -D_GNU_SOURCE
 LDFLAGS = -lutil
 
 TARGETS = aladdin-term aladdin-grep aladdin-log-stream
