@@ -99,6 +99,69 @@ async def recall(ctx: ToolContext, query: str, scope: str = "both", limit: int =
 
 # [RCF:PROTECTED]
 @tool(
+    name="search_documents",
+    description=(
+        "Search the text of files the user has uploaded (spreadsheets, PDFs, CSVs, "
+        "text). Use this when the question is about the contents of a document — "
+        "figures from a sheet, a clause in a contract. Returns the matching "
+        "excerpts with the filename and which part of the file they came from. "
+        "Uploaded files are NOT in memory, so `recall` will not find them."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "What to look for in the documents."},
+            "filename": {
+                "type": "string",
+                "description": "Optional: restrict the search to one uploaded file.",
+            },
+            "limit": {"type": "integer", "default": 5, "minimum": 1, "maximum": 20},
+        },
+        "required": ["query"],
+    },
+)
+# [RCF:PROTECTED]
+async def search_documents(
+    ctx: ToolContext,
+    query: str,
+    filename: str | None = None,
+    limit: int = 5,
+) -> dict:
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        limit = 5
+    limit = max(1, min(20, limit))
+
+    try:
+        results = await mem_service.search_documents(
+            ctx.db,
+            user_id=ctx.user_id,
+            query=query,
+            filename=filename,
+            limit=limit,
+        )
+    except Exception as e:
+        log.warning("search_documents tool failed: %s", e)
+        return {"error": f"Document search failed: {e}", "results": []}
+
+    return {
+        "query": query,
+        "count": len(results),
+        "results": [
+            {
+                "filename": r["filename"],
+                "part": f"{r['part']}/{r['total_parts']}" if r.get("total_parts") else None,
+                "text": r["text"],
+                "score": round(r["score"], 4),
+            }
+            for r in results
+        ],
+    }
+
+
+# [RCF:PROTECTED]
+@tool(
     name="remember",
     description=(
         "Store a fact in memory. Use `visibility='shared'` for facts other "
