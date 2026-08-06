@@ -9,7 +9,14 @@ Layout:
   MongoDB Atlas (per user, in their `db_name`):
     - agent_memories     — private per-agent facts (1 vector index)
     - shared_context     — facts visible to all agents of this user
+    - document_chunks    — text extracted from uploaded files, retrieved on demand
     - conversation_summaries — rolled-up chat history (no vector for now)
+
+Facts and documents are deliberately separate pools. A fact is an assertion
+("Acme renewed in March"); a document chunk is raw source text. Mixing them put
+29 slices of one spreadsheet into every agent's system prompt and pushed real
+facts off the dashboard, so uploads now land in `document_chunks` and are
+searched when asked for rather than injected always.
 
 Embeddings: 2048-dimensional vectors from any connected provider.
 Model selection: user chooses via UI (provider.embedding_model), fallback to provider defaults.
@@ -17,10 +24,15 @@ Model selection: user chooses via UI (provider.embedding_model), fallback to pro
 Atlas Vector Search indexes (must be created manually in the Atlas UI):
   Collection: agent_memories       Index: vector_index   field: embedding   dim: 2048   similarity: cosine
   Collection: shared_context       Index: vector_index   field: embedding   dim: 2048   similarity: cosine
+  Collection: document_chunks      Index: vector_index   field: embedding   dim: 2048   similarity: cosine
 
-Both indexes additionally need filter fields so we can scope queries:
+These indexes additionally need filter fields so we can scope queries:
   agent_memories: filter on `agent_id`, `user_id`
   shared_context: filter on `user_id`
+  document_chunks: filter on `user_id`
+
+Until the `document_chunks` index exists, `_vector_search` falls back to a
+recency query, so uploads stay searchable — just not by similarity.
 """
 from __future__ import annotations
 
@@ -47,6 +59,19 @@ VECTOR_INDEX_NAME = "vector_index"
 PRIVATE_COLLECTION = "agent_memories"
 SHARED_COLLECTION = "shared_context"
 SUMMARY_COLLECTION = "conversation_summaries"
+# Uploaded-document chunks live apart from facts. A slice of a spreadsheet is not
+# a fact — it has no subject and asserts nothing — so it must never be injected
+# into every agent's prompt or listed as one. Retrieved on demand instead.
+DOCUMENT_COLLECTION = "document_chunks"
+
+# Uploads made before documents were split out were stored as shared facts
+# carrying this tag. Fact reads exclude them rather than deleting them behind the
+# user's back — `migrate_legacy_file_chunks` moves them across on request.
+LEGACY_FILE_TAG = "file-upload"
+LEGACY_FILE_FILTER: dict[str, Any] = {"tags": {"$ne": LEGACY_FILE_TAG}}
+# Extra rows to over-fetch from vector search before dropping legacy chunks in
+# Python, so a user whose top hits are all old file chunks still gets facts.
+LEGACY_HEADROOM = 20
 
 # Module-level client cache keyed by user_id, so we don't reopen sockets every call.
 _client_cache: dict[int, tuple[AsyncIOMotorClient, str]] = {}
@@ -425,7 +450,8 @@ async def list_memories(
             })
 
     if scope in ("shared", "both"):
-        flt = {"user_id": user_id}
+        # Legacy file chunks are documents, not facts — keep them out of the list.
+        flt = {"user_id": user_id, **LEGACY_FILE_FILTER}
         if text_filter:
             flt = {"$and": [flt, text_filter]}
         cursor = mdb[SHARED_COLLECTION].find(
@@ -456,7 +482,9 @@ async def count_memories(db: AsyncSession, user_id: int) -> int:
     try:
         mdb = await get_mongo_db(db, user_id)
         private_count = await mdb[PRIVATE_COLLECTION].count_documents({"user_id": user_id})
-        shared_count = await mdb[SHARED_COLLECTION].count_documents({"user_id": user_id})
+        shared_count = await mdb[SHARED_COLLECTION].count_documents(
+            {"user_id": user_id, **LEGACY_FILE_FILTER}
+        )
         return private_count + shared_count
     except Exception:
         return 0
@@ -520,12 +548,19 @@ async def build_shared_context_block(
         results = await _vector_search(
             mdb[SHARED_COLLECTION],
             vector=vector,
-            limit=limit,
+            limit=limit + LEGACY_HEADROOM,
             filter_={"user_id": user_id},
             visibility="shared",
         )
     except Exception:  # noqa: BLE001
         return ""
+
+    # Drop legacy document chunks here rather than in the $vectorSearch filter:
+    # Atlas only filters on fields declared in the index, and `tags` is not one,
+    # so filtering there would error out into the recency fallback and lose
+    # ranking altogether. Over-fetch, then trim.
+    results = [r for r in results if LEGACY_FILE_TAG not in (r.get("tags") or [])]
+    results = results[:limit]
 
     if not results:
         return ""
@@ -542,6 +577,271 @@ async def build_shared_context_block(
     if len(lines) <= 2:
         return ""
     return "\n".join(lines)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Uploaded documents
+# ─────────────────────────────────────────────────────────────────────────────
+
+CHUNK_SIZE = 1000
+CHUNK_OVERLAP = 100
+
+
+# [RCF:PROTECTED]
+def chunk_text_content(text: str, *, tabular: bool = False) -> list[str]:
+    """Split extracted document text into chunks for embedding.
+
+    Prose is split on character count with an overlap, which is fine — a sentence
+    cut in half still reads. A table is not: slicing mid-row strips a number from
+    its column, and the header only ever appears in the first chunk, so every
+    later chunk becomes unlabelled figures. For tabular text we therefore split
+    on line boundaries and repeat the header on each chunk.
+
+    Pure and side-effect free so the chunking can be tested without Mongo.
+    """
+    if not text.strip():
+        return []
+
+    if not tabular:
+        chunks: list[str] = []
+        i = 0
+        step = CHUNK_SIZE - CHUNK_OVERLAP
+        while i < len(text):
+            chunks.append(text[i : i + CHUNK_SIZE])
+            i += step
+        return chunks
+
+    lines = text.splitlines()
+    if not lines:
+        return []
+
+    header = lines[0]
+    chunks = []
+    current: list[str] = []
+    # The header costs one line of budget in every chunk after the first.
+    size = len(header)
+
+    for line in lines[1:]:
+        # +1 for the newline joining it to what is already buffered.
+        if current and size + len(line) + 1 > CHUNK_SIZE:
+            chunks.append("\n".join([header, *current]))
+            current = []
+            size = len(header)
+        current.append(line)
+        size += len(line) + 1
+
+    if current:
+        chunks.append("\n".join([header, *current]))
+    elif not chunks:
+        # Header with no data rows — still worth indexing.
+        chunks.append(header)
+
+    return chunks
+
+
+# [RCF:PROTECTED]
+async def store_document_chunk(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    filename: str,
+    text: str,
+    part: int,
+    total_parts: int,
+) -> dict[str, Any]:
+    """Insert one chunk of an uploaded document.
+
+    Kept out of `store_memory` on purpose: these are not facts, they are not
+    visible to `list_memories`, and they are never injected into a system prompt.
+    """
+    vector = await embed(db, user_id, text, input_type="passage")
+    mdb = await get_mongo_db(db, user_id)
+
+    result = await mdb[DOCUMENT_COLLECTION].insert_one({
+        "user_id": user_id,
+        "filename": filename,
+        "text": text,
+        "embedding": vector,
+        "part": part,
+        "total_parts": total_parts,
+        "created_at": datetime.now(timezone.utc),
+    })
+    return {"id": str(result.inserted_id), "filename": filename, "part": part}
+
+
+# [RCF:PROTECTED]
+async def search_documents(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    query: str,
+    filename: str | None = None,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """Vector-search uploaded document chunks, most relevant first.
+
+    This is the pull side of the split: an agent reaches for a document when the
+    conversation calls for it, instead of every document riding along in every
+    prompt.
+    """
+    vector = await embed(db, user_id, query)
+    mdb = await get_mongo_db(db, user_id)
+
+    filter_: dict[str, Any] = {"user_id": user_id}
+    if filename:
+        filter_["filename"] = filename
+
+    pipeline = [
+        {
+            "$vectorSearch": {
+                "index": VECTOR_INDEX_NAME,
+                "path": "embedding",
+                "queryVector": vector,
+                "numCandidates": max(limit * 10, 50),
+                "limit": limit,
+                "filter": filter_,
+            }
+        },
+        {
+            "$project": {
+                "_id": 1,
+                "filename": 1,
+                "text": 1,
+                "part": 1,
+                "total_parts": 1,
+                "created_at": 1,
+                "score": {"$meta": "vectorSearchScore"},
+            }
+        },
+    ]
+
+    def _row(doc: dict[str, Any], score: float | None = None) -> dict[str, Any]:
+        return {
+            "id": str(doc["_id"]),
+            "filename": doc.get("filename", ""),
+            "text": doc.get("text", ""),
+            "part": doc.get("part"),
+            "total_parts": doc.get("total_parts"),
+            "created_at": doc.get("created_at"),
+            "score": doc.get("score", 0.0) if score is None else score,
+        }
+
+    out: list[dict[str, Any]] = []
+    try:
+        async for doc in mdb[DOCUMENT_COLLECTION].aggregate(pipeline):
+            out.append(_row(doc))
+    except Exception as e:
+        # No vector index yet (it is created by hand in Atlas): fall back to
+        # recency so an upload is still reachable, just not ranked.
+        log.warning("Document vector search failed, falling back to recent chunks: %s", e)
+        try:
+            cursor = (
+                mdb[DOCUMENT_COLLECTION]
+                .find(filter_, projection={"embedding": 0})
+                .sort("created_at", -1)
+                .limit(limit)
+            )
+            async for doc in cursor:
+                out.append(_row(doc, score=0.5))
+        except Exception as fe:
+            log.exception("Document fallback query also failed: %s", fe)
+
+    return out
+
+
+# [RCF:PROTECTED]
+async def list_documents(db: AsyncSession, user_id: int) -> list[dict[str, Any]]:
+    """Return one row per uploaded document, newest first."""
+    mdb = await get_mongo_db(db, user_id)
+    pipeline = [
+        {"$match": {"user_id": user_id}},
+        {
+            "$group": {
+                "_id": "$filename",
+                "chunks": {"$sum": 1},
+                "total_parts": {"$max": "$total_parts"},
+                "created_at": {"$max": "$created_at"},
+            }
+        },
+        {"$sort": {"created_at": -1}},
+    ]
+    out: list[dict[str, Any]] = []
+    try:
+        async for doc in mdb[DOCUMENT_COLLECTION].aggregate(pipeline):
+            out.append({
+                "filename": doc["_id"],
+                "chunks": doc.get("chunks", 0),
+                "total_parts": doc.get("total_parts"),
+                "created_at": doc.get("created_at"),
+            })
+    except Exception as e:
+        log.warning("Failed to list documents for user %s: %s", user_id, e)
+    return out
+
+
+# [RCF:PROTECTED]
+async def migrate_legacy_file_chunks(db: AsyncSession, *, user_id: int) -> dict[str, int]:
+    """Move pre-split file chunks out of shared facts and into `document_chunks`.
+
+    Reuses each document's existing embedding rather than re-embedding, so this
+    costs no provider calls. The old `fact` text carries a
+    "Content from uploaded file 'x' (part n/m):" preamble; it is stripped so the
+    stored text is the content, not a sentence about the content.
+
+    Idempotent: a chunk is deleted from `shared_context` only after its
+    replacement is written, so an interrupted run resumes safely.
+    """
+    import re
+
+    mdb = await get_mongo_db(db, user_id)
+    shared = mdb[SHARED_COLLECTION]
+    docs = mdb[DOCUMENT_COLLECTION]
+
+    preamble = re.compile(
+        r"^Content from uploaded file '(?P<name>.*?)' \(part (?P<part>\d+)/(?P<total>\d+)\):\n",
+        re.DOTALL,
+    )
+
+    moved = 0
+    failed = 0
+    cursor = shared.find({"user_id": user_id, "tags": LEGACY_FILE_TAG})
+    async for doc in cursor:
+        fact = doc.get("fact") or ""
+        match = preamble.match(fact)
+
+        tags = [t for t in (doc.get("tags") or []) if t != LEGACY_FILE_TAG]
+        filename = match.group("name") if match else (tags[0] if tags else "unknown")
+        text = fact[match.end():] if match else fact
+
+        try:
+            await docs.insert_one({
+                "user_id": user_id,
+                "filename": filename,
+                "text": text,
+                "embedding": doc.get("embedding"),
+                "part": int(match.group("part")) if match else None,
+                "total_parts": int(match.group("total")) if match else None,
+                "created_at": doc.get("created_at") or datetime.now(timezone.utc),
+                "migrated": True,
+            })
+            await shared.delete_one({"_id": doc["_id"]})
+            moved += 1
+        except Exception as e:  # noqa: BLE001
+            log.warning("Failed to migrate legacy chunk %s: %s", doc.get("_id"), e)
+            failed += 1
+
+    log.info("Migrated %d legacy file chunks for user %s (%d failed)", moved, user_id, failed)
+    return {"moved": moved, "failed": failed}
+
+
+# [RCF:PROTECTED]
+async def delete_document(db: AsyncSession, *, user_id: int, filename: str) -> int:
+    """Delete every chunk of one document. Returns how many were removed."""
+    mdb = await get_mongo_db(db, user_id)
+    res = await mdb[DOCUMENT_COLLECTION].delete_many(
+        {"user_id": user_id, "filename": filename}
+    )
+    return int(res.deleted_count)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -572,7 +872,10 @@ async def index_file_in_vector_search(
 
         text_content = ""
         mime_lower = mime.lower()
-        
+        # Tabular text is chunked line-wise with the header repeated, so no chunk
+        # arrives as columns without names.
+        is_tabular = False
+
         # 1. Text files
         if mime_lower.startswith("text/") or mime_lower in (
             "application/json", "application/javascript",
@@ -581,6 +884,8 @@ async def index_file_in_vector_search(
         ):
             try:
                 text_content = data.decode("utf-8", errors="ignore")
+                # A CSV is a table too: keep its header on every chunk.
+                is_tabular = mime_lower == "text/csv" or filename.lower().endswith(".csv")
             except Exception as e:
                 log.exception("Failed to decode text file: %s", e)
                 return
@@ -592,8 +897,20 @@ async def index_file_in_vector_search(
         ):
             try:
                 import pandas as pd
-                df = pd.read_excel(io.BytesIO(data))
-                text_content = df.to_string()
+                # Every sheet, not just the first: read_excel(sheet_name=None)
+                # returns an ordered dict so a workbook does not silently lose tabs.
+                sheets = pd.read_excel(io.BytesIO(data), sheet_name=None)
+                parts = []
+                for sheet_name, df in sheets.items():
+                    if df.empty:
+                        continue
+                    # to_csv, not to_string: to_string is a console rendering that
+                    # emits "NaN" for blanks and truncates wide frames. NaN reads to
+                    # an LLM as a cell value, which is a fabricated one.
+                    body = df.to_csv(index=False, na_rep="")
+                    parts.append(f"## Sheet: {sheet_name}\n{body}")
+                text_content = "\n\n".join(parts)
+                is_tabular = True
             except Exception as e:
                 log.warning("Failed to index Excel file %s: %s", filename, e)
                 return
@@ -617,30 +934,21 @@ async def index_file_in_vector_search(
             log.info("No extractable text content found in file %s", filename)
             return
 
-        # Chunk the text: 1000 chars per chunk, with 100 chars overlap
-        chunk_size = 1000
-        overlap = 100
-        chunks = []
-        i = 0
-        while i < len(text_content):
-            chunk = text_content[i : i + chunk_size]
-            chunks.append(chunk)
-            i += chunk_size - overlap
+        chunks = chunk_text_content(text_content, tabular=is_tabular)
 
-        log.info("Indexing %d chunks from file %s in vector search...", len(chunks), filename)
-        for idx, chunk_text in enumerate(chunks):
-            fact_text = f"Content from uploaded file '{filename}' (part {idx+1}/{len(chunks)}):\n{chunk_text}"
+        log.info("Indexing %d chunks from file %s in document search...", len(chunks), filename)
+        for idx, chunk in enumerate(chunks):
             try:
-                await store_memory(
+                await store_document_chunk(
                     db,
                     user_id=user_id,
-                    agent_id=None,
-                    fact=fact_text,
-                    visibility="shared",
-                    tags=["file-upload", filename],
+                    filename=filename,
+                    text=chunk,
+                    part=idx + 1,
+                    total_parts=len(chunks),
                 )
             except Exception as e:
-                log.exception("Failed to store memory chunk for file %s: %s", filename, e)
+                log.exception("Failed to store document chunk for file %s: %s", filename, e)
 
 
 # [RCF:PROTECTED]
