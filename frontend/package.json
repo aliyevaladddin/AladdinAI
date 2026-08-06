@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
+    "@floating-ui/utils": "^0.2.11",
     "@monaco-editor/react": "^4.7.0",
     "@tanstack/react-table": "^8.21.3",
     "@types/react-syntax-highlighter": "^15.5.13",
@@ -84,6 +85,7 @@
     "xterm-addon-fit": "^0.8.0"
   },
   "devDependencies": {
+    "@swc/core": "^1.15.47",
     "@swc/jest": "^0.2.39",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^7.0.0",
@@ -104,8 +106,7 @@
     "jest-environment-jsdom": "^30.4.1",
     "tailwindcss": "^4",
     "typescript": "^6",
-    "wait-on": "^9.0.10",
-    "@swc/core": "^1.15.47"
+    "wait-on": "^9.0.10"
   },
   "overrides": {
     "brace-expansion": "^2.1.2",
@@ -120,11 +121,11 @@
     "axios": ">=1.18.0"
   },
   "optionalDependencies": {
-    "lightningcss-linux-x64-gnu": "^1.32.0",
-    "lightningcss-linux-x64-musl": "^1.32.0",
-    "lightningcss-linux-arm64-gnu": "^1.33.0",
+    "@tailwindcss/oxide-linux-arm64-gnu": "^4.0.0",
     "@tailwindcss/oxide-linux-x64-gnu": "^4.0.0",
     "@tailwindcss/oxide-linux-x64-musl": "^4.0.0",
-    "@tailwindcss/oxide-linux-arm64-gnu": "^4.0.0"
+    "lightningcss-linux-arm64-gnu": "^1.33.0",
+    "lightningcss-linux-x64-gnu": "^1.32.0",
+    "lightningcss-linux-x64-musl": "^1.32.0"
   }
 }

@@ -14,13 +14,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from app.services.memory import (
+    CHUNK_OVERLAP,
+    CHUNK_SIZE,
+    DOCUMENT_COLLECTION,
     EMBED_DIM,
     MemoryError,
     _client_cache,
     build_shared_context_block,
+    chunk_text_content,
     count_memories,
     embed,
     invalidate_mongo_client,
+    store_document_chunk,
     store_memory,
 )
 
@@ -410,3 +415,149 @@ async def test_build_shared_context_block_empty_results():
         result = await build_shared_context_block(db, user_id=1, query="something")
 
     assert result == ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Documents are not facts
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+# [RCF:PROTECTED]
+def test_chunk_prose_overlaps():
+    """Prose is split on character count, with each chunk overlapping the last."""
+    text = "".join(str(i % 10) for i in range(2500))
+    chunks = chunk_text_content(text, tabular=False)
+
+    assert len(chunks) > 1
+    assert all(len(c) <= CHUNK_SIZE for c in chunks)
+    # The tail of one chunk reappears at the head of the next.
+    assert chunks[1].startswith(chunks[0][-CHUNK_OVERLAP:])
+    # Nothing is lost.
+    assert chunks[0][0] == text[0]
+    assert text.endswith(chunks[-1][-10:])
+
+
+# [RCF:PROTECTED]
+def test_chunk_table_repeats_header():
+    """Every chunk of a table carries the header, so no chunk is unlabelled.
+
+    This is the defect that produced `Total before Taxes NaN NaN NaN 34980` —
+    a row severed from its column names, mid-table.
+    """
+    header = "item,hours,rate,total"
+    rows = [f"task-{i},{i},100,{i * 100}" for i in range(200)]
+    table = "\n".join([header, *rows])
+
+    chunks = chunk_text_content(table, tabular=True)
+
+    assert len(chunks) > 1
+    for chunk in chunks:
+        assert chunk.startswith(header)
+        # Rows are never cut in half.
+        for line in chunk.splitlines():
+            assert line.count(",") == header.count(",")
+
+    # Every data row survives exactly once.
+    seen = [
+        line
+        for chunk in chunks
+        for line in chunk.splitlines()[1:]
+    ]
+    assert seen == rows
+
+
+# [RCF:PROTECTED]
+def test_chunk_table_header_only():
+    """A header with no rows is still indexed rather than dropped."""
+    assert chunk_text_content("a,b,c", tabular=True) == ["a,b,c"]
+
+
+# [RCF:PROTECTED]
+def test_chunk_empty_text():
+    """Empty input yields no chunks, in both modes."""
+    assert chunk_text_content("", tabular=False) == []
+    assert chunk_text_content("   \n  ", tabular=True) == []
+
+
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+# [RCF:PROTECTED]
+async def test_shared_context_excludes_legacy_file_chunks():
+    """Document chunks must never reach a system prompt.
+
+    Legacy uploads live in `shared_context` tagged `file-upload`. Injecting them
+    is what put 29 slices of one spreadsheet in front of every agent.
+    """
+    db = _make_db()
+    fake_vec = [0.0] * EMBED_DIM
+    fake_results = [
+        {
+            "fact": "Content from uploaded file 'q.xlsx' (part 28/29):\nAwards NaN NaN 2.0",
+            "tags": ["file-upload", "q.xlsx"],
+            "score": 0.95,
+        },
+        {"fact": "Acme renewed in March", "tags": ["crm"], "score": 0.7},
+    ]
+
+    with (
+        patch("app.services.memory.embed", new_callable=AsyncMock, return_value=fake_vec),
+        patch("app.services.memory.get_mongo_db", new_callable=AsyncMock),
+        patch("app.services.memory._vector_search", new_callable=AsyncMock, return_value=fake_results),
+    ):
+        result = await build_shared_context_block(db, user_id=1, query="renewals")
+
+    assert "Acme renewed in March" in result
+    assert "file-upload" not in result
+    assert "NaN" not in result
+
+
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+# [RCF:PROTECTED]
+async def test_shared_context_empty_when_only_file_chunks():
+    """If every hit is a document chunk, the block is empty — not a table dump."""
+    db = _make_db()
+    fake_vec = [0.0] * EMBED_DIM
+    fake_results = [
+        {"fact": f"chunk {i}", "tags": ["file-upload"], "score": 0.9} for i in range(5)
+    ]
+
+    with (
+        patch("app.services.memory.embed", new_callable=AsyncMock, return_value=fake_vec),
+        patch("app.services.memory.get_mongo_db", new_callable=AsyncMock),
+        patch("app.services.memory._vector_search", new_callable=AsyncMock, return_value=fake_results),
+    ):
+        result = await build_shared_context_block(db, user_id=1, query="anything")
+
+    assert result == ""
+
+
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+# [RCF:PROTECTED]
+async def test_store_document_chunk_writes_to_document_collection():
+    """Document chunks go to their own collection, with no `fact` field."""
+    db = _make_db()
+    fake_vec = [0.0] * EMBED_DIM
+
+    coll = MagicMock()
+    coll.insert_one = AsyncMock(return_value=MagicMock(inserted_id="abc123"))
+    mdb = MagicMock()
+    mdb.__getitem__ = MagicMock(return_value=coll)
+
+    with (
+        patch("app.services.memory.embed", new_callable=AsyncMock, return_value=fake_vec),
+        patch("app.services.memory.get_mongo_db", new_callable=AsyncMock, return_value=mdb),
+    ):
+        out = await store_document_chunk(
+            db, user_id=1, filename="q.xlsx", text="item,total\nawards,34980", part=1, total_parts=3
+        )
+
+    mdb.__getitem__.assert_called_with(DOCUMENT_COLLECTION)
+    doc = coll.insert_one.call_args[0][0]
+    assert doc["filename"] == "q.xlsx"
+    assert doc["text"] == "item,total\nawards,34980"
+    assert doc["part"] == 1 and doc["total_parts"] == 3
+    assert "fact" not in doc
+    assert "visibility" not in doc
+    assert out["id"] == "abc123"
