@@ -12,6 +12,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Close approval-gate bypass and scope approvals by owner (#529) ([a547adb](https://github.com/aliyevaladddin/AladdinAI/commit/a547adb4095adf10ecf1fa4b3caafacbe6d3df2a))
 
+- Separate uploaded documents from facts (#532) ([ae43db7](https://github.com/aliyevaladddin/AladdinAI/commit/ae43db7524d7cfa4c23cefb0cb491e0a12dca8f9))
+
 
 ### Dependencies
 
@@ -30,6 +32,13 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump shadcn from 4.15.0 to 4.16.0 in /frontend (#515) ([1ae4aae](https://github.com/aliyevaladddin/AladdinAI/commit/1ae4aaebfab9e3b59983b01c497b879c960012c4))
 
 - Bump framer-motion from 12.42.2 to 12.43.0 in /frontend (#516) ([05e588d](https://github.com/aliyevaladddin/AladdinAI/commit/05e588d23728a1e3b65ef5cf0bc2730de28f03b8))
+
+- Bump fast-uri from 3.1.4 to 3.1.5 in /frontend (#533) ([8aff038](https://github.com/aliyevaladddin/AladdinAI/commit/8aff038c0f629c12b9bd0311ca1374ffa5cc0832))
+
+
+### Documentation
+
+- Update API documentation [skip ci] (#531) ([2d51e54](https://github.com/aliyevaladddin/AladdinAI/commit/2d51e5443d8cc9218b3849bc160d17c7e9307f29))
 
 
 ### Features
@@ -58,6 +67,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump the security-patches group (#514) ([e57fbf6](https://github.com/aliyevaladddin/AladdinAI/commit/e57fbf60160c62e2fe43545bf63df5cfa9f8be12))
 
 - Bump eslint-config-next in /frontend (#517) ([154be83](https://github.com/aliyevaladddin/AladdinAI/commit/154be833699079d72ba6d9114a68087f44567169))
+
+- Update changelog [skip ci] (#530) ([82d4ba4](https://github.com/aliyevaladddin/AladdinAI/commit/82d4ba437cd65796d8e230ea2424a7cadabdf90a))
+
+- Update package-lock.json to sync with package.json ([6d9530d](https://github.com/aliyevaladddin/AladdinAI/commit/6d9530d92f18c8e95acac9ce59a39874822dd99d))
+
+- Force regenerate package-lock.json from scratch ([b0dc634](https://github.com/aliyevaladddin/AladdinAI/commit/b0dc634aff6d36b99173e057b4a1d48bb282bf4b))
+
+- Update lockfile to reflect frontend dependency changes ([b1a6648](https://github.com/aliyevaladddin/AladdinAI/commit/b1a6648ba219107b79db6ab8e22344ba6d478019))
 
 ## [v2.2.3] - 2026-07-22
 
