@@ -35,6 +35,22 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump fast-uri from 3.1.4 to 3.1.5 in /frontend (#533) ([8aff038](https://github.com/aliyevaladddin/AladdinAI/commit/8aff038c0f629c12b9bd0311ca1374ffa5cc0832))
 
+- Bump @tanstack/react-table in /frontend (#548) ([a6ee8b2](https://github.com/aliyevaladddin/AladdinAI/commit/a6ee8b2a068d0b09b1c39883fd1281e6c10a7349))
+
+- Bump @base-ui/react from 1.6.0 to 1.7.0 in /frontend (#547) ([d1522b0](https://github.com/aliyevaladddin/AladdinAI/commit/d1522b00e91ea04e23aa4ed625a4ff7743532325))
+
+- Bump framer-motion from 12.43.0 to 13.0.0 in /frontend (#545) ([9feae6d](https://github.com/aliyevaladddin/AladdinAI/commit/9feae6d0a1f2d1ee040bf9c09d4bd039150f9960))
+
+- Bump next from 16.2.12 to 16.3.0 in /frontend (#544) ([e8065c2](https://github.com/aliyevaladddin/AladdinAI/commit/e8065c27f5062b62c71163285bfded786124b6e8))
+
+- Bump lucide-react from 1.27.0 to 1.28.0 in /frontend (#543) ([f3370e1](https://github.com/aliyevaladddin/AladdinAI/commit/f3370e14aacbc1cbb9561ab0bceace89cfd9fe12))
+
+- Bump the security-patches group across 1 directory with 4 updates (#556) ([0f001bb](https://github.com/aliyevaladddin/AladdinAI/commit/0f001bb0555b503537da708d8b426efe6d210332))
+
+- Bump alembic from 1.18.5 to 1.19.0 (#541) ([fe4ea2b](https://github.com/aliyevaladddin/AladdinAI/commit/fe4ea2b1ec3d95a6905e1661a3edb271476db930))
+
+- Bump fastapi from 0.141.0 to 0.141.1 (#540) ([9733bae](https://github.com/aliyevaladddin/AladdinAI/commit/9733baec3fd0ef50cb7a6c04291032df92ad5042))
+
 
 ### Documentation
 
@@ -75,6 +91,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Force regenerate package-lock.json from scratch ([b0dc634](https://github.com/aliyevaladddin/AladdinAI/commit/b0dc634aff6d36b99173e057b4a1d48bb282bf4b))
 
 - Update lockfile to reflect frontend dependency changes ([b1a6648](https://github.com/aliyevaladddin/AladdinAI/commit/b1a6648ba219107b79db6ab8e22344ba6d478019))
+
+- Update changelog [skip ci] (#537) ([4bff920](https://github.com/aliyevaladddin/AladdinAI/commit/4bff9203c03404b19669d41392b81bcb3d8bc298))
+
+- Bump eslint-config-next in /frontend (#549) ([0a9acd4](https://github.com/aliyevaladddin/AladdinAI/commit/0a9acd4507df69437b1b111e65153f6dd76edeaa))
+
+- Bump electron from 43.1.1 to 43.3.0 in /frontend (#546) ([df2face](https://github.com/aliyevaladddin/AladdinAI/commit/df2face7fd4b15bf3f2b4b25e39b7889f473839d))
 
 ## [v2.2.3] - 2026-07-22
 
