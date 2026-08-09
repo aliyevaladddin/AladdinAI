@@ -35,6 +35,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump fast-uri from 3.1.4 to 3.1.5 in /frontend (#533) ([8aff038](https://github.com/aliyevaladddin/AladdinAI/commit/8aff038c0f629c12b9bd0311ca1374ffa5cc0832))
 
+- Bump @tanstack/react-table in /frontend (#548) ([a6ee8b2](https://github.com/aliyevaladddin/AladdinAI/commit/a6ee8b2a068d0b09b1c39883fd1281e6c10a7349))
+
+- Bump @base-ui/react from 1.6.0 to 1.7.0 in /frontend (#547) ([d1522b0](https://github.com/aliyevaladddin/AladdinAI/commit/d1522b00e91ea04e23aa4ed625a4ff7743532325))
+
 
 ### Documentation
 
@@ -75,6 +79,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Force regenerate package-lock.json from scratch ([b0dc634](https://github.com/aliyevaladddin/AladdinAI/commit/b0dc634aff6d36b99173e057b4a1d48bb282bf4b))
 
 - Update lockfile to reflect frontend dependency changes ([b1a6648](https://github.com/aliyevaladddin/AladdinAI/commit/b1a6648ba219107b79db6ab8e22344ba6d478019))
+
+- Update changelog [skip ci] (#537) ([4bff920](https://github.com/aliyevaladddin/AladdinAI/commit/4bff9203c03404b19669d41392b81bcb3d8bc298))
+
+- Bump eslint-config-next in /frontend (#549) ([0a9acd4](https://github.com/aliyevaladddin/AladdinAI/commit/0a9acd4507df69437b1b111e65153f6dd76edeaa))
 
 ## [v2.2.3] - 2026-07-22
 
