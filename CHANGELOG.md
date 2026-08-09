@@ -76,6 +76,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update lockfile to reflect frontend dependency changes ([b1a6648](https://github.com/aliyevaladddin/AladdinAI/commit/b1a6648ba219107b79db6ab8e22344ba6d478019))
 
+- Update changelog [skip ci] (#537) ([4bff920](https://github.com/aliyevaladddin/AladdinAI/commit/4bff9203c03404b19669d41392b81bcb3d8bc298))
+
+- Bump eslint-config-next in /frontend (#549) ([0a9acd4](https://github.com/aliyevaladddin/AladdinAI/commit/0a9acd4507df69437b1b111e65153f6dd76edeaa))
+
 ## [v2.2.3] - 2026-07-22
 
 ### Bug Fixes
