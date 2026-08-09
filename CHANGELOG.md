@@ -53,8 +53,6 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump uvicorn from 0.51.0 to 0.52.1 (#539) ([f57fbfc](https://github.com/aliyevaladddin/AladdinAI/commit/f57fbfc585687e7491e463f593d5d88494ed406b))
 
-- Bump playwright from 1.61.0 to 1.62.0 (#538) ([649aead](https://github.com/aliyevaladddin/AladdinAI/commit/649aead5ec6d5a6a1fbb5ecbc09ee19902929773))
-
 
 ### Documentation
 
