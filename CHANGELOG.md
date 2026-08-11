@@ -53,6 +53,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump uvicorn from 0.51.0 to 0.52.1 (#539) ([f57fbfc](https://github.com/aliyevaladddin/AladdinAI/commit/f57fbfc585687e7491e463f593d5d88494ed406b))
 
+- Bump playwright from 1.61.0 to 1.62.0 (#538) ([649aead](https://github.com/aliyevaladddin/AladdinAI/commit/649aead5ec6d5a6a1fbb5ecbc09ee19902929773))
+
 
 ### Documentation
 
@@ -99,6 +101,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump eslint-config-next in /frontend (#549) ([0a9acd4](https://github.com/aliyevaladddin/AladdinAI/commit/0a9acd4507df69437b1b111e65153f6dd76edeaa))
 
 - Bump electron from 43.1.1 to 43.3.0 in /frontend (#546) ([df2face](https://github.com/aliyevaladddin/AladdinAI/commit/df2face7fd4b15bf3f2b4b25e39b7889f473839d))
+
+- Update changelog [skip ci] (#561) ([adf5a79](https://github.com/aliyevaladddin/AladdinAI/commit/adf5a7920f4a85695b095e4dc2afc96d2f7f86a2))
+
+- Update changelog [skip ci] (#560) ([103797d](https://github.com/aliyevaladddin/AladdinAI/commit/103797dedcb5e61d68334fd0bc6959fa670172b1))
+
+- Update dependencies in package-lock.json ([d9e1454](https://github.com/aliyevaladddin/AladdinAI/commit/d9e145460bc6dbc3c77150694b6bbd21db0477a1))
 
 ## [v2.2.3] - 2026-07-22
 
