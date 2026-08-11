@@ -118,6 +118,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#566) ([4f9d7b0](https://github.com/aliyevaladddin/AladdinAI/commit/4f9d7b05abf2996c704f40048daeae8d394c3f3e))
 
+- Update changelog [skip ci] (#568) ([aa572d9](https://github.com/aliyevaladddin/AladdinAI/commit/aa572d95fead52c68ab8c6067002810c68e9dbe2))
+
+- Upgrade ws package to version 8.21.0 ([1bd52c0](https://github.com/aliyevaladddin/AladdinAI/commit/1bd52c03e150f3a98fa5e4ef01cc0dd1b67c346f))
+
 ## [v2.2.3] - 2026-07-22
 
 ### Bug Fixes
