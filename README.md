@@ -27,7 +27,7 @@
 ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝
 ```
 
-### My AI agents. *My infrastructure.* My rules.
+### *My AI agents.* *My infrastructure.* *My rules.*
 
 *AladdinAI is an open-source, self-hosted AI workspace —*
 *agents, memory, CRM, and multi-channel messaging running entirely in your own infrastructure.*
