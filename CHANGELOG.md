@@ -108,6 +108,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update dependencies in package-lock.json ([d9e1454](https://github.com/aliyevaladddin/AladdinAI/commit/d9e145460bc6dbc3c77150694b6bbd21db0477a1))
 
+- Update changelog [skip ci] (#562) ([0818f64](https://github.com/aliyevaladddin/AladdinAI/commit/0818f6473dce95a87be5acd9552726088615563c))
+
 ## [v2.2.3] - 2026-07-22
 
 ### Bug Fixes
