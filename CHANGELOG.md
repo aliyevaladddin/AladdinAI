@@ -122,6 +122,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Upgrade ws package to version 8.21.0 ([1bd52c0](https://github.com/aliyevaladddin/AladdinAI/commit/1bd52c03e150f3a98fa5e4ef01cc0dd1b67c346f))
 
+- Update changelog [skip ci] (#569) ([c0982c2](https://github.com/aliyevaladddin/AladdinAI/commit/c0982c20da7e38548a14f54c20193c86c7e3b134))
+
+- Upgrade @hono/node-server to version 2.0.10 ([a96e16c](https://github.com/aliyevaladddin/AladdinAI/commit/a96e16c8e63cde77fd625374a497d7abbcd5d3a8))
+
 ## [v2.2.3] - 2026-07-22
 
 ### Bug Fixes
