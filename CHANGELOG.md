@@ -55,6 +55,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump playwright from 1.61.0 to 1.62.0 (#538) ([649aead](https://github.com/aliyevaladddin/AladdinAI/commit/649aead5ec6d5a6a1fbb5ecbc09ee19902929773))
 
+- Bump ip-address from 10.2.0 to 10.5.0 in /frontend (#563) ([9f9aa12](https://github.com/aliyevaladddin/AladdinAI/commit/9f9aa125018d373126adf533676a23136f3b50a2))
+
 
 ### Documentation
 
@@ -107,6 +109,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#560) ([103797d](https://github.com/aliyevaladddin/AladdinAI/commit/103797dedcb5e61d68334fd0bc6959fa670172b1))
 
 - Update dependencies in package-lock.json ([d9e1454](https://github.com/aliyevaladddin/AladdinAI/commit/d9e145460bc6dbc3c77150694b6bbd21db0477a1))
+
+- Update changelog [skip ci] (#562) ([0818f64](https://github.com/aliyevaladddin/AladdinAI/commit/0818f6473dce95a87be5acd9552726088615563c))
+
+- Update dependency tree in package-lock.json ([939d615](https://github.com/aliyevaladddin/AladdinAI/commit/939d615b53e59bbab6a4aaeed006a40c507e66de))
 
 ## [v2.2.3] - 2026-07-22
 
