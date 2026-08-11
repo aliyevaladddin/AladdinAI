@@ -57,6 +57,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump ip-address from 10.2.0 to 10.5.0 in /frontend (#563) ([9f9aa12](https://github.com/aliyevaladddin/AladdinAI/commit/9f9aa125018d373126adf533676a23136f3b50a2))
 
+- Bump pypdf from 6.14.2 to 6.15.0 in /backend (#567) ([88b57f0](https://github.com/aliyevaladddin/AladdinAI/commit/88b57f071256aa3278d1da7ec8d8704795ccc6a1))
+
 
 ### Documentation
 
@@ -113,6 +115,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#562) ([0818f64](https://github.com/aliyevaladddin/AladdinAI/commit/0818f6473dce95a87be5acd9552726088615563c))
 
 - Update dependency tree in package-lock.json ([939d615](https://github.com/aliyevaladddin/AladdinAI/commit/939d615b53e59bbab6a4aaeed006a40c507e66de))
+
+- Update changelog [skip ci] (#566) ([4f9d7b0](https://github.com/aliyevaladddin/AladdinAI/commit/4f9d7b05abf2996c704f40048daeae8d394c3f3e))
 
 ## [v2.2.3] - 2026-07-22
 
