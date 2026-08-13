@@ -64,12 +64,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#531) ([2d51e54](https://github.com/aliyevaladddin/AladdinAI/commit/2d51e5443d8cc9218b3849bc160d17c7e9307f29))
 
+- Update API documentation [skip ci] (#573) ([c147ae8](https://github.com/aliyevaladddin/AladdinAI/commit/c147ae8821d0952abfb75b20cef92c38ba5a10c9))
+
 
 ### Features
 
 - Docker-per-agent isolated execution environment (#485) ([2314bc5](https://github.com/aliyevaladddin/AladdinAI/commit/2314bc5297388019741430081cfb08d5bbe73850))
 
 - Provision Atlas vector indexes from code (#571) ([a144f72](https://github.com/aliyevaladddin/AladdinAI/commit/a144f72d471617433efe355fe894236e78e8f5e6))
+
+- Migrate terminal approval state to Postgres to support multi-worker environments (#574) ([88ecb4a](https://github.com/aliyevaladddin/AladdinAI/commit/88ecb4a21936fcd1c0de388e856900a018dc0f20))
 
 
 ### Maintenance
@@ -129,6 +133,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Upgrade @hono/node-server to version 2.0.10 ([a96e16c](https://github.com/aliyevaladddin/AladdinAI/commit/a96e16c8e63cde77fd625374a497d7abbcd5d3a8))
 
 - Update changelog [skip ci] (#570) ([7fbc01e](https://github.com/aliyevaladddin/AladdinAI/commit/7fbc01eeb41277a5f2e877a51ad2defc797adb35))
+
+- Update changelog [skip ci] (#572) ([7520e0b](https://github.com/aliyevaladddin/AladdinAI/commit/7520e0bb98cdb45f076cdb1cdf8693844e173c39))
 
 ## [v2.2.3] - 2026-07-22
 
