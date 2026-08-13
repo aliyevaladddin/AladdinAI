@@ -5,15 +5,28 @@ import re
 import resource
 import subprocess
 import uuid
-from typing import Any
+from datetime import datetime, timezone
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.terminal_approval import (
+    STATUS_APPROVED,
+    STATUS_EXPIRED,
+    STATUS_PENDING,
+    STATUS_REJECTED,
+    TerminalApproval,
+)
 from app.tools.base import ToolContext, tool
 
 log = logging.getLogger(__name__)
 
-# In-memory store for pending approval requests
-# Key: request_id, Value: Future or dict with event/data
-PENDING_APPROVALS: dict[str, dict[str, Any]] = {}
+# How long the agent waits for a human, and how often it re-reads the verdict.
+# The wait is a poll rather than an awaited Future because the decision arrives
+# in whichever worker served the approve request — possibly not this one. Polling
+# Postgres is what makes the gate work across workers at all.
+APPROVAL_TIMEOUT_SECONDS = 120.0
+APPROVAL_POLL_SECONDS = 1.0
 
 SECRET_PATTERNS = [
     re.compile(r"(?:api[_-]?key|secret|token|password|auth|bearer)[\s:=]+['\"]?([a-zA-Z0-9_\-\.]{8,})['\"]?", re.IGNORECASE),
@@ -22,31 +35,79 @@ SECRET_PATTERNS = [
 
 
 # [RCF:PROTECTED]
-def find_pending(request_id: str, user_id: int) -> dict[str, Any] | None:
-    """Return a pending request only if `user_id` owns it.
+async def find_pending(
+    db: AsyncSession, request_id: str, user_id: int
+) -> TerminalApproval | None:
+    """Return a still-pending request only if `user_id` owns it.
 
     Scoping the lookup by owner is what stops one user settling a command the
     agent asked somebody else about — the request_id is a bearer token otherwise.
     """
-    item = PENDING_APPROVALS.get(request_id)
-    if item is None or item.get("user_id") != user_id:
-        return None
-    return item
+    result = await db.execute(
+        select(TerminalApproval).where(
+            TerminalApproval.request_id == request_id,
+            TerminalApproval.user_id == user_id,
+            TerminalApproval.status == STATUS_PENDING,
+        )
+    )
+    return result.scalar_one_or_none()
 
 
 # [RCF:PROTECTED]
-def latest_pending(user_id: int) -> tuple[str, dict[str, Any]] | None:
+async def latest_pending(db: AsyncSession, user_id: int) -> TerminalApproval | None:
     """Return this user's most recent pending request, or None.
 
     Used when the UI could not carry the request_id back. It resolves only
     against requests the agent actually raised for this user — never a command
     supplied by the caller.
     """
-    for request_id in reversed(list(PENDING_APPROVALS)):
-        item = PENDING_APPROVALS[request_id]
-        if item.get("user_id") == user_id:
-            return request_id, item
-    return None
+    result = await db.execute(
+        select(TerminalApproval)
+        .where(
+            TerminalApproval.user_id == user_id,
+            TerminalApproval.status == STATUS_PENDING,
+        )
+        .order_by(TerminalApproval.created_at.desc(), TerminalApproval.id.desc())
+        .limit(1)
+    )
+    return result.scalars().first()
+
+
+# [RCF:PROTECTED]
+async def settle(
+    db: AsyncSession, approval: TerminalApproval, *, approved: bool, settled_by: int
+) -> str:
+    """Record the human verdict. Returns the status actually written.
+
+    Guarded by a conditional UPDATE on `status = pending`: two clicks racing (or
+    the same click hitting two workers) means the second one changes no row and
+    is reported as already-settled, instead of overwriting a decision.
+    """
+    from sqlalchemy import update
+
+    new_status = STATUS_APPROVED if approved else STATUS_REJECTED
+    result = await db.execute(
+        update(TerminalApproval)
+        .where(
+            TerminalApproval.id == approval.id,
+            TerminalApproval.status == STATUS_PENDING,
+        )
+        .values(
+            status=new_status,
+            settled_by_user_id=settled_by,
+            settled_at=datetime.now(timezone.utc),
+        )
+    )
+    await db.commit()
+    if result.rowcount == 0:
+        await db.refresh(approval)
+        return approval.status
+    log.info(
+        "Terminal execution request %s [%s]",
+        "APPROVED" if approved else "REJECTED",
+        approval.request_id,
+    )
+    return new_status
 
 
 # [RCF:PROTECTED]
@@ -95,16 +156,23 @@ def set_rlimits():
 )
 async def execute_terminal_command(ctx: ToolContext, command: str, rationale: str) -> str:
     """Creates a pending approval request and waits for Aladdin's decision in the UI."""
-    request_id = str(uuid.uuid4())
-    loop = asyncio.get_running_loop()
-    future = loop.create_future()
+    from app.database import async_session
 
-    PENDING_APPROVALS[request_id] = {
-        "command": command,
-        "rationale": rationale,
-        "user_id": ctx.user_id,
-        "future": future,
-    }
+    request_id = str(uuid.uuid4())
+
+    # Written in its own session and committed immediately: until this row is
+    # visible to other connections, a worker handling the approve cannot find the
+    # request, and the poll below would never see a verdict.
+    async with async_session() as db:
+        db.add(TerminalApproval(
+            request_id=request_id,
+            user_id=ctx.user_id,
+            agent_id=ctx.agent_id,
+            command=command,
+            rationale=rationale,
+            status=STATUS_PENDING,
+        ))
+        await db.commit()
 
     # Notify via on_step callback if streaming is active
     on_step = ctx.extra.get("on_step")
@@ -122,19 +190,63 @@ async def execute_terminal_command(ctx: ToolContext, command: str, rationale: st
 
     log.info("Terminal execution approval requested [%s]: %s", request_id, command)
 
-    try:
-        # Wait up to 120 seconds for user approval in UI
-        approved = await asyncio.wait_for(future, timeout=120.0)
-    except asyncio.TimeoutError:
-        PENDING_APPROVALS.pop(request_id, None)
-        return "Terminal Execution Request timed out waiting for user approval."
-    finally:
-        PENDING_APPROVALS.pop(request_id, None)
+    status = await _await_verdict(request_id)
 
-    if not approved:
+    if status == STATUS_PENDING:
+        # Nobody answered. Mark it expired so a stale row cannot later be settled
+        # into an approval for a tool call that stopped waiting long ago.
+        await _expire(request_id)
+        return "Terminal Execution Request timed out waiting for user approval."
+    if status != STATUS_APPROVED:
         return "Terminal Execution Request was REJECTED by user."
 
     return await run_approved_command(command, user_id=ctx.user_id, agent_id=ctx.agent_id)
+
+
+# [RCF:PROTECTED]
+async def _await_verdict(request_id: str) -> str:
+    """Poll for this request's verdict; return its status, or `pending` on timeout.
+
+    A fresh session per poll on purpose: an AsyncSession holds a repeatable-read
+    snapshot, so reusing one would keep returning the `pending` this call itself
+    wrote and never observe the approve committed by another worker.
+    """
+    from app.database import async_session
+
+    deadline = asyncio.get_running_loop().time() + APPROVAL_TIMEOUT_SECONDS
+    while True:
+        async with async_session() as db:
+            result = await db.execute(
+                select(TerminalApproval.status).where(
+                    TerminalApproval.request_id == request_id
+                )
+            )
+            status = result.scalar_one_or_none()
+
+        if status is not None and status != STATUS_PENDING:
+            return status
+        if asyncio.get_running_loop().time() >= deadline:
+            return STATUS_PENDING
+        await asyncio.sleep(APPROVAL_POLL_SECONDS)
+
+
+# [RCF:PROTECTED]
+async def _expire(request_id: str) -> None:
+    """Retire an unanswered request. Only touches rows still pending."""
+    from sqlalchemy import update
+
+    from app.database import async_session
+
+    async with async_session() as db:
+        await db.execute(
+            update(TerminalApproval)
+            .where(
+                TerminalApproval.request_id == request_id,
+                TerminalApproval.status == STATUS_PENDING,
+            )
+            .values(status=STATUS_EXPIRED, settled_at=datetime.now(timezone.utc))
+        )
+        await db.commit()
 
 
 # [RCF:PROTECTED]
