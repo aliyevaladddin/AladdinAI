@@ -463,10 +463,20 @@ export default function ChatPage() {
   };
 
   const sendFeedback = async (messageId: number, type: "thumbs_up" | "thumbs_down") => {
+    const previous = feedback[messageId];
     setFeedback((prev) => ({ ...prev, [messageId]: type }));
     try {
-      await api.post(`/chat/messages/${messageId}/feedback`, { type });
+      await api.post(`/chat/messages/${messageId}/feedback`, { value: type });
     } catch (err) {
+      // Roll the highlight back: a rating that never reached the server must not
+      // look recorded. This is the labeling signal the forging loop trains on,
+      // so a button that lies about it costs real data.
+      setFeedback((prev) => {
+        const next = { ...prev };
+        if (previous) next[messageId] = previous;
+        else delete next[messageId];
+        return next;
+      });
       console.error("Failed to post feedback:", err);
     }
   };
