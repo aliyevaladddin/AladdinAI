@@ -21,18 +21,18 @@ searched when asked for rather than injected always.
 Embeddings: 2048-dimensional vectors from any connected provider.
 Model selection: user chooses via UI (provider.embedding_model), fallback to provider defaults.
 
-Atlas Vector Search indexes (must be created manually in the Atlas UI):
-  Collection: agent_memories       Index: vector_index   field: embedding   dim: 2048   similarity: cosine
-  Collection: shared_context       Index: vector_index   field: embedding   dim: 2048   similarity: cosine
-  Collection: document_chunks      Index: vector_index   field: embedding   dim: 2048   similarity: cosine
-
-These indexes additionally need filter fields so we can scope queries:
-  agent_memories: filter on `agent_id`, `user_id`
-  shared_context: filter on `user_id`
+Atlas Vector Search indexes are provisioned from code by `ensure_vector_indexes`
+(called when a connection is tested, and exposed as POST /mongodb/vector-indexes).
+Each is named `vector_index` over `embedding`, 2048-dimensional, cosine, and
+carries the filter fields its queries scope by:
+  agent_memories:  filter on `user_id`, `agent_id`
+  shared_context:  filter on `user_id`
   document_chunks: filter on `user_id`
 
-Until the `document_chunks` index exists, `_vector_search` falls back to a
-recency query, so uploads stay searchable — just not by similarity.
+Until an index exists — or while Atlas is still building it — the searches fall
+back to a recency query, so data stays reachable but unranked. That fallback is
+quiet by design, which is why the indexes are no longer left to be created by
+hand: a missing one looks exactly like a working search that returns weak hits.
 """
 from __future__ import annotations
 
@@ -121,6 +121,98 @@ def invalidate_mongo_client(user_id: int) -> None:
     cached = _client_cache.pop(user_id, None)
     if cached:
         cached[0].close()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Vector index provisioning
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Which filter fields each collection needs alongside its vector field. A filter
+# path missing from the index makes `$vectorSearch` reject the query outright, so
+# these mirror the `filter_` dicts built in `_vector_search` / `search_documents`.
+VECTOR_INDEX_FILTERS: dict[str, tuple[str, ...]] = {
+    PRIVATE_COLLECTION: ("user_id", "agent_id"),
+    SHARED_COLLECTION: ("user_id",),
+    DOCUMENT_COLLECTION: ("user_id",),
+}
+
+
+# [RCF:PROTECTED]
+def _vector_index_definition(filters: tuple[str, ...]) -> dict[str, Any]:
+    return {
+        "fields": [
+            {
+                "type": "vector",
+                "path": "embedding",
+                "numDimensions": EMBED_DIM,
+                "similarity": "cosine",
+            },
+            *({"type": "filter", "path": path} for path in filters),
+        ]
+    }
+
+
+# [RCF:PROTECTED]
+async def ensure_vector_indexes(
+    db: AsyncSession, user_id: int
+) -> dict[str, dict[str, Any]]:
+    """Create any missing Atlas vector indexes for this user's collections.
+
+    Previously these were created by hand in the Atlas UI, which meant a cluster
+    could serve searches for months with an index silently absent — the searches
+    still answered, from the recency fallback, so nothing looked broken while
+    ranking was gone. Provisioning from code makes the index a property of the
+    connection rather than of someone remembering.
+
+    Idempotent: an index that already exists is reported, never recreated, and
+    its definition is left alone. Returns one entry per collection with a
+    `status` of `exists`, `created`, `unsupported` (not an Atlas cluster) or
+    `error`.
+    """
+    mdb = await get_mongo_db(db, user_id)
+    existing_collections = set(await mdb.list_collection_names())
+    out: dict[str, dict[str, Any]] = {}
+
+    for collection, filters in VECTOR_INDEX_FILTERS.items():
+        entry: dict[str, Any] = {"status": "error"}
+        out[collection] = entry
+        try:
+            # `createSearchIndexes` fails on a namespace that does not exist yet,
+            # and document_chunks only appears on first upload. Create it empty so
+            # the index is ready before the first document lands, not after.
+            if collection not in existing_collections:
+                await mdb.create_collection(collection)
+                entry["collection_created"] = True
+
+            names = [
+                idx.get("name")
+                async for idx in mdb[collection].list_search_indexes()
+            ]
+            if VECTOR_INDEX_NAME in names:
+                entry["status"] = "exists"
+                continue
+
+            await mdb[collection].create_search_index({
+                "name": VECTOR_INDEX_NAME,
+                "type": "vectorSearch",
+                "definition": _vector_index_definition(filters),
+            })
+            # Atlas builds the index asynchronously; it answers queries only once
+            # it reaches `queryable`. Until then the caller keeps the fallback.
+            entry["status"] = "created"
+            entry["queryable"] = False
+        except Exception as e:  # noqa: BLE001
+            # Self-hosted MongoDB has no Atlas Search: report it rather than
+            # failing the request, since everything else still works there.
+            message = str(e)
+            if "not supported" in message.lower() or "CommandNotFound" in message:
+                entry["status"] = "unsupported"
+            entry["detail"] = message[:300]
+            log.warning(
+                "Vector index provisioning for %s failed: %s", collection, message
+            )
+
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────

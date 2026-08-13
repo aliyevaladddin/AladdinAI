@@ -24,16 +24,39 @@ AladdinAI ships with a built-in vector memory system backed by **MongoDB Atlas**
 **Collections used in MongoDB Atlas:**
 
 ```
-agent_memories         — private per-agent facts (vector index required)
-shared_context         — facts visible to all agents of a user (vector index required)
+agent_memories         — private per-agent facts (vector index)
+shared_context         — facts visible to all agents of a user (vector index)
+document_chunks        — text extracted from uploaded files (vector index)
 conversation_summaries — rolled-up chat history
 ```
 
-**Vector index setup (Atlas UI):**
-- Collection: `agent_memories` → Index name: `vector_index`, field: `embedding`, dim: `2048`, similarity: `cosine`, **filter fields: `user_id`, `agent_id`**
-- Collection: `shared_context` → same index config, **filter field: `user_id`**
+Facts and documents are separate pools on purpose: a fact asserts something
+("Acme renewed in March"), while a document chunk is raw source text with no
+subject. Facts are injected into agent prompts; document chunks are pulled on
+demand via the `search_documents` tool.
 
-> ⚠️ Both filter fields on `agent_memories` are required. The `$vectorSearch` pipeline passes `{"user_id": ..., "agent_id": ...}` as the filter — a missing `agent_id` filter field will cause per-agent memory queries to silently return no results.
+**Vector index setup — automatic.** The indexes are provisioned from code by
+`ensure_vector_indexes()`, which runs when a Mongo connection is tested and can
+be re-run any time with `POST /api/mongodb/vector-indexes`. It is idempotent:
+existing indexes are reported, never recreated. Each index is named
+`vector_index` over `embedding`, dim `2048`, similarity `cosine`, with the
+filter fields its queries scope by:
+
+| Collection | Filter fields |
+|---|---|
+| `agent_memories` | `user_id`, `agent_id` |
+| `shared_context` | `user_id` |
+| `document_chunks` | `user_id` |
+
+Atlas builds an index asynchronously — expect roughly half a minute before it
+reports `queryable`. On a non-Atlas deployment (no Atlas Search) provisioning
+reports `unsupported` rather than failing the connection.
+
+> ⚠️ The filter fields are not optional. `$vectorSearch` passes them as its
+> `filter`, and a filter path missing from the index makes Atlas reject the
+> query. The searches then fall back to a **recency** query — so results keep
+> coming back and nothing looks broken, while ranking is silently gone. That
+> quiet failure mode is why these are no longer created by hand.
 
 ---
 
