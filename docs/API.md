@@ -2914,6 +2914,29 @@ Test Mongo
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/mongodb/vector-indexes
+
+#### POST
+##### Summary:
+
+Create Vector Indexes
+
+##### Description:
+
+Create any missing Atlas vector indexes. Safe to call repeatedly.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/mongodb/{conn_id}
 
 #### PUT
@@ -2957,6 +2980,117 @@ Delete Mongo
 | ---- | ----------- |
 | 204 | Successful Response |
 | 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/mongodb/documents
+
+#### GET
+##### Summary:
+
+List Documents
+
+##### Description:
+
+One row per uploaded document, newest first.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/mongodb/documents/search
+
+#### GET
+##### Summary:
+
+Search Documents
+
+##### Description:
+
+Vector-search the text of uploaded documents.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| q | query |  | Yes | string |
+| filename | query |  | No |  |
+| limit | query |  | No | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/mongodb/documents/{filename}
+
+#### DELETE
+##### Summary:
+
+Delete Document
+
+##### Description:
+
+Delete every chunk of one uploaded document.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| filename | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/mongodb/documents/migrate-legacy
+
+#### POST
+##### Summary:
+
+Migrate Legacy Documents
+
+##### Description:
+
+Move pre-split file chunks out of shared facts into the document pool.
+
+Explicit rather than automatic: it rewrites the user's own Atlas data, so it
+runs when they ask for it. Safe to run twice.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
 
 ##### Security
 
