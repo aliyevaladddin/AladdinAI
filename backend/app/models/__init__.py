@@ -22,11 +22,12 @@ from app.models.terminal_provider import TerminalProvider
 from app.models.notification import Notification
 from app.models.system_settings import SystemSettings
 from app.models.message_feedback import MessageFeedback
+from app.models.terminal_approval import TerminalApproval
 
 __all__ = [
     "User", "VMConnection", "LLMProvider", "MongoConnection", "BentoMLConnection",
     "Agent", "RouterConfig", "Contact", "Deal", "Product", "Order", "OrderItem", "Activity", "Conversation",
     "EmailAccount", "MessagingChannel", "ChatSession", "ChatMessage", "OutgoingWebhook",
     "AgentMessage", "AgentTrigger", "TerminalProvider", "Notification", "SystemSettings",
-    "MessageFeedback",
+    "MessageFeedback", "TerminalApproval",
 ]
