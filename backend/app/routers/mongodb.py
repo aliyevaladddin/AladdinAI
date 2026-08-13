@@ -79,8 +79,8 @@ async def test_mongo(conn_id: int, user: User = Depends(get_current_user), db: A
     # degrades silently later (searches answer from the recency fallback).
     try:
         indexes = await memory_service.ensure_vector_indexes(db, user.id)
-    except Exception as e:  # noqa: BLE001
-        indexes = {"error": str(e)[:300]}
+    except Exception:  # noqa: BLE001
+        indexes = {"error": "Vector index provisioning failed."}
 
     return {
         "status": "ok",
