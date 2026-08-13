@@ -73,12 +73,36 @@ async def test_mongo(conn_id: int, user: User = Depends(get_current_user), db: A
     conn.status = "connected"
     await db.commit()
     invalidate_mongo_client(user.id)
+
+    # Provision the vector indexes here: testing a connection is the one moment a
+    # user is already waiting on their cluster, and an index missed at this point
+    # degrades silently later (searches answer from the recency fallback).
+    try:
+        indexes = await memory_service.ensure_vector_indexes(db, user.id)
+    except Exception as e:  # noqa: BLE001
+        indexes = {"error": str(e)[:300]}
+
     return {
         "status": "ok",
         "db": conn.db_name,
         "collections": collections,
+        "vector_indexes": indexes,
         "message": f"Pinged {conn.db_name} successfully",
     }
+
+
+# [RCF:PROTECTED]
+@router.post("/vector-indexes")
+# [RCF:PROTECTED]
+async def create_vector_indexes(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create any missing Atlas vector indexes. Safe to call repeatedly."""
+    try:
+        return await memory_service.ensure_vector_indexes(db, user.id)
+    except memory_service.MemoryError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # [RCF:PROTECTED]

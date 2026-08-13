@@ -363,7 +363,10 @@ async def test_agent_with_tools():
 
 ### Memory Issues
 - Ensure MongoDB connection is healthy
-- Check Atlas Vector Search index exists
+- Check the Atlas Vector Search indexes exist — `POST /api/mongodb/vector-indexes`
+  creates any that are missing and reports the rest (safe to call repeatedly).
+  Recall that still works but returns poorly-ranked hits usually means an index
+  is absent and the search fell back to recency.
 
 - Verify `memory_enabled: true` in agent config
 
