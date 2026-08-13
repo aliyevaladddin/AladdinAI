@@ -136,6 +136,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#572) ([7520e0b](https://github.com/aliyevaladddin/AladdinAI/commit/7520e0bb98cdb45f076cdb1cdf8693844e173c39))
 
+- Update changelog [skip ci] (#575) ([a31cd31](https://github.com/aliyevaladddin/AladdinAI/commit/a31cd31677f47335284731ebabb0d03ceb0c2094))
+
 ## [v2.2.3] - 2026-07-22
 
 ### Bug Fixes
