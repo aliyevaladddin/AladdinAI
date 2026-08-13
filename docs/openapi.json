@@ -5636,6 +5636,31 @@
         }
       }
     },
+    "/api/mongodb/vector-indexes": {
+      "post": {
+        "tags": [
+          "mongodb"
+        ],
+        "summary": "Create Vector Indexes",
+        "description": "Create any missing Atlas vector indexes. Safe to call repeatedly.",
+        "operationId": "create_vector_indexes_api_mongodb_vector_indexes_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/mongodb/{conn_id}": {
       "put": {
         "tags": [
@@ -5729,6 +5754,174 @@
             }
           }
         }
+      }
+    },
+    "/api/mongodb/documents": {
+      "get": {
+        "tags": [
+          "mongodb"
+        ],
+        "summary": "List Documents",
+        "description": "One row per uploaded document, newest first.",
+        "operationId": "list_documents_api_mongodb_documents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/mongodb/documents/search": {
+      "get": {
+        "tags": [
+          "mongodb"
+        ],
+        "summary": "Search Documents",
+        "description": "Vector-search the text of uploaded documents.",
+        "operationId": "search_documents_api_mongodb_documents_search_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Q"
+            }
+          },
+          {
+            "name": "filename",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filename"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mongodb/documents/{filename}": {
+      "delete": {
+        "tags": [
+          "mongodb"
+        ],
+        "summary": "Delete Document",
+        "description": "Delete every chunk of one uploaded document.",
+        "operationId": "delete_document_api_mongodb_documents__filename__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mongodb/documents/migrate-legacy": {
+      "post": {
+        "tags": [
+          "mongodb"
+        ],
+        "summary": "Migrate Legacy Documents",
+        "description": "Move pre-split file chunks out of shared facts into the document pool.\n\nExplicit rather than automatic: it rewrites the user's own Atlas data, so it\nruns when they ask for it. Safe to run twice.",
+        "operationId": "migrate_legacy_documents_api_mongodb_documents_migrate_legacy_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/bentoml": {
