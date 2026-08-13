@@ -18,12 +18,15 @@ from app.services.memory import (
     CHUNK_SIZE,
     DOCUMENT_COLLECTION,
     EMBED_DIM,
+    VECTOR_INDEX_FILTERS,
+    VECTOR_INDEX_NAME,
     MemoryError,
     _client_cache,
     build_shared_context_block,
     chunk_text_content,
     count_memories,
     embed,
+    ensure_vector_indexes,
     invalidate_mongo_client,
     store_document_chunk,
     store_memory,
@@ -561,3 +564,164 @@ async def test_store_document_chunk_writes_to_document_collection():
     assert "fact" not in doc
     assert "visibility" not in doc
     assert out["id"] == "abc123"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ensure_vector_indexes() — provisioning
+# ─────────────────────────────────────────────────────────────────────────────
+
+# [RCF:PROTECTED]
+def _make_mdb(*, collections: list[str], indexes: dict[str, list[str]]):
+    """Fake Atlas database whose collections report the given search indexes."""
+    colls: dict[str, MagicMock] = {}
+
+    for name in VECTOR_INDEX_FILTERS:
+        coll = MagicMock()
+        coll.create_search_index = AsyncMock(return_value=VECTOR_INDEX_NAME)
+
+        async def _list(_names=indexes.get(name, [])):
+            for n in _names:
+                yield {"name": n}
+
+        coll.list_search_indexes = MagicMock(side_effect=lambda _l=_list: _l())
+        colls[name] = coll
+
+    mdb = MagicMock()
+    mdb.list_collection_names = AsyncMock(return_value=collections)
+    mdb.create_collection = AsyncMock()
+    mdb.__getitem__ = MagicMock(side_effect=lambda n: colls[n])
+    return mdb, colls
+
+
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+# [RCF:PROTECTED]
+async def test_ensure_vector_indexes_creates_missing_document_index():
+    """The document index is created, and its filter matches how it is queried.
+
+    `search_documents` filters on `user_id`; a filter path absent from the index
+    makes Atlas reject the whole query, dropping it to the recency fallback.
+    """
+    db = _make_db()
+    mdb, colls = _make_mdb(
+        collections=["agent_memories", "shared_context", "document_chunks"],
+        indexes={
+            "agent_memories": [VECTOR_INDEX_NAME],
+            "shared_context": [VECTOR_INDEX_NAME],
+            "document_chunks": [],
+        },
+    )
+
+    with patch("app.services.memory.get_mongo_db", new_callable=AsyncMock, return_value=mdb):
+        out = await ensure_vector_indexes(db, 1)
+
+    assert out[DOCUMENT_COLLECTION]["status"] == "created"
+    assert out["agent_memories"]["status"] == "exists"
+    assert out["shared_context"]["status"] == "exists"
+
+    # Existing indexes are left alone — never recreated or redefined.
+    colls["agent_memories"].create_search_index.assert_not_called()
+    colls["shared_context"].create_search_index.assert_not_called()
+
+    model = colls[DOCUMENT_COLLECTION].create_search_index.call_args[0][0]
+    assert model["name"] == VECTOR_INDEX_NAME
+    assert model["type"] == "vectorSearch"
+    fields = model["definition"]["fields"]
+    vector = next(f for f in fields if f["type"] == "vector")
+    assert vector["path"] == "embedding"
+    assert vector["numDimensions"] == EMBED_DIM
+    assert vector["similarity"] == "cosine"
+    assert {f["path"] for f in fields if f["type"] == "filter"} == {"user_id"}
+
+
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+# [RCF:PROTECTED]
+async def test_ensure_vector_indexes_creates_absent_collection_first():
+    """createSearchIndexes fails on a namespace that does not exist yet.
+
+    `document_chunks` only appears on first upload, so provisioning has to make
+    the collection before indexing it.
+    """
+    db = _make_db()
+    mdb, colls = _make_mdb(
+        collections=["agent_memories", "shared_context"],
+        indexes={"agent_memories": [VECTOR_INDEX_NAME], "shared_context": [VECTOR_INDEX_NAME]},
+    )
+
+    with patch("app.services.memory.get_mongo_db", new_callable=AsyncMock, return_value=mdb):
+        out = await ensure_vector_indexes(db, 1)
+
+    mdb.create_collection.assert_awaited_once_with(DOCUMENT_COLLECTION)
+    assert out[DOCUMENT_COLLECTION]["collection_created"] is True
+    assert out[DOCUMENT_COLLECTION]["status"] == "created"
+
+
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+# [RCF:PROTECTED]
+async def test_ensure_vector_indexes_is_idempotent():
+    """Called twice against a provisioned cluster, it creates nothing."""
+    db = _make_db()
+    mdb, colls = _make_mdb(
+        collections=list(VECTOR_INDEX_FILTERS),
+        indexes={name: [VECTOR_INDEX_NAME] for name in VECTOR_INDEX_FILTERS},
+    )
+
+    with patch("app.services.memory.get_mongo_db", new_callable=AsyncMock, return_value=mdb):
+        first = await ensure_vector_indexes(db, 1)
+        second = await ensure_vector_indexes(db, 1)
+
+    assert all(e["status"] == "exists" for e in first.values())
+    assert first == second
+    for coll in colls.values():
+        coll.create_search_index.assert_not_called()
+    mdb.create_collection.assert_not_awaited()
+
+
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+# [RCF:PROTECTED]
+async def test_ensure_vector_indexes_reports_non_atlas_cluster():
+    """Self-hosted MongoDB has no Atlas Search: report it, don't raise.
+
+    Everything else in memory still works there, so a missing search feature
+    must not fail the connection test that calls this.
+    """
+    db = _make_db()
+    mdb, colls = _make_mdb(
+        collections=list(VECTOR_INDEX_FILTERS),
+        indexes={name: [] for name in VECTOR_INDEX_FILTERS},
+    )
+    for coll in colls.values():
+        coll.create_search_index = AsyncMock(
+            side_effect=Exception("Search index commands are not supported on this deployment")
+        )
+
+    with patch("app.services.memory.get_mongo_db", new_callable=AsyncMock, return_value=mdb):
+        out = await ensure_vector_indexes(db, 1)
+
+    assert all(e["status"] == "unsupported" for e in out.values())
+    assert "not supported" in out[DOCUMENT_COLLECTION]["detail"]
+
+
+# [RCF:PROTECTED]
+@pytest.mark.asyncio
+# [RCF:PROTECTED]
+async def test_ensure_vector_indexes_isolates_per_collection_failure():
+    """One collection failing must not stop the others being provisioned."""
+    db = _make_db()
+    mdb, colls = _make_mdb(
+        collections=list(VECTOR_INDEX_FILTERS),
+        indexes={name: [] for name in VECTOR_INDEX_FILTERS},
+    )
+    colls["agent_memories"].create_search_index = AsyncMock(
+        side_effect=Exception("quota exceeded")
+    )
+
+    with patch("app.services.memory.get_mongo_db", new_callable=AsyncMock, return_value=mdb):
+        out = await ensure_vector_indexes(db, 1)
+
+    assert out["agent_memories"]["status"] == "error"
+    assert out[DOCUMENT_COLLECTION]["status"] == "created"
+    assert out["shared_context"]["status"] == "created"
