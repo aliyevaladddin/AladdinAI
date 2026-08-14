@@ -7,6 +7,7 @@ so we test them against a tiny in-memory fake Mongo collection instead of the
 real driver — enough to prove selection, freezing (idempotent replace), and the
 base-vs-forged delta wiring.
 """
+import json
 from datetime import datetime, timezone
 
 import pytest
@@ -14,6 +15,7 @@ import pytest
 from app.services.forging import (
     _golden_query,
     _to_golden,
+    export_golden_set,
     freeze_golden_set,
     run_harness,
     score_response,
@@ -108,8 +110,14 @@ class _FakeCollection:
             for k, v in query.items():
                 if k == "user_id" and d.get("user_id") != v:
                     return False
-                if k == "reward" and isinstance(v, dict) and (d.get("reward") is None or d["reward"] < v["$gte"]):
-                    return False
+                if k == "reward" and isinstance(v, dict):
+                    if d.get("reward") is None:
+                        return False
+                    if "$gte" in v and d["reward"] < v["$gte"]:
+                        return False
+                    # The DPO export selects rejected answers by an upper bound.
+                    if "$lte" in v and d["reward"] > v["$lte"]:
+                        return False
                 if k == "human_labeled" and d.get("human_labeled") is not v:
                     return False
                 if k in ("final_text", "input_user_text") and isinstance(v, dict) and d.get(k) in v["$nin"]:
@@ -201,3 +209,142 @@ async def test_harness_reports_delta(monkeypatch):
     assert result["mean_forged"] == 1.0
     assert result["mean_base"] == 0.0
     assert result["delta"] == 1.0
+
+
+# ── export_golden_set (fake Mongo) ───────────────────────────────────────────
+# [RCF:PROTECTED]
+def _labeled(_id, user_id, q, a, reward=1.0):
+    return {"_id": _id, "user_id": user_id, "input_user_text": q,
+            "final_text": a, "reward": reward, "human_labeled": True}
+
+
+@pytest.mark.asyncio
+async def test_export_sft_emits_prompt_completion():
+    """SFT rows carry exactly the two keys Customizer reads for that type."""
+    mdb = _FakeMongo([_labeled(1, 1, "what to do?", "ship the order")])
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="sft")
+
+    assert out["examples"] == 1
+    row = json.loads(out["jsonl"])
+    assert row == {"prompt": "what to do?", "completion": "ship the order"}
+
+
+@pytest.mark.asyncio
+async def test_export_is_jsonl_not_json_array():
+    """One JSON document per line — a JSON array would be rejected by the trainer."""
+    mdb = _FakeMongo([_labeled(1, 1, "q1", "a1"), _labeled(2, 1, "q2", "a2")])
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="sft")
+    lines = out["jsonl"].splitlines()
+
+    assert len(lines) == 2
+    assert all(json.loads(line)["prompt"] for line in lines)
+
+
+@pytest.mark.asyncio
+async def test_export_chat_includes_system_prompt():
+    """Chat rows keep role order and carry the system prompt when given."""
+    mdb = _FakeMongo([_labeled(1, 1, "hi", "hello")])
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="chat", system_prompt="You are terse.")
+    messages = json.loads(out["jsonl"])["messages"]
+
+    assert [m["role"] for m in messages] == ["system", "user", "assistant"]
+    assert messages[0]["content"] == "You are terse."
+    assert messages[2]["content"] == "hello"
+
+
+@pytest.mark.asyncio
+async def test_export_chat_omits_empty_system_prompt():
+    """No system prompt means no empty system turn in the training data."""
+    mdb = _FakeMongo([_labeled(1, 1, "hi", "hello")])
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="chat")
+
+    assert [m["role"] for m in json.loads(out["jsonl"])["messages"]] == ["user", "assistant"]
+
+
+@pytest.mark.asyncio
+async def test_export_dpo_pairs_chosen_with_rejected_for_same_input():
+    """A preference pair must contrast two answers to the *same* prompt."""
+    traces = [
+        _labeled(1, 1, "how to greet?", "Hello, how may I help?", reward=1.0),
+        _labeled(2, 1, "how to greet?", "yo", reward=-1.0),  # thumbs-down
+    ]
+    mdb = _FakeMongo(traces)
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="dpo")
+    row = json.loads(out["jsonl"])
+
+    assert out["examples"] == 1
+    assert row["prompt"] == [{"role": "user", "content": "how to greet?"}]
+    assert row["chosen_response"] == "Hello, how may I help?"
+    assert row["rejected_response"] == "yo"
+
+
+@pytest.mark.asyncio
+async def test_export_dpo_skips_prompts_never_rated_badly():
+    """Without a rejected counterpart there is no preference to learn.
+
+    The count is reported rather than silently dropped: an export much smaller
+    than the golden set is a fact about the labels, not a bug.
+    """
+    mdb = _FakeMongo([_labeled(1, 1, "only good", "great answer", reward=1.0)])
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="dpo")
+
+    assert out["examples"] == 0
+    assert out["skipped_unpaired"] == 1
+    assert out["golden_available"] == 1
+
+
+@pytest.mark.asyncio
+async def test_export_empty_golden_set_is_empty_not_error():
+    """Nothing frozen yet is a normal state, not a failure."""
+    mdb = _FakeMongo([])
+
+    out = await export_golden_set(mdb, 1, fmt="sft")
+
+    assert out["examples"] == 0
+    assert out["jsonl"] == ""
+
+
+@pytest.mark.asyncio
+async def test_export_rejects_unknown_format():
+    """An unknown format must fail loudly, not silently produce the wrong schema."""
+    mdb = _FakeMongo([])
+
+    with pytest.raises(ValueError, match="Unknown export format"):
+        await export_golden_set(mdb, 1, fmt="alpaca")
+
+
+@pytest.mark.asyncio
+async def test_export_scopes_to_the_calling_user():
+    """One user's traces never leak into another's training data."""
+    mdb = _FakeMongo([_labeled(1, 1, "mine", "a"), _labeled(2, 2, "theirs", "b")])
+    await freeze_golden_set(mdb, user_id=1)
+    await freeze_golden_set(mdb, user_id=2)
+
+    out = await export_golden_set(mdb, 1, fmt="sft")
+
+    assert out["examples"] == 1
+    assert json.loads(out["jsonl"])["prompt"] == "mine"
+
+
+@pytest.mark.asyncio
+async def test_export_preserves_non_ascii():
+    """Cyrillic must survive as text, not as \\uXXXX escapes."""
+    mdb = _FakeMongo([_labeled(1, 1, "как дела?", "хорошо")])
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="sft")
+
+    assert "хорошо" in out["jsonl"]
+    assert json.loads(out["jsonl"])["completion"] == "хорошо"

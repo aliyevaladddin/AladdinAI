@@ -28,6 +28,7 @@ not "was the answer right".
 """
 from __future__ import annotations
 
+import json
 import logging
 import re
 from datetime import datetime, timezone
@@ -178,6 +179,125 @@ async def get_golden_set(mdb, user_id: int, *, limit: int = 500) -> list[dict[st
                     "human_labeled": 1, "frozen_at": 1},
     ).sort("frozen_at", -1).limit(limit)
     return [doc async for doc in cursor]
+
+
+# ── layer 2b: export for training ────────────────────────────────────────────
+# NeMo Customizer decides a dataset's schema by looking at it, so each format
+# here is the exact shape one training type expects — not a house format a
+# converter would have to translate.
+#   sft  — {"prompt", "completion"}: plain supervised fine-tuning.
+#   chat — {"messages": [{role, content}, ...]}: same pairs carrying the system
+#          prompt, for models trained on a chat template.
+#   dpo  — {"prompt", "chosen_response", "rejected_response"}: preference pairs.
+EXPORT_FORMATS = ("sft", "chat", "dpo")
+
+# A 👎 is `reward = -1.0` (see `human_score`). DPO needs a rejected answer, and
+# only a human thumbs-down is trustworthy enough to be one.
+REJECTED_MAX_REWARD = -0.5
+
+
+# [RCF:PROTECTED]
+def _sft_row(ex: dict[str, Any]) -> dict[str, Any]:
+    return {"prompt": ex.get("input") or "", "completion": ex.get("expected") or ""}
+
+
+# [RCF:PROTECTED]
+def _chat_row(ex: dict[str, Any], system_prompt: str) -> dict[str, Any]:
+    messages: list[dict[str, str]] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": ex.get("input") or ""})
+    messages.append({"role": "assistant", "content": ex.get("expected") or ""})
+    return {"messages": messages}
+
+
+# [RCF:PROTECTED]
+async def _rejected_by_input(mdb, user_id: int, limit: int) -> dict[str, str]:
+    """Map input text -> a thumbs-down reply the user gave for that same input.
+
+    DPO learns from a contrast, so a rejected answer is only meaningful next to
+    a chosen one for the *same* prompt. Pairing by input text is what makes the
+    two halves comparable; inputs with no rejected counterpart are skipped
+    rather than paired against something arbitrary.
+    """
+    cursor = mdb[TRACE_COLLECTION].find(
+        {
+            "user_id": user_id,
+            "human_labeled": True,
+            "reward": {"$lte": REJECTED_MAX_REWARD},
+            "final_text": {"$nin": [None, ""]},
+            "input_user_text": {"$nin": [None, ""]},
+        },
+        projection={"input_user_text": 1, "final_text": 1},
+    ).sort("created_at", -1).limit(limit)
+    return {
+        doc["input_user_text"]: doc["final_text"]
+        async for doc in cursor
+    }
+
+
+# [RCF:PROTECTED]
+async def export_golden_set(
+    mdb,
+    user_id: int,
+    *,
+    fmt: str = "sft",
+    system_prompt: str = "",
+    limit: int = 500,
+) -> dict[str, Any]:
+    """Render the frozen golden set as JSONL lines ready for a training job.
+
+    This is the step between "we measured that a forged model would help" and
+    actually producing one: the harness compares two models, but nothing turned
+    the golden set into something a trainer accepts. Returns the rows plus the
+    serialised JSONL so a caller can stream it as a file download.
+
+    Exporting reads the *frozen* set on purpose. Training against a live query
+    would mean the dataset silently changes between the run and the evaluation
+    that is supposed to judge it.
+    """
+    if fmt not in EXPORT_FORMATS:
+        raise ValueError(f"Unknown export format: {fmt!r} (expected one of {EXPORT_FORMATS})")
+
+    golden = await get_golden_set(mdb, user_id, limit=limit)
+    rows: list[dict[str, Any]] = []
+    skipped_unpaired = 0
+
+    if fmt == "dpo":
+        rejected = await _rejected_by_input(mdb, user_id, limit)
+        for ex in golden:
+            user_input = ex.get("input") or ""
+            counterpart = rejected.get(user_input)
+            if not counterpart:
+                skipped_unpaired += 1
+                continue
+            rows.append({
+                # Customizer wants the DPO prompt in message form, unlike SFT.
+                "prompt": [{"role": "user", "content": user_input}],
+                "chosen_response": ex.get("expected") or "",
+                "rejected_response": counterpart,
+            })
+    else:
+        for ex in golden:
+            if not (ex.get("input") and ex.get("expected")):
+                continue
+            rows.append(
+                _sft_row(ex) if fmt == "sft" else _chat_row(ex, system_prompt)
+            )
+
+    jsonl = "\n".join(json.dumps(r, ensure_ascii=False) for r in rows)
+    result: dict[str, Any] = {
+        "format": fmt,
+        "examples": len(rows),
+        "golden_available": len(golden),
+        "jsonl": jsonl,
+    }
+    if fmt == "dpo":
+        # Surfaced rather than swallowed: an export far smaller than the golden
+        # set means most prompts were never rated both ways, which is a fact
+        # about the data, not a bug in the export.
+        result["skipped_unpaired"] = skipped_unpaired
+    return result
 
 
 # ── layer 3: harness ─────────────────────────────────────────────────────────
