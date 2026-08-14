@@ -11,6 +11,7 @@ use layers 2 and 3.
 Layer 0  Capture    every agent turn → agent_traces (tracing.py)
 Layer 1  Signal     reward/quality_label: weak write-time score, overridden by human 👍/👎
 Layer 2  Golden set freeze labeled traces into a fixed benchmark (golden_traces)
+Layer 2b Export     render the frozen set as JSONL a trainer accepts
 Layer 3  Harness    replay golden inputs through base vs forged → measure the delta
 ```
 
@@ -49,6 +50,53 @@ curl -X POST http://localhost:8000/api/forging/golden-set \
 
 Inspect it: `GET /api/forging/golden-set`.
 
+## Layer 2b — export the golden set for training
+
+The golden set lives in Mongo; a trainer wants JSONL. This export is the step
+between "we can measure a forged model" and actually having one.
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:8000/api/forging/golden-set/export?format=sft" \
+  -o training.jsonl
+```
+
+`format` picks the schema, because NeMo Customizer detects a dataset's type from
+its shape rather than from a flag:
+
+| `format` | Line shape | Use for |
+|---|---|---|
+| `sft` (default) | `{"prompt", "completion"}` | supervised fine-tuning, LoRA |
+| `chat` | `{"messages": [{role, content}, …]}` | models trained on a chat template |
+| `dpo` | `{"prompt", "chosen_response", "rejected_response"}` | preference alignment |
+
+Add `&system_prompt=...` to put a system turn in front of every `chat` example,
+and `&download=false` to get a JSON summary instead of the file.
+
+**DPO needs both verdicts on the same question.** A preference pair contrasts a
+👍 answer with a 👎 answer *to the same input*, so prompts that were only ever
+rated one way are skipped and counted in `skipped_unpaired`. An export far
+smaller than the golden set is a fact about your labels, not a failure — it
+means few questions have been answered both well and badly.
+
+### Running the fine-tune
+
+The export is deliberately the boundary: AladdinAI produces the dataset, your
+GPU budget produces the model. With [NeMo Customizer][customizer] the shape is
+
+```bash
+# 1. upload training.jsonl as a dataset (training/ and optionally validation/)
+# 2. create a customization job against a base model, e.g.
+#      meta/llama-3.1-8b-instruct + LoRA
+# 3. the job yields a model name you can serve through NIM
+```
+
+Then point the harness at it: `forged_model` = the new name, `base_model` = what
+you started from. That delta is the whole reason the golden set is frozen — it
+tells you whether the run was worth its cost.
+
+[customizer]: https://docs.nvidia.com/nemo/microservices/latest/customizer/tutorials/sft-customization-job.html
+
 ## Layer 3 — run the harness
 
 Replay every golden input through two models and score each reply against the
@@ -85,9 +133,14 @@ same reason trace capture defaults off there.
 
 ## Boundaries (not built yet)
 
-Actual fine-tuning (producing the forged model), scheduled re-freezing, and a
-UI for the harness are out of scope here. This layer gives you the *measurement*
-— the number that says whether a fine-tune was worth it.
+Running the training job itself, scheduled re-freezing, and a UI for the harness
+are out of scope. What exists is the full data path — capture → label → freeze →
+**export** → measure — and the export hands off to whatever trainer you use.
+
+The one thing no code can supply is the labels. Traces with `reward: null` are
+*intentionally excluded*, not unlabeled — fine-tuning on unrated traces averages
+your good and bad answers together and produces a model that is more confident,
+not more correct. The 👍/👎 buttons are the input to all of this.
 
 ## See also
 
