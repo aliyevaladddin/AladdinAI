@@ -14,6 +14,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Separate uploaded documents from facts (#532) ([ae43db7](https://github.com/aliyevaladddin/AladdinAI/commit/ae43db7524d7cfa4c23cefb0cb491e0a12dca8f9))
 
+- Retry transient LLM provider errors with backoff (#578) ([5d9119e](https://github.com/aliyevaladddin/AladdinAI/commit/5d9119ef1566f7b515e49f4620c8d88310d944b8))
+
 
 ### Dependencies
 
@@ -74,6 +76,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Provision Atlas vector indexes from code (#571) ([a144f72](https://github.com/aliyevaladddin/AladdinAI/commit/a144f72d471617433efe355fe894236e78e8f5e6))
 
 - Migrate terminal approval state to Postgres to support multi-worker environments (#574) ([88ecb4a](https://github.com/aliyevaladddin/AladdinAI/commit/88ecb4a21936fcd1c0de388e856900a018dc0f20))
+
+- Add JSONL export of the golden set for fine-tuning (#579) ([cfbe0b9](https://github.com/aliyevaladddin/AladdinAI/commit/cfbe0b9eb4aafa132cdd69a301cd9a257b6236a4))
 
 
 ### Maintenance
@@ -137,6 +141,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#572) ([7520e0b](https://github.com/aliyevaladddin/AladdinAI/commit/7520e0bb98cdb45f076cdb1cdf8693844e173c39))
 
 - Update changelog [skip ci] (#575) ([a31cd31](https://github.com/aliyevaladddin/AladdinAI/commit/a31cd31677f47335284731ebabb0d03ceb0c2094))
+
+- Update changelog [skip ci] (#577) ([9a2e429](https://github.com/aliyevaladddin/AladdinAI/commit/9a2e4294a575b5bae47211176db024906ee9a974))
 
 ## [v2.2.3] - 2026-07-22
 
