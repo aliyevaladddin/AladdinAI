@@ -4241,6 +4241,44 @@ Return the current frozen golden examples.
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/forging/golden-set/export
+
+#### GET
+##### Summary:
+
+Export Golden
+
+##### Description:
+
+Export the frozen golden set as JSONL for a fine-tuning job.
+
+`format` selects the schema the trainer expects: `sft` (prompt/completion),
+`chat` (messages), or `dpo` (chosen/rejected pairs). With `download=true`
+the body is the .jsonl file itself, so it can be uploaded to NeMo Customizer
+as-is; otherwise a JSON summary comes back with the same lines inline.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| format | query |  | No | string |
+| system_prompt | query |  | No | string |
+| limit | query |  | No | integer |
+| download | query |  | No | boolean |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/forging/harness
 
 #### POST
