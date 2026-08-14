@@ -16,7 +16,10 @@ always return tool_calls=None — they fall back to text-only.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import random
+from contextlib import asynccontextmanager
 from typing import Any, Callable
 
 
@@ -31,6 +34,99 @@ log = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 180.0
 DEFAULT_MAX_TOKENS = 1024
+
+# Statuses where the request was fine and the provider simply could not take it
+# right now: 429 rate limit, 503/504 gateway, and 529 — the "temporarily
+# overloaded" code hosted NIM returns under load. Retrying these is the whole
+# difference between a hiccup upstream and a failed reply in the user's chat.
+# 4xx other than 429 are our fault (bad model name, bad key) and never retried.
+RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504, 529})
+RETRY_ATTEMPTS = 3
+RETRY_BASE_DELAY = 1.0  # seconds; doubled each attempt
+
+
+# [RCF:PROTECTED]
+def _retry_delay(attempt: int, retry_after: str | None = None) -> float:
+    """Seconds to wait before the next attempt.
+
+    Honours `Retry-After` when the provider sends one — it knows its own
+    recovery window better than a fixed curve does. Otherwise exponential
+    backoff with jitter, so a burst of agent turns that all hit an overloaded
+    provider does not retry in lockstep and re-overload it.
+    """
+    if retry_after:
+        try:
+            return min(float(retry_after), 30.0)
+        except ValueError:
+            pass
+    return RETRY_BASE_DELAY * (2 ** attempt) + random.uniform(0, 0.5)  # noqa: S311
+
+
+# [RCF:PROTECTED]
+def _log_retry(scope: str, status_code: int, model: str, attempt: int, delay: float) -> None:
+    log.warning(
+        "%s: provider returned %s for model %r; retry %d/%d in %.1fs",
+        scope, status_code, model, attempt + 1, RETRY_ATTEMPTS, delay,
+    )
+
+
+# [RCF:PROTECTED]
+async def _post_with_retry(
+    client: httpx.AsyncClient,
+    url: str,
+    payload: dict,
+    headers: dict,
+    model: str,
+) -> httpx.Response:
+    """POST `payload` and retry on transient provider errors (RETRYABLE_STATUS).
+
+    Non-retryable statuses and transport errors raise LLMError immediately —
+    same behavior as a plain post. A retryable status is retried up to
+    RETRY_ATTEMPTS times with backoff (honouring Retry-After) before it
+    becomes an LLMError too.
+    """
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            resp = await client.post(url, json=payload, headers=headers)
+            resp.raise_for_status()
+            return resp
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code not in RETRYABLE_STATUS or attempt == RETRY_ATTEMPTS - 1:
+                raise LLMError(f"HTTP {e.response.status_code}: {e.response.text[:300]}") from e
+            delay = _retry_delay(attempt, e.response.headers.get("Retry-After"))
+            _log_retry("chat completion", e.response.status_code, model, attempt, delay)
+            await asyncio.sleep(delay)
+        except httpx.HTTPError as e:
+            raise LLMError(str(e)) from e
+    raise LLMError("Retry attempts exhausted")  # unreachable: last attempt always raises
+
+
+# [RCF:PROTECTED]
+@asynccontextmanager
+async def _retried_stream(client: httpx.AsyncClient, url: str, payload: dict, headers: dict, model: str):
+    """Open a streaming POST, retrying transient failures *before* the first byte.
+
+    Yields only a response whose status check passed, so nothing has been
+    emitted downstream by the time a caller starts reading — retrying after
+    tokens were already streamed would duplicate them in the user's chat.
+    Mid-stream errors propagate unchanged and are never retried.
+    """
+    for attempt in range(RETRY_ATTEMPTS):
+        async with client.stream("POST", url, json=payload, headers=headers) as response:
+            if response.status_code >= 400:
+                await response.aread()
+                try:
+                    response.raise_for_status()
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code not in RETRYABLE_STATUS or attempt == RETRY_ATTEMPTS - 1:
+                        raise
+                    delay = _retry_delay(attempt, e.response.headers.get("Retry-After"))
+                    _log_retry("streaming completion", e.response.status_code, model, attempt, delay)
+                    await asyncio.sleep(delay)
+                    continue
+            yield response
+            return
+    raise LLMError("Retry attempts exhausted")  # unreachable: last attempt always raises
 
 OPENAI_COMPATIBLE = {"openai", "nvidia_nim", "ollama", "custom"}
 # Provider families that currently honor `tools=` in chat_completion.
@@ -171,7 +267,7 @@ async def _openai_compatible(
                 content_parts = []
                 reasoning_parts = []
                 tool_calls_map = {}
-                async with client.stream("POST", url, json=payload, headers=headers) as response:
+                async with _retried_stream(client, url, payload, headers, model) as response:
                     if response.status_code >= 400:
                         await response.aread()
                         response.raise_for_status()
@@ -244,13 +340,7 @@ async def _openai_compatible(
                 raise LLMError(str(e)) from e
 
     async with httpx.AsyncClient(timeout=timeout) as client:
-        try:
-            resp = await client.post(url, json=payload, headers=headers)
-            resp.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            raise LLMError(f"HTTP {e.response.status_code}: {e.response.text[:300]}") from e
-        except httpx.HTTPError as e:
-            raise LLMError(str(e)) from e
+        resp = await _post_with_retry(client, url, payload, headers, model)
 
     data = resp.json()
     try:
@@ -304,13 +394,7 @@ async def _anthropic(
     url = f"{(base_url or 'https://api.anthropic.com').rstrip('/')}/v1/messages"
 
     async with httpx.AsyncClient(timeout=timeout) as client:
-        try:
-            resp = await client.post(url, json=payload, headers=headers)
-            resp.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            raise LLMError(f"HTTP {e.response.status_code}: {e.response.text[:300]}") from e
-        except httpx.HTTPError as e:
-            raise LLMError(str(e)) from e
+        resp = await _post_with_retry(client, url, payload, headers, model)
 
     data = resp.json()
     try:
@@ -337,13 +421,7 @@ async def _huggingface(
     }
 
     async with httpx.AsyncClient(timeout=timeout) as client:
-        try:
-            resp = await client.post(url, json=payload, headers=headers)
-            resp.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            raise LLMError(f"HTTP {e.response.status_code}: {e.response.text[:300]}") from e
-        except httpx.HTTPError as e:
-            raise LLMError(str(e)) from e
+        resp = await _post_with_retry(client, url, payload, headers, model)
 
     data = resp.json()
     if isinstance(data, list) and data:
