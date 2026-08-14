@@ -77,6 +77,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Migrate terminal approval state to Postgres to support multi-worker environments (#574) ([88ecb4a](https://github.com/aliyevaladddin/AladdinAI/commit/88ecb4a21936fcd1c0de388e856900a018dc0f20))
 
+- Add JSONL export of the golden set for fine-tuning (#579) ([cfbe0b9](https://github.com/aliyevaladddin/AladdinAI/commit/cfbe0b9eb4aafa132cdd69a301cd9a257b6236a4))
+
 
 ### Maintenance
 
