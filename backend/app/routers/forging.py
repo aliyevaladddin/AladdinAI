@@ -7,7 +7,7 @@ forging pipeline, mirroring how trace *capture* is off for them by default.
 
 All data stays in the user's own Mongo cluster.
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,7 +17,12 @@ from app.models.llm_provider import LLMProvider
 from app.models.user import User
 from app.schemas.forging import GoldenFreezeRequest, GoldenFreezeResponse, HarnessRequest, HarnessResponse
 from app.security import get_current_user
-from app.services.forging import freeze_golden_set, get_golden_set, run_harness
+from app.services.forging import (
+    export_golden_set,
+    freeze_golden_set,
+    get_golden_set,
+    run_harness,
+)
 from app.services.memory import MemoryError as MemSvcError
 from app.services.memory import get_mongo_db
 
@@ -94,6 +99,51 @@ async def list_golden(
     for g in golden:
         g.pop("_id", None)
     return golden
+
+
+# ── layer 2b: export ─────────────────────────────────────────────────────────
+# [RCF:PROTECTED]
+@router.get("/golden-set/export")
+# [RCF:PROTECTED]
+async def export_golden(
+    format: str = "sft",
+    system_prompt: str = "",
+    limit: int = 500,
+    download: bool = True,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export the frozen golden set as JSONL for a fine-tuning job.
+
+    `format` selects the schema the trainer expects: `sft` (prompt/completion),
+    `chat` (messages), or `dpo` (chosen/rejected pairs). With `download=true`
+    the body is the .jsonl file itself, so it can be uploaded to NeMo Customizer
+    as-is; otherwise a JSON summary comes back with the same lines inline.
+    """
+    _require_edition()
+    mdb = await _mongo(db, user.id)
+    try:
+        result = await export_golden_set(
+            mdb, user.id, fmt=format, system_prompt=system_prompt, limit=limit
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    if not download:
+        return result
+
+    return Response(
+        content=result["jsonl"],
+        # JSON Lines is not application/json: the body is many JSON documents,
+        # one per line, and a strict JSON parser would reject it.
+        media_type="application/x-ndjson",
+        headers={
+            "Content-Disposition": f'attachment; filename="golden-{format}.jsonl"',
+            # Lets a client see how much it got without parsing the body, and
+            # notice a DPO export shrunk by unpaired prompts.
+            "X-Export-Examples": str(result["examples"]),
+        },
+    )
 
 
 # ── layer 3: harness ─────────────────────────────────────────────────────────
