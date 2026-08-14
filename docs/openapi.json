@@ -7851,6 +7851,83 @@
         }
       }
     },
+    "/api/forging/golden-set/export": {
+      "get": {
+        "tags": [
+          "forging"
+        ],
+        "summary": "Export Golden",
+        "description": "Export the frozen golden set as JSONL for a fine-tuning job.\n\n`format` selects the schema the trainer expects: `sft` (prompt/completion),\n`chat` (messages), or `dpo` (chosen/rejected pairs). With `download=true`\nthe body is the .jsonl file itself, so it can be uploaded to NeMo Customizer\nas-is; otherwise a JSON summary comes back with the same lines inline.",
+        "operationId": "export_golden_api_forging_golden_set_export_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "sft",
+              "title": "Format"
+            }
+          },
+          {
+            "name": "system_prompt",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "System Prompt"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 500,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Download"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/forging/harness": {
       "post": {
         "tags": [
