@@ -62,7 +62,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "electron-serve": "^3.0.1",
-    "framer-motion": "^13.0.0",
+    "framer-motion": "^13.1.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.31.0",
