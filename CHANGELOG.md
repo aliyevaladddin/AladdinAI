@@ -61,12 +61,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump pypdf from 6.14.2 to 6.15.0 in /backend (#567) ([88b57f0](https://github.com/aliyevaladddin/AladdinAI/commit/88b57f071256aa3278d1da7ec8d8704795ccc6a1))
 
+- Bump alembic from 1.19.0 to 1.19.1 (#583) ([916bafd](https://github.com/aliyevaladddin/AladdinAI/commit/916bafd69f80912ad32ae8302b87a49301755660))
+
 
 ### Documentation
 
 - Update API documentation [skip ci] (#531) ([2d51e54](https://github.com/aliyevaladddin/AladdinAI/commit/2d51e5443d8cc9218b3849bc160d17c7e9307f29))
 
 - Update API documentation [skip ci] (#573) ([c147ae8](https://github.com/aliyevaladddin/AladdinAI/commit/c147ae8821d0952abfb75b20cef92c38ba5a10c9))
+
+- Update API documentation [skip ci] (#582) ([d2a5d0c](https://github.com/aliyevaladddin/AladdinAI/commit/d2a5d0c9d84a488215fb679e692bd3511a49498b))
 
 
 ### Features
@@ -143,6 +147,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#575) ([a31cd31](https://github.com/aliyevaladddin/AladdinAI/commit/a31cd31677f47335284731ebabb0d03ceb0c2094))
 
 - Update changelog [skip ci] (#577) ([9a2e429](https://github.com/aliyevaladddin/AladdinAI/commit/9a2e4294a575b5bae47211176db024906ee9a974))
+
+- Update changelog [skip ci] (#580) ([4055af2](https://github.com/aliyevaladddin/AladdinAI/commit/4055af24a25bc440dff40dd1c1c8a02395a87f82))
+
+- Update changelog [skip ci] (#581) ([c22bbe5](https://github.com/aliyevaladddin/AladdinAI/commit/c22bbe528c90683d355d318ea21679547a9d47d5))
 
 ## [v2.2.3] - 2026-07-22
 
