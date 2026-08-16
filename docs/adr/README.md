@@ -25,6 +25,7 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 | [0009](0009-golden-set-and-harness.md) | Golden Set + Evaluation Harness (Self-Forging Layers 2 & 3) | ✅ Accepted | 2026-07-14 |
 | [0010](0010-native-agent-meta-search.md) | Native Agent Meta-Search Engine & Universal Tool Discovery | ✅ Accepted | 2026-07-20 |
 | [0011](0011-multi-agent-swarm-and-tools.md) | Multi-Agent Swarm Orchestration & Autonomous Tools Architecture | ✅ Accepted | 2026-07-20 |
+| [0012](0012-pluggable-image-gen-backends.md) | Pluggable Image Generation Backends (NIM FLUX sunset → DashScope) | ✅ Accepted | 2026-08-16 |
 
 ## Status Definitions
 
@@ -69,6 +70,7 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 - [ADR-0008](0008-orders-status-history-in-activity-metadata.md) - Orders Entity & Status History
 - [ADR-0009](0009-golden-set-and-harness.md) - Golden Set + Evaluation Harness
 - [ADR-0010](0010-native-agent-meta-search.md) - Native Agent Meta-Search & Universal Tool Discovery
+- [ADR-0012](0012-pluggable-image-gen-backends.md) - Pluggable Image Generation Backends
 
 ### Safety & Voice
 - [ADR-0004](0004-nemo-guardrails-deferred.md) - NeMo Guardrails Deferred

@@ -244,8 +244,8 @@ export function ChatMessageItem({
           <div className={`flex flex-wrap gap-2 mb-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             {msg.attachments
               .filter(a => a.kind === "audio" || a.mime?.startsWith("audio/"))
-              .map((att) => (
-                <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
+              .map((att, i) => (
+                <AuthAttachment key={`${att.filename}-${i}`} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
               ))}
           </div>
         )}
@@ -262,8 +262,8 @@ export function ChatMessageItem({
               <div className="flex flex-wrap gap-2 mb-3">
                 {msg.attachments
                   .filter(a => a.kind !== "audio" && !a.mime?.startsWith("audio/"))
-                  .map((att) => (
-                    <AuthAttachment key={att.filename} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
+                  .map((att, i) => (
+                    <AuthAttachment key={`${att.filename}-${i}`} filename={att.filename} mime={att.mime} kind={att.kind} isUser={msg.role === "user"} />
                   ))}
               </div>
             )}

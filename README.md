@@ -316,6 +316,24 @@ Install through the UI under *Settings → Terminal Providers*. No additional se
 ---
 
 
+## ◈ Contributors
+
+AladdinAI is built by a mixed human + AI team.
+
+**Humans**
+- **Aladdin Aliyev** — founder, architecture, product
+
+**AI agents** (commits land via bot accounts, credited here explicitly)
+- **AladdinAI[bot]** — autonomous engineering agent
+- **Claude** (Anthropic) — pair programming, infrastructure, reviews
+- **Qwen** (Alibaba) — image generation backbone (`wan2.2` via DashScope)
+
+GitHub's contributors graph only counts accounts linked by commit email, so
+AI teammates without their own GitHub accounts are credited here instead.
+
+---
+
+
 ## ◈ Feedback
 
 I'm building AladdinAI in public and I read every message personally. Even one sentence helps — especially the negative ones.
