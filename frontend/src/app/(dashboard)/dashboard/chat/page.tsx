@@ -692,8 +692,8 @@ export default function ChatPage() {
               <div className="max-w-4xl mx-auto space-y-3">
                 {pendingAttachments.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {pendingAttachments.map((att) => (
-                      <div key={att.filename} className="relative group">
+                    {pendingAttachments.map((att, i) => (
+                      <div key={`${att.filename}-${i}`} className="relative group">
                         <AuthAttachment filename={att.filename} mime={att.mime} kind={att.kind} compact />
                         <button
                           type="button"

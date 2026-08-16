@@ -96,8 +96,14 @@ async def _post_with_retry(
             delay = _retry_delay(attempt, e.response.headers.get("Retry-After"))
             _log_retry("chat completion", e.response.status_code, model, attempt, delay)
             await asyncio.sleep(delay)
-        except httpx.HTTPError as e:
-            raise LLMError(str(e)) from e
+        except httpx.TransportError as e:
+            # Network-level failures (DNS glitch, refused/reset connection) are
+            # transient by nature — retry them exactly like a 5xx.
+            if attempt == RETRY_ATTEMPTS - 1:
+                raise LLMError(f"{type(e).__name__}: {str(e) or 'no details'}") from e
+            delay = _retry_delay(attempt)
+            _log_retry("chat completion", f"network error {type(e).__name__}", model, attempt, delay)
+            await asyncio.sleep(delay)
     raise LLMError("Retry attempts exhausted")  # unreachable: last attempt always raises
 
 
@@ -112,20 +118,31 @@ async def _retried_stream(client: httpx.AsyncClient, url: str, payload: dict, he
     Mid-stream errors propagate unchanged and are never retried.
     """
     for attempt in range(RETRY_ATTEMPTS):
-        async with client.stream("POST", url, json=payload, headers=headers) as response:
-            if response.status_code >= 400:
-                await response.aread()
-                try:
-                    response.raise_for_status()
-                except httpx.HTTPStatusError as e:
-                    if e.response.status_code not in RETRYABLE_STATUS or attempt == RETRY_ATTEMPTS - 1:
-                        raise
-                    delay = _retry_delay(attempt, e.response.headers.get("Retry-After"))
-                    _log_retry("streaming completion", e.response.status_code, model, attempt, delay)
-                    await asyncio.sleep(delay)
-                    continue
-            yield response
-            return
+        connected = False
+        try:
+            async with client.stream("POST", url, json=payload, headers=headers) as response:
+                connected = True
+                if response.status_code >= 400:
+                    await response.aread()
+                    try:
+                        response.raise_for_status()
+                    except httpx.HTTPStatusError as e:
+                        if e.response.status_code not in RETRYABLE_STATUS or attempt == RETRY_ATTEMPTS - 1:
+                            raise
+                        delay = _retry_delay(attempt, e.response.headers.get("Retry-After"))
+                        _log_retry("streaming completion", e.response.status_code, model, attempt, delay)
+                        await asyncio.sleep(delay)
+                        continue
+                yield response
+                return
+        except httpx.TransportError as e:
+            # Only failures BEFORE the first response byte are retryable —
+            # retrying mid-stream would duplicate tokens already sent downstream.
+            if connected or attempt == RETRY_ATTEMPTS - 1:
+                raise LLMError(f"{type(e).__name__}: {str(e) or 'no details'}") from e
+            delay = _retry_delay(attempt)
+            _log_retry("streaming completion", f"network error {type(e).__name__}", model, attempt, delay)
+            await asyncio.sleep(delay)
     raise LLMError("Retry attempts exhausted")  # unreachable: last attempt always raises
 
 OPENAI_COMPATIBLE = {"openai", "nvidia_nim", "ollama", "custom"}
@@ -337,7 +354,7 @@ async def _openai_compatible(
             except httpx.HTTPStatusError as e:
                 raise LLMError(f"HTTP {e.response.status_code}: {e.response.text[:300]}") from e
             except httpx.HTTPError as e:
-                raise LLMError(str(e)) from e
+                raise LLMError(f"{type(e).__name__}: {str(e) or 'no details'}") from e
 
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await _post_with_retry(client, url, payload, headers, model)
