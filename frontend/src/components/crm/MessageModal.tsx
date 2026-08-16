@@ -287,7 +287,7 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
             {attachments.length} attachment{attachments.length > 1 ? "s" : ""}
           </p>
           <div className="flex flex-wrap gap-2">
-            {attachments.map((att) => {
+            {attachments.map((att, i) => {
               const isImage = att.content_type.startsWith("image/");
               const isPdf = att.content_type === "application/pdf";
               const isZip = att.content_type.includes("zip") || att.content_type.includes("archive");
@@ -321,7 +321,7 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
 
               return (
                 <button
-                  key={att.filename}
+                  key={`${att.filename}-${i}`}
                   onClick={handleDownload}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg border text-xs hover:opacity-80 transition-opacity cursor-pointer"
                   style={{ background: "var(--color-surface)", borderColor: "var(--color-border)", textAlign: "left" }}

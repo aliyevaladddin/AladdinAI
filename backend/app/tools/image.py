@@ -70,8 +70,9 @@ async def generate_image(ctx: ToolContext, prompt: str) -> dict:
     try:
         img_bytes, mime = await image_gen.generate_image_bytes(provider, prompt)
     except LLMError as e:
-        log.warning("generate_image failed for agent %s: %s", ctx.agent_id, e)
-        return {"error": str(e)}
+        message = str(e) or repr(e)
+        log.warning("generate_image failed for agent %s: %s", ctx.agent_id, message)
+        return {"error": message}
 
     saved = await media_storage.save_bytes(ctx.db, ctx.user_id, img_bytes, mime)
 

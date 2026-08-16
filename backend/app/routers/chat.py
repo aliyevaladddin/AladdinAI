@@ -48,6 +48,30 @@ async def _read_attachment_bytes(
     return await media_storage.get_bytes(db, user_id, handle)
 
 
+# [RCF:PROTECTED]
+def _dedupe_attachments(atts: list[dict] | None) -> list[dict] | None:
+    """Drop duplicate filenames from an outgoing attachment list.
+
+    An agent can deliver the same file twice in one turn (e.g.
+    ``generate_image`` appends the picture, then the LLM also calls
+    ``send_image`` with that filename) — both tools write into the same
+    ``outgoing_attachments`` list. The frontend keys attachment nodes by
+    filename, so the duplicate both trips a React duplicate-key warning and
+    renders the picture twice. First occurrence wins; entries without a
+    filename are always kept.
+    """
+    seen: set[str] = set()
+    out: list[dict] = []
+    for a in atts or []:
+        fn = a.get("filename")
+        if fn:
+            if fn in seen:
+                continue
+            seen.add(fn)
+        out.append(a)
+    return out or None
+
+
 # ── Sessions ──────────────────────────────────────────────────────────────────
 
 # [RCF:PROTECTED]
@@ -499,7 +523,7 @@ async def chat(
                     ))
                     assistant_msg = ChatMessage(
                         session_id=session.id, role="assistant", content=reply, model=agent.model,
-                        attachments=(outgoing_attachments + voice_atts) or None,
+                        attachments=_dedupe_attachments(outgoing_attachments + voice_atts),
                     )
                     db.add(assistant_msg)
                     session.updated_at = datetime.now(timezone.utc)
@@ -513,7 +537,7 @@ async def chat(
                         "model": agent.model,
                         "session_id": session.id,
                         "message_id": assistant_msg.id,
-                        "attachments": (outgoing_attachments + voice_atts) or None,
+                        "attachments": _dedupe_attachments(outgoing_attachments + voice_atts),
                     })
                 except Exception as e:
                     import logging
@@ -575,7 +599,7 @@ async def chat(
     ))
     assistant_msg = ChatMessage(
         session_id=session.id, role="assistant", content=reply, model=agent.model,
-        attachments=outgoing_attachments or None,
+        attachments=_dedupe_attachments(outgoing_attachments),
     )
     db.add(assistant_msg)
 
@@ -591,6 +615,6 @@ async def chat(
         model=agent.model,
         session_id=session.id,
         message_id=assistant_msg.id,
-        attachments=outgoing_attachments or None,
+        attachments=_dedupe_attachments(outgoing_attachments),
     )
 
