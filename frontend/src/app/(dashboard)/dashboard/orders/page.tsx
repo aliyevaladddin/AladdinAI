@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { ProductsCatalog, CatalogProduct } from "./ProductsCatalog";
 
 interface OrderItem {
   id: number;
@@ -27,15 +28,6 @@ interface Order {
   notes: string | null;
   created_at: string;
   items: OrderItem[];
-}
-
-interface Product {
-  id: number;
-  sku: string;
-  name: string;
-  price: number;
-  currency: string;
-  active: boolean;
 }
 
 interface Contact {
@@ -78,9 +70,10 @@ interface FormItem {
 }
 
 export default function OrdersPage() {
+  const [tab, setTab] = useState<"orders" | "products">("orders");
   const [orders, setOrders] = useState<Order[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [metrics, setMetrics] = useState<OrderMetrics | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
@@ -99,10 +92,14 @@ export default function OrdersPage() {
     api.get<OrderMetrics>("/crm/orders/metrics").then(setMetrics).catch(() => {});
   };
 
+  const loadProducts = () => {
+    api.get<CatalogProduct[]>("/crm/products").then(setProducts).catch(() => setProducts([]));
+  };
+
   useEffect(() => {
     load();
     api.get<Contact[]>("/crm/contacts").then(setContacts);
-    api.get<Product[]>("/crm/products").then(setProducts).catch(() => setProducts([]));
+    loadProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, mineOnly]);
 
@@ -153,11 +150,32 @@ export default function OrdersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold">Orders</h2>
-        <Button onClick={() => setShowForm(!showForm)}>{showForm ? "Cancel" : "New Order"}</Button>
+        {tab === "orders" && (
+          <Button onClick={() => setShowForm(!showForm)}>{showForm ? "Cancel" : "New Order"}</Button>
+        )}
       </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-6 border-b border-border">
+        {(["orders", "products"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              tab === t
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t === "orders" ? "Orders" : "Product Catalog"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "orders" ? (
+      <>
       {/* Metrics band */}
       {metrics && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -199,7 +217,7 @@ export default function OrdersPage() {
               <div key={idx} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
                 <select value={it.product_id} onChange={(e) => setFormItem(idx, { product_id: e.target.value })} className="rounded-md border border-input bg-background px-3 py-2 text-sm" required>
                   <option value="">Select product...</option>
-                  {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.currency} {p.price})</option>)}
+                  {products.filter((p) => p.active).map((p) => <option key={p.id} value={p.id}>{p.name} ({p.currency} {p.price})</option>)}
                 </select>
                 <input type="number" min="1" value={it.quantity} onChange={(e) => setFormItem(idx, { quantity: e.target.value })} className="w-20 rounded-md border border-input bg-background px-3 py-2 text-sm" />
                 {items.length > 1 && <Button type="button" variant="outline" size="sm" onClick={() => removeFormItem(idx)}>×</Button>}
@@ -209,8 +227,14 @@ export default function OrdersPage() {
           </div>
 
           <Button type="submit">Create Order</Button>
-          {products.length === 0 && (
-            <p className="text-xs text-muted-foreground">No products yet — add products to the catalog first.</p>
+          {products.filter((p) => p.active).length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              No active products yet — add them in the{" "}
+              <button type="button" onClick={() => setTab("products")} className="text-primary underline">
+                Product Catalog
+              </button>{" "}
+              tab first.
+            </p>
           )}
         </form>
       )}
@@ -269,6 +293,10 @@ export default function OrdersPage() {
         ))}
         {orders.length === 0 && <p className="text-muted-foreground text-sm">No orders yet.</p>}
       </div>
+      </>
+      ) : (
+        <ProductsCatalog products={products} onChanged={loadProducts} />
+      )}
     </div>
   );
 }
