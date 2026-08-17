@@ -236,7 +236,9 @@ users ──┬── agents ──┬── agent_messages         (per-turn le
         │            └── extraction → mongo memory
         │
         ├── contacts ── activities              (message_in/out, notes, deal events)
-        ├── deals
+        ├── deals                               (pipeline: lead → … → won / lost)
+        ├── products                            (catalog: sku, name, price, currency, active)
+        ├── orders ── order_items               (committed sales; lines snapshot name/price)
         ├── messaging_channels                  (telegram / whatsapp / sms)
         ├── email_accounts                      (imap + smtp)
         ├── outgoing_webhooks

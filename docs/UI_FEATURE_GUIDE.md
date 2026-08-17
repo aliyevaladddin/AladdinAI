@@ -12,6 +12,8 @@ This document provides a comprehensive technical overview of the modern UI/UX en
 5. [Telegram-Style Voice Player & Media Attachments](#5-telegram-style-voice-player--media-attachments)
 6. [GFM Markdown Tables Auto-Parsing](#6-gfm-markdown-tables-auto-parsing)
 7. [Global Fluidity & Smooth Animations](#7-global-fluidity--smooth-animations)
+8. [Chat Session UX Improvements](#8-chat-session-ux-improvements)
+9. [Orders & Product Catalog UI](#9-orders--product-catalog-ui)
 
 ---
 
@@ -90,3 +92,30 @@ src/app/(dashboard)/dashboard/chat/
 - **Smooth Scrolling & Font Antialiasing**: Configured in `globals.css` with custom rounded glass scrollbars (`::-webkit-scrollbar`).
 - **300ms Smooth Sidebar Collapse**: The history sidebar smoothly animates its width (`w-72` ➔ `w-0`) and opacity (`opacity-100` ➔ `opacity-0`) over 300ms without layout jumps.
 - **Route Fade-In**: Applied `.smooth-fade-in` transition utility across main dashboard routes.
+
+---
+
+## 8. Chat Session UX Improvements
+
+- **Session rename**: hover a session in `ChatSidebar` ➔ pencil icon reveals an inline input (`Enter`/blur saves, `Esc` cancels), backed by `PATCH /api/chat/sessions/{id}`.
+- **Auto-title from first message**: new sessions are named from the first user message (first 60 characters), with fallbacks — `Voice message` for audio, `Image` for image-only prompts, `Attachment` for other files.
+- **Regenerate last reply**: a `RotateCw` button on the last assistant message re-sends the last user prompt. The old reply is kept on purpose — thumbs up/down feedback on it is labeled training data for the self-forging loop.
+- **Smart scroll + scroll-down button**: the feed auto-scrolls only while the reader is pinned to the bottom; scrolling up to review history keeps the position, and a floating `ArrowDown` button appears to jump back down.
+- **Per-session input drafts**: unfinished composer text persists to `localStorage` per session (including the new-chat composer) and is restored when the session is reopened.
+
+Key files: `ChatSidebar.tsx` (rename), `ChatMessageItem.tsx` (regenerate), `page.tsx` (scroll, drafts, auto-title), backend `app/routers/chat.py` (`PATCH /sessions/{id}`, `_auto_session_title`).
+
+---
+
+## 9. Orders & Product Catalog UI
+
+The `/dashboard/orders` page is split into two tabs:
+
+- **Orders** — metrics band, new-order form (only *active* catalog products are listed, with a hint linking to the catalog when none exist), per-order status dropdown offering legal next-states only.
+- **Product Catalog** (`ProductsCatalog.tsx`) — full catalog management without leaving the page:
+  - Instant client-side search by SKU or name
+  - Add/edit form (SKU, name, price, currency, description, active flag) with inline validation; backend errors such as a duplicate SKU surface inside the form instead of a raw alert
+  - Row actions: edit, activate/deactivate, delete (with a confirmation noting that placed orders keep their item snapshots)
+  - Active/Inactive status badges; inactive rows are dimmed
+
+Deleting a product that appears in placed orders detaches the reference (`order_items.product_id` ➔ `null`) instead of failing on the foreign key — order lines keep their snapshotted name and price. See `docs/guides/ORDERS.md` for the snapshot design.

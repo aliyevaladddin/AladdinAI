@@ -1,9 +1,10 @@
 # NOTICE: This file is protected under RCF-PL
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.order import OrderItem
 from app.models.product import Product
 from app.models.user import User
 from app.schemas.crm import ProductCreate, ProductResponse, ProductUpdate
@@ -89,5 +90,12 @@ async def delete_product(product_id: int, user: User = Depends(get_current_user)
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    # Order lines snapshot the product's name and price at creation time, so
+    # detaching the reference keeps every placed order intact while removing
+    # the catalog entry. Without this, deleting a product that appears in an
+    # order hits the order_items FK and dies with a raw 500.
+    await db.execute(
+        update(OrderItem).where(OrderItem.product_id == product.id).values(product_id=None)
+    )
     await db.delete(product)
     await db.commit()
