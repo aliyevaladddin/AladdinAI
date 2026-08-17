@@ -15,6 +15,7 @@ import {
   VolumeX,
   Download,
   PanelLeftOpen,
+  ArrowDown,
 } from "lucide-react";
 import { VoicePlayer } from "./VoicePlayer";
 import { AuthAttachment } from "./AuthAttachment";
@@ -44,6 +45,9 @@ export default function ChatPage() {
   const [assistantStreaming, setAssistantStreaming] = useState(false);
 
   const messagesEnd = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const stickToBottomRef = useRef(true);
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -147,12 +151,60 @@ export default function ChatPage() {
     if (pending) {
       setInput(pending);
       sessionStorage.removeItem("aladdin_pending_chat_prompt");
+    } else {
+      setInput(loadDraft("aladdin_chat_draft_new"));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
+    // Auto-follow the stream only while the user is at (or near) the bottom —
+    // scrolling up to read history must not get yanked back down.
+    if (stickToBottomRef.current) {
+      messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
+
+  const handleScroll = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    stickToBottomRef.current = nearBottom;
+    setShowScrollDown(!nearBottom);
+  };
+
+  const scrollToBottom = () => {
+    stickToBottomRef.current = true;
+    setShowScrollDown(false);
+    messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const draftKeyFor = (sessionId: number | null, general: boolean): string =>
+    general
+      ? "aladdin_chat_draft_general"
+      : sessionId
+        ? `aladdin_chat_draft_${sessionId}`
+        : "aladdin_chat_draft_new";
+
+  const currentDraftKey = (): string =>
+    draftKeyFor(activeSession?.id ?? null, isGeneralChat);
+
+  const loadDraft = (key: string): string => {
+    try {
+      return localStorage.getItem(key) || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const saveDraft = (key: string, value: string): void => {
+    try {
+      if (value.trim()) localStorage.setItem(key, value);
+      else localStorage.removeItem(key);
+    } catch {
+      // Storage unavailable (private mode etc.) — drafts are a nicety, not core.
+    }
+  };
 
   const loadSessions = async () => {
     const data = await api.get<Session[]>("/chat/sessions");
@@ -160,10 +212,14 @@ export default function ChatPage() {
   };
 
   const openSession = async (session: Session): Promise<void> => {
+    saveDraft(currentDraftKey(), input);
     setIsGeneralChat(false);
     setComposingNew(false);
     setActiveSession(session);
     setSelectedAgentId(String(session.agent_id));
+    setInput(loadDraft(draftKeyFor(session.id, false)));
+    stickToBottomRef.current = true;
+    setShowScrollDown(false);
     setLoadingMessages(true);
     try {
       const msgs = await api.get<Message[]>(`/chat/sessions/${session.id}/messages`);
@@ -179,30 +235,39 @@ export default function ChatPage() {
   };
 
   const startNewChatWithAgent = (agentId: number) => {
+    saveDraft(currentDraftKey(), input);
     setIsGeneralChat(false);
     setActiveSession(null);
     setComposingNew(true);
     setMessages([]);
-    setInput("");
+    setInput(loadDraft(draftKeyFor(null, false)));
     setSelectedAgentId(String(agentId));
+    stickToBottomRef.current = true;
+    setShowScrollDown(false);
   };
 
   const newChat = () => {
+    saveDraft(currentDraftKey(), input);
     setIsGeneralChat(false);
     setActiveSession(null);
     setComposingNew(true);
     setMessages([]);
-    setInput("");
+    setInput(loadDraft(draftKeyFor(null, false)));
     setSelectedAgentId(agents[0] ? String(agents[0].id) : "1");
+    stickToBottomRef.current = true;
+    setShowScrollDown(false);
   };
 
   const openGeneralChat = () => {
+    saveDraft(currentDraftKey(), input);
     setIsGeneralChat(true);
     setComposingNew(false);
     setActiveSession(null);
     setMessages([]);
-    setInput("");
+    setInput(loadDraft(draftKeyFor(null, true)));
     setSelectedAgentId("unified");
+    stickToBottomRef.current = true;
+    setShowScrollDown(false);
   };
 
   const deleteSession = async (id: number, e: MouseEvent): Promise<void> => {
@@ -210,7 +275,24 @@ export default function ChatPage() {
     if (!confirm("Delete this chat?")) return;
     await api.delete(`/chat/sessions/${id}`);
     if (activeSession?.id === id) newChat();
+    try {
+      localStorage.removeItem(draftKeyFor(id, false));
+    } catch {
+      // ignore
+    }
     loadSessions();
+  };
+
+  const renameSession = async (id: number, title: string): Promise<void> => {
+    try {
+      const updated = await api.patch<Session>(`/chat/sessions/${id}`, { title });
+      setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title: updated.title } : s)));
+      if (activeSession?.id === id) {
+        setActiveSession({ ...activeSession, title: updated.title });
+      }
+    } catch (err) {
+      console.error("Failed to rename session:", err);
+    }
   };
 
   const handleAttachClick = () => {
@@ -280,23 +362,18 @@ export default function ChatPage() {
     }
   };
 
-  const handleSend = async (e: FormEvent): Promise<void> => {
-    e.preventDefault();
-    const hasText = input.trim().length > 0;
-    const hasAttachments = pendingAttachments.length > 0;
-    if ((!hasText && !hasAttachments) || !selectedAgentId) return;
-
-    const sentAttachments = pendingAttachments;
+  const submitMessage = async (text: string, atts: Attachment[]): Promise<void> => {
+    const sentAttachments = atts;
     const userMsg: Message = {
       role: "user",
-      content: input,
+      content: text,
       attachments: sentAttachments.length ? sentAttachments : null,
     };
     setMessages((prev: Message[]) => [...prev, userMsg]);
-    const sentInput = input;
-    setInput("");
-    setPendingAttachments([]);
+    const sentInput = text;
     setLoading(true);
+    stickToBottomRef.current = true;
+    setShowScrollDown(false);
 
     try {
       const agentId = selectedAgentId === "unified" ? 1 : parseInt(selectedAgentId);
@@ -395,7 +472,7 @@ export default function ChatPage() {
               if (event.session_id && (!activeSession || activeSession.id !== event.session_id)) {
                 setActiveSession({
                   id: event.session_id,
-                  title: sentInput.slice(0, 30) || "New Chat",
+                  title: sentInput.trim().slice(0, 60) || "New Chat",
                   agent_id: agentId,
                   created_at: new Date().toISOString(),
                 });
@@ -460,6 +537,34 @@ export default function ChatPage() {
       setCurrentThought(null);
       abortControllerRef.current = null;
     }
+  };
+
+  const handleSend = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    const hasText = input.trim().length > 0;
+    const hasAttachments = pendingAttachments.length > 0;
+    if ((!hasText && !hasAttachments) || !selectedAgentId) return;
+    const text = input;
+    const atts = pendingAttachments;
+    setInput("");
+    setPendingAttachments([]);
+    await submitMessage(text, atts);
+  };
+
+  const regenerateLast = () => {
+    // Re-send the latest user prompt as a fresh turn. The previous answer
+    // stays in history (it is labeled data for the feedback loop) — the new
+    // reply lands after it, same as if the user repeated the question.
+    if (loading || assistantStreaming || !selectedAgentId) return;
+    let lastUser: Message | null = null;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        lastUser = messages[i];
+        break;
+      }
+    }
+    if (!lastUser || !lastUser.content?.trim()) return;
+    void submitMessage(lastUser.content, []);
   };
 
   const sendFeedback = async (messageId: number, type: "thumbs_up" | "thumbs_down") => {
@@ -545,6 +650,7 @@ export default function ChatPage() {
         onOpenGeneralChat={openGeneralChat}
         onOpenSession={openSession}
         onDeleteSession={deleteSession}
+        onRenameSession={renameSession}
         onSelectAgent={setSelectedAgentId}
       />
 
@@ -625,8 +731,13 @@ export default function ChatPage() {
         ) : (
           <>
             {/* Messages Feed */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+            <div className="relative flex-1 min-h-0">
+              <div
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="h-full overflow-y-auto"
+              >
+                <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
                 {loadingMessages ? (
                   <p className="text-center text-sm text-muted-foreground py-12">
                     Loading messages…
@@ -647,6 +758,7 @@ export default function ChatPage() {
                         textareaRef.current?.focus();
                       }}
                       onSendFeedback={sendFeedback}
+                      onRegenerate={regenerateLast}
                       onSelectSuggestion={(sug) => {
                         setInput(sug);
                         textareaRef.current?.focus();
@@ -683,8 +795,22 @@ export default function ChatPage() {
                     </div>
                   </div>
                 )}
-                <div ref={messagesEnd} />
+                  <div ref={messagesEnd} />
+                </div>
               </div>
+
+              {/* Jump back to the latest message when scrolled up */}
+              {showScrollDown && (
+                <button
+                  type="button"
+                  onClick={scrollToBottom}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-background border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all animate-in fade-in slide-in-from-bottom-2 duration-200"
+                  aria-label="Scroll to latest message"
+                  title="Back to latest message"
+                >
+                  <ArrowDown size={16} />
+                </button>
+              )}
             </div>
 
             {/* Input Area */}
