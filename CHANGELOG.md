@@ -6,396 +6,190 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ### Bug Fixes
 
-- Update package overrides for axios, ws, uuid and hono node-server ([c41809b](https://github.com/aliyevaladddin/AladdinAI/commit/c41809b32b05a014a6e714094d10ad52d6dfc4d8))
+- Merge two heads; guard against schema drift (#406) ([8df2f99](https://github.com/aliyevaladddin/AladdinAI/commit/8df2f992e1b3349a090ca046b29c9d7c1d03136d))
 
-- Update package-lock.json ([89ba7cf](https://github.com/aliyevaladddin/AladdinAI/commit/89ba7cf8d3824315851f671379b42058f270df4c))
+- Register web_search and correct its function schema (#408) ([77b03b2](https://github.com/aliyevaladddin/AladdinAI/commit/77b03b2e3056b149648cd7ee0e96574697bbf931))
 
-- Close approval-gate bypass and scope approvals by owner (#529) ([a547adb](https://github.com/aliyevaladddin/AladdinAI/commit/a547adb4095adf10ecf1fa4b3caafacbe6d3df2a))
+- Add --allow-same-version to npm version steps in release workflow ([f405a63](https://github.com/aliyevaladddin/AladdinAI/commit/f405a632a7cc25a492199899f89c6e9cfd936aad))
 
-- Separate uploaded documents from facts (#532) ([ae43db7](https://github.com/aliyevaladddin/AladdinAI/commit/ae43db7524d7cfa4c23cefb0cb491e0a12dca8f9))
+- Add python3 make g++ build tools to frontend Dockerfile.prod deps stage ([6e677f9](https://github.com/aliyevaladddin/AladdinAI/commit/6e677f9390a60f0b4b6efee83c57766a6485b84e))
 
-- Retry transient LLM provider errors with backoff (#578) ([5d9119e](https://github.com/aliyevaladddin/AladdinAI/commit/5d9119ef1566f7b515e49f4620c8d88310d944b8))
+- Update package overrides for axios, ws, uuid and hono node-server ([8a52563](https://github.com/aliyevaladddin/AladdinAI/commit/8a525639a01957550a39525d8488e3b4666fede3))
 
-- Send generated images to Telegram when media store is GridFS (#615) ([eb26869](https://github.com/aliyevaladddin/AladdinAI/commit/eb26869b150a079a2405f493d4d2311afa45be40))
+- Update package-lock.json ([6b72f10](https://github.com/aliyevaladddin/AladdinAI/commit/6b72f1012fcd70033d49f2ee9f4ba06ad361b67e))
 
+- Close approval-gate bypass and scope approvals by owner (#529) ([45f1bee](https://github.com/aliyevaladddin/AladdinAI/commit/45f1beef8f4a1e34a58088eb466a429206e5f6bf))
 
-### Dependencies
+- Separate uploaded documents from facts (#532) ([87d2db8](https://github.com/aliyevaladddin/AladdinAI/commit/87d2db8d7881557d815c67ad5154d454d5919da0))
 
-- Bump actions/setup-python from 6 to 7 (#469) ([9f7d12b](https://github.com/aliyevaladddin/AladdinAI/commit/9f7d12b3b7a45392ae17bdd849210a672d8a94f1))
+- Retry transient LLM provider errors with backoff (#578) ([310b7e0](https://github.com/aliyevaladddin/AladdinAI/commit/310b7e06435ceeb3fd8d7625a648b2410e9bd9b8))
 
-- Bump builder-util-runtime and electron-builder in /frontend (#502) ([327a094](https://github.com/aliyevaladddin/AladdinAI/commit/327a094f0b8ab6f4b712981ad30f6100474dd189))
+- Send generated images to Telegram when media store is GridFS (#615) ([034d73a](https://github.com/aliyevaladddin/AladdinAI/commit/034d73a414565e26f970e6d82270243732be8fcc))
 
-- Bump x402 and x402-fetch in /frontend (#504) ([612d0ae](https://github.com/aliyevaladddin/AladdinAI/commit/612d0ae19a67e4ab6273fe2ec803fc84917ae445))
-
-- Bump lucide-react from 1.26.0 to 1.27.0 in /frontend (#518) ([1665464](https://github.com/aliyevaladddin/AladdinAI/commit/16654647ad3de73825552f916d58e22ad1f77d41))
-
-- Bump uvicorn from 0.51.0 to 0.52.0 (#512) ([33d0466](https://github.com/aliyevaladddin/AladdinAI/commit/33d0466f4e0b3d09cf20c7f3b7df68fab8705751))
-
-- Bump fastapi from 0.140.0 to 0.141.0 (#513) ([5ca0bf6](https://github.com/aliyevaladddin/AladdinAI/commit/5ca0bf6a1224167a1f1b23fac98ca0887a385a73))
-
-- Bump shadcn from 4.15.0 to 4.16.0 in /frontend (#515) ([1ae4aae](https://github.com/aliyevaladddin/AladdinAI/commit/1ae4aaebfab9e3b59983b01c497b879c960012c4))
-
-- Bump framer-motion from 12.42.2 to 12.43.0 in /frontend (#516) ([05e588d](https://github.com/aliyevaladddin/AladdinAI/commit/05e588d23728a1e3b65ef5cf0bc2730de28f03b8))
-
-- Bump fast-uri from 3.1.4 to 3.1.5 in /frontend (#533) ([8aff038](https://github.com/aliyevaladddin/AladdinAI/commit/8aff038c0f629c12b9bd0311ca1374ffa5cc0832))
-
-- Bump @tanstack/react-table in /frontend (#548) ([a6ee8b2](https://github.com/aliyevaladddin/AladdinAI/commit/a6ee8b2a068d0b09b1c39883fd1281e6c10a7349))
-
-- Bump @base-ui/react from 1.6.0 to 1.7.0 in /frontend (#547) ([d1522b0](https://github.com/aliyevaladddin/AladdinAI/commit/d1522b00e91ea04e23aa4ed625a4ff7743532325))
-
-- Bump framer-motion from 12.43.0 to 13.0.0 in /frontend (#545) ([9feae6d](https://github.com/aliyevaladddin/AladdinAI/commit/9feae6d0a1f2d1ee040bf9c09d4bd039150f9960))
-
-- Bump next from 16.2.12 to 16.3.0 in /frontend (#544) ([e8065c2](https://github.com/aliyevaladddin/AladdinAI/commit/e8065c27f5062b62c71163285bfded786124b6e8))
-
-- Bump lucide-react from 1.27.0 to 1.28.0 in /frontend (#543) ([f3370e1](https://github.com/aliyevaladddin/AladdinAI/commit/f3370e14aacbc1cbb9561ab0bceace89cfd9fe12))
-
-- Bump the security-patches group across 1 directory with 4 updates (#556) ([0f001bb](https://github.com/aliyevaladddin/AladdinAI/commit/0f001bb0555b503537da708d8b426efe6d210332))
-
-- Bump alembic from 1.18.5 to 1.19.0 (#541) ([fe4ea2b](https://github.com/aliyevaladddin/AladdinAI/commit/fe4ea2b1ec3d95a6905e1661a3edb271476db930))
-
-- Bump fastapi from 0.141.0 to 0.141.1 (#540) ([9733bae](https://github.com/aliyevaladddin/AladdinAI/commit/9733baec3fd0ef50cb7a6c04291032df92ad5042))
-
-- Bump uvicorn from 0.51.0 to 0.52.1 (#539) ([f57fbfc](https://github.com/aliyevaladddin/AladdinAI/commit/f57fbfc585687e7491e463f593d5d88494ed406b))
-
-- Bump playwright from 1.61.0 to 1.62.0 (#538) ([649aead](https://github.com/aliyevaladddin/AladdinAI/commit/649aead5ec6d5a6a1fbb5ecbc09ee19902929773))
-
-- Bump ip-address from 10.2.0 to 10.5.0 in /frontend (#563) ([9f9aa12](https://github.com/aliyevaladddin/AladdinAI/commit/9f9aa125018d373126adf533676a23136f3b50a2))
-
-- Bump pypdf from 6.14.2 to 6.15.0 in /backend (#567) ([88b57f0](https://github.com/aliyevaladddin/AladdinAI/commit/88b57f071256aa3278d1da7ec8d8704795ccc6a1))
-
-- Bump alembic from 1.19.0 to 1.19.1 (#583) ([916bafd](https://github.com/aliyevaladddin/AladdinAI/commit/916bafd69f80912ad32ae8302b87a49301755660))
-
-- Bump pydantic-settings from 2.14.2 to 2.15.0 (#584) ([63009e8](https://github.com/aliyevaladddin/AladdinAI/commit/63009e879b2b664744c697111dc7733acd34e8fd))
-
-- Bump sqlalchemy from 2.0.51 to 2.0.52 (#585) ([1e33a94](https://github.com/aliyevaladddin/AladdinAI/commit/1e33a94e325c3122068b1b7180a8a4cf01974ce4))
-
-- Bump fastapi from 0.141.0 to 0.141.1 (#586) ([84b251c](https://github.com/aliyevaladddin/AladdinAI/commit/84b251c1c1cf96ac4d91e963e1e3e9d6754fba5a))
-
-- Bump the security-patches group in /frontend with 3 updates (#587) ([14809c6](https://github.com/aliyevaladddin/AladdinAI/commit/14809c6f67da667281c6d5cf98f777e74b72c621))
-
-- Bump lucide-react from 1.28.0 to 1.31.0 in /frontend (#589) ([1905999](https://github.com/aliyevaladddin/AladdinAI/commit/19059998bb55aaaf4018887e738b5b54f9412414))
-
-- Bump shadcn from 4.16.2 to 4.17.0 in /frontend (#594) ([042caf0](https://github.com/aliyevaladddin/AladdinAI/commit/042caf097fa63505d6f70550a0f5bab705bc3de6))
-
-- Bump framer-motion from 13.0.0 to 13.1.0 in /frontend (#593) ([d8c3ffb](https://github.com/aliyevaladddin/AladdinAI/commit/d8c3ffb299b4030640f23dd8d77443a748436933))
-
-- Bump @tanstack/react-table from 9.0.0 to 9.1.2 in /frontend (#591) ([601ddc7](https://github.com/aliyevaladddin/AladdinAI/commit/601ddc7615e0a3999a5590da998862ca728b5e7f))
-
-
-### Documentation
-
-- Update API documentation [skip ci] (#531) ([2d51e54](https://github.com/aliyevaladddin/AladdinAI/commit/2d51e5443d8cc9218b3849bc160d17c7e9307f29))
-
-- Update API documentation [skip ci] (#573) ([c147ae8](https://github.com/aliyevaladddin/AladdinAI/commit/c147ae8821d0952abfb75b20cef92c38ba5a10c9))
-
-- Update API documentation [skip ci] (#582) ([d2a5d0c](https://github.com/aliyevaladddin/AladdinAI/commit/d2a5d0c9d84a488215fb679e692bd3511a49498b))
-
-- Update API documentation [skip ci] (#621) ([25a2256](https://github.com/aliyevaladddin/AladdinAI/commit/25a2256e4114ea2e8264fb937e680e9332726396))
-
-
-### Features
-
-- Docker-per-agent isolated execution environment (#485) ([2314bc5](https://github.com/aliyevaladddin/AladdinAI/commit/2314bc5297388019741430081cfb08d5bbe73850))
-
-- Provision Atlas vector indexes from code (#571) ([a144f72](https://github.com/aliyevaladddin/AladdinAI/commit/a144f72d471617433efe355fe894236e78e8f5e6))
-
-- Migrate terminal approval state to Postgres to support multi-worker environments (#574) ([88ecb4a](https://github.com/aliyevaladddin/AladdinAI/commit/88ecb4a21936fcd1c0de388e856900a018dc0f20))
-
-- Add JSONL export of the golden set for fine-tuning (#579) ([cfbe0b9](https://github.com/aliyevaladddin/AladdinAI/commit/cfbe0b9eb4aafa132cdd69a301cd9a257b6236a4))
-
-- Pluggable image-gen backends, transport retries, attachment dedupe (#612) ([d0a8958](https://github.com/aliyevaladddin/AladdinAI/commit/d0a8958bb40f443a62a43638755abe74eb7c601f))
-
-- Implement full-screen image lightbox and hover interaction cards for attachments ([f484352](https://github.com/aliyevaladddin/AladdinAI/commit/f4843529824d0cf6875f5519e21ac89807dd8205))
-
-- Rename, regenerate, smart scroll, drafts, auto-titles (#619) ([d7df18f](https://github.com/aliyevaladddin/AladdinAI/commit/d7df18f2d7e5f016960e033fd54d3a6aa2d3320c))
-
-- Product catalog UI and safe product delete (#622) ([3dc7ea7](https://github.com/aliyevaladddin/AladdinAI/commit/3dc7ea79fa683b7b7f90983bd0042605afedfed3))
-
-
-### Maintenance
-
-- Update changelog (#483) ([3344414](https://github.com/aliyevaladddin/AladdinAI/commit/3344414bc0aa67d3784e8631d1986e83678bd2ab))
-
-- Update changelog [skip ci] (#503) ([741159b](https://github.com/aliyevaladddin/AladdinAI/commit/741159b81f48c68cd2866e3cd76408edf6078a12))
-
-- Update changelog [skip ci] (#505) ([a7a88d5](https://github.com/aliyevaladddin/AladdinAI/commit/a7a88d563c1c0cf5db2547bbb7884361f343c132))
-
-- Update changelog [skip ci] (#508) ([3f1ffca](https://github.com/aliyevaladddin/AladdinAI/commit/3f1ffca2d5601ba3917b565e8e2f3150ccab3ac4))
-
-- Add uuid and ws dependencies to frontend package.json ([2614a46](https://github.com/aliyevaladddin/AladdinAI/commit/2614a4624727aec75f0be58ae66705704c286f27))
-
-- Update axios dependency, add scroll behavior attribute, and configure allowed dev origins in next config ([6249c61](https://github.com/aliyevaladddin/AladdinAI/commit/6249c61743359a4816e2e65c4d0b2c3c4db3c1a0))
-
-- Update changelog [skip ci] (#511) ([c5b4807](https://github.com/aliyevaladddin/AladdinAI/commit/c5b4807a9a9c15f297b0d8f9acd7161f2e6f0f0f))
-
-- Update dependencies in package-lock.json ([e1f6d83](https://github.com/aliyevaladddin/AladdinAI/commit/e1f6d83d0939969a18290ebe4ac718da110f643f))
-
-- Bump the security-patches group (#514) ([e57fbf6](https://github.com/aliyevaladddin/AladdinAI/commit/e57fbf60160c62e2fe43545bf63df5cfa9f8be12))
-
-- Bump eslint-config-next in /frontend (#517) ([154be83](https://github.com/aliyevaladddin/AladdinAI/commit/154be833699079d72ba6d9114a68087f44567169))
-
-- Update changelog [skip ci] (#530) ([82d4ba4](https://github.com/aliyevaladddin/AladdinAI/commit/82d4ba437cd65796d8e230ea2424a7cadabdf90a))
-
-- Update package-lock.json to sync with package.json ([6d9530d](https://github.com/aliyevaladddin/AladdinAI/commit/6d9530d92f18c8e95acac9ce59a39874822dd99d))
-
-- Force regenerate package-lock.json from scratch ([b0dc634](https://github.com/aliyevaladddin/AladdinAI/commit/b0dc634aff6d36b99173e057b4a1d48bb282bf4b))
-
-- Update lockfile to reflect frontend dependency changes ([b1a6648](https://github.com/aliyevaladddin/AladdinAI/commit/b1a6648ba219107b79db6ab8e22344ba6d478019))
-
-- Update changelog [skip ci] (#537) ([4bff920](https://github.com/aliyevaladddin/AladdinAI/commit/4bff9203c03404b19669d41392b81bcb3d8bc298))
-
-- Bump eslint-config-next in /frontend (#549) ([0a9acd4](https://github.com/aliyevaladddin/AladdinAI/commit/0a9acd4507df69437b1b111e65153f6dd76edeaa))
-
-- Bump electron from 43.1.1 to 43.3.0 in /frontend (#546) ([df2face](https://github.com/aliyevaladddin/AladdinAI/commit/df2face7fd4b15bf3f2b4b25e39b7889f473839d))
-
-- Update changelog [skip ci] (#561) ([adf5a79](https://github.com/aliyevaladddin/AladdinAI/commit/adf5a7920f4a85695b095e4dc2afc96d2f7f86a2))
-
-- Update changelog [skip ci] (#560) ([103797d](https://github.com/aliyevaladddin/AladdinAI/commit/103797dedcb5e61d68334fd0bc6959fa670172b1))
-
-- Update dependencies in package-lock.json ([d9e1454](https://github.com/aliyevaladddin/AladdinAI/commit/d9e145460bc6dbc3c77150694b6bbd21db0477a1))
-
-- Update changelog [skip ci] (#562) ([0818f64](https://github.com/aliyevaladddin/AladdinAI/commit/0818f6473dce95a87be5acd9552726088615563c))
-
-- Update dependency tree in package-lock.json ([939d615](https://github.com/aliyevaladddin/AladdinAI/commit/939d615b53e59bbab6a4aaeed006a40c507e66de))
-
-- Update changelog [skip ci] (#566) ([4f9d7b0](https://github.com/aliyevaladddin/AladdinAI/commit/4f9d7b05abf2996c704f40048daeae8d394c3f3e))
-
-- Update changelog [skip ci] (#568) ([aa572d9](https://github.com/aliyevaladddin/AladdinAI/commit/aa572d95fead52c68ab8c6067002810c68e9dbe2))
-
-- Upgrade ws package to version 8.21.0 ([1bd52c0](https://github.com/aliyevaladddin/AladdinAI/commit/1bd52c03e150f3a98fa5e4ef01cc0dd1b67c346f))
-
-- Update changelog [skip ci] (#569) ([c0982c2](https://github.com/aliyevaladddin/AladdinAI/commit/c0982c20da7e38548a14f54c20193c86c7e3b134))
-
-- Upgrade @hono/node-server to version 2.0.10 ([a96e16c](https://github.com/aliyevaladddin/AladdinAI/commit/a96e16c8e63cde77fd625374a497d7abbcd5d3a8))
-
-- Update changelog [skip ci] (#570) ([7fbc01e](https://github.com/aliyevaladddin/AladdinAI/commit/7fbc01eeb41277a5f2e877a51ad2defc797adb35))
-
-- Update changelog [skip ci] (#572) ([7520e0b](https://github.com/aliyevaladddin/AladdinAI/commit/7520e0bb98cdb45f076cdb1cdf8693844e173c39))
-
-- Update changelog [skip ci] (#575) ([a31cd31](https://github.com/aliyevaladddin/AladdinAI/commit/a31cd31677f47335284731ebabb0d03ceb0c2094))
-
-- Update changelog [skip ci] (#577) ([9a2e429](https://github.com/aliyevaladddin/AladdinAI/commit/9a2e4294a575b5bae47211176db024906ee9a974))
-
-- Update changelog [skip ci] (#580) ([4055af2](https://github.com/aliyevaladddin/AladdinAI/commit/4055af24a25bc440dff40dd1c1c8a02395a87f82))
-
-- Update changelog [skip ci] (#581) ([c22bbe5](https://github.com/aliyevaladddin/AladdinAI/commit/c22bbe528c90683d355d318ea21679547a9d47d5))
-
-- Bump eslint from 10.7.0 to 10.8.1 in /frontend (#588) ([3ed0371](https://github.com/aliyevaladddin/AladdinAI/commit/3ed0371c74035ceb07c1d05ad2bbc31fa61a40ba))
-
-- Update lockfile to reflect latest frontend dependencies ([379828a](https://github.com/aliyevaladddin/AladdinAI/commit/379828a8a646ce78be903907e8e75d67c44cb09d))
-
-- Update frontend dependencies in package-lock.json ([d0cb3bf](https://github.com/aliyevaladddin/AladdinAI/commit/d0cb3bff55a016b076f898af82572ded78136a85))
-
-- Update lockfile dependencies ([8979ed7](https://github.com/aliyevaladddin/AladdinAI/commit/8979ed753987670f8eedcc40ff387c15a554bda8))
-
-- Bump @types/node from 26.1.2 to 26.2.0 in /frontend (#592) ([b1ae017](https://github.com/aliyevaladddin/AladdinAI/commit/b1ae01748459c6446dc8fab9ebf9ce2aca2e2cf6))
-
-- Bump electron from 43.3.0 to 43.4.0 in /frontend (#590) ([a147a47](https://github.com/aliyevaladddin/AladdinAI/commit/a147a47276453effddc91f70b1af911bdcd97095))
-
-- Update frontend dependencies in package-lock.json ([f3190cc](https://github.com/aliyevaladddin/AladdinAI/commit/f3190cc51b99a57588f062307636213ddfaa0ac6))
-
-- Update lockfile dependencies for frontend project ([e22a882](https://github.com/aliyevaladddin/AladdinAI/commit/e22a882453ef9f604959df314211bcb0c71064fa))
-
-- Update changelog [skip ci] (#611) ([5e474a3](https://github.com/aliyevaladddin/AladdinAI/commit/5e474a3e70dd6fa5e048d22f0309b37a95606ae4))
-
-- Update changelog [skip ci] (#613) ([90d18cf](https://github.com/aliyevaladddin/AladdinAI/commit/90d18cf73462f20df50dca202c93c0fee315e484))
-
-- Update changelog [skip ci] (#616) ([d352ab7](https://github.com/aliyevaladddin/AladdinAI/commit/d352ab7590a29b1776a9a93838e98c6ab418370c))
-
-- Update frontend dependencies in package-lock.json ([d22fda3](https://github.com/aliyevaladddin/AladdinAI/commit/d22fda346662e664bccca1b957db3c055cd185c1))
-
-- Bump frontend version to 2.2.3 ([12dabc3](https://github.com/aliyevaladddin/AladdinAI/commit/12dabc3f2293d87d488461ca17093d9ad4f672af))
-
-- Update changelog [skip ci] (#618) ([0e19681](https://github.com/aliyevaladddin/AladdinAI/commit/0e196812517a9b10705f7b82d12d4bd5049146e5))
-
-- Update changelog [skip ci] (#620) ([ca4296b](https://github.com/aliyevaladddin/AladdinAI/commit/ca4296bf71a20355cfbb9c67752dcacf70fbe817))
-
-## [v2.2.3] - 2026-07-22
-
-### Bug Fixes
-
-- Add --allow-same-version to npm version steps in release workflow ([4c5074f](https://github.com/aliyevaladddin/AladdinAI/commit/4c5074f740d38e83fe54ed68c157374f8a2547ec))
-
-- Add python3 make g++ build tools to frontend Dockerfile.prod deps stage ([4172737](https://github.com/aliyevaladddin/AladdinAI/commit/4172737e856f1000b0050de3a94b3dc8f6c0dad4))
-
-
-### Dependencies
-
-- Bump body-parser from 2.2.2 to 2.3.0 in /frontend (#447) ([f32cbae](https://github.com/aliyevaladddin/AladdinAI/commit/f32cbaef9ae38f454c35cba11a4f2b44acf3cea9))
-
-- Bump fast-uri from 3.1.2 to 3.1.4 in /frontend (#455) ([95c0e93](https://github.com/aliyevaladddin/AladdinAI/commit/95c0e936d57966214462984c2e62aa9150fad04b))
-
-- Bump hono from 4.12.25 to 4.12.31 in /frontend (#459) ([53998cc](https://github.com/aliyevaladddin/AladdinAI/commit/53998cc5d49f9969ae2e4a797f4be66c7a92fc2c))
-
-- Bump dompurify from 3.4.11 to 3.4.12 in /frontend (#461) ([6417526](https://github.com/aliyevaladddin/AladdinAI/commit/64175266dd20b6dbe82d72bf22182bd3f146bce7))
-
-
-### Documentation
-
-- Update API documentation [skip ci] (#451) ([71b42d5](https://github.com/aliyevaladddin/AladdinAI/commit/71b42d5bf05b4067ca8819d689fcce905bd8d97d))
-
-- Update readme modules to include multi-agent swarm, meta-search, evaluation harness, UI features, and revised voice/order documentation ([b38092d](https://github.com/aliyevaladddin/AladdinAI/commit/b38092d32e8fbaecf5481b1596ecbd3e2663e116))
-
-- Update API documentation [skip ci] (#467) ([18c66e9](https://github.com/aliyevaladddin/AladdinAI/commit/18c66e9f12a6d65272f6019f4c2834fb99c89cf6))
-
-
-### Features
-
-- Implement voice playback, markdown parsing, and chat UI improvements (#453) ([3bbd3be](https://github.com/aliyevaladddin/AladdinAI/commit/3bbd3be56aada254a7904d43f02f2e440839b243))
-
-- Implement system-wide Command Palette with keyboard shortcut registry and documentation settings tab (#457) ([03b922d](https://github.com/aliyevaladddin/AladdinAI/commit/03b922d88e7bea8a6d6ec5bb6744b61bf6e5f5bb))
-
-- Implement native log/grep utilities and improve terminal UX with clipboard support and render safety patches (#465) ([3e90908](https://github.com/aliyevaladddin/AladdinAI/commit/3e909089b3c0cb5e77ce35645cb91ec7f0135747))
-
-- Add @hono/node-server to frontend dependencies ([77ed1fa](https://github.com/aliyevaladddin/AladdinAI/commit/77ed1fa28234ec51f26cfb1398abe1b8aae0fa61))
-
-
-### Maintenance
-
-- Bump tar from 7.5.16 to 7.5.20 in /frontend (#445) ([e920f2a](https://github.com/aliyevaladddin/AladdinAI/commit/e920f2a112032ac5730472db2d2123caeb258b71))
-
-- Update changelog [skip ci] (#446) ([c8b1214](https://github.com/aliyevaladddin/AladdinAI/commit/c8b12147c59811112503a29160582834d0c19b27))
-
-- Update changelog [skip ci] (#448) ([39ce49a](https://github.com/aliyevaladddin/AladdinAI/commit/39ce49aef1dd72e89dcd960660990fe5a7698d30))
-
-- Update changelog [skip ci] (#450) ([bdd9ecd](https://github.com/aliyevaladddin/AladdinAI/commit/bdd9ecd79921b9f9552b9487dfe3378ecc3cd193))
-
-- Update changelog [skip ci] (#456) ([df6c89a](https://github.com/aliyevaladddin/AladdinAI/commit/df6c89a5c74b58bf9194dfee7813fb335072a72f))
-
-- Update changelog [skip ci] (#458) ([416d031](https://github.com/aliyevaladddin/AladdinAI/commit/416d0316010db8e668b3e00d07b92e7a0ec70d72))
-
-- Update changelog [skip ci] (#460) ([bebaffb](https://github.com/aliyevaladddin/AladdinAI/commit/bebaffb8f27afd6f01acfe6b1011329bce4f2f7b))
-
-- Update changelog [skip ci] (#462) ([7d10262](https://github.com/aliyevaladddin/AladdinAI/commit/7d10262ab5c92dbd9e86c5188d467162081452f0))
-
-- Update changelog [skip ci] (#463) ([a5fd5c5](https://github.com/aliyevaladddin/AladdinAI/commit/a5fd5c5914d8686fb9f3e4c35f562dffbf05acbd))
-
-- Add axios, dotenv, ink, prompts, rcf-protocol, react, and zod dependencies to package.json ([f0fc601](https://github.com/aliyevaladddin/AladdinAI/commit/f0fc601ac10f78b19a9815093ddefcdde46d5e24))
-
-- Update changelog [skip ci] (#466) ([cc7f57a](https://github.com/aliyevaladddin/AladdinAI/commit/cc7f57a2a1bc5c2864774e089664821d243158de))
-
-- Update changelog [skip ci] (#468) ([f52345e](https://github.com/aliyevaladddin/AladdinAI/commit/f52345ea5668b68d2cf80e133254fe27780b7164))
-
-## [v2.2.2] - 2026-07-20
-
-### Bug Fixes
-
-- Merge two heads; guard against schema drift (#406) ([fae5de0](https://github.com/aliyevaladddin/AladdinAI/commit/fae5de0f93a7230ae26119bd311113d8e014d5a3))
-
-- Register web_search and correct its function schema (#408) ([906212b](https://github.com/aliyevaladddin/AladdinAI/commit/906212b69c247e0b05ca2b36ad5be6d25249bf7f))
-
-
-### Dependencies
-
-- Bump actions/setup-node from 6 to 7 (#413) ([ae0dcfc](https://github.com/aliyevaladddin/AladdinAI/commit/ae0dcfccc75f0036aa02154605d823d47c06d4ee))
-
-- Bump fastapi from 0.139.0 to 0.139.2 (#414) ([391709d](https://github.com/aliyevaladddin/AladdinAI/commit/391709dec71deb152ef28de07c3e1f66897fa66c))
-
-- Bump the security-patches group in /frontend with 4 updates (#415) ([ac463d3](https://github.com/aliyevaladddin/AladdinAI/commit/ac463d3080dc02821bac2e52a62dfd2724209568))
-
-- Bump lucide-react from 1.24.0 to 1.25.0 in /frontend (#416) ([91d1762](https://github.com/aliyevaladddin/AladdinAI/commit/91d17626a91b84042ce5f1e75b52bc3f63fbad3c))
-
-
-### Documentation
-
-- Update API documentation [skip ci] (#400) ([b7f0077](https://github.com/aliyevaladddin/AladdinAI/commit/b7f00771a1ee308a93ecf20e8da5dc3009852060))
-
-- Update API documentation [skip ci] (#403) ([7c13930](https://github.com/aliyevaladddin/AladdinAI/commit/7c139306434fc3f4428702fafc0b98c906440d9e))
-
-- Add Orders & Sales module documentation to README overview ([e86ec69](https://github.com/aliyevaladddin/AladdinAI/commit/e86ec6960f8ec3ac7915d708683d0d697cc32416))
-
-- Update API documentation [skip ci] (#412) ([7f0fddb](https://github.com/aliyevaladddin/AladdinAI/commit/7f0fddb696796bd0226ec0ec1410f3307b41c4aa))
-
-- Update API documentation [skip ci] (#424) ([8af800d](https://github.com/aliyevaladddin/AladdinAI/commit/8af800d3ceca7e2913a56fac16e70f58800cf774))
-
-- Update API documentation [skip ci] (#427) ([e9177e2](https://github.com/aliyevaladddin/AladdinAI/commit/e9177e224e2ab0c85debe2d84efa062923e2e09c))
-
-- Update API documentation [skip ci] (#434) ([7ba7504](https://github.com/aliyevaladddin/AladdinAI/commit/7ba750455504b22f5014a4e8410f57aa69a2e943))
-
-
-### Features
-
-- Human 👍/👎 labeling layer for the self-forging loop (#380) ([c72147f](https://github.com/aliyevaladddin/AladdinAI/commit/c72147ff3ee6dccb124ffe41e922b305ddeb4bec))
-
-- Add orders, product catalog, and sales/marketing layer (#401) ([34e944a](https://github.com/aliyevaladddin/AladdinAI/commit/34e944acfbda42f4e49151b2cef695512a9bd088))
-
-- Implement order management system, product catalog, and status tracking in CRM docs ([9020db9](https://github.com/aliyevaladddin/AladdinAI/commit/9020db9af0b92060741ef854e2a3c12485cd776e))
-
-- Golden set + base-vs-forged harness (self-forging layers 2-3) (#410) ([14ec211](https://github.com/aliyevaladddin/AladdinAI/commit/14ec21106a937bd38b84aaf9dd23c406adf952a4))
-
-- Integrate native meta-search and agent tool calling capabilities (#422) ([7b2109d](https://github.com/aliyevaladddin/AladdinAI/commit/7b2109dc16853a0db7cbf300679c3f1f3725f485))
-
-- Native Out-of-the-Box Meta-Search (ArXiv, Google News RSS, DDG HTML Fallback) (#425) ([b922729](https://github.com/aliyevaladddin/AladdinAI/commit/b922729a264aee62e8838ca98531859057869c94))
-
-- Integrate fetch_url tool with Chromium Headless Browser and UI thought process accordion ([351225b](https://github.com/aliyevaladddin/AladdinAI/commit/351225bddb2a3ebe78131dd4aaeabd19642b53b4))
-
-- Implement Playwright-based URL scraping and agent thought process visualization in chat UI ([108c02d](https://github.com/aliyevaladddin/AladdinAI/commit/108c02d6a5933bce1bd6d9f0cfaa4e2984f2f550))
-
-- Add AI response synthesis endpoint with optional deep web scraping and frontend integration (#432) ([ac58e8e](https://github.com/aliyevaladddin/AladdinAI/commit/ac58e8e24af45ced96fe468e768050280ec555e4))
-
-- Add multi-agent swarm orchestrator, python sandbox, http tools, and autonomous task execution stepper (#435) ([e566b06](https://github.com/aliyevaladddin/AladdinAI/commit/e566b0636f1207a27d8595bcb4aeba1ed8394363))
-
-
-### Maintenance
-
-- Bump version to 2.2.1 and update deps [skip ci] ([70a5fbd](https://github.com/aliyevaladddin/AladdinAI/commit/70a5fbdc76ad36171a83cc3597c9e94a29aff2ef))
-
-- Add good-first-issue mini-tutorial template (#374) ([6fac5dd](https://github.com/aliyevaladddin/AladdinAI/commit/6fac5ddc509dfa3242bb79d0ad2ebee3ed5ec7a9))
-
-- Update changelog [skip ci] (#375) ([9a01cbc](https://github.com/aliyevaladddin/AladdinAI/commit/9a01cbcc942db1bc42fa927d7c99a9a2cffee26d))
-
-- Update changelog [skip ci] (#399) ([0ae3ca5](https://github.com/aliyevaladddin/AladdinAI/commit/0ae3ca50a7545f6acfa7c8bf71646af7d1446607))
-
-- Update changelog [skip ci] (#402) ([47cae41](https://github.com/aliyevaladddin/AladdinAI/commit/47cae41c7a7a5bbb4e1a1d7157ccc1e250187942))
-
-- Update changelog [skip ci] (#404) ([1847b8e](https://github.com/aliyevaladddin/AladdinAI/commit/1847b8e4237c79ce12ff45d9c38a37b8a7748886))
-
-- Update changelog [skip ci] (#405) ([4db09f2](https://github.com/aliyevaladddin/AladdinAI/commit/4db09f218d11ddcc8a9b3c904de4faf1e8bd88c9))
-
-- Update changelog [skip ci] (#407) ([3f653a7](https://github.com/aliyevaladddin/AladdinAI/commit/3f653a72fd81f9e41a909dfd8432c02d041da9c6))
-
-- Update changelog [skip ci] (#411) ([b0d5134](https://github.com/aliyevaladddin/AladdinAI/commit/b0d51345582bf94ebee52743ec068f99660d7b64))
-
-- Update changelog [skip ci] (#420) ([46276c8](https://github.com/aliyevaladddin/AladdinAI/commit/46276c88dc183e3cf03a5f382f6f32c29f1d55d8))
-
-- Update changelog [skip ci] (#423) ([66589b8](https://github.com/aliyevaladddin/AladdinAI/commit/66589b8e0e495d51404fa263e3e4bbed2804d64c))
-
-- Update changelog [skip ci] (#426) ([3595de8](https://github.com/aliyevaladddin/AladdinAI/commit/3595de80e680ec970e1e5e307ed925ef3e547e08))
-
-- Update changelog [skip ci] (#428) ([5ae2e1f](https://github.com/aliyevaladddin/AladdinAI/commit/5ae2e1f30ba9b09e73733bc2fff79b755d9d80b1))
-
-- Update changelog [skip ci] (#429) ([b27d933](https://github.com/aliyevaladddin/AladdinAI/commit/b27d9331e2037fc8ca03a8147738caf53a888599))
-
-- Update changelog [skip ci] (#431) ([276bef2](https://github.com/aliyevaladddin/AladdinAI/commit/276bef22d5e3fb040e7dc9e2c24b1e858719e5b1))
-
-- Update changelog [skip ci] (#433) ([bbc49ee](https://github.com/aliyevaladddin/AladdinAI/commit/bbc49ee4d9c08147db09fb44ebe947882d37c955))
-
-- Update changelog [skip ci] (#436) ([d444ae2](https://github.com/aliyevaladddin/AladdinAI/commit/d444ae23edae3be79e92a3c1f29c3de336fd2872))
-
-- Bump axios from 1.17.0 to 1.18.1 in /frontend (#437) ([a817d2a](https://github.com/aliyevaladddin/AladdinAI/commit/a817d2aacb402a5553d68143bcf850caf13f3ad2))
-
-- Update changelog [skip ci] (#438) ([4dd21fc](https://github.com/aliyevaladddin/AladdinAI/commit/4dd21fc39d74c66b3136067dd7030f61904d30a6))
-
-- Update dependency overrides in package.json ([dd6370f](https://github.com/aliyevaladddin/AladdinAI/commit/dd6370f02f992e0e0dadc51c4dcdfcd0698f8b74))
-
-- Update changelog [skip ci] (#439) ([17473e6](https://github.com/aliyevaladddin/AladdinAI/commit/17473e6d3c71e9fa2566f4c59cdf834309a8675b))
-
-- Bump version to 2.2.2 across packages and documentation ([0745180](https://github.com/aliyevaladddin/AladdinAI/commit/07451808ab10e0b067ace3ac9f97fa9045b430ec))
-
-## [v2.2.1] - 2026-07-09
 
 ### Dependencies
 
 - Bump lucide-react from 1.21.0 to 1.23.0 in /frontend (#353) ([2d24ac8](https://github.com/aliyevaladddin/AladdinAI/commit/2d24ac88f2690e10bebce6d05d6e7bd449f5a479))
+
+- Bump actions/setup-node from 6 to 7 (#413) ([882791e](https://github.com/aliyevaladddin/AladdinAI/commit/882791e51ace3b4b005855bd2b12c9e293538d14))
+
+- Bump fastapi from 0.139.0 to 0.139.2 (#414) ([5cbce0b](https://github.com/aliyevaladddin/AladdinAI/commit/5cbce0b30e04c229d561c0875f874b71e3aaa990))
+
+- Bump the security-patches group in /frontend with 4 updates (#415) ([0c77742](https://github.com/aliyevaladddin/AladdinAI/commit/0c77742943948fd38ca7eee5f0e799a96702486d))
+
+- Bump lucide-react from 1.24.0 to 1.25.0 in /frontend (#416) ([92430b7](https://github.com/aliyevaladddin/AladdinAI/commit/92430b7b31e25231136a02668c22eeeab914893d))
+
+- Bump body-parser from 2.2.2 to 2.3.0 in /frontend (#447) ([1111d56](https://github.com/aliyevaladddin/AladdinAI/commit/1111d563a2cac53b764ebdd7400d69d4ed51dca8))
+
+- Bump fast-uri from 3.1.2 to 3.1.4 in /frontend (#455) ([f77c85f](https://github.com/aliyevaladddin/AladdinAI/commit/f77c85fe6e911ada73a5c36c36687ee003e20557))
+
+- Bump hono from 4.12.25 to 4.12.31 in /frontend (#459) ([ea4b01d](https://github.com/aliyevaladddin/AladdinAI/commit/ea4b01dbb5007edc8f77669cede5539aa6f86a77))
+
+- Bump dompurify from 3.4.11 to 3.4.12 in /frontend (#461) ([4938f76](https://github.com/aliyevaladddin/AladdinAI/commit/4938f767e62313b41afd99b6a4ff4c5a24e6c19d))
+
+- Bump actions/setup-python from 6 to 7 (#469) ([77b785e](https://github.com/aliyevaladddin/AladdinAI/commit/77b785edfe506805a570f885c22b7e44afbe2eae))
+
+- Bump builder-util-runtime and electron-builder in /frontend (#502) ([712f6ee](https://github.com/aliyevaladddin/AladdinAI/commit/712f6ee86c33faf05bca2e5957b9bcc304fe3a0c))
+
+- Bump x402 and x402-fetch in /frontend (#504) ([27df3c2](https://github.com/aliyevaladddin/AladdinAI/commit/27df3c28f32735afbf9871f11ed0d574b0346071))
+
+- Bump lucide-react from 1.26.0 to 1.27.0 in /frontend (#518) ([00e497e](https://github.com/aliyevaladddin/AladdinAI/commit/00e497e9092d7bc8ed5a3f5d0928a3e378c6e219))
+
+- Bump uvicorn from 0.51.0 to 0.52.0 (#512) ([e3f05b8](https://github.com/aliyevaladddin/AladdinAI/commit/e3f05b8234a441e3c67016ce286f8f246e72a0de))
+
+- Bump fastapi from 0.140.0 to 0.141.0 (#513) ([ac1b108](https://github.com/aliyevaladddin/AladdinAI/commit/ac1b1086c58df1a43b02fab3785bf060133c6929))
+
+- Bump shadcn from 4.15.0 to 4.16.0 in /frontend (#515) ([d4d3d95](https://github.com/aliyevaladddin/AladdinAI/commit/d4d3d95b9228ae263d7fcc009520afbbdffdf2e3))
+
+- Bump framer-motion from 12.42.2 to 12.43.0 in /frontend (#516) ([253972a](https://github.com/aliyevaladddin/AladdinAI/commit/253972a4232e60b9f7a6fe628ca6f83ec7f46bf0))
+
+- Bump fast-uri from 3.1.4 to 3.1.5 in /frontend (#533) ([467bbbd](https://github.com/aliyevaladddin/AladdinAI/commit/467bbbd15d67dc0ad7a43b91748fd5e52760dfe2))
+
+- Bump @tanstack/react-table in /frontend (#548) ([ca291e3](https://github.com/aliyevaladddin/AladdinAI/commit/ca291e399dad72b08372bfd677130a5f5aa3e0aa))
+
+- Bump @base-ui/react from 1.6.0 to 1.7.0 in /frontend (#547) ([6f92046](https://github.com/aliyevaladddin/AladdinAI/commit/6f92046f57196b14e1cb58589a6c18efc29b7ab2))
+
+- Bump framer-motion from 12.43.0 to 13.0.0 in /frontend (#545) ([fd38809](https://github.com/aliyevaladddin/AladdinAI/commit/fd388099a9c82d0c9d3c984b1a9e150b2f3c3646))
+
+- Bump next from 16.2.12 to 16.3.0 in /frontend (#544) ([5f6b8a5](https://github.com/aliyevaladddin/AladdinAI/commit/5f6b8a5abef590e9b5d7320645969c8292761411))
+
+- Bump lucide-react from 1.27.0 to 1.28.0 in /frontend (#543) ([84950c7](https://github.com/aliyevaladddin/AladdinAI/commit/84950c75deba059d64c0e72c28041bcf8c17db74))
+
+- Bump the security-patches group across 1 directory with 4 updates (#556) ([f2c47c9](https://github.com/aliyevaladddin/AladdinAI/commit/f2c47c901cd60db43f33988112b991b0783e5e48))
+
+- Bump alembic from 1.18.5 to 1.19.0 (#541) ([56a1023](https://github.com/aliyevaladddin/AladdinAI/commit/56a10239281dae515e8316d0a0c4ec89b47cd7f2))
+
+- Bump fastapi from 0.141.0 to 0.141.1 (#540) ([f4096b7](https://github.com/aliyevaladddin/AladdinAI/commit/f4096b7306d3360229118e7f0e14e9835bcc9cf8))
+
+- Bump uvicorn from 0.51.0 to 0.52.1 (#539) ([1822dbb](https://github.com/aliyevaladddin/AladdinAI/commit/1822dbb0ee2b483f1af62f3cd168f9c90f4af106))
+
+- Bump playwright from 1.61.0 to 1.62.0 (#538) ([d3904fc](https://github.com/aliyevaladddin/AladdinAI/commit/d3904fcbe69fc20e245771ef8745714b49365c37))
+
+- Bump ip-address from 10.2.0 to 10.5.0 in /frontend (#563) ([afb2727](https://github.com/aliyevaladddin/AladdinAI/commit/afb27279b42d1f8a9425a1d0efec91d26a9299f8))
+
+- Bump pypdf from 6.14.2 to 6.15.0 in /backend (#567) ([3154fd3](https://github.com/aliyevaladddin/AladdinAI/commit/3154fd3ccca4087f9adb64580653e0abca14ee4d))
+
+- Bump alembic from 1.19.0 to 1.19.1 (#583) ([4307490](https://github.com/aliyevaladddin/AladdinAI/commit/43074901bfaee100bc9037fc73de014963028292))
+
+- Bump pydantic-settings from 2.14.2 to 2.15.0 (#584) ([5d3e180](https://github.com/aliyevaladddin/AladdinAI/commit/5d3e18082270b6b90554d9532d58548c2c03dc2e))
+
+- Bump sqlalchemy from 2.0.51 to 2.0.52 (#585) ([be3cdf7](https://github.com/aliyevaladddin/AladdinAI/commit/be3cdf7f6174e692ab4160abe0b7229854cd53be))
+
+- Bump fastapi from 0.141.0 to 0.141.1 (#586) ([c0a4947](https://github.com/aliyevaladddin/AladdinAI/commit/c0a4947e139257bebca025c18c969eff9be03a16))
+
+- Bump the security-patches group in /frontend with 3 updates (#587) ([2695b7f](https://github.com/aliyevaladddin/AladdinAI/commit/2695b7ff6b1c026184151be4a5448fed4c1a4ce3))
+
+- Bump lucide-react from 1.28.0 to 1.31.0 in /frontend (#589) ([0ce31c8](https://github.com/aliyevaladddin/AladdinAI/commit/0ce31c8fadb59cf494ba40fc4487e1a55550dbb7))
+
+- Bump shadcn from 4.16.2 to 4.17.0 in /frontend (#594) ([725a7f3](https://github.com/aliyevaladddin/AladdinAI/commit/725a7f3fb7a09937683327cc926707f26fe1fb17))
+
+- Bump framer-motion from 13.0.0 to 13.1.0 in /frontend (#593) ([3f36bf5](https://github.com/aliyevaladddin/AladdinAI/commit/3f36bf52074d5a56ef8061729118b174a8765b8c))
+
+- Bump @tanstack/react-table from 9.0.0 to 9.1.2 in /frontend (#591) ([82826eb](https://github.com/aliyevaladddin/AladdinAI/commit/82826eb6c8a2f9adf88fec2785245d51cec684f9))
+
+
+### Documentation
+
+- Update API documentation [skip ci] (#400) ([3585fcc](https://github.com/aliyevaladddin/AladdinAI/commit/3585fcc7d2d6163c7091fb853cb9ab05f647359f))
+
+- Update API documentation [skip ci] (#403) ([0fa32f1](https://github.com/aliyevaladddin/AladdinAI/commit/0fa32f1d71c305c5b90527bdf062f20f70c22bc7))
+
+- Add Orders & Sales module documentation to README overview ([edf26b5](https://github.com/aliyevaladddin/AladdinAI/commit/edf26b548f9929ae5748b8a3e7fd2bea785ac36f))
+
+- Update API documentation [skip ci] (#412) ([904cc3c](https://github.com/aliyevaladddin/AladdinAI/commit/904cc3c959240519536089def37d0840dc01fcf4))
+
+- Update API documentation [skip ci] (#424) ([98aeef1](https://github.com/aliyevaladddin/AladdinAI/commit/98aeef1315d47093afcaef79dda16e0f866a2b73))
+
+- Update API documentation [skip ci] (#427) ([722e49e](https://github.com/aliyevaladddin/AladdinAI/commit/722e49e15e2d13ae00eccaf5076e5bbf7fd89c4f))
+
+- Update API documentation [skip ci] (#434) ([4c8b726](https://github.com/aliyevaladddin/AladdinAI/commit/4c8b726d45c0798665b6c44f3991114c79783d89))
+
+- Update API documentation [skip ci] (#451) ([7d5ba20](https://github.com/aliyevaladddin/AladdinAI/commit/7d5ba20101cfb52a048f26fe5aa261aaa290face))
+
+- Update readme modules to include multi-agent swarm, meta-search, evaluation harness, UI features, and revised voice/order documentation ([3c7a939](https://github.com/aliyevaladddin/AladdinAI/commit/3c7a939096436f7a6c23c10076c870a8785efd61))
+
+- Update API documentation [skip ci] (#467) ([6614386](https://github.com/aliyevaladddin/AladdinAI/commit/6614386446066f8448eed25a6398ef14dcb456e6))
+
+- Update API documentation [skip ci] (#531) ([07a750b](https://github.com/aliyevaladddin/AladdinAI/commit/07a750b664b14942679e7d23efb4ef549e26c75d))
+
+- Update API documentation [skip ci] (#573) ([608aa3c](https://github.com/aliyevaladddin/AladdinAI/commit/608aa3c9f5fcf11d2e4ecbbd47e00a5514d21ab9))
+
+- Update API documentation [skip ci] (#582) ([0a789df](https://github.com/aliyevaladddin/AladdinAI/commit/0a789df251c2bc09cdd019a92e7af8804e3a4cb1))
+
+- Update API documentation [skip ci] (#621) ([18ebfb2](https://github.com/aliyevaladddin/AladdinAI/commit/18ebfb2d43dc87f527d05c6132add53982fe52b0))
 
 
 ### Features
 
 - Score reward/quality_label at write time from loop out come (#368) ([0c9ce25](https://github.com/aliyevaladddin/AladdinAI/commit/0c9ce250458b748e5aad9356bc0335bd9c66c34b))
 
-- Add funding field to package.json (#371) ([d63164a](https://github.com/aliyevaladddin/AladdinAI/commit/d63164a6c7670fcfb09114eab1b55a45787692a7))
+- Add funding field to package.json (#371) ([73d4b37](https://github.com/aliyevaladddin/AladdinAI/commit/73d4b37f94e100aaf82156572ba0f9700a232421))
 
-- Add skillspector dependency to CI workflow and requirements ([3355210](https://github.com/aliyevaladddin/AladdinAI/commit/335521069384aa16fdc3b18b112c26ea171300b6))
+- Add skillspector dependency to CI workflow and requirements ([cfe920b](https://github.com/aliyevaladddin/AladdinAI/commit/cfe920b7f154afc55fdc4bbfb407d8bdce9c6e86))
+
+- Human 👍/👎 labeling layer for the self-forging loop (#380) ([6c46fdd](https://github.com/aliyevaladddin/AladdinAI/commit/6c46fddab3814e6613925ef9d4d8b556c7aaa62b))
+
+- Add orders, product catalog, and sales/marketing layer (#401) ([6ca2167](https://github.com/aliyevaladddin/AladdinAI/commit/6ca2167ee56f65e188d11b6d0eee1593e1df802c))
+
+- Implement order management system, product catalog, and status tracking in CRM docs ([b464446](https://github.com/aliyevaladddin/AladdinAI/commit/b464446ad6bc6d5b95c2b36ea2a75573c116591b))
+
+- Golden set + base-vs-forged harness (self-forging layers 2-3) (#410) ([1c2a075](https://github.com/aliyevaladddin/AladdinAI/commit/1c2a075eafb11d809d8a89289f48e8a18337afe0))
+
+- Integrate native meta-search and agent tool calling capabilities (#422) ([556fef5](https://github.com/aliyevaladddin/AladdinAI/commit/556fef5b5576bf75248f7354b960736134c2509c))
+
+- Native Out-of-the-Box Meta-Search (ArXiv, Google News RSS, DDG HTML Fallback) (#425) ([62ca62a](https://github.com/aliyevaladddin/AladdinAI/commit/62ca62aa1da4819a58d16b783df3639cdaa50438))
+
+- Integrate fetch_url tool with Chromium Headless Browser and UI thought process accordion ([084e107](https://github.com/aliyevaladddin/AladdinAI/commit/084e1074809ef9ca1a5cdf78bd12de672f9382a1))
+
+- Implement Playwright-based URL scraping and agent thought process visualization in chat UI ([b2b76e0](https://github.com/aliyevaladddin/AladdinAI/commit/b2b76e00c940b459313085f5e339ff927d5e062e))
+
+- Add AI response synthesis endpoint with optional deep web scraping and frontend integration (#432) ([b9b54a6](https://github.com/aliyevaladddin/AladdinAI/commit/b9b54a6757fbb5718ff52544c893c6cfc538367c))
+
+- Add multi-agent swarm orchestrator, python sandbox, http tools, and autonomous task execution stepper (#435) ([abfd5ab](https://github.com/aliyevaladddin/AladdinAI/commit/abfd5ab1c796c125f4c935063a1c07f7a7e91378))
+
+- Implement voice playback, markdown parsing, and chat UI improvements (#453) ([aa92bce](https://github.com/aliyevaladddin/AladdinAI/commit/aa92bce3e427e4150d3eb327eea5f072b1d92cdd))
+
+- Implement system-wide Command Palette with keyboard shortcut registry and documentation settings tab (#457) ([c31e854](https://github.com/aliyevaladddin/AladdinAI/commit/c31e854e8482a806ce846b09d7948f1317a16a52))
+
+- Implement native log/grep utilities and improve terminal UX with clipboard support and render safety patches (#465) ([3c41c75](https://github.com/aliyevaladddin/AladdinAI/commit/3c41c75986a5a0fe899b6ac5ad3fea3a0b8d3536))
+
+- Add @hono/node-server to frontend dependencies ([c390eee](https://github.com/aliyevaladddin/AladdinAI/commit/c390eee60ecd1d8baea4dc81a02af48fa0be48ea))
+
+- Docker-per-agent isolated execution environment (#485) ([a1d2546](https://github.com/aliyevaladddin/AladdinAI/commit/a1d254647dbc1535d54f227ce82f8233efe5fa80))
+
+- Provision Atlas vector indexes from code (#571) ([95b7f2a](https://github.com/aliyevaladddin/AladdinAI/commit/95b7f2ab9e6a375d0c7b439f0d3b5bef3d8f57e3))
+
+- Migrate terminal approval state to Postgres to support multi-worker environments (#574) ([cd63c1a](https://github.com/aliyevaladddin/AladdinAI/commit/cd63c1a9e61cb7cf2fc16c709ce6131b13f191bf))
+
+- Add JSONL export of the golden set for fine-tuning (#579) ([bd4da2a](https://github.com/aliyevaladddin/AladdinAI/commit/bd4da2ab71df9172cda4e69bc1763d148fae3207))
+
+- Pluggable image-gen backends, transport retries, attachment dedupe (#612) ([71f494e](https://github.com/aliyevaladddin/AladdinAI/commit/71f494ea3ff5c2c8e2e45c98f8f4ec5707702d74))
+
+- Implement full-screen image lightbox and hover interaction cards for attachments ([c505412](https://github.com/aliyevaladddin/AladdinAI/commit/c505412bab985337e335bd91a2f2e84b4d15de13))
+
+- Rename, regenerate, smart scroll, drafts, auto-titles (#619) ([0c51bbc](https://github.com/aliyevaladddin/AladdinAI/commit/0c51bbc8ac5a98c298c3b91aa89bdf76f20e0e1f))
+
+- Product catalog UI and safe product delete (#622) ([8f87495](https://github.com/aliyevaladddin/AladdinAI/commit/8f87495e2d91551f96307e6012acb0f14ff22646))
 
 
 ### Maintenance
@@ -416,9 +210,177 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#369) ([38db820](https://github.com/aliyevaladddin/AladdinAI/commit/38db8201b161fb18810c134303bc7565901a7b50))
 
-- Update changelog [skip ci] (#372) ([6ffea7f](https://github.com/aliyevaladddin/AladdinAI/commit/6ffea7f66a7a53a74e8209e186302af315d88878))
+- Update changelog [skip ci] (#372) ([fcccfa0](https://github.com/aliyevaladddin/AladdinAI/commit/fcccfa0e9fc7343a620dedac4de0b8b149f901c1))
 
-- Update changelog [skip ci] (#373) ([6de7ac8](https://github.com/aliyevaladddin/AladdinAI/commit/6de7ac895cdc70c1ca03aac49b4fa7927060759f))
+- Update changelog [skip ci] (#373) ([e657391](https://github.com/aliyevaladddin/AladdinAI/commit/e6573918433fc97579ef6d0a6a51ba17d928e8c6))
+
+- Bump version to 2.2.1 and update deps [skip ci] ([a208f24](https://github.com/aliyevaladddin/AladdinAI/commit/a208f24e847691985f100526f9899e6fa4bd334f))
+
+- Add good-first-issue mini-tutorial template (#374) ([836c9b1](https://github.com/aliyevaladddin/AladdinAI/commit/836c9b1443d9da3556693d88da6bba1aa3e6a2ca))
+
+- Update changelog [skip ci] (#375) ([f1df671](https://github.com/aliyevaladddin/AladdinAI/commit/f1df67162d2958d1aa2e569885b23f13b58425ca))
+
+- Update changelog [skip ci] (#399) ([5c0a94e](https://github.com/aliyevaladddin/AladdinAI/commit/5c0a94ecd39800334e35ab87d589ce9e9d766d26))
+
+- Update changelog [skip ci] (#402) ([bab52fd](https://github.com/aliyevaladddin/AladdinAI/commit/bab52fd78d6bb8be2c07f6286dade6c9a326aaba))
+
+- Update changelog [skip ci] (#404) ([9c11532](https://github.com/aliyevaladddin/AladdinAI/commit/9c11532c9b2720621c888e79f2bff00cc3021c56))
+
+- Update changelog [skip ci] (#405) ([09e2a34](https://github.com/aliyevaladddin/AladdinAI/commit/09e2a34336e873d85035b933098a9f7d46b7911e))
+
+- Update changelog [skip ci] (#407) ([fa86364](https://github.com/aliyevaladddin/AladdinAI/commit/fa86364060b52906ef2e9d16eeef42019092407d))
+
+- Update changelog [skip ci] (#411) ([04ca90d](https://github.com/aliyevaladddin/AladdinAI/commit/04ca90dc0b25357704ffdc4d913b582dfe9431dc))
+
+- Update changelog [skip ci] (#420) ([2336a03](https://github.com/aliyevaladddin/AladdinAI/commit/2336a03c6704e6242ed98cfcbc7dd7a904ca4220))
+
+- Update changelog [skip ci] (#423) ([910b3ae](https://github.com/aliyevaladddin/AladdinAI/commit/910b3aee9cd0e00825cc899798cfd4430af2485e))
+
+- Update changelog [skip ci] (#426) ([da40fed](https://github.com/aliyevaladddin/AladdinAI/commit/da40fed29d08ba0d42efefe09fe3990b87d6b5b0))
+
+- Update changelog [skip ci] (#428) ([f165277](https://github.com/aliyevaladddin/AladdinAI/commit/f16527704237b8336761cb9c66b5f5a96d1d19e8))
+
+- Update changelog [skip ci] (#429) ([d747107](https://github.com/aliyevaladddin/AladdinAI/commit/d7471070ae5a457e2e58b90cf950a0ff436bad25))
+
+- Update changelog [skip ci] (#431) ([547467b](https://github.com/aliyevaladddin/AladdinAI/commit/547467bdcb50ce447ad032d45547060af0114386))
+
+- Update changelog [skip ci] (#433) ([6e6aeee](https://github.com/aliyevaladddin/AladdinAI/commit/6e6aeee0fb8be13bdd13736afd7c0eecd02cde6e))
+
+- Update changelog [skip ci] (#436) ([2418f52](https://github.com/aliyevaladddin/AladdinAI/commit/2418f52dc4f24170db7d88b5bbf378c2c40def68))
+
+- Bump axios from 1.17.0 to 1.18.1 in /frontend (#437) ([4b8e0b6](https://github.com/aliyevaladddin/AladdinAI/commit/4b8e0b6a2ae72cab6fef4f3a25bacdf10a94177d))
+
+- Update changelog [skip ci] (#438) ([af87c74](https://github.com/aliyevaladddin/AladdinAI/commit/af87c742077c6bdd3a24f3a37c6c6a47b4a242eb))
+
+- Update dependency overrides in package.json ([149828f](https://github.com/aliyevaladddin/AladdinAI/commit/149828fd402140b4c2bd104b8d94091d8031f9a3))
+
+- Update changelog [skip ci] (#439) ([57cb1a0](https://github.com/aliyevaladddin/AladdinAI/commit/57cb1a0220f7281375baf38e5db32ae9e3e774f0))
+
+- Bump version to 2.2.2 across packages and documentation ([d494334](https://github.com/aliyevaladddin/AladdinAI/commit/d49433480573efb36ad6c4136238f3419f43d214))
+
+- Bump tar from 7.5.16 to 7.5.20 in /frontend (#445) ([93f0c77](https://github.com/aliyevaladddin/AladdinAI/commit/93f0c77751207cade08aba104372d5800ac28a90))
+
+- Update changelog [skip ci] (#446) ([e0a9bff](https://github.com/aliyevaladddin/AladdinAI/commit/e0a9bffe95b1d47cba1098f7b37904780a170018))
+
+- Update changelog [skip ci] (#448) ([e8f67f7](https://github.com/aliyevaladddin/AladdinAI/commit/e8f67f76d9e91dde98a49f62f01f07a94dc13181))
+
+- Update changelog [skip ci] (#450) ([395fd8c](https://github.com/aliyevaladddin/AladdinAI/commit/395fd8ce13cad5db7c50cac50016659719b7b66c))
+
+- Update changelog [skip ci] (#456) ([0328a1c](https://github.com/aliyevaladddin/AladdinAI/commit/0328a1c17438232f36b2fdb6ae04725f5822d75d))
+
+- Update changelog [skip ci] (#458) ([2a022e4](https://github.com/aliyevaladddin/AladdinAI/commit/2a022e47e57b54a114a618887f9f8ac76f990865))
+
+- Update changelog [skip ci] (#460) ([703bfe5](https://github.com/aliyevaladddin/AladdinAI/commit/703bfe5d121323d5c6afe344650ec06ae2054cce))
+
+- Update changelog [skip ci] (#462) ([0c5d9b3](https://github.com/aliyevaladddin/AladdinAI/commit/0c5d9b3c6275c78a6ae48dacd93e96c1236db1bf))
+
+- Update changelog [skip ci] (#463) ([f4cf449](https://github.com/aliyevaladddin/AladdinAI/commit/f4cf4498d1239b82f5db7a5077aef70c5df51f28))
+
+- Add axios, dotenv, ink, prompts, rcf-protocol, react, and zod dependencies to package.json ([787e97a](https://github.com/aliyevaladddin/AladdinAI/commit/787e97afc182dd15a3d22274b170aa7bb5107ceb))
+
+- Update changelog [skip ci] (#466) ([55c820d](https://github.com/aliyevaladddin/AladdinAI/commit/55c820d9428c0343803993afdf34d079d113edfe))
+
+- Update changelog [skip ci] (#468) ([d2f7b6a](https://github.com/aliyevaladddin/AladdinAI/commit/d2f7b6a537e3754b80d73d008885a65c67d25523))
+
+- Update changelog (#483) ([6cf87ae](https://github.com/aliyevaladddin/AladdinAI/commit/6cf87ae17402ea310767f532d215b704f28ee657))
+
+- Update changelog [skip ci] (#503) ([2e896ea](https://github.com/aliyevaladddin/AladdinAI/commit/2e896ea435c9c85593c02c7386d5bc456adaf68a))
+
+- Update changelog [skip ci] (#505) ([d34e5e7](https://github.com/aliyevaladddin/AladdinAI/commit/d34e5e7a89f205c1ff70a2b31f2498f4c85810f6))
+
+- Update changelog [skip ci] (#508) ([9f7411b](https://github.com/aliyevaladddin/AladdinAI/commit/9f7411bc081859d428c99bc2933da81d586d8575))
+
+- Add uuid and ws dependencies to frontend package.json ([64d2ed9](https://github.com/aliyevaladddin/AladdinAI/commit/64d2ed94ecd0254cda17b49e40548d0adc9ffe75))
+
+- Update axios dependency, add scroll behavior attribute, and configure allowed dev origins in next config ([49b5064](https://github.com/aliyevaladddin/AladdinAI/commit/49b50640ea2bd1c75022b70ce7171d700d995484))
+
+- Update changelog [skip ci] (#511) ([8eedfca](https://github.com/aliyevaladddin/AladdinAI/commit/8eedfca6d7f9d7387955aca9d8ada63f13197d93))
+
+- Update dependencies in package-lock.json ([7f754e2](https://github.com/aliyevaladddin/AladdinAI/commit/7f754e2d31ee390705a10e4662153fd040996a45))
+
+- Bump the security-patches group (#514) ([540fe8d](https://github.com/aliyevaladddin/AladdinAI/commit/540fe8d3918e8faa1145988ae6921197704b4d59))
+
+- Bump eslint-config-next in /frontend (#517) ([8743bb5](https://github.com/aliyevaladddin/AladdinAI/commit/8743bb5e81b73df6c11e29dda9212e9e1620b35c))
+
+- Update changelog [skip ci] (#530) ([7c508fe](https://github.com/aliyevaladddin/AladdinAI/commit/7c508fe7b1732364965c2764db82f6261102a687))
+
+- Update package-lock.json to sync with package.json ([354c164](https://github.com/aliyevaladddin/AladdinAI/commit/354c1648de991d55e0a379846effca23edf76538))
+
+- Force regenerate package-lock.json from scratch ([04b7f3b](https://github.com/aliyevaladddin/AladdinAI/commit/04b7f3b2d27fad7d01291a8f0c45c61de966e337))
+
+- Update lockfile to reflect frontend dependency changes ([8844edd](https://github.com/aliyevaladddin/AladdinAI/commit/8844eddc702752714406cf67608dbe90f6e3daa4))
+
+- Update changelog [skip ci] (#537) ([8db3901](https://github.com/aliyevaladddin/AladdinAI/commit/8db3901e6831d823246185f4fb4321b68bab15ea))
+
+- Bump eslint-config-next in /frontend (#549) ([360ffc9](https://github.com/aliyevaladddin/AladdinAI/commit/360ffc9a32b941217cbfe7cb61f700eb39e714a6))
+
+- Bump electron from 43.1.1 to 43.3.0 in /frontend (#546) ([f308ada](https://github.com/aliyevaladddin/AladdinAI/commit/f308adaef9efc4a6bb5e96b3029f98b471124e09))
+
+- Update changelog [skip ci] (#561) ([b5dc4d4](https://github.com/aliyevaladddin/AladdinAI/commit/b5dc4d4dbcab3da5c3209eeb5ceba1f2a3b93c0b))
+
+- Update changelog [skip ci] (#560) ([3dd5726](https://github.com/aliyevaladddin/AladdinAI/commit/3dd5726027feca4f29ac678ad4335c9cc5657d2d))
+
+- Update dependencies in package-lock.json ([823a55b](https://github.com/aliyevaladddin/AladdinAI/commit/823a55b0e49d2229d1a35a46900d0ffd2c9500a9))
+
+- Update changelog [skip ci] (#562) ([049d445](https://github.com/aliyevaladddin/AladdinAI/commit/049d445e6ccbd26d698a6c089221bc20cadf3f13))
+
+- Update dependency tree in package-lock.json ([6486585](https://github.com/aliyevaladddin/AladdinAI/commit/6486585522bcd2d5a507c99d20fa1f2b5e8f005d))
+
+- Update changelog [skip ci] (#566) ([bd66fdf](https://github.com/aliyevaladddin/AladdinAI/commit/bd66fdf38bf0fb3723024a629a3d96a3e0e5af04))
+
+- Update changelog [skip ci] (#568) ([9d23ee6](https://github.com/aliyevaladddin/AladdinAI/commit/9d23ee65045f9d982285a74810c3d7d461a3f00f))
+
+- Upgrade ws package to version 8.21.0 ([47bed52](https://github.com/aliyevaladddin/AladdinAI/commit/47bed522d7e730bf196f989f135fcace50b167ef))
+
+- Update changelog [skip ci] (#569) ([75cb81c](https://github.com/aliyevaladddin/AladdinAI/commit/75cb81c9205eb25e59ccee9a8b98213044c47942))
+
+- Upgrade @hono/node-server to version 2.0.10 ([a93a2f3](https://github.com/aliyevaladddin/AladdinAI/commit/a93a2f35b18875c99fb91a6f37d98f9217652bad))
+
+- Update changelog [skip ci] (#570) ([d87c515](https://github.com/aliyevaladddin/AladdinAI/commit/d87c515d384eaec2fc94ca84941b2e07de30326c))
+
+- Update changelog [skip ci] (#572) ([f79e6cd](https://github.com/aliyevaladddin/AladdinAI/commit/f79e6cdba3741867dcf3ea7241007895bc38b2c3))
+
+- Update changelog [skip ci] (#575) ([2d216ef](https://github.com/aliyevaladddin/AladdinAI/commit/2d216ef8f3f5b25155a66e35fcb8d451fb8007af))
+
+- Update changelog [skip ci] (#577) ([cc29ebb](https://github.com/aliyevaladddin/AladdinAI/commit/cc29ebbf3daac89e3c5b3ff5d6354f83964f40e3))
+
+- Update changelog [skip ci] (#580) ([275f7ae](https://github.com/aliyevaladddin/AladdinAI/commit/275f7ae7ea105d6239333763ce16caa2866b0036))
+
+- Update changelog [skip ci] (#581) ([c815f90](https://github.com/aliyevaladddin/AladdinAI/commit/c815f90e93dc3c851c41a890bd5465cc6f3f93d7))
+
+- Bump eslint from 10.7.0 to 10.8.1 in /frontend (#588) ([83bf3a4](https://github.com/aliyevaladddin/AladdinAI/commit/83bf3a43eaf38bbe026866e1fec89dde9ed288e9))
+
+- Update lockfile to reflect latest frontend dependencies ([0940216](https://github.com/aliyevaladddin/AladdinAI/commit/0940216bb568d10be1296937939f6cce7bdb54e6))
+
+- Update frontend dependencies in package-lock.json ([216aaf0](https://github.com/aliyevaladddin/AladdinAI/commit/216aaf0dc1a7b8c24c4627f2c87af3064a1fa855))
+
+- Update lockfile dependencies ([adccaf6](https://github.com/aliyevaladddin/AladdinAI/commit/adccaf63ea6b58d0b513852b9c1e812ebd421b8f))
+
+- Bump @types/node from 26.1.2 to 26.2.0 in /frontend (#592) ([1e89319](https://github.com/aliyevaladddin/AladdinAI/commit/1e89319ba35a1f5c66f6683ff44c8b5f2331bae0))
+
+- Bump electron from 43.3.0 to 43.4.0 in /frontend (#590) ([c487504](https://github.com/aliyevaladddin/AladdinAI/commit/c487504cece3c436209edbd6742362901a01a704))
+
+- Update frontend dependencies in package-lock.json ([453b07d](https://github.com/aliyevaladddin/AladdinAI/commit/453b07d644c7e615232b0bfa7c6e4dcb44d4d95a))
+
+- Update lockfile dependencies for frontend project ([365343f](https://github.com/aliyevaladddin/AladdinAI/commit/365343f01192f6343382d061ae3aa6b94f257223))
+
+- Update changelog [skip ci] (#611) ([06eb562](https://github.com/aliyevaladddin/AladdinAI/commit/06eb5627cfc656ea93acf662b2f06dd1b41939d8))
+
+- Update changelog [skip ci] (#613) ([f9cc619](https://github.com/aliyevaladddin/AladdinAI/commit/f9cc619477b0b56baacc37bc5890f333470e701b))
+
+- Update changelog [skip ci] (#616) ([19a8228](https://github.com/aliyevaladddin/AladdinAI/commit/19a82286be02cfb7c53ca606e4ec35fb389fc650))
+
+- Update frontend dependencies in package-lock.json ([e21c9cb](https://github.com/aliyevaladddin/AladdinAI/commit/e21c9cb39fc45ac60d282b3bfae439e65c31e9a4))
+
+- Bump frontend version to 2.2.3 ([c73853e](https://github.com/aliyevaladddin/AladdinAI/commit/c73853ec3e5c5601dfe44f0644affc33a95de4bb))
+
+- Update changelog [skip ci] (#618) ([c8df39a](https://github.com/aliyevaladddin/AladdinAI/commit/c8df39a410f755fd976697ae10e2720a6c66ce1d))
+
+- Update changelog [skip ci] (#620) ([4f71de0](https://github.com/aliyevaladddin/AladdinAI/commit/4f71de0470a565e62e52c05d3d3727e00aa57199))
+
+- Update changelog [skip ci] (#623) ([c5b3426](https://github.com/aliyevaladddin/AladdinAI/commit/c5b3426fc9c1f9867235bab4c8c0b92aef602887))
+
+- Gitignore .git-rewrite filter-branch leftovers ([fbaae6f](https://github.com/aliyevaladddin/AladdinAI/commit/fbaae6f7f4d7f21b70b91b571c7e659e996d581d))
 
 ## [v2.2.0] - 2026-06-29
 
