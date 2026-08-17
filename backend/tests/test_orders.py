@@ -56,6 +56,35 @@ def test_product_scoping_404(client, test_user):
     assert client.get(f"/api/crm/products/{pid}", headers=h2).status_code == 404
 
 
+def test_delete_product(client, auth_headers):
+    pid = _product(client, auth_headers, sku="GONE", name="Gone")
+    assert client.delete(f"/api/crm/products/{pid}", headers=auth_headers).status_code == 204
+    assert client.get(f"/api/crm/products/{pid}", headers=auth_headers).status_code == 404
+
+
+def test_delete_product_used_in_order_keeps_order(client, auth_headers):
+    """Deleting a product that is on an order detaches the reference instead of
+    500-ing on the FK: order lines snapshot name/price, so history stays whole."""
+    contact = _contact(client, auth_headers, email="delbuyer@example.com")
+    pid = _product(client, auth_headers, sku="DEL1", name="Deletable", price=7.0)
+    r = client.post("/api/crm/orders", headers=auth_headers,
+                    json={"contact_id": contact, "items": [{"product_id": pid, "quantity": 2}]})
+    assert r.status_code == 201, r.text
+    oid = r.json()["id"]
+
+    assert client.delete(f"/api/crm/products/{pid}", headers=auth_headers).status_code == 204
+
+    order = client.get(f"/api/crm/orders/{oid}", headers=auth_headers)
+    assert order.status_code == 200
+    data = order.json()
+    assert data["total"] == 14.0
+    assert len(data["items"]) == 1
+    item = data["items"][0]
+    assert item["product_id"] is None
+    assert item["product_name"] == "Deletable"
+    assert item["unit_price"] == 7.0
+
+
 # ── orders: create + total ───────────────────────────────────────────────────
 def test_create_order_computes_total(client, auth_headers):
     cid = _contact(client, auth_headers)
