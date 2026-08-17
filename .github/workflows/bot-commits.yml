@@ -22,8 +22,10 @@ jobs:
 
       - name: Configure Git for Bot
         run: |
-          git config user.name "AladdinAI[bot]"
-          git config user.email "AladdinAI[bot]@users.noreply.github.com"
+          # Correct noreply format is required for attribution:
+          # {numeric_id}+{login}@users.noreply.github.com
+          git config user.name "aladdinai-bot[bot]"
+          git config user.email "288494217+aladdinai-bot[bot]@users.noreply.github.com"
 
       - name: Create Bot Commit
         run: |
@@ -71,8 +73,10 @@ jobs:
 
       - name: Configure Git for Bot
         run: |
-          git config user.name "NVIDIA Code Review[bot]"
-          git config user.email "NVIDIA-Code-Review[bot]@users.noreply.github.com"
+          # Correct noreply format is required for attribution:
+          # {numeric_id}+{login}@users.noreply.github.com
+          git config user.name "nvidia-code-review-bot[bot]"
+          git config user.email "288502120+nvidia-code-review-bot[bot]@users.noreply.github.com"
 
       - name: Create Bot Commit
         run: |
@@ -91,6 +95,72 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/${{ github.repository }}/pulls \
             -d "{\"title\":\"chore: NVIDIA bot activity update\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated activity log update from NVIDIA Code Review bot\"}")
+
+          # Extract PR number and enable auto-merge
+          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
+          if [ "$PR_NUMBER" != "null" ]; then
+            curl -s -X PUT \
+              -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge \
+              -d '{"merge_method":"squash"}'
+          fi
+
+  qwen-bot-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.QWEN_BOT_APP_ID }}
+          private_key: ${{ secrets.QWEN_BOT_PRIVATE_KEY }}
+
+      - name: Configure Git for Bot
+        env:
+          TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          # The app does not exist at workflow-authoring time, so resolve the
+          # bot identity from the installation token. The noreply email MUST
+          # be {numeric_id}+{login}@users.noreply.github.com or the commit is
+          # anonymous and never counts toward contributors.
+          RESPONSE=$(curl -s -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/user)
+          BOT_LOGIN=$(echo "$RESPONSE" | jq -r '.login // empty')
+          BOT_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
+          if [ -z "$BOT_LOGIN" ] || [ -z "$BOT_ID" ]; then
+            echo "::error::Could not resolve the Qwen app bot identity from /user"
+            echo "$RESPONSE"
+            exit 1
+          fi
+          git config user.name "$BOT_LOGIN"
+          git config user.email "${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
+          echo "Committing as $BOT_LOGIN"
+
+      - name: Create Bot Commit
+        run: |
+          BRANCH_NAME="bot/qwen-activity-$(date +%s)"
+          git checkout -b "$BRANCH_NAME"
+
+          echo "# Qwen Bot Activity" > .github/qwen-bot-activity.md
+          echo "Last activity: $(date)" >> .github/qwen-bot-activity.md
+          git add .github/qwen-bot-activity.md
+          git commit -m "chore: update qwen bot activity log" || echo "No changes to commit"
+          git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:"$BRANCH_NAME"
+
+          # Create PR using GitHub API
+          PR_RESPONSE=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/pulls \
+            -d "{\"title\":\"chore: Qwen bot activity update\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated activity log update from Qwen bot\"}")
 
           # Extract PR number and enable auto-merge
           PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
