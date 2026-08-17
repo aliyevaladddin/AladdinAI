@@ -13,6 +13,7 @@ import {
   ThumbsDown,
   Shield,
   Zap,
+  RotateCw,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { AuthAttachment } from "./AuthAttachment";
@@ -187,6 +188,7 @@ interface ChatMessageItemProps {
   onCopy: (text: string) => void;
   onEditPrompt: (text: string) => void;
   onSendFeedback: (id: number, type: "thumbs_up" | "thumbs_down") => void;
+  onRegenerate?: () => void;
   onSelectSuggestion: (sug: string) => void;
   formatTime: (ts?: string) => string;
 }
@@ -201,6 +203,7 @@ export function ChatMessageItem({
   onCopy,
   onEditPrompt,
   onSendFeedback,
+  onRegenerate,
   onSelectSuggestion,
   formatTime,
 }: ChatMessageItemProps) {
@@ -581,6 +584,16 @@ export function ChatMessageItem({
                 <Copy size={14} />
               )}
             </button>
+            {isLast && !assistantStreaming && onRegenerate && (
+              <button
+                onClick={onRegenerate}
+                aria-label="Regenerate response"
+                className="p-1.5 rounded-lg transition-all hover:bg-muted text-muted-foreground hover:text-foreground"
+                title="Regenerate response"
+              >
+                <RotateCw size={14} />
+              </button>
+            )}
           </div>
         )}
 
