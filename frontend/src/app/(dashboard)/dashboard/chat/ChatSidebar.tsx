@@ -1,6 +1,6 @@
 "use client";
 
-import React, { MouseEvent } from "react";
+import React, { MouseEvent, useState } from "react";
 import {
   MessageSquare,
   Plus,
@@ -10,6 +10,7 @@ import {
   X,
   Search,
   PanelLeftClose,
+  Pencil,
 } from "lucide-react";
 
 export interface Agent {
@@ -41,6 +42,7 @@ interface ChatSidebarProps {
   onOpenGeneralChat: () => void;
   onOpenSession: (session: Session) => void;
   onDeleteSession: (id: number, e: MouseEvent) => void;
+  onRenameSession: (id: number, title: string) => Promise<void>;
   onSelectAgent: (agentId: string) => void;
 }
 
@@ -60,11 +62,23 @@ export function ChatSidebar({
   onOpenGeneralChat,
   onOpenSession,
   onDeleteSession,
+  onRenameSession,
   onSelectAgent,
 }: ChatSidebarProps) {
   const filteredSessions = sessions.filter((s) =>
     s.title.toLowerCase().includes(sessionQuery.toLowerCase())
   );
+
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
+  const commitRename = async (id: number) => {
+    const value = renameValue.trim();
+    setRenamingId(null);
+    if (!value) return;
+    if (value === sessions.find((s) => s.id === id)?.title) return;
+    await onRenameSession(id, value);
+  };
 
   return (
     <>
@@ -172,24 +186,63 @@ export function ChatSidebar({
             filteredSessions.map((session) => (
               <div
                 key={session.id}
-                onClick={() => onOpenSession(session)}
+                onClick={() => {
+                  if (renamingId !== session.id) onOpenSession(session);
+                }}
                 className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs cursor-pointer transition-all ${
                   activeSession?.id === session.id
                     ? "bg-muted text-foreground font-semibold shadow-xs"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                 }`}
               >
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <MessageSquare size={13} className="shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="truncate">{session.title}</span>
-                </div>
-                <button
-                  onClick={(e) => onDeleteSession(session.id, e)}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-red-500 rounded transition-opacity"
-                  title="Delete chat"
-                >
-                  <Trash2 size={12} />
-                </button>
+                {renamingId === session.id ? (
+                  <div
+                    className="flex items-center gap-2 min-w-0 flex-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MessageSquare size={13} className="shrink-0 text-primary" />
+                    <input
+                      autoFocus
+                      value={renameValue}
+                      maxLength={200}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") void commitRename(session.id);
+                        else if (e.key === "Escape") setRenamingId(null);
+                      }}
+                      onBlur={() => void commitRename(session.id)}
+                      className="w-full bg-background border border-primary/40 rounded-md px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      aria-label="Chat title"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <MessageSquare size={13} className="shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="truncate">{session.title}</span>
+                    </div>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRenamingId(session.id);
+                          setRenameValue(session.title);
+                        }}
+                        className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
+                        title="Rename chat"
+                      >
+                        <Pencil size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => onDeleteSession(session.id, e)}
+                        className="p-1 text-muted-foreground hover:text-red-500 rounded transition-opacity"
+                        title="Delete chat"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))
           )}

@@ -49,6 +49,29 @@ async def _read_attachment_bytes(
 
 
 # [RCF:PROTECTED]
+def _auto_session_title(text: str, attachments: list[dict] | None) -> str:
+    """Derive a title for a brand-new session from its first message.
+
+    Text wins; an attachment-only first message still deserves a readable
+    label instead of an empty row in the sidebar.
+    """
+    text = (text or "").strip()
+    if text:
+        return text[:60] + ("..." if len(text) > 60 else "")
+    atts = attachments or []
+    if any(
+        str(a.get("kind") or "") == "audio" or str(a.get("mime") or "").startswith("audio/")
+        for a in atts
+    ):
+        return "Voice message"
+    if any(str(a.get("mime") or "").startswith("image/") for a in atts):
+        return "Image"
+    if atts:
+        return "Attachment"
+    return "New Chat"
+
+
+# [RCF:PROTECTED]
 def _dedupe_attachments(atts: list[dict] | None) -> list[dict] | None:
     """Drop duplicate filenames from an outgoing attachment list.
 
@@ -119,6 +142,38 @@ async def create_session(
         title=body.get("title", f"Chat with {agent.name}"),
     )
     db.add(session)
+    await db.commit()
+    await db.refresh(session)
+    return ChatSessionResponse(
+        id=session.id,
+        agent_id=session.agent_id,
+        title=session.title,
+        created_at=session.created_at.isoformat(),
+        updated_at=session.updated_at.isoformat(),
+    )
+
+
+# [RCF:PROTECTED]
+@router.patch("/sessions/{session_id}", response_model=ChatSessionResponse)
+# [RCF:PROTECTED]
+async def rename_session(
+    session_id: int,
+    body: dict,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    title = str(body.get("title") or "").strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="title is required")
+
+    result = await db.execute(
+        select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == user.id)
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    session.title = title[:500]
     await db.commit()
     await db.refresh(session)
     return ChatSessionResponse(
@@ -438,7 +493,7 @@ async def chat(
         session = ChatSession(
             user_id=user.id,
             agent_id=agent.id,
-            title=effective_message[:60] + ("..." if len(effective_message) > 60 else ""),
+            title=_auto_session_title(effective_message, attachments),
         )
         db.add(session)
         await db.flush()  # получаем session.id без commit
