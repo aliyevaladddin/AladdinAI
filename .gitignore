@@ -115,3 +115,5 @@ backend/native/aladdin-*
 backend/guacamole-config/user-mapping.xml
 backend/guacamole-config/guacamole.properties
 RCF-AUDIT-REPORT.json
+# git filter-branch temp leftovers
+.git-rewrite/
