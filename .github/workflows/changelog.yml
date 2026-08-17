@@ -39,8 +39,10 @@ jobs:
 
       - name: Commit and create PR
         run: |
-          git config user.name "AladdinAI[bot]"
-          git config user.email "AladdinAI[bot]@users.noreply.github.com"
+          # Correct noreply format is required for attribution:
+          # {numeric_id}+{login}@users.noreply.github.com
+          git config user.name "aladdinai-bot[bot]"
+          git config user.email "288494217+aladdinai-bot[bot]@users.noreply.github.com"
 
           # Check if there are changes
           git add CHANGELOG.md
