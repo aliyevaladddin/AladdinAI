@@ -99,6 +99,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add JSONL export of the golden set for fine-tuning (#579) ([cfbe0b9](https://github.com/aliyevaladddin/AladdinAI/commit/cfbe0b9eb4aafa132cdd69a301cd9a257b6236a4))
 
+- Pluggable image-gen backends, transport retries, attachment dedupe (#612) ([d0a8958](https://github.com/aliyevaladddin/AladdinAI/commit/d0a8958bb40f443a62a43638755abe74eb7c601f))
+
 
 ### Maintenance
 
@@ -183,6 +185,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update frontend dependencies in package-lock.json ([f3190cc](https://github.com/aliyevaladddin/AladdinAI/commit/f3190cc51b99a57588f062307636213ddfaa0ac6))
 
 - Update lockfile dependencies for frontend project ([e22a882](https://github.com/aliyevaladddin/AladdinAI/commit/e22a882453ef9f604959df314211bcb0c71064fa))
+
+- Update changelog [skip ci] (#611) ([5e474a3](https://github.com/aliyevaladddin/AladdinAI/commit/5e474a3e70dd6fa5e048d22f0309b37a95606ae4))
 
 ## [v2.2.3] - 2026-07-22
 
