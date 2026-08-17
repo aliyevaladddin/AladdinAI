@@ -101,6 +101,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Pluggable image-gen backends, transport retries, attachment dedupe (#612) ([d0a8958](https://github.com/aliyevaladddin/AladdinAI/commit/d0a8958bb40f443a62a43638755abe74eb7c601f))
 
+- Implement full-screen image lightbox and hover interaction cards for attachments ([f484352](https://github.com/aliyevaladddin/AladdinAI/commit/f4843529824d0cf6875f5519e21ac89807dd8205))
+
 
 ### Maintenance
 
@@ -187,6 +189,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update lockfile dependencies for frontend project ([e22a882](https://github.com/aliyevaladddin/AladdinAI/commit/e22a882453ef9f604959df314211bcb0c71064fa))
 
 - Update changelog [skip ci] (#611) ([5e474a3](https://github.com/aliyevaladddin/AladdinAI/commit/5e474a3e70dd6fa5e048d22f0309b37a95606ae4))
+
+- Update changelog [skip ci] (#613) ([90d18cf](https://github.com/aliyevaladddin/AladdinAI/commit/90d18cf73462f20df50dca202c93c0fee315e484))
 
 ## [v2.2.3] - 2026-07-22
 
