@@ -33,13 +33,17 @@ Order  (status, total, currency, contact, source, campaign, assigned_agent)
 OrderItem  (product_name, quantity, unit_price, line_total)
 ```
 
-Two design choices worth knowing:
+Three design choices worth knowing:
 
 - **`total` is computed, never set by hand.** It is the sum of every line's
   `line_total` and is recomputed automatically whenever items change.
 - **Line items snapshot the product.** When an item is created it copies the
   product's `name` and `price` into the line. Editing the catalog later
   (e.g. raising a price) **never rewrites an order that was already placed**.
+- **Deleting a catalog product never touches placed orders.** Order lines hold
+  the product reference only for convenience; when a product is deleted the
+  reference is detached (`order_items.product_id` → `null`) and the line keeps
+  its snapshotted name and price. Deletion is therefore always safe.
 
 ## 🔄 Order status lifecycle
 
@@ -73,6 +77,10 @@ Full request/response schemas live in the [API reference](../API.md). Summary:
 | `DELETE` | `/api/crm/products/{id}` | Delete a product |
 
 SKU is unique **per user**.
+
+`DELETE` on a product that appears in placed orders does not fail and does not
+rewrite those orders: the line items are detached from the catalog entry and
+keep their snapshotted name/price (see the data model above).
 
 ### Orders — `/api/crm/orders`
 
@@ -117,6 +125,28 @@ Then advance it:
 curl -X PUT "http://localhost:8000/api/crm/orders/45/status?status=processing" \
   -H "Authorization: Bearer $TOKEN"
 ```
+
+### Deals — `/api/crm/deals`
+
+Deals are the pipeline half of sales (see [Deal vs Order](#-deal-vs-order)).
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/crm/deals` | List deals (`?stage=`) |
+| `POST` | `/api/crm/deals` | Create a deal |
+| `GET` | `/api/crm/deals/{id}` | Get one deal |
+| `PUT` | `/api/crm/deals/{id}` | Update a deal |
+| `DELETE` | `/api/crm/deals/{id}` | Delete a deal |
+| `PUT` | `/api/crm/deals/{id}/stage?stage=` | Move the deal to another stage |
+
+Stages: `lead → qualified → proposal → negotiation → won / lost`. Unlike order
+statuses, stages are **not** a strict graph — any stage value from the list is
+accepted in one move. Every stage change is logged to the CRM activity
+timeline, and `pipeline_value` / `funnel` / `win_rate` in the metrics below are
+computed from deals.
+
+An order may reference the deal it came from via `deal_id`, but the link is
+manual and optional — winning a deal never creates an order by itself.
 
 ## 📊 Sales & marketing metrics
 
@@ -163,12 +193,32 @@ See [Tool Development](TOOL_DEVELOPMENT.md) for how the tool registry works.
 
 ## 🖥️ Frontend
 
-The dashboard page lives at **`/dashboard/orders`**:
+The dashboard page lives at **`/dashboard/orders`** and is split into two
+tabs:
+
+### Orders tab
 
 - A metrics band (realized revenue, booked revenue, open pipeline, order count)
-- A create form (pick a customer, add product + quantity rows, set source/campaign)
+- A create form (pick a customer, add product + quantity rows, set
+  source/campaign). The product dropdown lists **active** catalog products
+  only; if there are none, the form points you to the Product Catalog tab
 - A per-order status dropdown that only offers **legal next-states**
 - A "My orders" filter (orders that have an assigned agent)
+
+### Product Catalog tab
+
+Full CRUD over the catalog without leaving the page
+(`ProductsCatalog.tsx`):
+
+- Instant client-side search by SKU or name
+- Add/edit form (SKU, name, price, currency, description, active flag) with
+  inline validation; backend errors — e.g. a duplicate SKU — surface inside
+  the form instead of a raw alert
+- Row actions: edit, activate/deactivate, delete. Deactivating hides the
+  product from new orders while keeping history intact; deleting asks for
+  confirmation and detaches the product from order lines (their snapshots
+  survive — see the data model above)
+- Active/Inactive badge per row; inactive rows are dimmed
 
 ## 🗄️ Migration
 
