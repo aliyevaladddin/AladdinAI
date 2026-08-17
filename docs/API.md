@@ -838,6 +838,30 @@ Create Session
 
 ### /api/chat/sessions/{session_id}
 
+#### PATCH
+##### Summary:
+
+Rename Session
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| session_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 #### DELETE
 ##### Summary:
 
