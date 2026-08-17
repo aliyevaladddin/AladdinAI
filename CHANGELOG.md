@@ -90,6 +90,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#582) ([d2a5d0c](https://github.com/aliyevaladddin/AladdinAI/commit/d2a5d0c9d84a488215fb679e692bd3511a49498b))
 
+- Update API documentation [skip ci] (#621) ([25a2256](https://github.com/aliyevaladddin/AladdinAI/commit/25a2256e4114ea2e8264fb937e680e9332726396))
+
 
 ### Features
 
@@ -106,6 +108,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Implement full-screen image lightbox and hover interaction cards for attachments ([f484352](https://github.com/aliyevaladddin/AladdinAI/commit/f4843529824d0cf6875f5519e21ac89807dd8205))
 
 - Rename, regenerate, smart scroll, drafts, auto-titles (#619) ([d7df18f](https://github.com/aliyevaladddin/AladdinAI/commit/d7df18f2d7e5f016960e033fd54d3a6aa2d3320c))
+
+- Product catalog UI and safe product delete (#622) ([3dc7ea7](https://github.com/aliyevaladddin/AladdinAI/commit/3dc7ea79fa683b7b7f90983bd0042605afedfed3))
 
 
 ### Maintenance
@@ -203,6 +207,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump frontend version to 2.2.3 ([12dabc3](https://github.com/aliyevaladddin/AladdinAI/commit/12dabc3f2293d87d488461ca17093d9ad4f672af))
 
 - Update changelog [skip ci] (#618) ([0e19681](https://github.com/aliyevaladddin/AladdinAI/commit/0e196812517a9b10705f7b82d12d4bd5049146e5))
+
+- Update changelog [skip ci] (#620) ([ca4296b](https://github.com/aliyevaladddin/AladdinAI/commit/ca4296bf71a20355cfbb9c67752dcacf70fbe817))
 
 ## [v2.2.3] - 2026-07-22
 
