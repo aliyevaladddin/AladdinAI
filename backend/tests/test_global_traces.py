@@ -4,7 +4,6 @@
 - GET /api/traces — list traces across all agents, agent filter, outcome filter,
   pagination, agent name enrichment
 """
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from tests.test_agent_traces import _AsyncCursor, _trace_doc
