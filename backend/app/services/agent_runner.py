@@ -44,6 +44,8 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "run_python_code", "execute_terminal_command", "read_excel", "write_excel", "create_reminder",
         # Read-only order visibility for every agent.
         "list_orders", "get_order_summary", "get_sales_metrics",
+        # Outgoing webhooks (e.g. Zapier): agents can see and fire them.
+        "list_webhooks", "send_webhook",
     ],
     # A sales agent can also mutate the order book and catalog.
     "sales": [
@@ -54,6 +56,7 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "run_python_code", "execute_terminal_command", "read_excel", "write_excel", "create_reminder",
         "list_orders", "get_order_summary", "get_sales_metrics",
         "create_order", "update_order_status", "create_product",
+        "list_webhooks", "send_webhook",
     ],
 }
 
