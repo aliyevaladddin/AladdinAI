@@ -4,6 +4,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 import asyncssh
 from sqlalchemy import select
+
+from app.services.ssh_known_hosts import resolve_known_hosts
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.crypto import decrypt
 from app.database import async_session
@@ -84,7 +86,7 @@ async def deploy_service(
         "host": vm.host,
         "port": vm.port,
         "username": vm.username,
-        "known_hosts": None
+        "known_hosts": resolve_known_hosts()
     }
 # [RCF:PROTECTED]
     # Note: Use vm.password_encrypted if needed as per main.py

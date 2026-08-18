@@ -16,6 +16,7 @@ from app.crypto import decrypt
 from app.database import async_session
 from app.models.vm import VMConnection
 from app.security import get_current_user_ws
+from app.services.ssh_known_hosts import resolve_known_hosts
 
 log = logging.getLogger(__name__)
 
@@ -186,7 +187,7 @@ async def terminal_websocket(websocket: WebSocket, vm_id: int):
                 "host": vm.host,
                 "port": vm.port,
                 "username": vm.username,
-                "known_hosts": None,
+                "known_hosts": resolve_known_hosts(),
                 "connect_timeout": 30,
             }
 # [RCF:PROTECTED]

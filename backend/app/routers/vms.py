@@ -1,6 +1,8 @@
 # NOTICE: This file is protected under RCF-PL
 import asyncssh
 import logging
+
+from app.services.ssh_known_hosts import resolve_known_hosts
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,7 +62,7 @@ async def connect_vm(vm_id: int, user: User = Depends(get_current_user), db: Asy
         "host": vm.host,
         "port": vm.port,
         "username": vm.username,
-        "known_hosts": None,
+        "known_hosts": resolve_known_hosts(),
         "connect_timeout": 10,
     }
 
