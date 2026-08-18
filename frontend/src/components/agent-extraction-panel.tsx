@@ -167,7 +167,7 @@ export function AgentExtractionPanel({
               checked={cfg.enabled}
               onChange={(e) => toggleEnabled(e.target.checked)}
             />
-            <div className="w-9 h-5 bg-zinc-700 peer-checked:bg-green-500 rounded-full relative transition">
+            <div className="w-9 h-5 bg-muted peer-checked:bg-success rounded-full relative transition">
               <div
                 className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${cfg.enabled ? "translate-x-4" : ""
                   }`}

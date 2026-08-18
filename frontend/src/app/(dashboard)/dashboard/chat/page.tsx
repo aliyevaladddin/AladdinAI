@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef, FormEvent, MouseEvent, KeyboardEvent } from "react";
+import React, { useEffect, useState, useRef, useCallback, FormEvent, MouseEvent, KeyboardEvent } from "react";
 import { api, API_URL } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,11 @@ import { VoicePlayer } from "./VoicePlayer";
 import { AuthAttachment } from "./AuthAttachment";
 import { ChatSidebar, Agent, Session } from "./ChatSidebar";
 import { ChatMessageItem, Message, Attachment } from "./ChatMessageItem";
+
+// Stable client-side ids for optimistic messages (no server id yet). Keys built
+// from these stay stable across stream frames, so React can reuse DOM nodes.
+let clientMsgSeq = 0;
+const nextClientId = (): string => `c-${++clientMsgSeq}`;
 
 export default function ChatPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -58,6 +63,13 @@ export default function ChatPage() {
   const audioChunksRef = useRef<Blob[]>([]);
   const timerIntervalRef = useRef<any>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Keep the latest feedback map in a ref so sendFeedback stays referentially
+  // stable (it must not invalidate the memoized ChatMessageItem list).
+  const feedbackRef = useRef<Record<number, string>>({});
+  useEffect(() => {
+    feedbackRef.current = feedback;
+  }, [feedback]);
 
   const handleStopStreaming = () => {
     if (abortControllerRef.current) {
@@ -206,12 +218,12 @@ export default function ChatPage() {
     }
   };
 
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     const data = await api.get<Session[]>("/chat/sessions");
     setSessions(data);
-  };
+  }, []);
 
-  const openSession = async (session: Session): Promise<void> => {
+  const openSession = useCallback(async (session: Session): Promise<void> => {
     saveDraft(currentDraftKey(), input);
     setIsGeneralChat(false);
     setComposingNew(false);
@@ -232,7 +244,7 @@ export default function ChatPage() {
     } finally {
       setLoadingMessages(false);
     }
-  };
+  }, [input, activeSession, isGeneralChat]);
 
   const startNewChatWithAgent = (agentId: number) => {
     saveDraft(currentDraftKey(), input);
@@ -246,7 +258,7 @@ export default function ChatPage() {
     setShowScrollDown(false);
   };
 
-  const newChat = () => {
+  const newChat = useCallback(() => {
     saveDraft(currentDraftKey(), input);
     setIsGeneralChat(false);
     setActiveSession(null);
@@ -256,9 +268,9 @@ export default function ChatPage() {
     setSelectedAgentId(agents[0] ? String(agents[0].id) : "1");
     stickToBottomRef.current = true;
     setShowScrollDown(false);
-  };
+  }, [agents, input, activeSession, isGeneralChat]);
 
-  const openGeneralChat = () => {
+  const openGeneralChat = useCallback(() => {
     saveDraft(currentDraftKey(), input);
     setIsGeneralChat(true);
     setComposingNew(false);
@@ -268,9 +280,9 @@ export default function ChatPage() {
     setSelectedAgentId("unified");
     stickToBottomRef.current = true;
     setShowScrollDown(false);
-  };
+  }, [input, activeSession, isGeneralChat]);
 
-  const deleteSession = async (id: number, e: MouseEvent): Promise<void> => {
+  const deleteSession = useCallback(async (id: number, e: MouseEvent): Promise<void> => {
     e.stopPropagation();
     if (!confirm("Delete this chat?")) return;
     await api.delete(`/chat/sessions/${id}`);
@@ -281,9 +293,9 @@ export default function ChatPage() {
       // ignore
     }
     loadSessions();
-  };
+  }, [activeSession, newChat, loadSessions]);
 
-  const renameSession = async (id: number, title: string): Promise<void> => {
+  const renameSession = useCallback(async (id: number, title: string): Promise<void> => {
     try {
       const updated = await api.patch<Session>(`/chat/sessions/${id}`, { title });
       setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, title: updated.title } : s)));
@@ -293,7 +305,7 @@ export default function ChatPage() {
     } catch (err) {
       console.error("Failed to rename session:", err);
     }
-  };
+  }, [activeSession]);
 
   const handleAttachClick = () => {
     if (uploading) return;
@@ -352,7 +364,7 @@ export default function ChatPage() {
     setPendingAttachments((prev) => prev.filter((a) => a.filename !== filename));
   };
 
-  const copyToClipboard = async (code: string) => {
+  const copyToClipboard = useCallback(async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
       setCopiedCode(code);
@@ -360,7 +372,21 @@ export default function ChatPage() {
     } catch (err) {
       console.error("Failed to copy:", err);
     }
-  };
+  }, []);
+
+  const editPrompt = useCallback((text: string) => {
+    setInput(text);
+    textareaRef.current?.focus();
+  }, []);
+
+  const selectSuggestion = useCallback((sug: string) => {
+    setInput(sug);
+    textareaRef.current?.focus();
+  }, []);
+
+  const toggleSidebarCollapse = useCallback(() => {
+    setSidebarCollapsed((c) => !c);
+  }, []);
 
   const submitMessage = async (text: string, atts: Attachment[]): Promise<void> => {
     const sentAttachments = atts;
@@ -368,6 +394,7 @@ export default function ChatPage() {
       role: "user",
       content: text,
       attachments: sentAttachments.length ? sentAttachments : null,
+      clientId: nextClientId(),
     };
     setMessages((prev: Message[]) => [...prev, userMsg]);
     const sentInput = text;
@@ -450,6 +477,7 @@ export default function ChatPage() {
                     content: streamedReply,
                     model: event.model || null,
                     thoughts: [...activeThoughts],
+                    clientId: nextClientId(),
                   },
                 ]);
                 lastStreamFrameTime = now;
@@ -567,24 +595,36 @@ export default function ChatPage() {
     void submitMessage(lastUser.content, []);
   };
 
-  const sendFeedback = async (messageId: number, type: "thumbs_up" | "thumbs_down") => {
-    const previous = feedback[messageId];
-    setFeedback((prev) => ({ ...prev, [messageId]: type }));
-    try {
-      await api.post(`/chat/messages/${messageId}/feedback`, { value: type });
-    } catch (err) {
-      // Roll the highlight back: a rating that never reached the server must not
-      // look recorded. This is the labeling signal the forging loop trains on,
-      // so a button that lies about it costs real data.
-      setFeedback((prev) => {
-        const next = { ...prev };
-        if (previous) next[messageId] = previous;
-        else delete next[messageId];
-        return next;
-      });
-      console.error("Failed to post feedback:", err);
-    }
-  };
+  // Latest-ref pattern: regenerateLast reads messages/loading, which change on
+  // every stream frame, so we hand a stable wrapper to the memoized list and
+  // always call the freshest implementation.
+  const regenerateRef = useRef<() => void>(() => {});
+  regenerateRef.current = regenerateLast;
+  const stableRegenerate = useCallback(() => {
+    regenerateRef.current();
+  }, []);
+
+  const sendFeedback = useCallback(
+    async (messageId: number, type: "thumbs_up" | "thumbs_down") => {
+      const previous = feedbackRef.current[messageId];
+      setFeedback((prev) => ({ ...prev, [messageId]: type }));
+      try {
+        await api.post(`/chat/messages/${messageId}/feedback`, { value: type });
+      } catch (err) {
+        // Roll the highlight back: a rating that never reached the server must
+        // not look recorded. This is the labeling signal the forging loop
+        // trains on, so a button that lies about it costs real data.
+        setFeedback((prev) => {
+          const next = { ...prev };
+          if (previous) next[messageId] = previous;
+          else delete next[messageId];
+          return next;
+        });
+        console.error("Failed to post feedback:", err);
+      }
+    },
+    []
+  );
 
   const exportChat = () => {
     if (!messages.length) return;
@@ -606,14 +646,14 @@ export default function ChatPage() {
     URL.revokeObjectURL(url);
   };
 
-  const formatTime = (ts?: string) => {
+  const formatTime = useCallback((ts?: string) => {
     if (!ts) return "";
     try {
       return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     } catch {
       return "";
     }
-  };
+  }, []);
 
   return (
     <div
@@ -644,7 +684,7 @@ export default function ChatPage() {
         selectedAgentId={selectedAgentId}
         isGeneralChat={isGeneralChat}
         onSetSidebarOpen={setSidebarOpen}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onToggleCollapse={toggleSidebarCollapse}
         onSetSessionQuery={setSessionQuery}
         onNewChat={newChat}
         onOpenGeneralChat={openGeneralChat}
@@ -745,7 +785,7 @@ export default function ChatPage() {
                 ) : (
                   messages.map((msg, i) => (
                     <ChatMessageItem
-                      key={i}
+                      key={msg.clientId ?? msg.id ?? i}
                       msg={msg}
                       index={i}
                       isLast={i === messages.length - 1}
@@ -753,16 +793,10 @@ export default function ChatPage() {
                       copiedCode={copiedCode}
                       feedback={feedback}
                       onCopy={copyToClipboard}
-                      onEditPrompt={(text) => {
-                        setInput(text);
-                        textareaRef.current?.focus();
-                      }}
+                      onEditPrompt={editPrompt}
                       onSendFeedback={sendFeedback}
-                      onRegenerate={regenerateLast}
-                      onSelectSuggestion={(sug) => {
-                        setInput(sug);
-                        textareaRef.current?.focus();
-                      }}
+                      onRegenerate={stableRegenerate}
+                      onSelectSuggestion={selectSuggestion}
                       formatTime={formatTime}
                     />
                   ))

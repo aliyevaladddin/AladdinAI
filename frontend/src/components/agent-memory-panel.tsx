@@ -202,8 +202,8 @@ export function AgentMemoryPanel({ agentId }: { agentId: number }) {
               <div className="flex items-center gap-2">
                 <span
                   className={`px-1.5 rounded ${m.visibility === "shared"
-                      ? "bg-blue-500/20 text-blue-400"
-                      : "bg-zinc-500/20 text-zinc-400"
+                      ? "bg-info-soft text-info"
+                      : "bg-muted text-muted-foreground"
                     }`}
                 >
                   {m.visibility}

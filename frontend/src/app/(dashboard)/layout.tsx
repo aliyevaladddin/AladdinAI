@@ -8,7 +8,7 @@ import { Toaster } from "sonner";
 
 import { AppShell } from "@/components/shell/AppShell";
 import { ActivityBar } from "@/components/shell/ActivityBar";
-import { StatusBar } from "@/components/shell/StatusBar";
+import { LiveStatusBar } from "@/components/shell/LiveStatusBar";
 import { DASHBOARD_PRIMARY, DASHBOARD_FOOTER } from "@/components/shell/dashboard-nav";
 import { DashboardTitlebarRight } from "@/components/shell/DashboardTitlebarRight";
 import { TerminalProvider } from "@/components/terminal/TerminalProvider";
@@ -52,7 +52,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             dividerAfter={5}
           />
         }
-        status={<StatusBar rightExtra={<TerminalLauncherButton />} />}
+        status={<LiveStatusBar rightExtra={<TerminalLauncherButton />} />}
         bodyOverlay={<TerminalDrawer />}
       >
         <main className="h-full overflow-y-auto px-8 py-6 smooth-fade-in">{children}</main>

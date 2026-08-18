@@ -34,11 +34,11 @@ const TYPE_ICONS: Record<string, any> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  task: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-  action: "text-green-400 bg-green-500/10 border-green-500/20",
-  gate_allow: "text-green-400 bg-green-500/10 border-green-500/20",
-  gate_block: "text-red-400 bg-red-500/10 border-red-500/20",
-  trigger: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  task: "text-info bg-info-soft border-info/20",
+  action: "text-success bg-success-soft border-success/20",
+  gate_allow: "text-success bg-success-soft border-success/20",
+  gate_block: "text-danger bg-danger-soft border-danger/20",
+  trigger: "text-primary bg-primary/10 border-primary/20",
 };
 
 

@@ -9,7 +9,8 @@ import { AgentGatesPanel } from "@/components/agent-gates-panel";
 import { AgentSafetyPanel } from "@/components/agent-safety-panel";
 import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
 import { AgentMemoryPanel } from "@/components/agent-memory-panel";
-import { ChevronRight, Trash2 } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Bot, ChevronRight, Trash2 } from "lucide-react";
 
 
 interface Agent {
@@ -31,11 +32,11 @@ interface Provider {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  running: "bg-green-500/20 text-green-400",
-  active: "bg-green-500/20 text-green-400",
-  stopped: "bg-zinc-500/20 text-zinc-400",
-  idle: "bg-zinc-500/20 text-zinc-400",
-  error: "bg-red-500/20 text-red-400",
+  running: "bg-success-soft text-success",
+  active: "bg-success-soft text-success",
+  stopped: "bg-muted text-muted-foreground",
+  idle: "bg-muted text-muted-foreground",
+  error: "bg-danger-soft text-danger",
 };
 
 export default function AgentsPage() {
@@ -142,14 +143,16 @@ export default function AgentsPage() {
           ))}
         </div>
       ) : agents.length === 0 ? (
-        <div className="rounded-lg border border-border p-8 text-center">
-          <p className="text-muted-foreground text-sm mb-4">
-            No agents yet. Create one to start orchestrating tasks.
-          </p>
-          <Link href="/dashboard/agents/new">
-            <Button>Create your first agent</Button>
-          </Link>
-        </div>
+        <EmptyState
+          icon={<Bot size={36} />}
+          title="No agents yet"
+          description="Create one to start orchestrating tasks."
+          action={
+            <Link href="/dashboard/agents/new">
+              <Button>Create your first agent</Button>
+            </Link>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {agents.map((a) => {

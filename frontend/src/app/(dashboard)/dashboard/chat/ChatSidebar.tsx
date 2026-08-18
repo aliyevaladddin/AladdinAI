@@ -1,6 +1,6 @@
 "use client";
 
-import React, { MouseEvent, useState } from "react";
+import React, { MouseEvent, useState, useMemo } from "react";
 import {
   MessageSquare,
   Plus,
@@ -46,7 +46,7 @@ interface ChatSidebarProps {
   onSelectAgent: (agentId: string) => void;
 }
 
-export function ChatSidebar({
+export const ChatSidebar = React.memo(function ChatSidebar({
   sidebarOpen,
   sidebarCollapsed,
   sessions,
@@ -65,8 +65,9 @@ export function ChatSidebar({
   onRenameSession,
   onSelectAgent,
 }: ChatSidebarProps) {
-  const filteredSessions = sessions.filter((s) =>
-    s.title.toLowerCase().includes(sessionQuery.toLowerCase())
+  const filteredSessions = useMemo(
+    () => sessions.filter((s) => s.title.toLowerCase().includes(sessionQuery.toLowerCase())),
+    [sessions, sessionQuery]
   );
 
   const [renamingId, setRenamingId] = useState<number | null>(null);
@@ -250,4 +251,4 @@ export function ChatSidebar({
       </aside>
     </>
   );
-}
+});
