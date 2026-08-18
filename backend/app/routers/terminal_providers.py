@@ -19,8 +19,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-log = logging.getLogger(__name__)
-
 import yaml
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select, update
@@ -51,6 +49,8 @@ from app.services.terminal_token_broker import (
     peek_token,
     verify_session_cookie,
 )
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Terminal"])
 
