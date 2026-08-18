@@ -1,7 +1,7 @@
 # NOTICE: This file is protected under RCF-PL
-"""Tests for outgoing webhooks: CRUD, event fan-out, unsigned (Zapier-style)
-delivery, RCF-signed delivery, contact_created wiring, and the agent tools
-list_webhooks / send_webhook.
+"""Tests for outgoing webhooks: CRUD + partial update, test-delivery endpoint,
+event fan-out, unsigned (Zapier-style) delivery, RCF-signed delivery,
+contact_created wiring, and the agent tools list_webhooks / send_webhook.
 """
 import asyncio
 
