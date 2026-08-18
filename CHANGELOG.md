@@ -8,6 +8,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - VoicePlayer tokens, terminal TabBar, code block hex, reports colors, blob cache ([5c1c452](https://github.com/aliyevaladddin/AladdinAI/commit/5c1c4523db4be2a6864285087446f644bf7137ef))
 
+- Remove false positive CodeQL URL-substring warning in test ([dbe68a6](https://github.com/aliyevaladddin/AladdinAI/commit/dbe68a683b604b21412a55af29b17211fb369198))
+
 
 ### Documentation
 
@@ -44,6 +46,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#649) ([3dedc75](https://github.com/aliyevaladddin/AladdinAI/commit/3dedc754a52d57eb55546d65a8bcac4f71abb1d0))
 
 - Update changelog [skip ci] (#652) ([e0a0a6c](https://github.com/aliyevaladddin/AladdinAI/commit/e0a0a6c34d17dd6ea191eaab8376a2e31a5f5219))
+
+- Update changelog [skip ci] (#653) ([91c4f05](https://github.com/aliyevaladddin/AladdinAI/commit/91c4f05946aa6fbc26e957ac7650ed550f80778a))
 
 ## [v2.2.4] - 2026-08-18
 
