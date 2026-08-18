@@ -19,6 +19,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#650) ([e4637fe](https://github.com/aliyevaladddin/AladdinAI/commit/e4637feb0c7dc0245b71e10e9ba12a37543d521a))
 
+- Add agent sandbox architecture guide ([f24c117](https://github.com/aliyevaladddin/AladdinAI/commit/f24c1178d72380f95369b40945a3f7d132da5350))
+
 
 ### Features
 
@@ -40,6 +42,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#646) ([4fad802](https://github.com/aliyevaladddin/AladdinAI/commit/4fad802fef3574f9e4f504a808c7ae5062c474d1))
 
 - Update changelog [skip ci] (#649) ([3dedc75](https://github.com/aliyevaladddin/AladdinAI/commit/3dedc754a52d57eb55546d65a8bcac4f71abb1d0))
+
+- Update changelog [skip ci] (#652) ([e0a0a6c](https://github.com/aliyevaladddin/AladdinAI/commit/e0a0a6c34d17dd6ea191eaab8376a2e31a5f5219))
 
 ## [v2.2.4] - 2026-08-18
 
