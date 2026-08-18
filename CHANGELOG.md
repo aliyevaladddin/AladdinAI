@@ -4,6 +4,17 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Features
+
+- Per-turn agent trace view in the UI (#637) ([2253c23](https://github.com/aliyevaladddin/AladdinAI/commit/2253c2333c9e1f54868c1878281893c8debb980c))
+
+
+### Maintenance
+
+- Bump version to 2.2.4 and update deps [skip ci] ([b316572](https://github.com/aliyevaladddin/AladdinAI/commit/b316572996e5eaef139c2334a14c3b44bb59f159))
+
+## [v2.2.4] - 2026-08-18
+
 ### Bug Fixes
 
 - Update package overrides for axios, ws, uuid and hono node-server ([f468d5e](https://github.com/aliyevaladddin/AladdinAI/commit/f468d5ebbcc9365208ad37b2b61031d734acfbce))
@@ -95,6 +106,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update API documentation [skip ci] (#582) ([78b90b3](https://github.com/aliyevaladddin/AladdinAI/commit/78b90b3f7040f9816e2fd19ea278832fcad66419))
 
 - Update API documentation [skip ci] (#621) ([84e86bb](https://github.com/aliyevaladddin/AladdinAI/commit/84e86bbe9a48d2da6ea9c6371af1a8a65d593831))
+
+- Update API documentation [skip ci] (#636) ([1f942c9](https://github.com/aliyevaladddin/AladdinAI/commit/1f942c94019fe00e7a073ac92ac431392a0112cf))
 
 
 ### Features
@@ -227,6 +240,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog after history rewrite [skip ci] (#631) ([011a994](https://github.com/aliyevaladddin/AladdinAI/commit/011a994ce67c45bf7d8f2e797d4c25da700932b1))
 
 - Update changelog [skip ci] (#633) ([2991897](https://github.com/aliyevaladddin/AladdinAI/commit/2991897c6f5fb791265fa9dbeb936476c81418c2))
+
+- Update changelog [skip ci] (#635) ([c94fa59](https://github.com/aliyevaladddin/AladdinAI/commit/c94fa59a269ca9f85fe21448b65f215dd228c319))
 
 ## [v2.2.3] - 2026-07-22
 
