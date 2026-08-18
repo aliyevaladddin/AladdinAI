@@ -257,7 +257,7 @@ npx aladdin-ai logs -f backend     # backend only
 npx aladdin-ai logs -f frontend    # frontend only
 ```
 
-Every agent turn is traceable: memory reads, gate decisions, tool calls, and model latency are logged to the backend. Use `GET /api/agents/{agent_id}/gate-logs` to pull structured decision logs per agent.
+Every agent turn is traceable: memory reads, gate decisions, tool calls, and model latency are logged to the backend. Use `GET /api/agents/{agent_id}/gates/log` for structured gate decisions, or open the **Traces** tab on an agent page for a full per-turn view (input, tool calls, iterations, outcome, reward). Raw turn traces are also available via `GET /api/agents/{agent_id}/traces`.
 
 ### Upgrades
 

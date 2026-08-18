@@ -24,6 +24,8 @@ from app.services import gate_log, memory as memory_service
 from app.services.agent_runner import run_agent
 from app.services.llm_service import LLMError
 from app.services.memory import MemoryError as MemoryServiceError
+from app.services.memory import get_mongo_db
+from app.services.tracing import TRACE_COLLECTION
 from app.services.recommended_models import (
     resolve_extraction as resolve_extraction_recs,
     resolve_gates as resolve_gates_recs,
@@ -984,5 +986,104 @@ async def _process_agent_message(message_id: int) -> None:
             "_process_agent_message: notification failed for msg %s (non-fatal)",
             message_id,
         )
+
+
+# [RCF:PROTECTED]
+async def _get_agent_or_404(db: AsyncSession, user_id: int, agent_id: int) -> Agent:
+    """Fetch an agent scoped to the user, or 404."""
+    agent = (await db.execute(
+        select(Agent).where(Agent.id == agent_id, Agent.user_id == user_id)
+    )).scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return agent
+
+
+# [RCF:PROTECTED]
+async def _mongo_for_user(db: AsyncSession, user_id: int):
+    """Return the user's Mongo handle or raise a friendly 400."""
+    try:
+        return await get_mongo_db(db, user_id)
+    except MemoryServiceError:
+        raise HTTPException(
+            status_code=400,
+            detail="No MongoDB cluster configured for this user — connect one first.",
+        )
+
+
+# [RCF:PROTECTED]
+def _serialise_trace(doc: dict[str, Any]) -> dict[str, Any]:
+    """Normalise a raw agent_traces doc for the API (ObjectId/datetime-safe)."""
+    out: dict[str, Any] = {}
+    for k, v in doc.items():
+        if k == "_id":
+            out["id"] = str(v)
+        elif isinstance(v, datetime):
+            out[k] = v.isoformat()
+        else:
+            out[k] = v
+    return out
+
+
+# [RCF:PROTECTED]
+@router.get("/{agent_id}/traces")
+# [RCF:PROTECTED]
+async def list_agent_traces(
+    agent_id: int,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    outcome: str | None = Query(default=None),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List agent turn traces (newest first) — the raw material of Self-Forging.
+
+    Returns summaries without the full `messages` array (which can be large);
+    fetch an individual trace by id for the full conversation and tool calls.
+    """
+    await _get_agent_or_404(db, user.id, agent_id)
+    mdb = await _mongo_for_user(db, user.id)
+
+    query: dict[str, Any] = {"user_id": user.id, "agent_id": agent_id}
+    if outcome:
+        query["outcome"] = outcome
+
+    collection = mdb[TRACE_COLLECTION]
+    total = await collection.count_documents(query)
+    cursor = (
+        collection.find(query, projection={"messages": 0})
+        .sort("created_at", -1)
+        .skip(offset)
+        .limit(limit)
+    )
+    items = [_serialise_trace(doc) async for doc in cursor]
+    return {"total": total, "offset": offset, "limit": limit, "items": items}
+
+
+# [RCF:PROTECTED]
+@router.get("/{agent_id}/traces/{trace_id}")
+# [RCF:PROTECTED]
+async def get_agent_trace(
+    agent_id: int,
+    trace_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return a single trace with full messages and tool calls."""
+    await _get_agent_or_404(db, user.id, agent_id)
+    mdb = await _mongo_for_user(db, user.id)
+
+    try:
+        from bson import ObjectId
+        oid = ObjectId(trace_id)
+    except Exception:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail="Invalid trace id")
+
+    doc = await mdb[TRACE_COLLECTION].find_one(
+        {"_id": oid, "user_id": user.id, "agent_id": agent_id}
+    )
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Trace not found")
+    return _serialise_trace(doc)
 
 
