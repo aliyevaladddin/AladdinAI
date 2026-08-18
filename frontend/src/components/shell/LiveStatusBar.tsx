@@ -53,12 +53,6 @@ function liveItems(stats: StatsResponse | null, reached: boolean): StatusItem[] 
       label: "Channels",
       code: channelsErr > 0 ? `${channelsOk} ok · ${channelsErr} err` : `${channelsOk} ok`,
     },
-    {
-      id: "gates",
-      dot: "info",
-      label: "Gates 24h",
-      code: `${gatePass} pass · ${gateBlock} block`,
-    },
     { id: "rcf", dot: "violet", label: "RCF", code: "chain", variant: "rcf" as const },
   ];
 }
