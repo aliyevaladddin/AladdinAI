@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import ReactMarkdown from "react-markdown";
+import React, { useMemo } from "react";
+import ReactMarkdown, { Components } from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import {
@@ -27,6 +27,7 @@ export interface Attachment {
 
 export interface Message {
   id?: number;
+  clientId?: string;
   role: "user" | "assistant";
   content: string;
   model?: string | null;
@@ -46,11 +47,13 @@ const MemoizedCodeBlock = React.memo(function MemoizedCodeBlock({
   codeString,
   isCopied,
   onCopy,
+  streaming,
 }: {
   language: string;
   codeString: string;
   isCopied: boolean;
   onCopy: (code: string) => void;
+  streaming?: boolean;
 }) {
   return (
     <div className="relative group my-3 not-prose">
@@ -63,14 +66,23 @@ const MemoizedCodeBlock = React.memo(function MemoizedCodeBlock({
           {isCopied ? <Check size={14} /> : <Copy size={14} />}
         </button>
       </div>
-      <SyntaxHighlighter
-        style={oneDark}
-        language={language}
-        PreTag="div"
-        className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
-      >
-        {codeString}
-      </SyntaxHighlighter>
+      {streaming ? (
+        /* While the block is still streaming, skip Prism highlighting (the code
+           grows every frame) and render a plain <pre>; one highlight pass runs
+           when the stream finishes. */
+        <pre className="rounded-xl !mt-0 !mb-0 overflow-x-auto !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm p-4 text-[13px] font-mono text-foreground">
+          {codeString}
+        </pre>
+      ) : (
+        <SyntaxHighlighter
+          style={oneDark}
+          language={language}
+          PreTag="div"
+          className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
+        >
+          {codeString}
+        </SyntaxHighlighter>
+      )}
     </div>
   );
 });
@@ -193,7 +205,7 @@ interface ChatMessageItemProps {
   formatTime: (ts?: string) => string;
 }
 
-export function ChatMessageItem({
+export const ChatMessageItem = React.memo(function ChatMessageItem({
   msg,
   index,
   isLast,
@@ -207,6 +219,46 @@ export function ChatMessageItem({
   onSelectSuggestion,
   formatTime,
 }: ChatMessageItemProps) {
+  // Heavy parsing is memoized per message content so a stream frame only
+  // re-parses the message whose text actually changed.
+  const parsedContent = useMemo(() => parseThoughtsAndCleanText(msg.content || ""), [msg.content]);
+  const displayThoughts =
+    msg.thoughts && msg.thoughts.length > 0 ? msg.thoughts : parsedContent.thoughts;
+  const cleanText = msg.role === "user" ? msg.content || "" : parsedContent.cleanText;
+  const markdownParts = useMemo(() => parseMarkdownTables(cleanText || ""), [cleanText]);
+
+  const markdownComponents = useMemo<Components>(
+    () => ({
+      code({ node, className, children, ...props }) {
+        const match = /language-(\w+)/.exec(className || "");
+        const codeString = String(children).replace(/\n$/, "");
+        const isCopied = copiedCode === codeString;
+        const isBlock = Boolean(match);
+
+        return isBlock ? (
+          <MemoizedCodeBlock
+            language={match![1]}
+            codeString={codeString}
+            isCopied={isCopied}
+            onCopy={onCopy}
+            streaming={assistantStreaming && isLast}
+          />
+        ) : (
+          <code
+            className={`${msg.role === "user"
+              ? "bg-white/20 text-white"
+              : "bg-muted/80 dark:bg-muted/60 text-foreground"
+              } px-1.5 py-0.5 rounded text-[13px] font-mono`}
+            {...props}
+          >
+            {children}
+          </code>
+        );
+      },
+    }),
+    [copiedCode, onCopy, msg.role, assistantStreaming, isLast]
+  );
+
   return (
     <div
       className={`flex gap-4 group ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
@@ -270,13 +322,7 @@ export function ChatMessageItem({
                   ))}
               </div>
             )}
-            {(() => {
-              const { thoughts: parsedThoughts, cleanText: extractedClean } = parseThoughtsAndCleanText(msg.content || "");
-              const displayThoughts = (msg.thoughts && msg.thoughts.length > 0) ? msg.thoughts : parsedThoughts;
-              const cleanText = msg.role === "user" ? (msg.content || "") : extractedClean;
-
-              return (
-                <>
+            <>
                   {msg.role === "assistant" && displayThoughts.length > 0 && (
                     <details className="mb-3.5 rounded-xl border border-border/80 bg-card/90 dark:bg-muted/30 text-xs overflow-hidden group shadow-sm transition-all">
                       <summary className="px-3.5 py-2 cursor-pointer font-mono text-[11px] text-muted-foreground hover:text-foreground flex items-center justify-between select-none bg-muted/50 hover:bg-muted/80 transition-colors">
@@ -304,37 +350,11 @@ export function ChatMessageItem({
                       ? "prose-invert prose-headings:text-white prose-p:text-white/95 prose-strong:text-white prose-code:text-white/90"
                       : "dark:prose-invert"
                       } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
-                      {parseMarkdownTables(cleanText || "").map((part, pIdx) => {
+                      {markdownParts.map((part, pIdx) => {
                         if (typeof part === "string") {
                           if (!part.trim()) return null;
                           return (
-                            <ReactMarkdown
-                              key={pIdx}
-                              components={{
-                                code({ node, className, children, ...props }) {
-                                  const match = /language-(\w+)/.exec(className || "");
-                                  const codeString = String(children).replace(/\n$/, "");
-                                  const isCopied = copiedCode === codeString;
-                                  const isBlock = Boolean(match);
-
-                                  return isBlock ? (
-                                    <MemoizedCodeBlock
-                                      language={match![1]}
-                                      codeString={codeString}
-                                      isCopied={isCopied}
-                                      onCopy={onCopy}
-                                    />
-                                  ) : (
-                                    <code className={`${msg.role === "user"
-                                      ? "bg-white/20 text-white"
-                                      : "bg-muted/80 dark:bg-muted/60 text-foreground"
-                                      } px-1.5 py-0.5 rounded text-[13px] font-mono`} {...props}>
-                                      {children}
-                                    </code>
-                                  );
-                                },
-                              }}
-                            >
+                            <ReactMarkdown key={pIdx} components={markdownComponents}>
                               {part}
                             </ReactMarkdown>
                           );
@@ -373,8 +393,6 @@ export function ChatMessageItem({
                     </div>
                   )}
                 </>
-              );
-            })()}
 
             {/* Human-in-the-Loop Terminal Approval Card */}
             {msg.role === "assistant" && msg.content && (
@@ -571,14 +589,13 @@ export function ChatMessageItem({
             )}
             <button
               onClick={() => {
-                const { cleanText } = parseThoughtsAndCleanText(msg.content || "");
-                onCopy(cleanText || msg.content || "");
+                onCopy(parsedContent.cleanText || msg.content || "");
               }}
               aria-label="Copy response"
               className="p-1.5 rounded-lg transition-all hover:bg-muted text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
               title="Copy response"
             >
-              {copiedCode === (parseThoughtsAndCleanText(msg.content || "").cleanText || msg.content) ? (
+              {copiedCode === (parsedContent.cleanText || msg.content) ? (
                 <Check size={14} className="text-emerald-500" />
               ) : (
                 <Copy size={14} />
@@ -625,4 +642,4 @@ export function ChatMessageItem({
       </div>
     </div>
   );
-}
+});
