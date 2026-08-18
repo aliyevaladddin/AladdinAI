@@ -83,6 +83,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump @tanstack/react-table from 9.0.0 to 9.1.2 in /frontend (#591) ([2b4d99c](https://github.com/aliyevaladddin/AladdinAI/commit/2b4d99c48ca12f5b62c17b2f6f5a07621dae0de1))
 
+- Bump sqlparse from 0.5.5 to 0.6.0 in /backend (#632) ([1c76b9b](https://github.com/aliyevaladddin/AladdinAI/commit/1c76b9b62fe0e43d556adc8cd1cf11f36f52ebc8))
+
 
 ### Documentation
 
@@ -219,6 +221,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Gitignore .git-rewrite filter-branch leftovers ([8e9a9a3](https://github.com/aliyevaladddin/AladdinAI/commit/8e9a9a36869ac3617e38ba2698243e00e8d04810))
 
 - Update changelog [skip ci] (#627) ([e6010f6](https://github.com/aliyevaladddin/AladdinAI/commit/e6010f660ef260673be19fe3ccba492503ba7702))
+
+- Update changelog after history rewrite [skip ci] (#631) ([011a994](https://github.com/aliyevaladddin/AladdinAI/commit/011a994ce67c45bf7d8f2e797d4c25da700932b1))
 
 ## [v2.2.3] - 2026-07-22
 
