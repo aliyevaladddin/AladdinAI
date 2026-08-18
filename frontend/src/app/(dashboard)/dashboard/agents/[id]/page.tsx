@@ -10,7 +10,8 @@ import { AgentSafetyPanel } from "@/components/agent-safety-panel";
 import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
 import { AgentMemoryPanel } from "@/components/agent-memory-panel";
 import { AgentActivityTab } from "@/components/agent-activity-tab";
-import { ArrowLeft, Bot, Shield, Database, Activity, Lock, Zap, Check, X, Pencil } from "lucide-react";
+import { AgentTracesPanel } from "@/components/agent-traces-panel";
+import { ArrowLeft, Bot, Shield, Database, Activity, ListTree, Lock, Zap, Check, X, Pencil } from "lucide-react";
 import Link from "next/link";
 
 const VISION_HINT_SUBSTRINGS = ["-vision", "vision-instruct"];
@@ -32,7 +33,7 @@ interface Agent {
   status: string;
 }
 
-type TabId = "overview" | "memory" | "gates" | "safety" | "activity";
+type TabId = "overview" | "memory" | "gates" | "safety" | "activity" | "traces";
 
 export default function AgentDetailsPage() {
   const { id } = useParams();
@@ -122,6 +123,7 @@ export default function AgentDetailsPage() {
           { id: "gates", label: "Gates", icon: Lock },
           { id: "safety", label: "Safety", icon: Shield },
           { id: "activity", label: "Activity", icon: Activity },
+          { id: "traces", label: "Traces", icon: ListTree },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -191,6 +193,8 @@ export default function AgentDetailsPage() {
         )}
 
         {activeTab === "activity" && <AgentActivityTab agentId={agent.id} />}
+
+        {activeTab === "traces" && <AgentTracesPanel agentId={agent.id} />}
       </div>
     </div>
   );
