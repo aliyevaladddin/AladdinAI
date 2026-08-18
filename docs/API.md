@@ -3324,6 +3324,61 @@ Delete Outgoing Webhook
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+#### PUT
+##### Summary:
+
+Update Outgoing Webhook
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| webhook_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/webhooks/outgoing/{webhook_id}/test
+
+#### POST
+##### Summary:
+
+Test Outgoing Webhook
+
+##### Description:
+
+Deliver a one-off test event to this webhook so the user can verify the
+URL and (when configured) the RCF signing straight from the settings UI.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| webhook_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/webhooks/telegram/{channel_id}
 
 #### POST
@@ -4989,6 +5044,20 @@ One row in the dashboard marketplace — read straight from a YAML manifest.
 | is_active | boolean |  | No |
 | id | integer |  | Yes |
 | created_at | dateTime |  | Yes |
+
+#### OutgoingWebhookUpdate
+
+Partial update. `secret` follows three-state semantics: omitted → keep the
+current secret, empty string → remove signing (deliver unsigned), any other
+value → rotate to a new secret.
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name |  |  | No |
+| url |  |  | No |
+| secret |  |  | No |
+| events |  |  | No |
+| is_active |  |  | No |
 
 #### ProductCreate
 
