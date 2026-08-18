@@ -1,12 +1,13 @@
 # NOTICE: This file is protected under RCF-PL
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, BackgroundTasks
 from fastapi.responses import FileResponse, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.limiter import limiter
 from app.models.agent import Agent
 from app.models.chat_session import ChatMessage, ChatSession
 from app.models.llm_provider import LLMProvider
@@ -356,9 +357,11 @@ def _kind_for_mime(mime: str) -> str:
 
 
 # [RCF:PROTECTED]
+@limiter.limit("10/minute")
 @router.post("/upload")
 # [RCF:PROTECTED]
 async def upload_attachment(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),

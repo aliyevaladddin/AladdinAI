@@ -1,5 +1,5 @@
 # NOTICE: This file is protected under RCF-PL
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,14 +20,16 @@ from app.security import (
     hash_password,
     verify_password,
 )
+from app.limiter import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 # [RCF:PROTECTED]
+@limiter.limit("5/minute")
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 # [RCF:PROTECTED]
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -44,9 +46,10 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
 
 # [RCF:PROTECTED]
+@limiter.limit("10/minute")
 @router.post("/login", response_model=TokenResponse)
 # [RCF:PROTECTED]
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if not user or not verify_password(body.password, user.password_hash):
