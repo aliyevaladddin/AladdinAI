@@ -117,3 +117,4 @@ backend/guacamole-config/guacamole.properties
 RCF-AUDIT-REPORT.json
 # git filter-branch temp leftovers
 .git-rewrite/
+frontend/coverage
