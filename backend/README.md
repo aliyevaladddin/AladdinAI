@@ -94,6 +94,10 @@ the responding agent, and feeds the message in as if it came from chat.
 | `webhook_service.py`           | Outgoing webhook fan-out with HMAC signing          |
 | `crm_service.py`               | Contacts / deals / activities                       |
 | `recommended_models.py`        | Hand-picked NIM models surfaced in the UI           |
+| `agent_sandbox.py`             | Per-agent Docker sandbox for code/terminal execution|
+| `ssh_known_hosts.py`           | TOFU host-key verification for SSH connections      |
+| `tracing.py`                   | Per-turn trace capture for the self-forging loop    |
+| `forging.py`                   | Golden set freeze + evaluation harness              |
 
 ---
 

@@ -23,6 +23,14 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["Terminal"])
 
 
+def _safe_json(raw: str, default=None):
+    """Parse JSON from a websocket message safely."""
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return default if default is not None else {}
+
+
 @router.websocket("/ws/terminal/local")
 async def local_terminal_websocket(websocket: WebSocket):
     log.debug("Local terminal WS connection attempt")
@@ -122,7 +130,9 @@ async def local_terminal_websocket(websocket: WebSocket):
     try:
         while True:
             msg_text = await websocket.receive_text()
-            msg = json.loads(msg_text)
+            msg = _safe_json(msg_text)
+            if msg is None:
+                continue
             msg_type = msg.get("type")
             if msg_type == "data":
                 os.write(master_fd, msg["data"].encode("utf-8"))
@@ -227,7 +237,9 @@ async def terminal_websocket(websocket: WebSocket, vm_id: int):
                 try:
                     while True:
                         msg_text = await websocket.receive_text()
-                        msg = json.loads(msg_text)
+                        msg = _safe_json(msg_text)
+                        if msg is None or msg.get("type") is None:
+                            continue
                         if msg["type"] == "data":
                             process.stdin.write(msg["data"])
                         elif msg["type"] == "resize":

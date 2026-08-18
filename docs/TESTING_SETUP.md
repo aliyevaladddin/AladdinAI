@@ -51,45 +51,45 @@ npm test
 
 ## 📊 Current Test Coverage
 
-| Module | Tests | Coverage |
-|--------|-------|----------|
-| Backend Auth | 8 tests | ~60% |
-| Backend Agents | 9 tests | ~50% |
-| Frontend Components | 4 tests | ~20% |
-| **Total** | **21 tests** | **~40%** |
+| Module | Tests | Notes |
+|--------|-------|-------|
+| Auth | 8 | JWT, login, register |
+| Agents | 9 | CRUD, model config |
+| Agent Traces | 16 | Tracing toggle, feedback, global traces |
+| CRM | 18 | Contacts, deals, products, orders |
+| Global Traces | 6 | Per-user cross-agent trace view |
+| SSH Known Hosts | 3 | TOFU helper, file creation, fallback |
+| Webhooks | 5 | RCF signing, delivery, retry |
+| Forging | 5 | Golden set freeze, harness |
+| Other | ~261 | Chat, dashboard, memory, providers, etc. |
+| Frontend Components | 4 | StatusBar |
+| **Total** | **~335** | **All passing ✅** |
 
 ## 🎯 Next Steps to Improve Coverage
 
 ### Priority 1 - Critical Paths
 - [ ] Agent execution tests (run agent with tools)
 - [ ] Memory service tests (vector search, storage)
-- [ ] Tool registry tests (tool execution, permissions)
 - [ ] Safety stack tests (PII detection, content filtering)
+- [ ] SSH exec + VM connect integration tests
 
 ### Priority 2 - API Coverage
-- [ ] CRM endpoints (contacts, deals, activities)
 - [ ] Provider management tests
-
-- [ ] Webhook tests (RCF signature verification)
 - [ ] Settings endpoints
+- [ ] Terminal providers tests
+- [ ] Dashboard stats tests
 
 ### Priority 3 - Frontend Coverage
-- [ ] Agent creation form tests
-- [ ] Chat interface tests
-- [ ] Dashboard components tests
-- [ ] Navigation tests
+- [ ] ChatMessageItem tests (parsing, feedback)
+- [ ] Agent detail page tests
+- [ ] AgentTracesPanel tests
+- [ ] ErrorBoundary components
 
 ### Priority 4 - Integration Tests
 - [ ] Full agent execution flow (E2E)
 - [ ] Multi-agent orchestration
 - [ ] Channel integration (Telegram, Email)
 - [ ] File upload/download
-
-### Priority 5 - Load & Performance
-- [ ] Concurrent agent executions
-- [ ] Memory leak tests
-- [ ] API rate limiting tests
-- [ ] Database query performance
 
 ## 🔧 Test Infrastructure Details
 
