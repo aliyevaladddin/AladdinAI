@@ -83,117 +83,88 @@ class SearchResult(TypedDict):
 async def _search_duckduckgo(
     client: httpx.AsyncClient, query: str, limit: int
 ) -> list[SearchResult]:
-    """DDG Instant Answer API — free, no key required.
+    """DuckDuckGo web search — HTML scrape (primary) + Instant Answer (bonus).
 
-    Returns zero-click answers, definitions and related topics.
-    Less comprehensive than full web-search but always available without
-    bot-detection issues.
+    The HTML endpoint returns real web search results. The Instant Answer API
+    only provides definitions and related topics — useful as enrichment but
+    insufficient on its own.
     """
-    resp = await client.get(
-        "https://api.duckduckgo.com/",
-        params={
-            "q": query,
-            "format": "json",
-            "no_html": "1",
-            "skip_disambig": "1",
-            "no_redirect": "1",
-        },
-        headers={"User-Agent": USER_AGENT},
-    )
-    resp.raise_for_status()
-    data = resp.json()
-
     results: list[SearchResult] = []
 
-    # 1. Direct answer / abstract
-    abstract_text = (data.get("AbstractText") or "").strip()
-    abstract_url = (data.get("AbstractURL") or "").strip()
-    heading = (data.get("Heading") or query).strip()
-    if abstract_text and abstract_url:
-        results.append(SearchResult(
-            title=heading,
-            link=abstract_url,
-            snippet=abstract_text[:300],
-            source="duckduckgo",
-        ))
+    # 1. Primary: HTML search — full web results from html.duckduckgo.com
+    try:
+        html_resp = await client.post(
+            "https://html.duckduckgo.com/html/",
+            data={"q": query},
+            headers={"User-Agent": USER_AGENT},
+            timeout=10.0,
+        )
+        if html_resp.status_code == 200:
+            from app.tools.web_search import DuckDuckGoParser
+            parser = DuckDuckGoParser()
+            parser.feed(html_resp.text)
+            for item in parser.get_results()[:limit]:
+                results.append(SearchResult(
+                    title=item["title"],
+                    link=item["link"],
+                    snippet=(item.get("snippet") or "")[:300],
+                    source="duckduckgo",
+                ))
+    except Exception as exc:
+        logger.debug("DuckDuckGo HTML search failed: %s", exc)
 
-    # 2. Direct results (e.g. official website)
-    for r in data.get("Results", [])[:2]:
-        url = (r.get("FirstURL") or "").strip()
-        text = _strip_html(r.get("Text") or "")
-        if url and text:
-            results.append(SearchResult(
-                title=text[:80],
-                link=url,
-                snippet=text,
+    # 2. Bonus: Instant Answer API — definitions, abstracts, related topics
+    #    Add only if they aren't duplicates of what HTML search already found.
+    existing_links = {r.link for r in results}
+    try:
+        resp = await client.get(
+            "https://api.duckduckgo.com/",
+            params={
+                "q": query,
+                "format": "json",
+                "no_html": "1",
+                "skip_disambig": "1",
+                "no_redirect": "1",
+            },
+            headers={"User-Agent": USER_AGENT},
+            timeout=5.0,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        # Abstract
+        abstract_text = (data.get("AbstractText") or "").strip()
+        abstract_url = (data.get("AbstractURL") or "").strip()
+        heading = (data.get("Heading") or query).strip()
+        if abstract_text and abstract_url and abstract_url not in existing_links:
+            results.insert(0, SearchResult(
+                title=heading,
+                link=abstract_url,
+                snippet=abstract_text[:300],
                 source="duckduckgo",
             ))
 
-    # 3. Related topics (richest source of results)
-    for topic in data.get("RelatedTopics", []):
-        if len(results) >= limit:
-            break
-        # Topics can be nested groups
-        if "Topics" in topic:
-            for sub in topic["Topics"]:
+        # Related topics (only unique links)
+        for topic in data.get("RelatedTopics", []):
+            if len(results) >= limit:
+                break
+            topics = topic.get("Topics", [topic])
+            for sub in topics:
                 if len(results) >= limit:
                     break
                 url = (sub.get("FirstURL") or "").strip()
                 text = _strip_html(sub.get("Text") or "")
-                if url and text:
+                if url and text and url not in existing_links:
                     title = text.split(" - ")[0][:100] if " - " in text else text[:80]
-                    snippet = text
                     results.append(SearchResult(
                         title=title,
                         link=url,
-                        snippet=snippet[:300],
+                        snippet=text[:300],
                         source="duckduckgo",
                     ))
-        else:
-            url = (topic.get("FirstURL") or "").strip()
-            text = _strip_html(topic.get("Text") or "")
-            if url and text:
-                title = text.split(" - ")[0][:100] if " - " in text else text[:80]
-                results.append(SearchResult(
-                    title=title,
-                    link=url,
-                    snippet=text[:300],
-                    source="duckduckgo",
-                ))
-
-    # 4. Definition
-    definition = (data.get("Definition") or "").strip()
-    definition_url = (data.get("DefinitionURL") or "").strip()
-    definition_src = (data.get("DefinitionSource") or "").strip()
-    if definition and definition_url and len(results) < limit:
-        results.append(SearchResult(
-            title=f"Definition ({definition_src})" if definition_src else "Definition",
-            link=definition_url,
-            snippet=definition[:300],
-            source="duckduckgo",
-        ))
-
-    # 5. HTML Search Fallback if Instant Answer API returned 0 results
-    if not results:
-        try:
-            html_resp = await client.post(
-                "https://html.duckduckgo.com/html/",
-                data={"q": query},
-                headers={"User-Agent": USER_AGENT},
-            )
-            if html_resp.status_code == 200:
-                from app.tools.web_search import DuckDuckGoParser
-                parser = DuckDuckGoParser()
-                parser.feed(html_resp.text)
-                for item in parser.get_results()[:limit]:
-                    results.append(SearchResult(
-                        title=item["title"],
-                        link=item["link"],
-                        snippet=(item.get("snippet") or "")[:300],
-                        source="duckduckgo",
-                    ))
-        except Exception as exc:
-            logger.debug("DuckDuckGo HTML fallback failed: %s", exc)
+                    existing_links.add(url)
+    except Exception as exc:
+        logger.debug("DuckDuckGo Instant Answer API failed: %s", exc)
 
     return results[:limit]
 

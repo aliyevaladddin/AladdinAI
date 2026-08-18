@@ -7,12 +7,13 @@ forging pipeline, mirroring how trace *capture* is off for them by default.
 
 All data stays in the user's own Mongo cluster.
 """
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.limiter import limiter
 from app.models.llm_provider import LLMProvider
 from app.models.user import User
 from app.schemas.forging import GoldenFreezeRequest, GoldenFreezeResponse, HarnessRequest, HarnessResponse
@@ -148,9 +149,11 @@ async def export_golden(
 
 # ── layer 3: harness ─────────────────────────────────────────────────────────
 # [RCF:PROTECTED]
+@limiter.limit("2/minute")
 @router.post("/harness", response_model=HarnessResponse)
 # [RCF:PROTECTED]
 async def harness(
+    request: Request,
     body: HarnessRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

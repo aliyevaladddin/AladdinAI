@@ -7,10 +7,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+
+from app.limiter import limiter
 
 from app.config import settings as app_settings
 from app.routers import (
@@ -33,8 +34,6 @@ log = logging.getLogger(__name__)
 # Rate limiter — keyed by client IP by default.
 # To key by authenticated user, replace get_remote_address with a custom
 # function that extracts user_id from the JWT in request.headers.
-limiter = Limiter(key_func=get_remote_address)
-
 # Read version from CLI package.json (single source of truth)
 try:
     cli_package_path = Path(__file__).resolve().parent.parent.parent / "cli" / "package.json"

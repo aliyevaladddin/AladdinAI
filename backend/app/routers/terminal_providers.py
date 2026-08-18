@@ -14,6 +14,7 @@ to docker_runner for container ops and to adapters for transport details.
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -48,6 +49,8 @@ from app.services.terminal_token_broker import (
     peek_token,
     verify_session_cookie,
 )
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Terminal"])
 
@@ -93,11 +96,11 @@ def _load_manifests() -> Dict[str, TerminalManifest]:
                 out[manifest.type] = manifest
             except yaml.YAMLError as exc:
                 # YAML syntax error — skip this manifest
-                print(f"Warning: Failed to parse {path.name}: {exc}")
+                log.warning("Failed to parse manifest %s: %s", path.name, exc)
                 continue
             except Exception as exc:
                 # Pydantic validation error or other issue — skip this manifest
-                print(f"Warning: Invalid manifest {path.name}: {exc}")
+                log.warning("Invalid manifest %s: %s", path.name, exc)
                 continue
     _manifest_cache = out
     return out
