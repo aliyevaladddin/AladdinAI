@@ -24,7 +24,7 @@
     Exceeding a limit returns HTTP 429 with a `Retry-After` header.
     
 
-## Version: 2.2.2
+## Version: 2.2.4
 
 ### Terms of service
 https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE
@@ -791,6 +791,73 @@ Delete Agent Memory
 | Code | Description |
 | ---- | ----------- |
 | 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/agents/{agent_id}/traces
+
+#### GET
+##### Summary:
+
+List Agent Traces
+
+##### Description:
+
+List agent turn traces (newest first) — the raw material of Self-Forging.
+
+Returns summaries without the full `messages` array (which can be large);
+fetch an individual trace by id for the full conversation and tool calls.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| agent_id | path |  | Yes | integer |
+| limit | query |  | No | integer |
+| offset | query |  | No | integer |
+| outcome | query |  | No |  |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/agents/{agent_id}/traces/{trace_id}
+
+#### GET
+##### Summary:
+
+Get Agent Trace
+
+##### Description:
+
+Return a single trace with full messages and tool calls.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| agent_id | path |  | Yes | integer |
+| trace_id | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
 | 422 | Validation Error |
 
 ##### Security
