@@ -791,7 +791,7 @@ export default function ChatPage() {
                       isLast={i === messages.length - 1}
                       assistantStreaming={assistantStreaming}
                       copiedCode={copiedCode}
-                      feedback={feedback}
+                      feedbackValue={msg.id ? feedback[msg.id] : undefined}
                       onCopy={copyToClipboard}
                       onEditPrompt={editPrompt}
                       onSendFeedback={sendFeedback}

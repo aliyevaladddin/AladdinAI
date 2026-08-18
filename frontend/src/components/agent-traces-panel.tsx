@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -13,11 +14,22 @@ import {
   Cpu,
   Hash,
   RefreshCw,
+  Settings,
   ThumbsDown,
   ThumbsUp,
   Wrench,
   XCircle,
 } from "lucide-react";
+
+interface TraceFeedback {
+  reward: number | null;
+  quality_label: string | null;
+}
+
+interface TracingConfig {
+  enabled: boolean;
+  redact_pii: boolean;
+}
 
 interface TraceToolCall {
   name: string;
@@ -98,6 +110,49 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [details, setDetails] = useState<Record<string, AgentTrace | null>>({});
   const [limit, setLimit] = useState(50);
+  const [tracingCfg, setTracingCfg] = useState<TracingConfig | null>(null);
+  const [savingTracing, setSavingTracing] = useState(false);
+  const [traceFeedback, setTraceFeedback] = useState<Record<string, TraceFeedback>>({});
+
+  // Load tracing config on mount
+  useEffect(() => {
+    api
+      .get<TracingConfig>(`/agents/${agentId}/tracing`)
+      .then(setTracingCfg)
+      .catch(() => {});
+  }, [agentId]);
+
+  const toggleTracing = async (enabled: boolean) => {
+    setSavingTracing(true);
+    try {
+      const updated = await api.patch<TracingConfig>(`/agents/${agentId}/tracing`, { enabled });
+      setTracingCfg(updated);
+    } catch {
+      toast.error("Failed to update tracing config");
+    } finally {
+      setSavingTracing(false);
+    }
+  };
+
+  const sendFeedback = async (traceId: string, value: "thumbs_up" | "thumbs_down") => {
+    // Optimistic: show immediately
+    const prev = traceFeedback[traceId];
+    const reward = value === "thumbs_up" ? 1.0 : -1.0;
+    const label = value === "thumbs_up" ? "good" : "bad";
+    setTraceFeedback((p) => ({ ...p, [traceId]: { reward, quality_label: label } }));
+    try {
+      await api.post(`/agents/${agentId}/traces/${traceId}/feedback`, { value });
+    } catch {
+      // Roll back
+      setTraceFeedback((p) => {
+        const next = { ...p };
+        if (prev) next[traceId] = prev;
+        else delete next[traceId];
+        return next;
+      });
+      toast.error("Failed to save feedback");
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -160,22 +215,80 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
 
   if (traces.length === 0) {
     return (
-      <EmptyState
-        icon={<Activity size={40} />}
-        title="No traces recorded for this agent yet."
-        description={
-          <>
-            Trace capture is off by default in the community edition. Enable it per agent via
-            the API:{" "}
-            <code className="font-mono text-[11px]">tools_config.tracing.enabled: true</code>.
-          </>
-        }
-      />
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* Tracing config — prominent when no traces exist */}
+        {tracingCfg && (
+          <div className="rounded-xl border border-border/50 bg-surface-1 p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold flex items-center gap-2">
+                  <Settings size={15} className="text-muted-foreground" />
+                  Trace Capture
+                </p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Record every agent turn (messages, tool calls, outcomes) to MongoDB.
+                  Traces are the raw material for fine-tuning and quality evals.
+                </p>
+              </div>
+              <label className="inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={tracingCfg.enabled}
+                  disabled={savingTracing}
+                  onChange={(e) => toggleTracing(e.target.checked)}
+                />
+                <div className="w-9 h-5 bg-muted peer-checked:bg-success rounded-full relative transition">
+                  <div
+                    className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${tracingCfg.enabled ? "translate-x-4" : ""}`}
+                  />
+                </div>
+              </label>
+            </div>
+          </div>
+        )}
+        <EmptyState
+          icon={<Activity size={40} />}
+          title="No traces recorded for this agent yet."
+          description={
+            tracingCfg?.enabled
+              ? "Tracing is enabled. Traces will appear here after the next agent turn."
+              : "Toggle trace capture above to start recording agent turns."
+          }
+        />
+      </div>
     );
   }
 
   return (
     <div className="space-y-4 max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Tracing config bar */}
+      {tracingCfg && (
+        <div className="flex items-center justify-between gap-4 p-3 rounded-xl border border-border/50 bg-surface-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <Settings size={14} className="text-muted-foreground shrink-0" />
+            <span className="text-xs font-medium">Trace Capture</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${tracingCfg.enabled ? "bg-success-soft text-success border border-success/20" : "bg-muted text-muted-foreground border border-border"}`}>
+              {tracingCfg.enabled ? "ON" : "OFF"}
+            </span>
+          </div>
+          <label className="inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={tracingCfg.enabled}
+              disabled={savingTracing}
+              onChange={(e) => toggleTracing(e.target.checked)}
+            />
+            <div className="w-9 h-5 bg-muted peer-checked:bg-success rounded-full relative transition">
+              <div
+                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${tracingCfg.enabled ? "translate-x-4" : ""}`}
+              />
+            </div>
+          </label>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-4 mb-2 flex-wrap">
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
@@ -253,6 +366,37 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
                         reward {trace.reward.toFixed(2)}
                       </span>
                     )}
+                    {/* Feedback buttons */}
+                    <span className="flex items-center gap-0.5 ml-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          sendFeedback(trace.id, "thumbs_up");
+                        }}
+                        className={`p-1 rounded transition-all hover:bg-muted ${
+                          (traceFeedback[trace.id]?.quality_label === "good" || trace.quality_label === "good")
+                            ? "text-success"
+                            : "text-muted-foreground"
+                        }`}
+                        title="Good response"
+                      >
+                        <ThumbsUp size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          sendFeedback(trace.id, "thumbs_down");
+                        }}
+                        className={`p-1 rounded transition-all hover:bg-muted ${
+                          (traceFeedback[trace.id]?.quality_label === "bad" || trace.quality_label === "bad")
+                            ? "text-danger"
+                            : "text-muted-foreground"
+                        }`}
+                        title="Bad response"
+                      >
+                        <ThumbsDown size={12} />
+                      </button>
+                    </span>
                     <span className="text-[10px] font-mono text-muted-foreground/60">
                       {fmtTime(trace.created_at)}
                     </span>

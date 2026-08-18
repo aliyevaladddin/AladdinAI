@@ -196,7 +196,7 @@ interface ChatMessageItemProps {
   isLast: boolean;
   assistantStreaming: boolean;
   copiedCode: string | null;
-  feedback: Record<number, string>;
+  feedbackValue?: string;
   onCopy: (text: string) => void;
   onEditPrompt: (text: string) => void;
   onSendFeedback: (id: number, type: "thumbs_up" | "thumbs_down") => void;
@@ -211,7 +211,7 @@ export const ChatMessageItem = React.memo(function ChatMessageItem({
   isLast,
   assistantStreaming,
   copiedCode,
-  feedback,
+  feedbackValue,
   onCopy,
   onEditPrompt,
   onSendFeedback,
@@ -572,7 +572,7 @@ export const ChatMessageItem = React.memo(function ChatMessageItem({
                 <button
                   onClick={() => onSendFeedback(msg.id!, "thumbs_up")}
                   aria-label="Good response"
-                  className={`p-1.5 rounded-lg transition-all hover:bg-muted ${feedback[msg.id] === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
+                  className={`p-1.5 rounded-lg transition-all hover:bg-muted ${feedbackValue === "thumbs_up" ? "text-green-500" : "text-muted-foreground"}`}
                   title="Good response"
                 >
                   <ThumbsUp size={14} />
@@ -580,7 +580,7 @@ export const ChatMessageItem = React.memo(function ChatMessageItem({
                 <button
                   onClick={() => onSendFeedback(msg.id!, "thumbs_down")}
                   aria-label="Bad response"
-                  className={`p-1.5 rounded-lg transition-all hover:bg-muted ${feedback[msg.id] === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
+                  className={`p-1.5 rounded-lg transition-all hover:bg-muted ${feedbackValue === "thumbs_down" ? "text-red-500" : "text-muted-foreground"}`}
                   title="Bad response"
                 >
                   <ThumbsDown size={14} />
