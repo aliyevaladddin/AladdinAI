@@ -17,8 +17,9 @@ from app.database import async_session, get_db
 from app.models.messaging_channel import MessagingChannel
 from app.models.outgoing_webhook import OutgoingWebhook
 from app.models.user import User
-from app.schemas.webhook import OutgoingWebhookCreate, OutgoingWebhookResponse
+from app.schemas.webhook import OutgoingWebhookCreate, OutgoingWebhookResponse, OutgoingWebhookUpdate
 from app.security import get_current_user
+from app.services.webhook_service import deliver_single
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +65,47 @@ async def delete_outgoing_webhook(webhook_id: int, user: User = Depends(get_curr
         raise HTTPException(status_code=404, detail="Webhook not found")
     await db.delete(webhook)
     await db.commit()
+
+
+# [RCF:PROTECTED]
+@router.put("/outgoing/{webhook_id}", response_model=OutgoingWebhookResponse)
+# [RCF:PROTECTED]
+async def update_outgoing_webhook(webhook_id: int, body: OutgoingWebhookUpdate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(OutgoingWebhook).where(OutgoingWebhook.id == webhook_id, OutgoingWebhook.user_id == user.id))
+    webhook = result.scalar_one_or_none()
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+
+    data = body.model_dump(exclude_unset=True)
+    if "secret" in data:
+        # Three-state: omitted → keep; empty/null → unsigned; value → rotate.
+        secret_value = data.pop("secret")
+        webhook.secret = encrypt(secret_value) if secret_value else None
+    for key, value in data.items():
+        setattr(webhook, key, value)
+
+    await db.commit()
+    await db.refresh(webhook)
+    return webhook
+
+
+# [RCF:PROTECTED]
+@router.post("/outgoing/{webhook_id}/test")
+# [RCF:PROTECTED]
+async def test_outgoing_webhook(webhook_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Deliver a one-off test event to this webhook so the user can verify the
+    URL and (when configured) the RCF signing straight from the settings UI."""
+    result = await db.execute(select(OutgoingWebhook).where(OutgoingWebhook.id == webhook_id, OutgoingWebhook.user_id == user.id))
+    webhook = result.scalar_one_or_none()
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+
+    ok = await deliver_single(webhook, "test", {
+        "message": "Test event from AladdinAI webhook settings",
+    })
+    if not ok:
+        raise HTTPException(status_code=502, detail="Delivery failed — check the URL and backend logs")
+    return {"ok": True, "signed": bool(webhook.secret)}
 
 
 # --- Incoming webhook signature verification ---

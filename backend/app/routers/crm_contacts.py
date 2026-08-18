@@ -48,6 +48,18 @@ async def create_contact(body: ContactCreate, user: User = Depends(get_current_u
     db.add(contact)
     await db.commit()
     await db.refresh(contact)
+
+    # Fan out to subscribed outgoing webhooks (fire-and-forget).
+    import asyncio
+    from app.services.webhook_service import trigger_webhooks
+    asyncio.create_task(trigger_webhooks(user.id, "contact_created", {
+        "contact_id": contact.id,
+        "name": contact.name,
+        "email": contact.email,
+        "phone": contact.phone,
+        "company": contact.company,
+    }))
+
     return contact
 
 

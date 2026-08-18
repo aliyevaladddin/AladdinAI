@@ -57,23 +57,19 @@ async def _send_webhook(
     webhook: OutgoingWebhook,
     event_type: str,
     payload: Any,
-):
-    """Sign a single webhook, deliver it with retries, and advance the RCF chain.
+) -> bool:
+    """Sign a single webhook (when a secret is configured), deliver it with
+    retries, and advance the RCF chain.
 
-    Without a per-webhook secret we cannot produce a verifiable marker — we
-    refuse to fall back to a public default (that would let anyone forge
-    a chain). The delivery is skipped with a loud warning instead.
+    Signing is opt-in per webhook: a webhook without a secret is delivered
+    unsigned (plain event JSON, no RCF headers, no chain). That keeps receivers
+    that do not verify markers — Zapier catch hooks, plain automations —
+    working, while a configured secret still produces a verifiable chain.
+    We still never fall back to a public default secret (that would let anyone
+    forge a chain).
+
+    Returns True when delivery succeeded.
     """
-    raw_secret = webhook.secret
-    if not raw_secret:
-        log.warning(
-            "webhook %s (%s) has no secret — refusing to sign (would expose chain)",
-            webhook.id, webhook.url,
-        )
-        return
-
-    secret = decrypt(raw_secret)
-
     data = {
         "event": event_type,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -81,21 +77,26 @@ async def _send_webhook(
     }
     body = json.dumps(data)
 
-    new_marker, ts = RCFProtocol.generate_marker(secret, webhook.last_marker, body)
-    correlation_id = str(uuid.uuid4())
-
-    headers = {
-        "Content-Type": "application/json",
-        "X-RCF-Correlation-ID": correlation_id,
-        "X-RCF-Marker": new_marker,
-        "X-RCF-Timestamp": ts,
-    }
-    if webhook.last_marker:
-        headers["X-RCF-Chain-Root"] = webhook.last_marker
+    headers = {"Content-Type": "application/json"}
+    secret = decrypt(webhook.secret) if webhook.secret else None
+    new_marker: str | None = None
+    if secret:
+        new_marker, ts = RCFProtocol.generate_marker(secret, webhook.last_marker, body)
+        correlation_id = str(uuid.uuid4())
+        headers.update({
+            "X-RCF-Correlation-ID": correlation_id,
+            "X-RCF-Marker": new_marker,
+            "X-RCF-Timestamp": ts,
+        })
+        if webhook.last_marker:
+            headers["X-RCF-Chain-Root"] = webhook.last_marker
+    else:
+        correlation_id = f"unsigned-{webhook.id}"
 
     success = await _deliver_with_retries(client, webhook, body, headers, correlation_id)
-    if not success:
-        return
+    if not success or new_marker is None:
+        # Unsigned deliveries carry no chain to advance.
+        return success
 
     # Advance the chain only after delivery confirms — a torn marker would
     # break verifiability on the receiver side.
@@ -106,6 +107,20 @@ async def _send_webhook(
             .values(last_marker=new_marker)
         )
         await db.commit()
+    return True
+
+
+# [RCF:PROTECTED]
+async def deliver_single(
+    webhook: OutgoingWebhook, event_type: str, payload: Any
+) -> bool:
+    """Deliver one event to one specific webhook (agent-initiated send).
+
+    Unlike trigger_webhooks() this ignores the webhook's event subscription —
+    an explicit send targets the webhook directly.
+    """
+    async with httpx.AsyncClient(timeout=10) as client:
+        return await _send_webhook(client, webhook, event_type, payload)
 
 
 # [RCF:PROTECTED]
