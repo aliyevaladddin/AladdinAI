@@ -117,6 +117,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add Qwen bot activity job and fix bot commit attribution (#626) ([f7324ca](https://github.com/aliyevaladddin/AladdinAI/commit/f7324cad07263abf482a87b5c0a26860a5c39325))
 
+- Agents can see and fire webhooks; edit & test in settings UI (#634) ([dfb2870](https://github.com/aliyevaladddin/AladdinAI/commit/dfb2870b67e557fa081b14a2279dd13405a6c18d))
+
 
 ### Maintenance
 
@@ -223,6 +225,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#627) ([e6010f6](https://github.com/aliyevaladddin/AladdinAI/commit/e6010f660ef260673be19fe3ccba492503ba7702))
 
 - Update changelog after history rewrite [skip ci] (#631) ([011a994](https://github.com/aliyevaladddin/AladdinAI/commit/011a994ce67c45bf7d8f2e797d4c25da700932b1))
+
+- Update changelog [skip ci] (#633) ([2991897](https://github.com/aliyevaladddin/AladdinAI/commit/2991897c6f5fb791265fa9dbeb936476c81418c2))
 
 ## [v2.2.3] - 2026-07-22
 
