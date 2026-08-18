@@ -185,7 +185,13 @@ export default function TracesPage() {
 
           return (
             <div key={trace.id} className="rounded-xl border border-border/50 bg-surface-1 overflow-hidden transition-colors hover:border-accent/30">
-              <button onClick={() => toggleExpand(trace)} className="w-full text-left p-4 flex items-start gap-3">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => toggleExpand(trace)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExpand(trace); } }}
+                className="w-full text-left p-4 flex items-start gap-3 cursor-pointer"
+              >
                 <div className="mt-0.5 text-muted-foreground/60">
                   {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 </div>
@@ -258,7 +264,7 @@ export default function TracesPage() {
                     <span className="flex items-center gap-1"><Clock size={10} /> {fmtTime(trace.created_at)}</span>
                   </div>
                 </div>
-              </button>
+              </div>
 
               {/* Expanded detail */}
               {isOpen && (
