@@ -5,6 +5,28 @@ import { API_URL } from "@/lib/api";
 import { VoicePlayer } from "./VoicePlayer";
 import { Download, Maximize2, X, ZoomIn } from "lucide-react";
 
+// Module-level blob URL cache: avoids re-fetching the same attachment on
+// every mount (e.g. during streaming re-renders). Bounded to 100 entries;
+// oldest are evicted when the limit is reached.
+const _blobCache = new Map<string, string>();
+const BLOB_CACHE_MAX = 100;
+
+function getCachedBlobUrl(filename: string): string | null {
+  return _blobCache.get(filename) ?? null;
+}
+
+function setCachedBlobUrl(filename: string, url: string): void {
+  if (_blobCache.size >= BLOB_CACHE_MAX) {
+    // Evict the oldest entry (first inserted)
+    const firstKey = _blobCache.keys().next().value;
+    if (firstKey !== undefined) {
+      URL.revokeObjectURL(_blobCache.get(firstKey)!);
+      _blobCache.delete(firstKey);
+    }
+  }
+  _blobCache.set(filename, url);
+}
+
 /* ─────────────────────────────────────────────
    Lightbox – full-screen image viewer
 ───────────────────────────────────────────── */
@@ -235,6 +257,13 @@ export function AuthAttachment({
   const [src, setSrc] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check cache first — avoids re-fetching during streaming re-renders.
+    const cached = getCachedBlobUrl(filename);
+    if (cached) {
+      setSrc(cached);
+      return;
+    }
+
     let revoke: string | null = null;
     let cancelled = false;
     const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
@@ -246,13 +275,14 @@ export function AuthAttachment({
         if (!blob || cancelled) return;
         const url = URL.createObjectURL(blob);
         revoke = url;
+        setCachedBlobUrl(filename, url);
         setSrc(url);
       })
       .catch(() => { });
 
     return () => {
       cancelled = true;
-      if (revoke) URL.revokeObjectURL(revoke);
+      // Don't revoke here — the cache owns the URL now.
     };
   }, [filename]);
 

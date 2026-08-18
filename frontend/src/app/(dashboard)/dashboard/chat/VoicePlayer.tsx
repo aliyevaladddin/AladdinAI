@@ -59,7 +59,7 @@ export function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) 
 
   return (
     <div
-      className="flex items-center gap-3 px-3.5 py-3 rounded-2xl max-w-[280px] shadow-lg bg-[#11111a] border border-violet-500/30 text-white transition-all hover:border-violet-500/50"
+      className="flex items-center gap-3 px-3.5 py-3 rounded-2xl max-w-[280px] shadow-lg bg-card border border-primary/30 text-foreground transition-all hover:border-primary/50"
     >
       <audio
         ref={audioRef}
@@ -73,7 +73,7 @@ export function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) 
       {/* Play / Pause button with glow */}
       <button
         onClick={toggle}
-        className="relative w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 hover:scale-105 active:scale-95 bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
+        className="relative w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 hover:scale-105 active:scale-95 bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_0_12px_rgba(139,92,246,0.4)]"
         aria-label={playing ? "Pause" : "Play"}
       >
         {playing ? (
@@ -83,7 +83,7 @@ export function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) 
         )}
         {/* Ripple on play */}
         {playing && (
-          <span className="absolute inset-0 rounded-full animate-ping opacity-30 bg-violet-400" />
+          <span className="absolute inset-0 rounded-full animate-ping opacity-30 bg-primary/60" />
         )}
       </button>
 
@@ -102,7 +102,7 @@ export function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) 
               <div
                 key={i}
                 className={`rounded-full w-[2.5px] flex-shrink-0 transition-all duration-150 ${
-                  isPast ? "bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.6)]" : "bg-white/20"
+                  isPast ? "bg-primary shadow-[0_0_6px_rgba(139,92,246,0.6)]" : "bg-muted/40"
                 }`}
                 style={{
                   height: `${h}px`,
@@ -115,9 +115,9 @@ export function VoicePlayer({ src, isUser }: { src: string; isUser?: boolean }) 
         </div>
 
         {/* Time row */}
-        <div className="flex items-center justify-between text-[10px] font-mono text-slate-300 font-medium">
+        <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground font-medium">
           <span>{fmt(currentTime)}</span>
-          <span className="text-[9px] uppercase tracking-wide font-bold text-violet-400">Voice</span>
+          <span className="text-[9px] uppercase tracking-wide font-bold text-primary">Voice</span>
           <span>{fmt(duration || 0)}</span>
         </div>
       </div>

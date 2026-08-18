@@ -70,7 +70,7 @@ const MemoizedCodeBlock = React.memo(function MemoizedCodeBlock({
         /* While the block is still streaming, skip Prism highlighting (the code
            grows every frame) and render a plain <pre>; one highlight pass runs
            when the stream finishes. */
-        <pre className="rounded-xl !mt-0 !mb-0 overflow-x-auto !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm p-4 text-[13px] font-mono text-foreground">
+        <pre className="rounded-xl !mt-0 !mb-0 overflow-x-auto !bg-background/95 dark:!bg-card border border-border/50 shadow-sm p-4 text-[13px] font-mono text-foreground">
           {codeString}
         </pre>
       ) : (
@@ -78,7 +78,7 @@ const MemoizedCodeBlock = React.memo(function MemoizedCodeBlock({
           style={oneDark}
           language={language}
           PreTag="div"
-          className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-[#1e1e1e] border border-border/50 shadow-sm"
+          className="rounded-xl !mt-0 !mb-0 !bg-background/95 dark:!bg-card border border-border/50 shadow-sm"
         >
           {codeString}
         </SyntaxHighlighter>
@@ -349,7 +349,7 @@ export const ChatMessageItem = React.memo(function ChatMessageItem({
                     <div className={`prose prose-sm max-w-none relative ${msg.role === "user"
                       ? "prose-invert prose-headings:text-white prose-p:text-white/95 prose-strong:text-white prose-code:text-white/90"
                       : "dark:prose-invert"
-                      } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-[#1e1e1e] prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
+                      } prose-pre:my-3 prose-pre:bg-background/95 dark:prose-pre:bg-card prose-pre:border prose-pre:border-border/50 prose-pre:shadow-sm prose-code:text-sm prose-p:leading-relaxed prose-headings:font-semibold`}>
                       {markdownParts.map((part, pIdx) => {
                         if (typeof part === "string") {
                           if (!part.trim()) return null;

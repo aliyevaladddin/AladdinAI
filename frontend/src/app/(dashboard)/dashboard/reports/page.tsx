@@ -21,28 +21,28 @@ const REPORTS: ReportCard[] = [
     title: "Contacts Report",
     description: "All CRM contacts with email, phone, company, tags and source.",
     icon: "👥",
-    color: "#3B82F6",
+    color: "var(--color-info)",
   },
   {
     type: "deals",
     title: "Deals Report",
     description: "Pipeline deals with stage, amount, currency and probability. Includes total sum row.",
     icon: "💼",
-    color: "#10B981",
+    color: "var(--color-success)",
   },
   {
     type: "activities",
     title: "Activities Report",
     description: "All communication activities: emails, messages, calls by channel.",
     icon: "📋",
-    color: "#8B5CF6",
+    color: "var(--color-primary)",
   },
   {
     type: "all",
     title: "Full Report",
     description: "Complete multi-sheet workbook: Contacts + Deals + Activities in one file.",
     icon: "📊",
-    color: "#F59E0B",
+    color: "var(--color-warning)",
   },
 ];
 

@@ -13,6 +13,7 @@ export interface TabDef<T extends string> {
   label: string;
   icon?: ComponentType<{ size?: number; className?: string }>;
   desc?: string;
+  count?: number;
 }
 
 interface SegmentedTabsProps<T extends string> {
@@ -57,6 +58,17 @@ export function SegmentedTabs<T extends string>({
               <Icon size={14} className={isActive ? "text-[var(--color-accent)]" : ""} />
             )}
             {tab.label}
+            {typeof tab.count === "number" && (
+              <span
+                className="inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 rounded-full text-[10px] font-semibold tabular-nums"
+                style={{
+                  background: isActive ? "var(--color-accent)" : "var(--color-surface-2)",
+                  color: isActive ? "var(--color-surface)" : "var(--color-fg-muted)",
+                }}
+              >
+                {tab.count}
+              </span>
+            )}
           </button>
         );
       })}

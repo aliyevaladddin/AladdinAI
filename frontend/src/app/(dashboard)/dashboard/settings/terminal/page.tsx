@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 import { api } from "@/lib/api";
 import {
   listProviders,
@@ -213,7 +214,14 @@ export default function TerminalProvidersPage() {
       </div>
 
       {/* Tabs */}
-      <TabBar tab={tab} setTab={setTab} installedCount={installed.length} marketCount={MARKETPLACE.length} />
+      <SegmentedTabs
+        tabs={[
+          { id: "installed" as Tab, label: "Installed", count: installed.length },
+          { id: "marketplace" as Tab, label: "Marketplace", count: MARKETPLACE.length },
+        ] as TabDef<Tab>[]}
+        active={tab}
+        onChange={(id) => setTab(id)}
+      />
 
       {tab === "installed" ? (
         <InstalledPanel
@@ -255,61 +263,6 @@ export default function TerminalProvidersPage() {
   );
 }
 
-/* ============================================================
-   Tab bar — segmented, premium underline animation
-   ============================================================ */
-
-function TabBar({
-  tab, setTab, installedCount, marketCount,
-}: {
-  tab: Tab;
-  setTab: (t: Tab) => void;
-  installedCount: number;
-  marketCount: number;
-}) {
-  const items: Array<{ id: Tab; label: string; count: number }> = [
-    { id: "installed", label: "Installed", count: installedCount },
-    { id: "marketplace", label: "Marketplace", count: marketCount },
-  ];
-  return (
-    <div
-      className="inline-flex items-center gap-1 p-1 rounded-lg"
-      style={{ background: "var(--bg-2)", border: "1px solid var(--line)" }}
-      role="tablist"
-    >
-      {items.map((it) => {
-        const active = tab === it.id;
-        return (
-          <button
-            key={it.id}
-            role="tab"
-            aria-selected={active}
-            onClick={() => setTab(it.id)}
-            className="relative inline-flex items-center gap-2 px-3 h-7 rounded-md text-[12.5px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
-            style={{
-              background: active ? "var(--bg-3)" : "transparent",
-              color: active ? "var(--fg)" : "var(--fg-3)",
-              outlineColor: "var(--violet)",
-              boxShadow: active ? "0 1px 0 var(--line-strong) inset, 0 -1px 0 var(--line) inset" : undefined,
-            }}
-          >
-            {it.label}
-            <span
-              className="inline-flex items-center justify-center min-w-[18px] h-[16px] px-1 rounded-full text-[10.5px] font-semibold tabular-nums"
-              style={{
-                background: active ? "var(--violet-soft)" : "var(--bg-3)",
-                color: active ? "var(--violet)" : "var(--fg-3)",
-                border: active ? "1px solid var(--violet-line)" : "1px solid var(--line)",
-              }}
-            >
-              {it.count}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /* ============================================================
    Installed panel
