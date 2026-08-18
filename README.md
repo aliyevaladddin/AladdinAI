@@ -29,8 +29,7 @@
 
 ### *My AI agents.* *My infrastructure.* *My rules.*
 
-*AladdinAI is an open-source, self-hosted AI workspace —*
-*agents, memory, CRM, and multi-channel messaging running entirely in your own infrastructure.*
+AladdinAI — open-source BYOI (Bring Your Own Infrastructure) AI Agent Platform.
 
 <br/>
 
@@ -42,19 +41,33 @@
 [![NPM Version](https://img.shields.io/npm/v/aladdin-ai?style=flat-square&color=4ecdc4&logo=npm&logoColor=white)](https://www.npmjs.com/package/aladdin-ai)
 
 
+
+
+Connect your own servers, NVIDIA NIM, OpenAI, Anthropic, or Ollama — build and manage AI agents visually with complete control over your data and infrastructure.
+
+
+
+
+<p align="center">
+  <img src="docs/login-preview.png" width="22%" />
+  <img src="docs/agent-overview.png" width="22%" />
+  <img src="docs/gates.png" width="22%" />
+  <img src="docs/search.png" width="22%" />
+</p>
+
+<!-- 4 скриншота -->
+
 <br/>
 
-| `436` unique cloners | `14` days since launch | `$0` marketing spend |
-|:---:|:---:|:---:|
-| **organic traction** | **after public release** | **zero paid promotion** |
+## ***One command. No git clone. No Python. No Node toolchain. Just Docker.***
 
-<br/>
+```bash
+npx aladdin-ai
+```
 
 <div align="center">
   <img src="docs/demo.svg" alt="AladdinAI terminal demo" width="700"/>
 </div>
-
-**One command. No git clone. No Python. No Node toolchain. Just Docker.**
 
 <br/>
 
