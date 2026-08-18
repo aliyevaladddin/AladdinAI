@@ -13,12 +13,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Per-turn agent trace view in the UI (#637) ([2253c23](https://github.com/aliyevaladddin/AladdinAI/commit/2253c2333c9e1f54868c1878281893c8debb980c))
 
+- Tracing toggle, global traces page, trace feedback, Self-Forging UI (#642) ([9e03385](https://github.com/aliyevaladddin/AladdinAI/commit/9e03385982e73cec9b9a78d7b9443fba7088c4e4))
+
 
 ### Maintenance
 
 - Bump version to 2.2.4 and update deps [skip ci] ([b316572](https://github.com/aliyevaladddin/AladdinAI/commit/b316572996e5eaef139c2334a14c3b44bb59f159))
 
 - Update changelog [skip ci] (#638) ([61f2f21](https://github.com/aliyevaladddin/AladdinAI/commit/61f2f21bcda66e4638dfef12293822bb0eb10338))
+
+- Update changelog [skip ci] (#641) ([fe3b1c0](https://github.com/aliyevaladddin/AladdinAI/commit/fe3b1c0534f6cfcb43e111e4ea1112bdea1ff69a))
 
 ## [v2.2.4] - 2026-08-18
 
