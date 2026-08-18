@@ -12,6 +12,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add python symlink and env for node-gyp in Docker build ([fa25dc5](https://github.com/aliyevaladddin/AladdinAI/commit/fa25dc55141436888f2b03c03ef06f7364d71251))
 
+- Critical security and reliability issues (#668) ([0d3a0a6](https://github.com/aliyevaladddin/AladdinAI/commit/0d3a0a6ebac18934752d8081316968c9ebe4c987))
+
 
 ### Documentation
 
@@ -58,6 +60,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#655) ([5864d5e](https://github.com/aliyevaladddin/AladdinAI/commit/5864d5e048010823482e45eb87ecfb9901a0b77b))
 
 - Update changelog [skip ci] (#656) ([49b3225](https://github.com/aliyevaladddin/AladdinAI/commit/49b3225d1f9fbbcfef67dc380917e4d5a47239cc))
+
+- Update changelog [skip ci] (#667) ([0ccf937](https://github.com/aliyevaladddin/AladdinAI/commit/0ccf93754187edc729858cc8cc77b5f3eb1d32c6))
 
 ## [v2.2.4] - 2026-08-18
 
