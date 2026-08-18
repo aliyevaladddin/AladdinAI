@@ -4,9 +4,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- VoicePlayer tokens, terminal TabBar, code block hex, reports colors, blob cache ([5c1c452](https://github.com/aliyevaladddin/AladdinAI/commit/5c1c4523db4be2a6864285087446f644bf7137ef))
+
+
 ### Documentation
 
 - Update API documentation [skip ci] (#639) ([93bccb8](https://github.com/aliyevaladddin/AladdinAI/commit/93bccb8e5554dd51e6383f145c1a2a3a12bf1ac9))
+
+- UI polish, chat perf, tracing & forging guide ([30eb502](https://github.com/aliyevaladddin/AladdinAI/commit/30eb502b457a67bf9cc118a3e51baacdca2798db))
 
 
 ### Features
@@ -23,6 +30,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#638) ([61f2f21](https://github.com/aliyevaladddin/AladdinAI/commit/61f2f21bcda66e4638dfef12293822bb0eb10338))
 
 - Update changelog [skip ci] (#641) ([fe3b1c0](https://github.com/aliyevaladddin/AladdinAI/commit/fe3b1c0534f6cfcb43e111e4ea1112bdea1ff69a))
+
+- Update changelog [skip ci] (#643) ([64f1afb](https://github.com/aliyevaladddin/AladdinAI/commit/64f1afbe83eec8bc4fa847797023d9a0a20bb212))
 
 ## [v2.2.4] - 2026-08-18
 
