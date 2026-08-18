@@ -10,6 +10,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Remove false positive CodeQL URL-substring warning in test ([dbe68a6](https://github.com/aliyevaladddin/AladdinAI/commit/dbe68a683b604b21412a55af29b17211fb369198))
 
+- Add python symlink and env for node-gyp in Docker build ([fa25dc5](https://github.com/aliyevaladddin/AladdinAI/commit/fa25dc55141436888f2b03c03ef06f7364d71251))
+
 
 ### Documentation
 
@@ -48,6 +50,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#652) ([e0a0a6c](https://github.com/aliyevaladddin/AladdinAI/commit/e0a0a6c34d17dd6ea191eaab8376a2e31a5f5219))
 
 - Update changelog [skip ci] (#653) ([91c4f05](https://github.com/aliyevaladddin/AladdinAI/commit/91c4f05946aa6fbc26e957ac7650ed550f80778a))
+
+- Update changelog [skip ci] (#654) ([7d4a2ae](https://github.com/aliyevaladddin/AladdinAI/commit/7d4a2aebe53874f9f944299a4088356114e19a33))
 
 ## [v2.2.4] - 2026-08-18
 
