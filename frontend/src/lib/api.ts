@@ -176,6 +176,9 @@ export const api = {
       const errorText = await res.text().catch(() => "No error body");
       throw new Error(`Failed to POST to ${path} (Status: ${res.status}): ${errorText}`);
     }
+    // Invalidate the parent list cache so fresh data is fetched
+    const basePath = path.replace(/\/\d+(\/|$)/, "/");
+    apiCache.delete(basePath);
     if (res.status === 204) return {} as T;
     const text = await res.text();
     try {
