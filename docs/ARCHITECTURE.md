@@ -133,6 +133,8 @@ Tools are functions the LLM can invoke, declared with a JSON schema and register
 
 Adding a tool means adding a class under `backend/app/tools/` and registering it. All stateful logic goes through a service layer so the same code is reachable from background tasks and the orchestrator.
 
+**Sandboxed execution:** Terminal commands and Python code run inside per-agent Docker containers (`agent_sandbox.py`), not on the backend host. Each sandbox has a private `/workspace` volume, read-only root FS, network disabled, and strict resource limits (512 MB RAM, 128 PIDs, 1 CPU). Falls back to host subprocesses under rlimits when Docker is unavailable. See [Agent Sandbox](guides/AGENT_SANDBOX.md).
+
 ---
 
 ### Channels
@@ -282,10 +284,11 @@ The current release covers the full core platform. Planned for upcoming versions
 |---------|-------------|
 | **Agent marketplace** | Shareable agent templates, tool packs, and gate configurations. Publish, fork, extend. |
 | **Multi-tenant mode** | Run AladdinAI as a hosted service for your own customers — per-tenant isolation, billing hooks. |
-| **Advanced observability** | Full trace view per agent turn: memory reads, gate decisions, tool calls, model latency. |
 | **Voice channel** | WebRTC + NIM ASR/TTS pipeline. Agents that pick up calls. |
 | **One-click cloud deploy** | Terraform modules for AWS, GCP, Azure. Full stack up in under 10 minutes. |
 | **Durable job queue** | Replace APScheduler with a persistent queue for guaranteed trigger delivery across restarts. |
+| **Scheduled re-freeze** | Auto re-freeze golden set every N days to keep the benchmark fresh. |
+| **Trace export (JSON/CSV)** | Export traces with filters (by agent, quality, date) for offline analysis. |
 
 ---
 
