@@ -1,9 +1,8 @@
 # NOTICE: This file is protected under RCF-PL
 import logging
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends
 
-log = logging.getLogger(__name__)
+from fastapi import APIRouter, Depends
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +17,8 @@ from app.models.email_account import EmailAccount
 from app.models.user import User
 from app.security import get_current_user
 from app.services import memory, gate_log
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
