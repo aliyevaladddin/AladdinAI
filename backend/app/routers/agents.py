@@ -1,5 +1,7 @@
 # NOTICE: This file is protected under RCF-PL
 import asyncio
+import json as _json
+import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -14,23 +16,23 @@ from app.models.agent import Agent
 from app.models.agent_message import AgentMessage
 from app.models.activity import Activity
 from app.models.agent_trigger import AgentTrigger
+from app.models.llm_provider import LLMProvider
 from app.models.user import User
 from app.schemas.agents import AgentCreate, AgentResponse, AgentUpdate
 from app.security import get_current_user
-import json as _json
-
-from app.models.llm_provider import LLMProvider
 from app.services import gate_log, memory as memory_service
 from app.services.agent_runner import run_agent
 from app.services.llm_service import LLMError
 from app.services.memory import MemoryError as MemoryServiceError
 from app.services.memory import get_mongo_db
-from app.services.tracing import TRACE_COLLECTION
 from app.services.recommended_models import (
     resolve_extraction as resolve_extraction_recs,
     resolve_gates as resolve_gates_recs,
     resolve_safety as resolve_safety_recs,
 )
+from app.services.tracing import TRACE_COLLECTION
+
+log = logging.getLogger(__name__)
 
 GATE_NAMES = {"handoff", "memory_write", "recall_rerank"}
 SAFETY_NAMES = {"ingress", "egress", "pii"}
@@ -140,7 +142,7 @@ async def get_agent_stats(
         decisions = await gate_log.list_decisions(db, user_id=user.id, agent_id=agent_id, limit=1000)
         gate_decisions_count = len(decisions)
     except Exception:
-        pass
+        log.debug("Failed to count gate decisions for agent %s", agent_id, exc_info=True)
 
     # Format uptime for display
     if uptime_seconds < 3600:
@@ -926,9 +928,6 @@ async def _process_agent_message(message_id: int) -> None:
     never holds a connection open. SQLite WAL + busy_timeout handle the
     rare case where two short writes collide.
     """
-    import logging as _logging
-    _log = _logging.getLogger(__name__)
-
     # ── Phase 1: mark in_progress ──────────────────────────────────────────
     async with async_session() as db:
         msg = (await db.execute(
@@ -992,7 +991,7 @@ async def _process_agent_message(message_id: int) -> None:
     except LLMError as e:
         error_text = str(e)
     except Exception as e:  # noqa: BLE001
-        _log.exception(
+        log.exception(
             "_process_agent_message: unexpected error for msg %s", message_id
         )
         error_text = f"{type(e).__name__}: {e}"
@@ -1017,7 +1016,7 @@ async def _process_agent_message(message_id: int) -> None:
             if ("locked" in err or "busy" in err) and attempt < 4:
                 await asyncio.sleep(2 ** attempt)
             else:
-                _log.exception(
+                log.exception(
                     "_process_agent_message: could not persist result for msg %s",
                     message_id,
                 )
@@ -1046,7 +1045,7 @@ async def _process_agent_message(message_id: int) -> None:
             db.add(notif)
             await db.commit()
     except Exception:  # noqa: BLE001
-        _log.warning(
+        log.warning(
             "_process_agent_message: notification failed for msg %s (non-fatal)",
             message_id,
         )

@@ -19,11 +19,9 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import yaml
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from fastapi import Request, Response
 from urllib.parse import parse_qs, urlsplit
 
 from app.config import settings
@@ -52,6 +50,16 @@ from app.services.terminal_token_broker import (
 )
 
 router = APIRouter(tags=["Terminal"])
+
+
+def _safe_json(raw: str | None, default=None):
+    """Parse JSON safely; return *default* on corrupt data."""
+    if not raw:
+        return default if default is not None else {}
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return default if default is not None else {}
 
 
 # ── manifest loader ─────────────────────────────────────────────────────
@@ -227,7 +235,7 @@ async def start_provider(
     provider = await _load_owned(db, user, provider_id)
     manifest = _manifest_entry(provider.type)
     adapter = get_adapter(provider.type)
-    config_dict = json.loads(provider.config or "{}")
+    config_dict = _safe_json(provider.config)
 
     # If this provider requires SSH and has a vm_id in config, fetch VM credentials
     # and inject them into the config so the adapter can use them.
@@ -411,7 +419,7 @@ async def issue_session(
         # SSH session — find a provider with requires_ssh_proxy=True and matching vm_id in config
         ssh_providers = [
             p for p in candidates
-            if p.requires_ssh_proxy and json.loads(p.config or "{}").get("vm_id") == body.vm_id
+            if p.requires_ssh_proxy and _safe_json(p.config).get("vm_id") == body.vm_id
         ]
         if not ssh_providers:
             raise HTTPException(

@@ -91,7 +91,10 @@ async def import_contacts_from_excel(
     if not file.filename or not file.filename.lower().endswith((".xlsx", ".xls")):
         raise HTTPException(status_code=400, detail="Only .xlsx / .xls files are supported")
 
+    _MAX_IMPORT_BYTES = 10 * 1024 * 1024  # 10 MB
     content = await file.read()
+    if len(content) > _MAX_IMPORT_BYTES:
+        raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
     try:
         df = pd.read_excel(io.BytesIO(content))
     except Exception as e:

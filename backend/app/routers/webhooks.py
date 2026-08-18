@@ -26,6 +26,16 @@ log = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 
 
+def _safe_json(raw, default=None):
+    """Parse JSON safely; return *default* on corrupt data."""
+    if not raw:
+        return default if default is not None else {}
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError, UnicodeDecodeError):
+        return default if default is not None else {}
+
+
 # --- Outgoing webhooks (CRUD) ---
 
 # [RCF:PROTECTED]
@@ -267,7 +277,7 @@ async def _authorize_channel(channel_id: int, expected_type: str, request: Reque
 # [RCF:PROTECTED]
 async def telegram_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
     channel, raw_body = await _authorize_channel(channel_id, "telegram", request)
-    payload = json.loads(raw_body or b"{}")
+    payload = _safe_json(raw_body)
 
     from app.services.orchestrator import handle_incoming_message
     background_tasks.add_task(handle_incoming_message, channel, "telegram", payload)
@@ -306,7 +316,7 @@ async def verify_whatsapp_webhook(channel_id: int, request: Request):
 # [RCF:PROTECTED]
 async def whatsapp_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
     channel, raw_body = await _authorize_channel(channel_id, "whatsapp", request)
-    payload = json.loads(raw_body or b"{}")
+    payload = _safe_json(raw_body)
 
     from app.services.orchestrator import handle_incoming_message
     background_tasks.add_task(handle_incoming_message, channel, "whatsapp", payload)
@@ -318,7 +328,7 @@ async def whatsapp_webhook(channel_id: int, request: Request, background_tasks: 
 # [RCF:PROTECTED]
 async def waha_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
     channel, raw_body = await _authorize_channel(channel_id, "whatsapp_waha", request)
-    payload = json.loads(raw_body or b"{}")
+    payload = _safe_json(raw_body)
 
     from app.services.orchestrator import handle_incoming_message
     background_tasks.add_task(handle_incoming_message, channel, "whatsapp_waha", payload)
@@ -363,7 +373,7 @@ async def github_webhook(request: Request, background_tasks: BackgroundTasks):
 
         log.info("GitHub webhook signature verified successfully")
 
-    payload = json.loads(raw_body or b"{}")
+    payload = _safe_json(raw_body)
     event_type = request.headers.get("X-GitHub-Event", "unknown")
 
     log.info("github webhook: received event %s", event_type)
