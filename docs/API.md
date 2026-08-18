@@ -587,6 +587,56 @@ Get Agent Extraction Recommendations
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/agents/{agent_id}/tracing
+
+#### GET
+##### Summary:
+
+Get Agent Tracing
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| agent_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### PATCH
+##### Summary:
+
+Patch Agent Tracing
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| agent_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/agents/{agent_id}/extraction
 
 #### GET
@@ -852,6 +902,73 @@ Return a single trace with full messages and tool calls.
 | ---- | ---------- | ----------- | -------- | ---- |
 | agent_id | path |  | Yes | integer |
 | trace_id | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/agents/{agent_id}/traces/{trace_id}/feedback
+
+#### POST
+##### Summary:
+
+Post Trace Feedback
+
+##### Description:
+
+Apply human 👍/👎 feedback directly to a trace.
+
+Mirrors the logic in tracing.human_score but operates synchronously on a
+specific trace (no session_id matching needed).
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| agent_id | path |  | Yes | integer |
+| trace_id | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/traces
+
+#### GET
+##### Summary:
+
+List All Traces
+
+##### Description:
+
+List agent traces across all of the user's agents (newest first).
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| limit | query |  | No | integer |
+| offset | query |  | No | integer |
+| outcome | query |  | No |  |
+| agent_id | query |  | No |  |
 
 ##### Responses
 
@@ -5391,6 +5508,19 @@ ttyd adapter ignores it.
 | access_token | string |  | Yes |
 | refresh_token | string |  | Yes |
 | token_type | string |  | No |
+
+#### TraceFeedback
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| value | string |  | Yes |
+
+#### TracingUpdate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| enabled |  |  | No |
+| redact_pii |  |  | No |
 
 #### TriggerCreate
 
