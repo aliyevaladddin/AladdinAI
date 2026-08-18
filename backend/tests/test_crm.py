@@ -6,7 +6,6 @@
 - products: CRUD, activate/deactivate
 - orders: CRUD, metrics, status transitions
 """
-import pytest
 
 
 # ── contacts ─────────────────────────────────────────────────────────────────
