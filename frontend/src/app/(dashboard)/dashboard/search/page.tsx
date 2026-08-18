@@ -28,6 +28,7 @@ import {
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { api } from "@/lib/api";
+import { EmptyState } from "@/components/ui/empty-state";
 
 /* ── Types ───────────────────────────────────────────────────────── */
 
@@ -72,9 +73,9 @@ function SourceBadge({ source }: { source: string }) {
       case "wikipedia":
         return { bg: "var(--color-surface-2)", color: "var(--color-fg-muted)", icon: <BookOpen size={9} />, label: "Wikipedia" };
       case "arxiv":
-        return { bg: "rgba(168, 85, 247, 0.12)", color: "#a855f7", icon: <GraduationCap size={9} />, label: "ArXiv" };
+        return { bg: "var(--color-accent-soft)", color: "var(--color-accent)", icon: <GraduationCap size={9} />, label: "ArXiv" };
       case "news":
-        return { bg: "rgba(239, 68, 68, 0.12)", color: "#ef4444", icon: <Newspaper size={9} />, label: "News" };
+        return { bg: "var(--color-danger-soft)", color: "var(--color-danger)", icon: <Newspaper size={9} />, label: "News" };
       default:
         return { bg: "rgba(var(--color-accent-rgb, 99,102,241), 0.12)", color: "var(--color-accent)", icon: <Globe size={9} />, label: "Web" };
     }
@@ -151,7 +152,7 @@ function ResultCard({ r }: { r: SearchResult }) {
             title="Copy link and citation to clipboard"
             className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-muted/60 text-muted-foreground hover:text-foreground"
           >
-            {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+            {copied ? <Check size={13} className="text-success" /> : <Copy size={13} />}
           </button>
           <ExternalLink
             size={13}
@@ -161,27 +162,6 @@ function ResultCard({ r }: { r: SearchResult }) {
         </div>
       </div>
     </a>
-  );
-}
-
-function EmptyState({ query }: { query: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 gap-4">
-      <div
-        className="w-12 h-12 rounded-2xl flex items-center justify-center"
-        style={{ background: "var(--color-surface-2)" }}
-      >
-        <Search size={22} style={{ color: "var(--color-fg-muted)" }} />
-      </div>
-      <div className="text-center">
-        <p className="text-[14px] font-medium" style={{ color: "var(--color-fg)" }}>
-          No results for &ldquo;{query}&rdquo;
-        </p>
-        <p className="text-[12px] mt-1" style={{ color: "var(--color-fg-muted)" }}>
-          Try a different query or switch engines
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -321,7 +301,7 @@ export default function SearchPage() {
                 </div>
                 <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: "var(--color-fg)" }}>
                   AladdinAI Search
-                  <Shield size={16} className="text-emerald-400 opacity-80" title="RCF Protected Meta-Search Engine" />
+                  <Shield size={16} className="text-success opacity-80" title="RCF Protected Meta-Search Engine" />
                 </h1>
               </div>
               <p className="text-[13px]" style={{ color: "var(--color-fg-muted)" }}>
@@ -365,11 +345,11 @@ export default function SearchPage() {
                 title="Deep Web Scraping: uses Playwright Chromium to extract full content from top links"
                 className={`flex items-center gap-1 text-[11px] font-medium rounded-lg px-2.5 py-1 border transition-all ${
                   deepScrape
-                    ? "bg-purple-950/60 text-purple-300 border-purple-500/50 shadow-sm"
+                    ? "bg-primary/10 text-primary border-primary/40 shadow-sm"
                     : "bg-muted/40 text-muted-foreground border-border/40 hover:text-foreground"
                 }`}
               >
-                <Cpu size={12} className={deepScrape ? "text-purple-400 animate-pulse" : ""} />
+                <Cpu size={12} className={deepScrape ? "text-primary animate-pulse" : ""} />
                 <span>Deep Scrape</span>
               </button>
 
@@ -431,7 +411,7 @@ export default function SearchPage() {
                     <button
                       onClick={(e) => deleteHistoryItem(h, e)}
                       title="Remove from history"
-                      className="ml-0.5 hover:text-red-400 opacity-60 hover:opacity-100 transition-opacity"
+                      className="ml-0.5 hover:text-danger opacity-60 hover:opacity-100 transition-opacity"
                     >
                       <X size={10} />
                     </button>
@@ -440,7 +420,7 @@ export default function SearchPage() {
               </div>
               <button
                 onClick={clearHistory}
-                className="text-[10px] text-muted-foreground hover:text-red-400 flex items-center gap-1 transition-colors"
+                className="text-[10px] text-muted-foreground hover:text-danger flex items-center gap-1 transition-colors"
                 title="Clear all search history"
               >
                 <Trash2 size={10} /> Clear history
@@ -493,7 +473,7 @@ export default function SearchPage() {
                 <span className="text-[11px]" style={{ color: "var(--color-fg-muted)" }}>
                   {results.total} results · {elapsed}ms
                   {Object.keys(results.errors).length > 0 && (
-                    <span className="ml-2 text-yellow-500">
+                    <span className="ml-2 text-warning">
                       ⚠ {Object.keys(results.errors).join(", ")} failed
                     </span>
                   )}
@@ -501,7 +481,7 @@ export default function SearchPage() {
                 <button
                   onClick={sendToChat}
                   title="Transfer query and search findings directly into Agent Chat"
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border bg-indigo-500/10 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/20 transition-all"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium border bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 transition-all"
                 >
                   <Bot size={12} />
                   <span>Send to Agent</span>
@@ -515,13 +495,13 @@ export default function SearchPage() {
             <div
               className="rounded-2xl p-5 border mb-6 shadow-lg transition-all"
               style={{
-                background: "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05), rgba(6, 182, 212, 0.05))",
+                background: "linear-gradient(135deg, var(--violet-soft), var(--color-accent-soft), var(--info-soft))",
                 borderColor: "var(--color-accent)",
               }}
             >
               <div className="flex items-center justify-between border-b pb-3 mb-3" style={{ borderColor: "var(--color-border)" }}>
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-violet-deep flex items-center justify-center text-white shadow-sm">
                     <Sparkles size={13} />
                   </div>
                   <span className="text-[13px] font-semibold tracking-wide" style={{ color: "var(--color-fg)" }}>
@@ -533,7 +513,7 @@ export default function SearchPage() {
                     </span>
                   )}
                   {synthesis?.scraped_urls && synthesis.scraped_urls.length > 0 && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-mono text-cyan-400 bg-cyan-950/40 border border-cyan-800/50 flex items-center gap-1">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-mono text-info bg-info-soft border border-info/30 flex items-center gap-1">
                       <Cpu size={10} /> Chromium Scraped ({synthesis.scraped_urls.length})
                     </span>
                   )}
@@ -546,13 +526,13 @@ export default function SearchPage() {
                         title="Copy AI Synthesis answer"
                         className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-surface border text-muted-foreground hover:text-foreground transition-all"
                       >
-                        {synthCopied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
+                        {synthCopied ? <Check size={11} className="text-success" /> : <Copy size={11} />}
                         <span>{synthCopied ? "Copied" : "Copy"}</span>
                       </button>
                       <button
                         onClick={sendToChat}
                         title="Discuss this synthesis with an AI Agent in Chat"
-                        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition-all shadow-sm"
+                        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all shadow-sm"
                       >
                         <MessageSquare size={11} />
                         <span>Discuss with Agent</span>
@@ -560,7 +540,7 @@ export default function SearchPage() {
                     </>
                   )}
                   {synthesisLoading && (
-                    <div className="flex items-center gap-2 text-xs text-indigo-400 font-medium animate-pulse">
+                    <div className="flex items-center gap-2 text-xs text-primary font-medium animate-pulse">
                       <Loader2 size={13} className="animate-spin" />
                       Synthesizing answer...
                     </div>
@@ -610,9 +590,9 @@ export default function SearchPage() {
             <div
               className="flex items-center gap-3 rounded-xl p-4 border"
               style={{
-                background: "rgba(239,68,68,0.08)",
-                borderColor: "rgba(239,68,68,0.3)",
-                color: "#ef4444",
+                background: "var(--color-danger-soft)",
+                borderColor: "var(--color-danger)",
+                color: "var(--color-danger)",
               }}
             >
               <AlertCircle size={16} />
@@ -625,7 +605,11 @@ export default function SearchPage() {
 
           {/* Results list */}
           {!loading && results && displayed.length === 0 && (
-            <EmptyState query={query} />
+            <EmptyState
+              icon={<Search size={22} />}
+              title={`No results for “${query}”`}
+              description="Try a different query or switch engines"
+            />
           )}
 
           {!loading && displayed.length > 0 && (

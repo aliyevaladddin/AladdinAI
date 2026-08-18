@@ -6,10 +6,11 @@ import { Zap, Webhook, Network, Clock } from "lucide-react";
 import { AgentTriggersPanel } from "@/components/agent-triggers-panel";
 import { RouterSettings } from "@/components/settings/RouterSettings";
 import { WebhooksPanel } from "@/components/settings/WebhooksPanel";
+import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 
 type TabId = "triggers" | "webhooks" | "router";
 
-const tabs: { id: TabId; label: string; icon: any; desc: string }[] = [
+const tabs: TabDef<TabId>[] = [
   {
     id: "triggers",
     label: "Triggers",
@@ -52,30 +53,7 @@ export default function AutomationsPage() {
       </div>
 
       {/* Tab bar */}
-      <div
-        className="flex items-center gap-1 p-1 rounded-xl w-fit"
-        style={{ background: "var(--color-surface-2)", border: "1px solid var(--color-border)" }}
-      >
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const active = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-all"
-              style={{
-                background: active ? "var(--color-surface)" : "transparent",
-                color: active ? "var(--color-fg)" : "var(--color-fg-muted)",
-                boxShadow: active ? "0 1px 4px rgba(0,0,0,0.15)" : "none",
-              }}
-            >
-              <Icon size={14} className={active ? "text-[var(--color-accent)]" : ""} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <SegmentedTabs tabs={tabs} active={activeTab} onChange={setActiveTab} />
 
       {/* Tab description */}
       <p className="text-xs" style={{ color: "var(--color-fg-subtle)" }}>

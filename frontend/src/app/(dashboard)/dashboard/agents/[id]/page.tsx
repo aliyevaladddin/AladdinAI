@@ -98,7 +98,7 @@ export default function AgentDetailsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{agent.name}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-widest ${isRunning ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-zinc-500/10 text-zinc-500 border border-zinc-500/20"
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-widest ${isRunning ? "bg-success-soft text-success border border-success/20" : "bg-muted text-muted-foreground border border-border"
                 }`}>
                 {agent.status}
               </span>
@@ -284,7 +284,7 @@ function BaseModelField({
         </div>
         <p className="text-sm font-mono mt-1">{agent.model}</p>
         {isVisionModel(agent.model) && (
-          <p className="text-[11px] text-amber-500 mt-1">
+          <p className="text-[11px] text-warning mt-1">
             Vision model — tool calls disabled. Switch to a text model for full
             agent capabilities (the agent will use the `analyze_image` tool to
             inspect photos).
@@ -314,12 +314,12 @@ function BaseModelField({
         ))}
       </select>
       {isVisionModel(selected) && (
-        <p className="text-[11px] text-amber-500 mt-1">
+        <p className="text-[11px] text-warning mt-1">
           Vision models cannot call tools (analyze_image / send_image / delegate).
           The agent will only describe images directly.
         </p>
       )}
-      {error && <p className="text-[11px] text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-[11px] text-danger mt-1">{error}</p>}
       <div className="flex items-center gap-2 mt-2">
         <Button size="sm" onClick={save} disabled={saving}>
           <Check size={12} className="mr-1" /> Save

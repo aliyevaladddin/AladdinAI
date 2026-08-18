@@ -257,8 +257,8 @@ export default function CommsPage() {
                   <div className="flex items-center gap-2">
                     <span
                       className={`text-xs px-2 py-1 rounded ${c.status === "connected"
-                          ? "bg-green-500/20 text-green-400"
-                          : "bg-zinc-500/20 text-zinc-400"
+                          ? "bg-success-soft text-success"
+                          : "bg-muted text-muted-foreground"
                         }`}
                     >
                       {c.status}
@@ -303,8 +303,8 @@ export default function CommsPage() {
                   <div className="flex items-center gap-2">
                     <span
                       className={`text-xs px-2 py-1 rounded ${e.status === "connected"
-                          ? "bg-green-500/20 text-green-400"
-                          : "bg-zinc-500/20 text-zinc-400"
+                          ? "bg-success-soft text-success"
+                          : "bg-muted text-muted-foreground"
                         }`}
                     >
                       {e.status}

@@ -443,10 +443,41 @@
   --color-success: var(--ok);
   --color-warning: var(--warn);
   --color-danger: var(--err);
+  --color-info: var(--info);
 
   --color-success-soft: var(--ok-soft);
   --color-warning-soft: var(--warn-soft);
   --color-danger-soft: var(--err-soft);
+  --color-info-soft: var(--info-soft);
+
+  /* shadcn-compatible semantic tokens — the chat, ui/button and most
+     dashboard pages are written against these. Previously undefined,
+     so every bg-primary / text-muted-foreground / bg-card class silently
+     compiled to nothing. Mapped onto the theme tokens so all 12 themes
+     keep working. */
+  --color-primary: var(--violet);
+  --color-primary-foreground: var(--bg-0);
+
+  --color-secondary: var(--bg-3);
+  --color-secondary-foreground: var(--fg-2);
+
+  --color-muted: var(--bg-3);
+  --color-muted-foreground: var(--fg-2);
+
+  --color-card: var(--bg-2);
+  --color-card-foreground: var(--fg);
+
+  --color-background: var(--bg-0);
+  --color-foreground: var(--fg);
+
+  --color-popover: var(--bg-2);
+  --color-popover-foreground: var(--fg);
+
+  --color-destructive: var(--err);
+  --color-destructive-foreground: var(--bg-0);
+
+  --color-input: var(--line);
+  --color-ring: var(--violet);
 
   --radius: 8px;
   --radius-sm: 6px;
@@ -2031,6 +2062,7 @@
   line-height: 1.5;
   flex: 1;
   display: -webkit-box;
+  line-clamp: 3;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;

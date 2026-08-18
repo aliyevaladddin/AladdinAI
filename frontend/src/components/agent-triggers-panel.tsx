@@ -405,7 +405,7 @@ export function AgentTriggersPanel() {
                       key={a.id}
                       type="button"
                       className={`text-xs px-2 py-1 rounded ${on
-                          ? "bg-blue-500/20 text-blue-400"
+                          ? "bg-info-soft text-info"
                           : "bg-muted text-muted-foreground"
                         }`}
                       onClick={() => toggleAgent(a.id)}
@@ -468,8 +468,8 @@ export function AgentTriggersPanel() {
                   <p className="font-medium truncate">{t.name}</p>
                   <span
                     className={`text-[10px] px-1.5 rounded ${t.enabled
-                        ? "bg-green-500/20 text-green-400"
-                        : "bg-zinc-500/20 text-zinc-400"
+                        ? "bg-success-soft text-success"
+                        : "bg-muted text-muted-foreground"
                       }`}
                   >
                     {t.enabled ? "enabled" : "disabled"}

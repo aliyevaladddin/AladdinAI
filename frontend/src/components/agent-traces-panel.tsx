@@ -3,6 +3,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { api } from "@/lib/api";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Activity,
   Bot,
@@ -58,19 +59,19 @@ interface TraceListResponse {
 }
 
 const OUTCOME_META: Record<string, { label: string; cls: string }> = {
-  completed_no_tools: { label: "completed", cls: "text-green-400 bg-green-500/10 border-green-500/20" },
-  completed_with_tools: { label: "completed + tools", cls: "text-green-400 bg-green-500/10 border-green-500/20" },
-  egress_blocked: { label: "egress blocked", cls: "text-red-400 bg-red-500/10 border-red-500/20" },
-  ingress_blocked: { label: "ingress blocked", cls: "text-red-400 bg-red-500/10 border-red-500/20" },
-  max_iterations_exhausted: { label: "max iterations", cls: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
-  llm_error: { label: "llm error", cls: "text-orange-400 bg-orange-500/10 border-orange-500/20" },
+  completed_no_tools: { label: "completed", cls: "text-success bg-success-soft border-success/20" },
+  completed_with_tools: { label: "completed + tools", cls: "text-success bg-success-soft border-success/20" },
+  egress_blocked: { label: "egress blocked", cls: "text-danger bg-danger-soft border-danger/20" },
+  ingress_blocked: { label: "ingress blocked", cls: "text-danger bg-danger-soft border-danger/20" },
+  max_iterations_exhausted: { label: "max iterations", cls: "text-warning bg-warning-soft border-warning/20" },
+  llm_error: { label: "llm error", cls: "text-warning bg-warning-soft border-warning/20" },
 };
 
 const LABEL_META: Record<string, { label: string; cls: string }> = {
-  good: { label: "good", cls: "text-green-400 bg-green-500/10 border-green-500/20" },
-  neutral: { label: "neutral", cls: "text-zinc-400 bg-zinc-500/10 border-zinc-500/20" },
-  bad: { label: "bad", cls: "text-red-400 bg-red-500/10 border-red-500/20" },
-  excluded: { label: "excluded", cls: "text-zinc-500 bg-zinc-500/10 border-zinc-500/20" },
+  good: { label: "good", cls: "text-success bg-success-soft border-success/20" },
+  neutral: { label: "neutral", cls: "text-muted-foreground bg-muted border-muted" },
+  bad: { label: "bad", cls: "text-danger bg-danger-soft border-danger/20" },
+  excluded: { label: "excluded", cls: "text-fg-subtle bg-muted border-border" },
 };
 
 const fmtTime = (ts?: string) => {
@@ -149,23 +150,27 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
 
   if (error && traces.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed border-border/50 bg-surface-1">
-        <XCircle size={40} className="text-red-400/40 mb-4" />
-        <p className="text-sm text-muted-foreground">{error}</p>
-      </div>
+      <EmptyState
+        icon={<XCircle size={40} />}
+        title="Failed to load traces"
+        description={error}
+      />
     );
   }
 
   if (traces.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed border-border/50 bg-surface-1">
-        <Activity size={40} className="text-muted-foreground/30 mb-4" />
-        <p className="text-muted-foreground text-sm mb-1">No traces recorded for this agent yet.</p>
-        <p className="text-xs text-muted-foreground/70 max-w-md text-center leading-relaxed">
-          Trace capture is off by default in the community edition. Enable it per agent via
-          the API: <code className="font-mono text-[11px]">tools_config.tracing.enabled: true</code>.
-        </p>
-      </div>
+      <EmptyState
+        icon={<Activity size={40} />}
+        title="No traces recorded for this agent yet."
+        description={
+          <>
+            Trace capture is off by default in the community edition. Enable it per agent via
+            the API:{" "}
+            <code className="font-mono text-[11px]">tools_config.tracing.enabled: true</code>.
+          </>
+        }
+      />
     );
   }
 
@@ -206,7 +211,7 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
         {traces.map((trace) => {
           const meta = OUTCOME_META[trace.outcome || ""] || {
             label: trace.outcome || "unknown",
-            cls: "text-zinc-400 bg-zinc-500/10 border-zinc-500/20",
+            cls: "text-muted-foreground bg-muted border-border",
           };
           const label = trace.quality_label
             ? LABEL_META[trace.quality_label] || LABEL_META.excluded
@@ -239,7 +244,7 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
                       </span>
                     )}
                     {trace.human_labeled && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full uppercase tracking-tighter font-bold border text-purple-400 bg-purple-500/10 border-purple-500/20">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full uppercase tracking-tighter font-bold border text-primary bg-primary/10 border-primary/20">
                         human
                       </span>
                     )}
@@ -275,7 +280,7 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
                       </span>
                     )}
                     {typeof trace.tool_error_count === "number" && trace.tool_error_count > 0 && (
-                      <span className="flex items-center gap-1 text-red-400">
+                      <span className="flex items-center gap-1 text-danger">
                         <XCircle size={10} /> {trace.tool_error_count} errors
                       </span>
                     )}
@@ -290,7 +295,7 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
               {isOpen && (
                 <div className="px-4 pb-4 pt-1 border-t border-border/30 animate-in fade-in duration-200">
                   {full === null ? (
-                    <p className="text-xs text-red-400 py-2">Failed to load full trace.</p>
+                    <p className="text-xs text-danger py-2">Failed to load full trace.</p>
                   ) : !full ? (
                     <div className="py-4 text-center text-xs text-muted-foreground animate-pulse">
                       Loading full trace…
@@ -309,7 +314,7 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
                                 key={i}
                                 className={`rounded-lg border p-3 font-mono text-xs ${
                                   tc.is_error
-                                    ? "border-red-500/20 bg-red-500/5"
+                                    ? "border-danger/20 bg-danger-soft"
                                     : "border-border/40 bg-surface-2"
                                 }`}
                               >
@@ -318,7 +323,7 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
                                     <Wrench size={11} /> {tc.name}
                                   </span>
                                   {tc.is_error && (
-                                    <span className="text-[10px] text-red-400 uppercase font-bold">error</span>
+                                    <span className="text-[10px] text-danger uppercase font-bold">error</span>
                                   )}
                                 </div>
                                 <pre className="whitespace-pre-wrap break-words text-muted-foreground leading-relaxed max-h-40 overflow-y-auto">

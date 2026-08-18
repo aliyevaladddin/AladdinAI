@@ -315,7 +315,7 @@ export function AgentSafetyPanel({
                     checked={state.enabled}
                     onChange={(e) => toggleCheck(name, e.target.checked)}
                   />
-                  <div className="w-9 h-5 bg-zinc-700 peer-checked:bg-green-500 rounded-full relative transition">
+                  <div className="w-9 h-5 bg-muted peer-checked:bg-success rounded-full relative transition">
                     <div
                       className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition ${state.enabled ? "translate-x-4" : ""
                         }`}
@@ -373,10 +373,10 @@ export function AgentSafetyPanel({
                       <span className="font-medium">{e.gate}</span>
                       <span
                         className={`px-1.5 rounded ${e.decision === "block"
-                            ? "bg-red-500/20 text-red-400"
+                            ? "bg-danger-soft text-danger"
                             : e.decision === "rerank"
-                              ? "bg-blue-500/20 text-blue-400"
-                              : "bg-zinc-500/20 text-zinc-400"
+                              ? "bg-info-soft text-info"
+                              : "bg-muted text-muted-foreground"
                           }`}
                       >
                         {e.decision}

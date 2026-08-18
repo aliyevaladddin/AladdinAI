@@ -27,12 +27,12 @@ interface Contact {
 
 const STAGES = ["lead", "qualified", "proposal", "negotiation", "won", "lost"];
 const STAGE_COLORS: Record<string, string> = {
-  lead: "bg-blue-500/20 text-blue-400",
-  qualified: "bg-yellow-500/20 text-yellow-400",
-  proposal: "bg-purple-500/20 text-purple-400",
-  negotiation: "bg-orange-500/20 text-orange-400",
-  won: "bg-green-500/20 text-green-400",
-  lost: "bg-red-500/20 text-red-400",
+  lead: "bg-info-soft text-info",
+  qualified: "bg-warning-soft text-warning",
+  proposal: "bg-primary/10 text-primary",
+  negotiation: "bg-warning-soft text-warning",
+  won: "bg-success-soft text-success",
+  lost: "bg-danger-soft text-danger",
 };
 
 export default function DealsPage() {
@@ -131,7 +131,7 @@ export default function DealsPage() {
               <select
                 value={d.stage}
                 onChange={(e) => handleMoveStage(d.id, e.target.value)}
-                className={`text-xs px-2 py-1 rounded border-0 ${STAGE_COLORS[d.stage] || "bg-zinc-500/20 text-zinc-400"}`}
+                className={`text-xs px-2 py-1 rounded border-0 ${STAGE_COLORS[d.stage] || "bg-muted text-muted-foreground"}`}
               >
                 {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
