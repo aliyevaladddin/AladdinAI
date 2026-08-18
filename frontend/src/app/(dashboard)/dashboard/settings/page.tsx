@@ -12,10 +12,12 @@ import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 import { StorageSettings } from "@/components/settings/StorageSettings";
 import { SecuritySettings } from "@/components/settings/SecuritySettings";
 import { ShortcutsSettings } from "@/components/settings/ShortcutsSettings";
-import { Cpu, Cloud, Database, Server, Network, Palette, HardDrive, Shield, Keyboard } from "lucide-react";
+import { ObservabilitySettings } from "@/components/settings/ObservabilitySettings";
+import { TrainingSettings } from "@/components/settings/TrainingSettings";
+import { Cpu, Cloud, Database, Server, Network, Palette, HardDrive, Shield, Keyboard, Activity, FlaskConical } from "lucide-react";
 
 
-type TabId = "appearance" | "storage" | "shortcuts" | "providers" | "vms" | "mongo" | "bento" | "router" | "security";
+type TabId = "appearance" | "storage" | "shortcuts" | "providers" | "vms" | "mongo" | "bento" | "router" | "security" | "observability" | "training";
 
 const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
   { id: "appearance", label: "Appearance", icon: Palette },
@@ -27,6 +29,8 @@ const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: numbe
   { id: "bento", label: "BentoML", icon: Server },
   { id: "router", label: "Routing", icon: Network },
   { id: "security", label: "Security & Safety", icon: Shield },
+  { id: "observability", label: "Observability", icon: Activity },
+  { id: "training", label: "Training", icon: FlaskConical },
 ];
 
 
@@ -104,6 +108,8 @@ export default function SettingsPage() {
           {activeTab === "bento" && <BentoSettings />}
           {activeTab === "router" && <RouterSettings />}
           {activeTab === "security" && <SecuritySettings />}
+          {activeTab === "observability" && <ObservabilitySettings />}
+          {activeTab === "training" && <TrainingSettings />}
 
         </div>
       </div>

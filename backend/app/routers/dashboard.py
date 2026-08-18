@@ -1,5 +1,7 @@
 # NOTICE: This file is protected under RCF-PL
+import logging
 from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +17,8 @@ from app.models.email_account import EmailAccount
 from app.models.user import User
 from app.security import get_current_user
 from app.services import memory, gate_log
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -124,7 +128,7 @@ async def get_dashboard_stats(
             if isinstance(m.get("created_at"), datetime):
                 m["created_at"] = m["created_at"].isoformat()
     except Exception:
-        pass
+        log.debug("Failed to load recent memories for dashboard", exc_info=True)
 
     # ── 5. Gate decisions (24h) ──────────────────────────────────────────────
     # Source: gate_decisions MongoDB collection, filtered to last 24h
@@ -151,7 +155,7 @@ async def get_dashboard_stats(
                 gate_by_type[gate] = {}
             gate_by_type[gate][decision] = gate_by_type[gate].get(decision, 0) + 1
     except Exception:
-        pass
+        log.debug("Failed to load gate decisions for dashboard", exc_info=True)
 
     # ── 6. Channels status ───────────────────────────────────────────────────
     # Source: messaging_channels + email_accounts

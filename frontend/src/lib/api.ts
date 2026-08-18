@@ -107,12 +107,37 @@ export async function fetchDeals() {
 }
 
 /* ── In-Memory SWR Cache ─────────────────────────────────────────── */
+//
+// CONVENTION: Every mutating method (POST, PUT, PATCH, DELETE) must call
+// `apiCache.delete(...)` for the affected resource and its parent list.
+// Without this, the frontend serves stale data after edits — e.g.
+// changing an agent's model via PUT /agents/{id} leaves the old model
+// in GET /agents cache, so the chat page uses the wrong model.
+//
+// Pattern: for a mutation on `/agents/3`, invalidate both
+//   `/agents/3` (the resource) and `/agents` (the list).
+//
 interface CacheEntry<T = any> {
   data: T;
   timestamp: number;
 }
 const apiCache = new Map<string, CacheEntry>();
 const DEFAULT_CACHE_TTL = 15000; // 15 seconds default
+
+/** Extract the parent list path from a resource path.
+ *  `/agents/3/traces` → `/agents/3` (parent of the nested resource)
+ *  `/agents/3` → `/agents` (list)
+ */
+function parentPath(path: string): string {
+  return path.replace(/\/\d+(\/|$)/, "/");
+}
+
+/** Invalidate cache for a resource and its parent list.
+ *  Call after every successful POST/PUT/PATCH/DELETE. */
+function invalidateMutated(path: string): void {
+  apiCache.delete(path);
+  apiCache.delete(parentPath(path));
+}
 
 /* ── Main API object ─────────────────────────────────────────────── */
 export const api = {
@@ -176,6 +201,7 @@ export const api = {
       const errorText = await res.text().catch(() => "No error body");
       throw new Error(`Failed to POST to ${path} (Status: ${res.status}): ${errorText}`);
     }
+    invalidateMutated(path);
     if (res.status === 204) return {} as T;
     const text = await res.text();
     try {
@@ -196,6 +222,7 @@ export const api = {
       const errorText = await res.text().catch(() => "No error body");
       throw new Error(`Failed to PUT to ${path} (Status: ${res.status}): ${errorText}`);
     }
+    invalidateMutated(path);
     if (res.status === 204) return {} as T;
     return res.json();
   },
@@ -210,6 +237,7 @@ export const api = {
       const errorText = await res.text().catch(() => "No error body");
       throw new Error(`Failed to PATCH ${path} (Status: ${res.status}): ${errorText}`);
     }
+    invalidateMutated(path);
     if (res.status === 204) return {} as T;
     return res.json();
   },
@@ -231,6 +259,7 @@ export const api = {
       const errorText = await res.text().catch(() => "No error body");
       throw new Error(`Failed to DELETE ${path} (Status: ${res.status}): ${errorText}`);
     }
+    invalidateMutated(path);
     if (res.status === 204) return {} as T;
     return res.json();
   },

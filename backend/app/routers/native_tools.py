@@ -55,7 +55,7 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
                 try:
                     results.append(json.loads(line))
                 except Exception:
-                    pass
+                    log.debug("Skipping unparseable search result line")
         return {"query": query, "count": len(results), "results": results}
     except Exception as e:
         log.exception("Error running fast native search: %s", e)
@@ -96,7 +96,7 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
                 try:
                     logs.append(json.loads(line))
                 except Exception:
-                    pass
+                    log.debug("Skipping unparseable log line")
         return {"count": len(logs), "logs": logs}
     except Exception as e:
         log.exception("Error running native log filter: %s", e)

@@ -41,7 +41,7 @@ def _serialise(doc: dict[str, Any]) -> dict[str, Any]:
 async def list_all_traces(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    outcome: str | None = Query(default=None),
+    outcome: str | None = Query(default=None, pattern=r"^[a-z_]{1,50}$"),
     agent_id: int | None = Query(default=None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
