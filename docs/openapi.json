@@ -1699,7 +1699,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^[a-z_]{1,50}$"
                 },
                 {
                   "type": "null"
@@ -1895,7 +1896,8 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^[a-z_]{1,50}$"
                 },
                 {
                   "type": "null"
