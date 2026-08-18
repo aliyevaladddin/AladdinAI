@@ -196,6 +196,10 @@ export const api = {
       const errorText = await res.text().catch(() => "No error body");
       throw new Error(`Failed to PUT to ${path} (Status: ${res.status}): ${errorText}`);
     }
+    // Invalidate cache for this resource and its parent list
+    const basePath = path.replace(/\/\d+(\/|$)/, "/");
+    apiCache.delete(path);
+    apiCache.delete(basePath);
     if (res.status === 204) return {} as T;
     return res.json();
   },
@@ -210,6 +214,10 @@ export const api = {
       const errorText = await res.text().catch(() => "No error body");
       throw new Error(`Failed to PATCH ${path} (Status: ${res.status}): ${errorText}`);
     }
+    // Invalidate cache for this resource and its parent list
+    const basePath = path.replace(/\/\d+(\/|$)/, "/");
+    apiCache.delete(path);
+    apiCache.delete(basePath);
     if (res.status === 204) return {} as T;
     return res.json();
   },
@@ -231,6 +239,10 @@ export const api = {
       const errorText = await res.text().catch(() => "No error body");
       throw new Error(`Failed to DELETE ${path} (Status: ${res.status}): ${errorText}`);
     }
+    // Invalidate cache for this resource and its parent list
+    const basePath = path.replace(/\/\d+(\/|$)/, "/");
+    apiCache.delete(path);
+    apiCache.delete(basePath);
     if (res.status === 204) return {} as T;
     return res.json();
   },
