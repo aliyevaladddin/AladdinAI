@@ -23,13 +23,13 @@ def test_resolve_known_hosts_returns_existing_file(tmp_path: Path):
     """If ~/.ssh/known_hosts already exists, its path is returned as-is."""
     fake_path = tmp_path / ".ssh" / "known_hosts"
     fake_path.parent.mkdir(parents=True)
-    fake_path.write_text("example.com ssh-ed25519 AAAA...\n")
+    fake_path.write_text("myserver ssh-ed25519 AAAA...\n")
 
     with patch("app.services.ssh_known_hosts._KNOWN_HOSTS_PATH", fake_path):
         result = resolve_known_hosts()
 
     assert result == str(fake_path)
-    assert fake_path.read_text().startswith("example.com")
+    assert fake_path.read_text().startswith("myserver")
 
 
 def test_resolve_known_hosts_fallback_on_oserror():
