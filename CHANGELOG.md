@@ -4,6 +4,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Documentation
+
+- Update API documentation [skip ci] (#639) ([93bccb8](https://github.com/aliyevaladddin/AladdinAI/commit/93bccb8e5554dd51e6383f145c1a2a3a12bf1ac9))
+
+
 ### Features
 
 - Per-turn agent trace view in the UI (#637) ([2253c23](https://github.com/aliyevaladddin/AladdinAI/commit/2253c2333c9e1f54868c1878281893c8debb980c))
@@ -12,6 +17,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 ### Maintenance
 
 - Bump version to 2.2.4 and update deps [skip ci] ([b316572](https://github.com/aliyevaladddin/AladdinAI/commit/b316572996e5eaef139c2334a14c3b44bb59f159))
+
+- Update changelog [skip ci] (#638) ([61f2f21](https://github.com/aliyevaladddin/AladdinAI/commit/61f2f21bcda66e4638dfef12293822bb0eb10338))
 
 ## [v2.2.4] - 2026-08-18
 
