@@ -448,9 +448,18 @@ def _write_traefik_config_sync(
             "services": {
                 svc: {
                     "loadBalancer": {
+                        # Health-check so Traefik withholds traffic until the
+                        # terminal container is actually ready after a restart.
+                        # Without this, Traefik routes immediately and returns
+                        # 502 during the container startup window.
+                        "healthCheck": {
+                            "path": "/",
+                            "interval": "2s",
+                            "timeout": "1s",
+                        },
                         "servers": [
                             {"url": f"http://{container_name}:{internal_port}"}
-                        ]
+                        ],
                     }
                 }
             },
