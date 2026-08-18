@@ -32,6 +32,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Tracing toggle, global traces page, trace feedback, Self-Forging UI (#642) ([9e03385](https://github.com/aliyevaladddin/AladdinAI/commit/9e03385982e73cec9b9a78d7b9443fba7088c4e4))
 
+- Add Traefik health checks to Docker services and include SOFA usage documentation ([ac6c057](https://github.com/aliyevaladddin/AladdinAI/commit/ac6c057474ad12d9227ac76e0a01f1c0b7ab6e83))
+
 
 ### Maintenance
 
@@ -52,6 +54,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#653) ([91c4f05](https://github.com/aliyevaladddin/AladdinAI/commit/91c4f05946aa6fbc26e957ac7650ed550f80778a))
 
 - Update changelog [skip ci] (#654) ([7d4a2ae](https://github.com/aliyevaladddin/AladdinAI/commit/7d4a2aebe53874f9f944299a4088356114e19a33))
+
+- Update changelog [skip ci] (#655) ([5864d5e](https://github.com/aliyevaladddin/AladdinAI/commit/5864d5e048010823482e45eb87ecfb9901a0b77b))
 
 ## [v2.2.4] - 2026-08-18
 
