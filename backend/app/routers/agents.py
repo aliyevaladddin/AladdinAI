@@ -1096,7 +1096,7 @@ async def list_agent_traces(
     agent_id: int,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    outcome: str | None = Query(default=None),
+    outcome: str | None = Query(default=None, pattern=r"^[a-z_]{1,50}$"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

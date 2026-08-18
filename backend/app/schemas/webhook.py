@@ -1,5 +1,5 @@
 # NOTICE: This file is protected under RCF-PL
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 # [RCF:PROTECTED]
@@ -31,5 +31,4 @@ class OutgoingWebhookResponse(OutgoingWebhookBase):
     created_at: datetime
 
 # [RCF:PROTECTED]
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -9,7 +9,7 @@ before they're used to start containers.
 
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # [RCF:PROTECTED]
@@ -103,5 +103,4 @@ class TerminalManifest(BaseModel):
         return v
 
 # [RCF:PROTECTED]
-    class Config:
-        extra = "forbid"  # Reject unknown fields to catch typos in manifests
+    model_config = ConfigDict(extra="forbid")  # Reject unknown fields to catch typos in manifests

@@ -131,7 +131,10 @@ async def get_provider_models(provider_id: int, user: User = Depends(get_current
     if not provider.models_available:
         return {"models": [], "hint": "Connect the provider first to fetch available models."}
 
-    models = json.loads(provider.models_available)
+    try:
+        models = json.loads(provider.models_available)
+    except (json.JSONDecodeError, TypeError):
+        return {"models": [], "hint": "Provider model list is corrupted — reconnect to refresh."}
     return {"models": models, "count": len(models)}
 
 
