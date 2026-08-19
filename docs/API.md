@@ -4657,6 +4657,23 @@ Health check endpoint for load balancers and container orchestration.
 | ---- | ----------- |
 | 200 | Successful Response |
 
+### /ready
+
+#### GET
+##### Summary:
+
+Readiness
+
+##### Description:
+
+Readiness probe — returns 200 only when DB is reachable.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
 ### /api/edition
 
 #### GET
