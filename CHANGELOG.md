@@ -14,6 +14,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Critical security and reliability issues (#668) ([0d3a0a6](https://github.com/aliyevaladddin/AladdinAI/commit/0d3a0a6ebac18934752d8081316968c9ebe4c987))
 
+- Critical production issues — hardcoded port, blocking event loop, readiness probe (#672) ([1ece654](https://github.com/aliyevaladddin/AladdinAI/commit/1ece654f72a1caab45206a5693661441b736c3ad))
+
 
 ### Documentation
 
@@ -64,6 +66,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#667) ([0ccf937](https://github.com/aliyevaladddin/AladdinAI/commit/0ccf93754187edc729858cc8cc77b5f3eb1d32c6))
 
 - Update changelog [skip ci] (#669) ([1d34b3b](https://github.com/aliyevaladddin/AladdinAI/commit/1d34b3bae726fc6bd473aefe11879a088c467818))
+
+- Update changelog [skip ci] (#671) ([813a7cd](https://github.com/aliyevaladddin/AladdinAI/commit/813a7cdc0de8501cce6600d710610f9485cd4b74))
 
 ## [v2.2.4] - 2026-08-18
 
