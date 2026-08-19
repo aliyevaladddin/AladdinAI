@@ -4,7 +4,6 @@ import asyncio
 import json
 import logging
 import os
-import subprocess
 from pathlib import Path
 from fastapi import APIRouter, Depends, Query, HTTPException
 from app.security import get_current_user
@@ -19,17 +18,22 @@ GREP_BIN = NATIVE_DIR / "aladdin-grep"
 LOG_BIN = NATIVE_DIR / "aladdin-log-stream"
 LOGS_ROOT = (Path(__file__).resolve().parent.parent.parent / "logs").resolve()
 
-def ensure_binaries():
+async def ensure_binaries():
     if not (GREP_BIN.exists() and LOG_BIN.exists()):
         try:
-            subprocess.run(["make", "-C", str(NATIVE_DIR)], capture_output=True, timeout=15)
+            proc = await asyncio.create_subprocess_exec(
+                "make", "-C", str(NATIVE_DIR),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            await proc.communicate()
         except Exception as e:
             log.error("Failed to build native C binaries: %s", e)
 
 @router.get("/search")
 async def fast_native_search(query: str = Query(..., min_length=1), path: str = Query("."), current_user: User = Depends(get_current_user)):
     """Fast native C project code search using mmap memory mapping."""
-    ensure_binaries()
+    await ensure_binaries()
     if not GREP_BIN.exists():
         raise HTTPException(status_code=500, detail="Native grep C binary not compiled")
 
@@ -64,7 +68,7 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
 @router.get("/logs/filter")
 async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query(""), current_user: User = Depends(get_current_user)):
     """High-speed C log stream filtering engine."""
-    ensure_binaries()
+    await ensure_binaries()
     if not LOG_BIN.exists():
         raise HTTPException(status_code=500, detail="Native log stream C binary not compiled")
 

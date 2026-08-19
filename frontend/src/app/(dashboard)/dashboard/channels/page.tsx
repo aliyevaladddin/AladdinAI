@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Mail, MessageSquare, Plus, X, Pencil, Trash2,
@@ -245,8 +245,8 @@ export default function ChannelsPage() {
     setWebhookModal({ open: true, loading: true, channel: c, data: null, error: null });
     try {
       const res = await api.get<{ webhook_url: string; webhook_secret: string | null; instructions: Record<string, string> }>(`/channels/messaging/${c.id}/webhook-config`);
-      // Resolve relative webhook_url to absolute using the dev-port convention
-      const base = window.location.origin.replace("3000", "8000");
+      // Resolve relative webhook_url to absolute using API_URL
+      const base = API_URL.replace(/\/api$/, "");
       const absoluteUrl = res.webhook_url.startsWith("http") ? res.webhook_url : `${base}${res.webhook_url}`;
       setWebhookModal({
         open: true,
@@ -276,7 +276,7 @@ export default function ChannelsPage() {
 
 
   const copyWebhookUrl = (c: MessagingChannel) => {
-    const base = window.location.origin.replace("3000", "8000");
+    const base = API_URL.replace(/\/api$/, "");
     const url = `${base}/api/webhooks/${c.type}/${c.id}`;
     navigator.clipboard?.writeText(url).catch(() => { });
     toast.success("Webhook URL copied", { description: url });

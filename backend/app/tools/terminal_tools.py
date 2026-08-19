@@ -282,8 +282,9 @@ async def run_approved_command(
         )
 
     # 2. Fallback: host subprocess under rlimits (no docker daemon available).
-    try:
-        res = subprocess.run(  # noqa: ASYNC221
+    #    preexec_fn requires a real thread; run_in_executor avoids blocking the event loop.
+    def _host_run():
+        return subprocess.run(
             ["bash", "-c", command],
             capture_output=True,
             text=True,
@@ -292,6 +293,9 @@ async def run_approved_command(
             cwd="/workspaces/AladdinAI",
             check=False,
         )
+
+    try:
+        res = await asyncio.get_event_loop().run_in_executor(None, _host_run)
         stdout = mask_secrets(res.stdout or "")
         stderr = mask_secrets(res.stderr or "")
         return (

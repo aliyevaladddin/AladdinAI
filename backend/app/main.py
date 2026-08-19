@@ -183,6 +183,25 @@ async def health(request: Request):
 
 
 # [RCF:PROTECTED]
+@app.get("/ready")
+# [RCF:PROTECTED]
+@limiter.limit("120/minute")
+# [RCF:PROTECTED]
+async def readiness(request: Request):
+    """Readiness probe — returns 200 only when DB is reachable."""
+    from app.database import async_session
+    from sqlalchemy import text
+
+    try:
+        async with async_session() as db:
+            await db.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception as exc:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=503, content={"status": "not ready", "error": str(exc)})
+
+
+# [RCF:PROTECTED]
 @app.get("/api/edition")
 # [RCF:PROTECTED]
 async def edition():
