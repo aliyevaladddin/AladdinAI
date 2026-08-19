@@ -16,6 +16,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Critical production issues — hardcoded port, blocking event loop, readiness probe (#672) ([1ece654](https://github.com/aliyevaladddin/AladdinAI/commit/1ece654f72a1caab45206a5693661441b736c3ad))
 
+- Add loading states, OpenAPI tags, silent-except logging, and internal links (#675) ([82f536f](https://github.com/aliyevaladddin/AladdinAI/commit/82f536f6483010ad4fee293ce34f2a64f36784f5))
+
 
 ### Documentation
 
@@ -28,6 +30,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update API documentation [skip ci] (#650) ([e4637fe](https://github.com/aliyevaladddin/AladdinAI/commit/e4637feb0c7dc0245b71e10e9ba12a37543d521a))
 
 - Add agent sandbox architecture guide ([f24c117](https://github.com/aliyevaladddin/AladdinAI/commit/f24c1178d72380f95369b40945a3f7d132da5350))
+
+- Update API documentation [skip ci] (#674) ([85272b0](https://github.com/aliyevaladddin/AladdinAI/commit/85272b0d136958a9455c77151b999cb741e70cf1))
 
 
 ### Features
@@ -68,6 +72,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#669) ([1d34b3b](https://github.com/aliyevaladddin/AladdinAI/commit/1d34b3bae726fc6bd473aefe11879a088c467818))
 
 - Update changelog [skip ci] (#671) ([813a7cd](https://github.com/aliyevaladddin/AladdinAI/commit/813a7cdc0de8501cce6600d710610f9485cd4b74))
+
+- Update changelog [skip ci] (#673) ([10f7c69](https://github.com/aliyevaladddin/AladdinAI/commit/10f7c6943d71fce185646763767c6c48de5a371b))
 
 ## [v2.2.4] - 2026-08-18
 
