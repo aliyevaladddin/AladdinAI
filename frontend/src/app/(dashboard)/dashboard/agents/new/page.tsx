@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
@@ -130,7 +131,7 @@ export default function NewAgentPage() {
           {selectedProvider && selectedProvider.status !== "connected" && (
             <p className="mt-1 text-xs text-amber-500">
               This provider is not connected. Go to{" "}
-              <a href="/dashboard/providers" className="underline">Providers</a> and click Connect first.
+              <Link href="/dashboard/providers" className="underline">Providers</Link> and click Connect first.
             </p>
           )}
         </div>

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ProductsCatalog, CatalogProduct } from "./ProductsCatalog";
+import { Loader2 } from "lucide-react";
 
 interface OrderItem {
   id: number;
@@ -75,6 +76,7 @@ export default function OrdersPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [metrics, setMetrics] = useState<OrderMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
@@ -83,13 +85,22 @@ export default function OrdersPage() {
   const [campaign, setCampaign] = useState("");
   const [items, setItems] = useState<FormItem[]>([{ product_id: "", quantity: "1" }]);
 
-  const load = () => {
-    const params = new URLSearchParams();
-    if (statusFilter) params.set("status", statusFilter);
-    if (mineOnly) params.set("mine", "true");
-    const qs = params.toString();
-    api.get<Order[]>(`/crm/orders${qs ? `?${qs}` : ""}`).then(setOrders);
-    api.get<OrderMetrics>("/crm/orders/metrics").then(setMetrics).catch(() => {});
+  const load = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (statusFilter) params.set("status", statusFilter);
+      if (mineOnly) params.set("mine", "true");
+      const qs = params.toString();
+      const [o, m] = await Promise.all([
+        api.get<Order[]>(`/crm/orders${qs ? `?${qs}` : ""}`),
+        api.get<OrderMetrics>("/crm/orders/metrics").catch(() => null),
+      ]);
+      setOrders(o);
+      if (m) setMetrics(m);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loadProducts = () => {
@@ -251,6 +262,11 @@ export default function OrdersPage() {
         </label>
       </div>
 
+      {loading ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="animate-spin mr-2 h-4 w-4" /> Loading orders…
+        </div>
+      ) : (
       <div className="space-y-3">
         {orders.map((o) => (
           <div key={o.id} className="rounded-lg border border-border p-4">
@@ -293,7 +309,7 @@ export default function OrdersPage() {
         ))}
         {orders.length === 0 && <p className="text-muted-foreground text-sm">No orders yet.</p>}
       </div>
-      </>
+      )}</>
       ) : (
         <ProductsCatalog products={products} onChanged={loadProducts} />
       )}

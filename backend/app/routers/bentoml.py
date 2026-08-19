@@ -15,7 +15,7 @@ from app.security import get_current_user
 
 log = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(tags=["BentoML"])
 
 # [RCF:PROTECTED]
 async def get_db():

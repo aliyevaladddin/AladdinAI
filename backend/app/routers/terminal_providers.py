@@ -218,9 +218,9 @@ async def delete_provider(
         try:
             await docker_runner.remove_container(provider.container_id)
         except docker_runner.DockerUnavailable:
-            pass
-        except docker_runner.DockerOperationError:
-            pass
+            log.debug("Docker unavailable during container cleanup for provider %s", provider.id)
+        except docker_runner.DockerOperationError as exc:
+            log.debug("Docker error during container cleanup for provider %s: %s", provider.id, exc)
     # Clean up Traefik routing config regardless of container state.
     await docker_runner.remove_traefik_config(provider.id)
     await db.delete(provider)

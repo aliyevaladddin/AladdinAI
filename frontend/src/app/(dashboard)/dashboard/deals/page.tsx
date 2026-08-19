@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 
 interface Deal {
@@ -38,15 +39,25 @@ const STAGE_COLORS: Record<string, string> = {
 export default function DealsPage() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ contact_id: "", title: "", amount: "", currency: "USD" });
 
 
-  const load = () => api.get<Deal[]>("/crm/deals").then(setDeals);
-  useEffect(() => {
-    load();
-    api.get<Contact[]>("/crm/contacts").then(setContacts);
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [d, c] = await Promise.all([
+        api.get<Deal[]>("/crm/deals"),
+        api.get<Contact[]>("/crm/contacts"),
+      ]);
+      setDeals(d);
+      setContacts(c);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { load(); }, []);
 
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -117,6 +128,11 @@ export default function DealsPage() {
         })}
       </div>
 
+      {loading ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="animate-spin mr-2 h-4 w-4" /> Loading deals…
+        </div>
+      ) : (
       <div className="space-y-3">
         {deals.map((d) => (
           <div key={d.id} className="flex items-center justify-between rounded-lg border border-border p-4">
@@ -141,6 +157,7 @@ export default function DealsPage() {
         ))}
         {deals.length === 0 && <p className="text-muted-foreground text-sm">No deals yet.</p>}
       </div>
+      )}
     </div>
   );
 }

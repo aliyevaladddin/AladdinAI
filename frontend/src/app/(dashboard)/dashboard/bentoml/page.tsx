@@ -26,6 +26,7 @@ interface VM {
 export default function BentoMLPage() {
   const [conns, setConns] = useState<BentoML[]>([]);
   const [vms, setVms] = useState<VM[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", endpoint_url: "", api_key: "" });
 
@@ -34,9 +35,18 @@ export default function BentoMLPage() {
   const [deployForm, setDeployForm] = useState({ vm_id: "", service_name: "my_service:svc", port: "3000" });
 
 
-  const load = () => {
-    api.get<BentoML[]>("/bentoml").then(setConns);
-    api.get<VM[]>("/ssh/vms-list").then(setVms);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [c, v] = await Promise.all([
+        api.get<BentoML[]>("/bentoml"),
+        api.get<VM[]>("/ssh/vms-list"),
+      ]);
+      setConns(c);
+      setVms(v);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -137,6 +147,11 @@ export default function BentoMLPage() {
         </form>
       )}
 
+      {loading ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="animate-spin mr-2 h-4 w-4" /> Loading BentoML connections…
+        </div>
+      ) : (
       <div className="space-y-3">
         {conns.map((c) => (
           <div key={c.id} className="rounded-lg border border-border p-4">
@@ -188,6 +203,7 @@ export default function BentoMLPage() {
           </p>
         )}
       </div>
+      )}
 
       {showDeployModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">

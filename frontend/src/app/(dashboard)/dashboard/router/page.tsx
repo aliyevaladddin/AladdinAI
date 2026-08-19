@@ -4,6 +4,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 
 interface RouterCfg {
@@ -39,20 +40,28 @@ const TYPE_INFO: Record<string, { label: string; description: string }> = {
 export default function RouterPage() {
   const [configs, setConfigs] = useState<RouterCfg[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState("keyword");
   const [formName, setFormName] = useState("");
-  // keyword rules: [{keywords: [], agent_id: ""}]
   const [rules, setRules] = useState([{ keywords: "", agent_id: "" }]);
-  // llm_classifier: fallback agent
   const [fallbackAgentId, setFallbackAgentId] = useState("");
 
 
-  const load = () => api.get<RouterCfg[]>("/router").then(setConfigs);
-  useEffect(() => {
-    load();
-    api.get<Agent[]>("/agents").then(setAgents);
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [c, a] = await Promise.all([
+        api.get<RouterCfg[]>("/router"),
+        api.get<Agent[]>("/agents"),
+      ]);
+      setConfigs(c);
+      setAgents(a);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => { load(); }, []);
 
 
   const buildConfig = () => {
@@ -236,6 +245,11 @@ export default function RouterPage() {
         </form>
       )}
 
+      {loading ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          <Loader2 className="animate-spin mr-2 h-4 w-4" /> Loading router configs…
+        </div>
+      ) : (
       <div className="space-y-3">
         {configs.map((c: RouterCfg) => (
           <div key={c.id} className="rounded-lg border border-border p-4 space-y-3">
@@ -284,6 +298,7 @@ export default function RouterPage() {
           <p className="text-muted-foreground text-sm">No router configs yet.</p>
         )}
       </div>
+      )}
     </div>
   );
 }
