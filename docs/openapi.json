@@ -8702,6 +8702,23 @@
         }
       }
     },
+    "/ready": {
+      "get": {
+        "summary": "Readiness",
+        "description": "Readiness probe \u2014 returns 200 only when DB is reachable.",
+        "operationId": "readiness_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/edition": {
       "get": {
         "summary": "Edition",
