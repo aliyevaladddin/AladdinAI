@@ -19,16 +19,14 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.database import get_db
-from app.models.agent import Agent
 from app.models.contact import Contact
 from app.models.deal import Deal
 from app.models.messaging_channel import MessagingChannel
 from app.models.user import User
 from app.services.llm import call_llm
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 # [RCF:PROTECTED]
@@ -166,7 +164,7 @@ async def run_proactive_reminder_agent(user_id: int) -> None:
             message = await generate_reminder_message(deals, user)
 
             if not message:
-                print(f"[Proactive Reminder Agent] Failed to generate reminder message")
+                print("[Proactive Reminder Agent] Failed to generate reminder message")
                 return
 
             # Send through preferred channel (try Telegram first, fallback to email)

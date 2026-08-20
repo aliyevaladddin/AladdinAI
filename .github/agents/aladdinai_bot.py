@@ -96,7 +96,7 @@ class AladdinAIBot:
 
             # Personalized welcome based on interaction history
             if "OWNER" in user_context:
-                message = f"On it, boss! 🫡\n\nReviewing your issue now...\n\n*— AladdinAI Bot*"
+                message = "On it, boss! 🫡\n\nReviewing your issue now...\n\n*— AladdinAI Bot*"
             elif "FIRST interaction" in user_context:
                 message = f"Welcome to AladdinAI, @{user}! 🎉\n\nThanks for opening your first issue! Our AI agents are reviewing it now...\n\n*— AladdinAI Bot*"
             elif "CORE contributor" in user_context:
@@ -132,13 +132,13 @@ class AladdinAIBot:
                 user_context = await self._get_user_context(user, owner)
 
                 if "OWNER" in user_context:
-                    message = f"👋 Yes, boss? What do you need?\n\n*— AladdinAI Bot*"
+                    message = "👋 Yes, boss? What do you need?\n\n*— AladdinAI Bot*"
                 elif "FIRST interaction" in user_context:
                     message = f"👋 Welcome @{user}! I'm here to help!\n\nI'm still learning, but feel free to ask questions about AladdinAI.\n\n*— AladdinAI Bot*"
                 elif "CORE contributor" in user_context:
                     message = f"👋 @{user}! Always happy to help a core contributor.\n\nWhat can I do for you?\n\n*— AladdinAI Bot*"
                 else:
-                    message = f"👋 You called? I'm here to help!\n\nI'm still learning, but feel free to ask questions about AladdinAI.\n\n*— AladdinAI Bot*"
+                    message = "👋 You called? I'm here to help!\n\nI'm still learning, but feel free to ask questions about AladdinAI.\n\n*— AladdinAI Bot*"
 
                 await self._post_issue_comment(owner, repo_name, issue_number, message)
 

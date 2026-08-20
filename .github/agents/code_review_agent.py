@@ -34,7 +34,7 @@ except ImportError:
     sys.exit(1)
 
 
-REVIEW_PROMPT = """You are an expert code reviewer. Analyze this pull request with focus on real, actionable issues.
+REVIEW_PROMPT = r"""You are an expert code reviewer. Analyze this pull request with focus on real, actionable issues.
 
 **CRITICAL RULES:**
 1. Only flag issues that will actually break production or create security holes
