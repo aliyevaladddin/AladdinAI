@@ -198,7 +198,11 @@ async def readiness(request: Request):
         return {"status": "ready"}
     except Exception as exc:
         from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=503, content={"status": "not ready", "error": str(exc)})
+        log.exception("Readiness check failed")
+        return JSONResponse(
+            status_code=503,
+            content={"status": "not ready", "error": "service unavailable"},
+        )
 
 
 # [RCF:PROTECTED]
