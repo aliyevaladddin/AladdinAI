@@ -162,7 +162,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
 
         review_body = response.choices[0].message.content
 
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         print(f"Error calling NIM API: {e}", file=sys.stderr)
         sys.exit(1)
 
@@ -206,7 +206,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
             event="COMMENT"
         )
         print(f"✓ Review posted: {result['html_url']}")
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         print(f"Error posting review: {e}", file=sys.stderr)
         sys.exit(1)
 

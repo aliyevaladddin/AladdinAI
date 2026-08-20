@@ -177,10 +177,9 @@ async def run_proactive_reminder_agent(user_id: int) -> None:
             else:
                 print(f"[Proactive Reminder Agent] Failed to send reminder to user {user_id}")
 
-        except Exception as e:
+        except (OSError, ValueError, RuntimeError) as e:
             print(f"[Proactive Reminder Agent] Error: {e}")
-        finally:
-            break
+        break
 
 
 # Scheduler integration helper
