@@ -6381,6 +6381,7 @@
     "/api/bentoml": {
       "get": {
         "tags": [
+          "BentoML",
           "BentoML"
         ],
         "summary": "Get Bentoml Connections",
@@ -6403,6 +6404,7 @@
       },
       "post": {
         "tags": [
+          "BentoML",
           "BentoML"
         ],
         "summary": "Create Bentoml Connection",
@@ -6447,6 +6449,7 @@
     "/api/bentoml/{conn_id}/deploy": {
       "post": {
         "tags": [
+          "BentoML",
           "BentoML"
         ],
         "summary": "Deploy Service",
@@ -6502,6 +6505,7 @@
     "/api/bentoml/{conn_id}": {
       "put": {
         "tags": [
+          "BentoML",
           "BentoML"
         ],
         "summary": "Update Bentoml Connection",
@@ -6555,6 +6559,7 @@
       },
       "delete": {
         "tags": [
+          "BentoML",
           "BentoML"
         ],
         "summary": "Delete Bentoml Connection",
@@ -6595,6 +6600,7 @@
     "/api/bentoml/{conn_id}/test": {
       "post": {
         "tags": [
+          "BentoML",
           "BentoML"
         ],
         "summary": "Test Bentoml",
