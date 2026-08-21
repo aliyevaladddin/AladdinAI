@@ -8,10 +8,19 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Remove 16 of 19 type: ignore suppressions in backend ([d704540](https://github.com/aliyevaladddin/AladdinAI/commit/d70454019c891aa4506060d55e1c30b21dbcc50a))
 
+- Replace 23 of 26 any types with proper TypeScript types (#714) ([5f450c6](https://github.com/aliyevaladddin/AladdinAI/commit/5f450c6f3a8a1cbe0a12efffca384eb3267cec94))
+
+
+### Documentation
+
+- Update API documentation [skip ci] (#713) ([43cce1c](https://github.com/aliyevaladddin/AladdinAI/commit/43cce1cf0cb41fbd95e395d2753769615f519c5a))
+
 
 ### Maintenance
 
 - Bump version to 2.2.5 and update deps [skip ci] ([f2f404c](https://github.com/aliyevaladddin/AladdinAI/commit/f2f404cf94bca10ea83f5574e4a91fd1d03bb5ff))
+
+- Update changelog [skip ci] (#712) ([3a19f0f](https://github.com/aliyevaladddin/AladdinAI/commit/3a19f0ffa398033c6c7b25c4cc3ab9e889582f05))
 
 ## [v2.2.5] - 2026-08-21
 
