@@ -126,10 +126,9 @@ jobs:
         env:
           TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
-          # The app does not exist at workflow-authoring time, so resolve the
-          # bot identity from the installation token. The noreply email MUST
-          # be {numeric_id}+{login}@users.noreply.github.com or the commit is
-          # anonymous and never counts toward contributors.
+          # Resolve the bot identity from the installation token.
+          # The noreply email MUST be {numeric_id}+{login}@users.noreply.github.com
+          # or the commit is anonymous and never counts toward contributors.
           RESPONSE=$(curl -s -H "Authorization: Bearer $TOKEN" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/user)
@@ -142,32 +141,23 @@ jobs:
           fi
           git config user.name "$BOT_LOGIN"
           git config user.email "${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
-          echo "Committing as $BOT_LOGIN"
+          echo "Committing as $BOT_LOGIN <${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com>"
 
-      - name: Create Bot Commit
+      - name: Create Bot Commit (direct push to main)
+        env:
+          TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
-          BRANCH_NAME="bot/qwen-activity-$(date +%s)"
-          git checkout -b "$BRANCH_NAME"
-
+          # Direct push to main so the bot's authorship is preserved.
+          # squash/merge PRs reassign the commit to the merger — use direct push instead.
           echo "# Qwen Bot Activity" > .github/qwen-bot-activity.md
-          echo "Last activity: $(date)" >> .github/qwen-bot-activity.md
+          echo "Last activity: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> .github/qwen-bot-activity.md
+          echo "Run: ${{ github.run_id }}" >> .github/qwen-bot-activity.md
           git add .github/qwen-bot-activity.md
-          git commit -m "chore: update qwen bot activity log" || echo "No changes to commit"
-          git push https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/${{ github.repository }}.git HEAD:"$BRANCH_NAME"
 
-          # Create PR using GitHub API
-          PR_RESPONSE=$(curl -s -X POST \
-            -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/pulls \
-            -d "{\"title\":\"chore: Qwen bot activity update\",\"head\":\"$BRANCH_NAME\",\"base\":\"main\",\"body\":\"Automated activity log update from Qwen bot\"}")
-
-          # Extract PR number and enable auto-merge
-          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number')
-          if [ "$PR_NUMBER" != "null" ]; then
-            curl -s -X PUT \
-              -H "Authorization: Bearer ${{ steps.generate_token.outputs.token }}" \
-              -H "Accept: application/vnd.github+json" \
-              https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge \
-              -d '{"merge_method":"squash"}'
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore(qwen-bot): update activity log [skip ci]"
+            git push https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git HEAD:main
+            echo "✅ Qwen bot commit pushed to main successfully"
           fi
