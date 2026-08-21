@@ -73,6 +73,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add Antigravity contributor profile with link in README ([a22c2e7](https://github.com/aliyevaladddin/AladdinAI/commit/a22c2e764edd3b359f2d895689abe75ca691e6a9))
 
+- Update API documentation [skip ci] (#691) ([974067d](https://github.com/aliyevaladddin/AladdinAI/commit/974067d01750a3746c4c8134b6bc66aaa82bcbda))
+
 
 ### Features
 
@@ -130,6 +132,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Ignore frontend coverage directory in git ([d0fe0c9](https://github.com/aliyevaladddin/AladdinAI/commit/d0fe0c9cd69746b46788516b507684cf63c2966f))
 
 - Update changelog [skip ci] (#689) ([79d199e](https://github.com/aliyevaladddin/AladdinAI/commit/79d199e95d3d8d2576bfc9596989a78b07a7c5ab))
+
+- Update changelog [skip ci] (#690) ([a4c9bf7](https://github.com/aliyevaladddin/AladdinAI/commit/a4c9bf7dcef8af0be59ec955348c83ed77a93f33))
 
 
 ### Performance
