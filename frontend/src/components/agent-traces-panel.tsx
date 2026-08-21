@@ -338,9 +338,12 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
               className="rounded-xl border border-border/50 bg-surface-1 overflow-hidden transition-colors hover:border-accent/30"
             >
               {/* Summary row */}
-              <button
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={() => toggleExpand(trace)}
-                className="w-full text-left p-4 flex items-start gap-3"
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleExpand(trace); } }}
+                className="w-full text-left p-4 flex items-start gap-3 cursor-pointer"
               >
                 <div className="mt-0.5 text-muted-foreground/60">
                   {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -432,7 +435,7 @@ export function AgentTracesPanel({ agentId }: { agentId: number }) {
                     </span>
                   </div>
                 </div>
-              </button>
+              </div>
 
               {/* Expanded detail */}
               {isOpen && (
