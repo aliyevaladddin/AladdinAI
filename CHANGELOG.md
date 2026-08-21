@@ -6,6 +6,17 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ### Bug Fixes
 
+- Remove 16 of 19 type: ignore suppressions in backend ([d704540](https://github.com/aliyevaladddin/AladdinAI/commit/d70454019c891aa4506060d55e1c30b21dbcc50a))
+
+
+### Maintenance
+
+- Bump version to 2.2.5 and update deps [skip ci] ([f2f404c](https://github.com/aliyevaladddin/AladdinAI/commit/f2f404cf94bca10ea83f5574e4a91fd1d03bb5ff))
+
+## [v2.2.5] - 2026-08-21
+
+### Bug Fixes
+
 - VoicePlayer tokens, terminal TabBar, code block hex, reports colors, blob cache ([5c1c452](https://github.com/aliyevaladddin/AladdinAI/commit/5c1c4523db4be2a6864285087446f644bf7137ef))
 
 - Remove false positive CodeQL URL-substring warning in test ([dbe68a6](https://github.com/aliyevaladddin/AladdinAI/commit/dbe68a683b604b21412a55af29b17211fb369198))
@@ -164,6 +175,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update nvidia bot activity log (#708) ([013dff9](https://github.com/aliyevaladddin/AladdinAI/commit/013dff9a537b188352d7b4818c5f0a9aeb6bf13a))
 
 - Update bot activity log (#709) ([82800cc](https://github.com/aliyevaladddin/AladdinAI/commit/82800cce23e2d1902d98f6dfeb9f118df700d49b))
+
+- Update changelog [skip ci] (#711) ([430485c](https://github.com/aliyevaladddin/AladdinAI/commit/430485cb46208d69a494fd108bd670741d07ec5c))
 
 
 ### Performance
