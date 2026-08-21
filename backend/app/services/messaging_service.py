@@ -156,28 +156,22 @@ async def send_telegram(channel: MessagingChannel, chat_id: str, text: str):
 async def send_telegram_photo(
     channel: MessagingChannel,
     chat_id: str,
-    image_path: str,
+    image_bytes: bytes,
+    filename: str = "image.png",
     caption: str | None = None,
 ):
-    """Upload a local image file to a Telegram chat via sendPhoto (multipart)."""
-    from pathlib import Path
-
+    """Upload image bytes to a Telegram chat via sendPhoto (multipart)."""
     token = channel.config.get("bot_token")
-    p = Path(image_path)
-    if not p.exists():
-        log.warning("send_telegram_photo: file not found %s", image_path)
-        return
-    with p.open("rb") as fh:
-        files = {"photo": (p.name, fh, "application/octet-stream")}
-        data: dict[str, str] = {"chat_id": str(chat_id)}
-        if caption:
-            data["caption"] = caption
-        async with httpx.AsyncClient(timeout=60) as client:
-            await client.post(
-                f"https://api.telegram.org/bot{token}/sendPhoto",
-                data=data,
-                files=files,
-            )
+    files = {"photo": (filename, image_bytes, "application/octet-stream")}
+    data: dict[str, str] = {"chat_id": str(chat_id)}
+    if caption:
+        data["caption"] = caption
+    async with httpx.AsyncClient(timeout=60) as client:
+        await client.post(
+            f"https://api.telegram.org/bot{token}/sendPhoto",
+            data=data,
+            files=files,
+        )
 
 
 # [RCF:PROTECTED]

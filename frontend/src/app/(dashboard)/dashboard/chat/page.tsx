@@ -548,7 +548,7 @@ export default function ChatPage() {
       }
     } catch (err: any) {
       if (err.name === "AbortError") {
-        console.log("Chat generation stopped by user");
+        // User cancelled — silently ignore
         return;
       }
       console.error(err);

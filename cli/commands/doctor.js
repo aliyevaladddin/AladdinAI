@@ -169,6 +169,18 @@ export async function doctorCommand() {
     warn('frontend not responding on :3000', 'check `npx aladdin-ai logs frontend`');
   }
 
+  // ── Database readiness ───────────────────────────────────────────
+  console.log(chalk.bold('\nDatabase'));
+  const readyRes = await fetchWithTimeout('http://localhost:8000/ready');
+  if (readyRes && readyRes.status === 200) {
+    ok('database reachable and ready');
+  } else if (readyRes && readyRes.status === 503) {
+    bad('database not ready', 'check postgres container: `npx aladdin-ai logs postgres`');
+    failures++;
+  } else {
+    warn('readiness endpoint not responding', 'backend may not be running');
+  }
+
   // ── Summary ──────────────────────────────────────────────────────
   console.log();
   if (failures === 0) {

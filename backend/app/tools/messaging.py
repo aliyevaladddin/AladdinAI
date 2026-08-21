@@ -103,31 +103,16 @@ async def send_image(
         if channel_type == "telegram":
             from app.services.messaging_service import send_telegram_photo
 
-            # send_telegram_photo uploads from a real on-disk path. For local
-            # storage the resolved handle *is* such a path. For mongodb there is
-            # no file on disk, so materialise the GridFS bytes into a temp file
-            # for the duration of the upload, then clean it up.
-            import os
+            # Read image bytes from disk or media store (no temp files needed)
             from pathlib import Path
 
             if Path(handle).exists():
-                await send_telegram_photo(channel, str(recipient), handle, caption=caption)
+                image_bytes = Path(handle).read_bytes()
             else:
-                data = await media_storage.get_bytes(ctx.db, ctx.user_id, handle)
-                if not data:
+                image_bytes = await media_storage.get_bytes(ctx.db, ctx.user_id, handle)
+                if not image_bytes:
                     return {"error": f"Failed to read {filename!r} from media store"}
-                import tempfile
-                suffix = os.path.splitext(filename)[1] or ".bin"
-                tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
-                try:
-                    tmp.write(data)
-                    tmp.close()
-                    await send_telegram_photo(channel, str(recipient), tmp.name, caption=caption)
-                finally:
-                    try:
-                        os.unlink(tmp.name)
-                    except OSError:
-                        pass
+            await send_telegram_photo(channel, str(recipient), image_bytes, filename=filename, caption=caption)
             return {"status": "sent", "channel": "telegram", "filename": filename}
         return {"error": f"send_image not implemented for channel {channel_type!r}"}
     except Exception as e:  # noqa: BLE001
