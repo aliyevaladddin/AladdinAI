@@ -17,7 +17,7 @@ import type { ActivityItem } from "./ActivityBar";
  * Activity bar configuration for the authenticated dashboard.
  * Order mirrors the existing AppSidebar — same routes, vertical layout.
  *
- * Providers moved to /dashboard/settings?tab=providers (2026-06-01).
+ * Providers, Traces, and Self-Forging moved to Settings tabs.
  */
 export const DASHBOARD_PRIMARY: ActivityItem[] = [
   { href: "/dashboard",             title: "Overview",     icon: LayoutDashboard },
