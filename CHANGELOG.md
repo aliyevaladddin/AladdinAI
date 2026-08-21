@@ -48,6 +48,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Telegram photo bytes, doctor DB check, add Cursor contributor ([7b80c00](https://github.com/aliyevaladddin/AladdinAI/commit/7b80c00b3615cc29b369b777a77dcb7e5a12e556))
 
+- Nested button hydration error in agent traces panel ([172e909](https://github.com/aliyevaladddin/AladdinAI/commit/172e9094a450ec44aa158a1339380f6fb1b5661a))
+
 
 ### Documentation
 
@@ -135,6 +137,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#690) ([a4c9bf7](https://github.com/aliyevaladddin/AladdinAI/commit/a4c9bf7dcef8af0be59ec955348c83ed77a93f33))
 
+- Update changelog [skip ci] (#693) ([ad5cb1e](https://github.com/aliyevaladddin/AladdinAI/commit/ad5cb1e2233e23d6148d4c8f4b6637ba597adce0))
+
+- Remove unused Activity and FlaskConical imports from dashboard-nav ([24d17fc](https://github.com/aliyevaladddin/AladdinAI/commit/24d17fc3ee1d4c55e60c960acc8b319b1873ae1e))
+
 
 ### Performance
 
@@ -160,6 +166,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Remove unused os and tempfile imports in ssh known hosts test ([3aa51f4](https://github.com/aliyevaladddin/AladdinAI/commit/3aa51f4dadd55a6cca1c0b04d71d69455ca6354a))
 
 - Extract SQL playground into sub-components (1255→454 lines) ([1431664](https://github.com/aliyevaladddin/AladdinAI/commit/1431664dec66263d41e662b32c26313afa09b737))
+
+- Move Traces from sidebar to Settings > Observability ([079f592](https://github.com/aliyevaladddin/AladdinAI/commit/079f592103895a40e66b99ee687b4079fcf7d9ea))
+
+- Move Self-Forging from sidebar to Settings > Training ([b52a365](https://github.com/aliyevaladddin/AladdinAI/commit/b52a36546c85211fc44367aa4c272c4d61723477))
 
 
 ### Testing
