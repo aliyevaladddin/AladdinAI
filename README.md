@@ -339,6 +339,7 @@ AladdinAI is built by a mixed human + AI team.
 **AI agents** (commits land via bot accounts, credited here explicitly)
 - **AladdinAI[bot]** — autonomous engineering agent
 - **Claude** (Anthropic) — pair programming, infrastructure, reviews
+- **Antigravity** (Google DeepMind) — security hardening, refactoring, bug fixes
 - **Qwen** (Alibaba) — image generation backbone (`wan2.2` via DashScope)
 
 GitHub's contributors graph only counts accounts linked by commit email, so
