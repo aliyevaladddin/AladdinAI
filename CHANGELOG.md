@@ -18,6 +18,34 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add loading states, OpenAPI tags, silent-except logging, and internal links (#675) ([82f536f](https://github.com/aliyevaladddin/AladdinAI/commit/82f536f6483010ad4fee293ce34f2a64f36784f5))
 
+- Pydantic V2 ConfigDict, silent exceptions, json.loads safety, input validation ([d6408b0](https://github.com/aliyevaladddin/AladdinAI/commit/d6408b0441f813793f09d1257e8156da441cb425))
+
+- Hydration error — nested buttons in trace panels ([0cc6a2f](https://github.com/aliyevaladddin/AladdinAI/commit/0cc6a2f021c21909e5d9e92a8cfab4b7b8c20061))
+
+- Move logging import after other imports (ruff E402) ([ad71e2d](https://github.com/aliyevaladddin/AladdinAI/commit/ad71e2d248e7bef602345656a662005dcce553c4))
+
+- Invalidate API cache on PUT/PATCH/DELETE mutations ([1063e41](https://github.com/aliyevaladddin/AladdinAI/commit/1063e4146a0225a6b316391365342f8a9500b819))
+
+- Also invalidate cache on POST (new resource creation) ([736c43e](https://github.com/aliyevaladddin/AladdinAI/commit/736c43e0c8cb7947f0ff812b8157aa0c59547a01))
+
+- Remove Gates 24h from status bar (always 0 when gates disabled) ([9d49e1f](https://github.com/aliyevaladddin/AladdinAI/commit/9d49e1f2a87d3aa11f7e6af5e2017703756c949a))
+
+- Critical security and reliability issues ([8bd9f72](https://github.com/aliyevaladddin/AladdinAI/commit/8bd9f726884062daed18c078d614622bc919e941))
+
+- Error boundaries, rate limiting, and print→log ([f7bc51d](https://github.com/aliyevaladddin/AladdinAI/commit/f7bc51d338be9e21aca11ba00366f30bcdff2b77))
+
+- DuckDuckGo search returning 0 web results ([158ed28](https://github.com/aliyevaladddin/AladdinAI/commit/158ed28d31be905640b5e23b6666b34b5bed6b6c))
+
+- Move log import after all imports in terminal_providers (ruff E402) ([31877db](https://github.com/aliyevaladddin/AladdinAI/commit/31877dbd028abe8ee296d663bd64b5c6e4dedc7a))
+
+- Add loading states, OpenAPI tags, silent-except logging, and internal links ([2b69790](https://github.com/aliyevaladddin/AladdinAI/commit/2b69790da72a42119e045787133a8ec77b89d7ff))
+
+- Correct changelog bot noreply identity for contributor attribution ([ada866e](https://github.com/aliyevaladddin/AladdinAI/commit/ada866e57737d3cc9d2ff21224ebc065586ad341))
+
+- Critical production issues — hardcoded port, blocking event loop, readiness probe ([1fc6bb6](https://github.com/aliyevaladddin/AladdinAI/commit/1fc6bb6bc1c72ce4a6b0ad2ad199227c09d9d696))
+
+- Replace known_hosts=None with TOFU verification (issue #356) ([46040d7](https://github.com/aliyevaladddin/AladdinAI/commit/46040d7166cbf049b14c13f297d466d7d0a11ab3))
+
 
 ### Documentation
 
@@ -35,6 +63,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#677) ([d50fc14](https://github.com/aliyevaladddin/AladdinAI/commit/d50fc143115e8c1a7ad560d4401d6a62a4f5d093))
 
+- Add Antigravity to contributors list ([7828c8e](https://github.com/aliyevaladddin/AladdinAI/commit/7828c8e40259328571aebac15ba00d6ddeb2898f))
+
+- Add visual contributors table with avatars in README ([c19855d](https://github.com/aliyevaladddin/AladdinAI/commit/c19855d5d6da8a91d7dbe75dce5a04330ccf77af))
+
+- Update architecture, testing, and backend docs ([2bf490e](https://github.com/aliyevaladddin/AladdinAI/commit/2bf490e72a2321b711d2911dae1382776a7f2177))
+
 
 ### Features
 
@@ -43,6 +77,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Tracing toggle, global traces page, trace feedback, Self-Forging UI (#642) ([9e03385](https://github.com/aliyevaladddin/AladdinAI/commit/9e03385982e73cec9b9a78d7b9443fba7088c4e4))
 
 - Add Traefik health checks to Docker services and include SOFA usage documentation ([ac6c057](https://github.com/aliyevaladddin/AladdinAI/commit/ac6c057474ad12d9227ac76e0a01f1c0b7ab6e83))
+
+- Add Qwen bot activity job and fix bot commit attribution ([a2b0b16](https://github.com/aliyevaladddin/AladdinAI/commit/a2b0b16d5f94f9f212b86672fa2387f02790fdf8))
+
+- Per-turn agent trace view in the UI ([7b6e7cc](https://github.com/aliyevaladddin/AladdinAI/commit/7b6e7cc840fa807f22c40b08144035067dfc5634))
+
+- Tracing toggle, global traces page, trace feedback, Self-Forging UI ([a5c4cbe](https://github.com/aliyevaladddin/AladdinAI/commit/a5c4cbe12eb690b1ec68813b7a4950e3b5add783))
+
+- Fix broken design tokens and polish dashboard UI ([c35e4d0](https://github.com/aliyevaladddin/AladdinAI/commit/c35e4d0842052362266bf255cd56d6fb1f4cb908))
 
 
 ### Maintenance
@@ -79,6 +121,15 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#679) ([c8d75de](https://github.com/aliyevaladddin/AladdinAI/commit/c8d75de853e7db04205f24ea8a94f753095fa09d))
 
+- Update changelog [skip ci] (#683) ([122f8de](https://github.com/aliyevaladddin/AladdinAI/commit/122f8ded3a732e7a5b328ad7aa901dd81c9f38b8))
+
+- Ignore frontend coverage directory in git ([d0fe0c9](https://github.com/aliyevaladddin/AladdinAI/commit/d0fe0c9cd69746b46788516b507684cf63c2966f))
+
+
+### Performance
+
+- Stream chat updates without re-rendering the whole message list ([4193a53](https://github.com/aliyevaladddin/AladdinAI/commit/4193a5334dfdd34bc44dc3966e093b395b9ab04d))
+
 
 ### Refactor
 
@@ -87,6 +138,58 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Clean up error handling, fix f-string usage, and reorganize imports across agents and tools ([720da99](https://github.com/aliyevaladddin/AladdinAI/commit/720da997a693ee99598de049daecaf131c7e4a1c))
 
 - Replace broad exception handling with specific exception types in agents and simplify readiness check logging ([276fea3](https://github.com/aliyevaladddin/AladdinAI/commit/276fea3b7fca1022dcc9385e4407a58c091e5520))
+
+- Move Traces and Self-Forging from sidebar to Settings tabs (#648) ([691849d](https://github.com/aliyevaladddin/AladdinAI/commit/691849dee1e1c637234e968e0fb444099ee8f153))
+
+- Remove unused pytest import in crm test suite ([bca6328](https://github.com/aliyevaladddin/AladdinAI/commit/bca632821471949d73982ba7664cb96adfe64dbb))
+
+- Extract invalidateMutated helper + convention comment ([6646c7e](https://github.com/aliyevaladddin/AladdinAI/commit/6646c7ee76423f8bd7302b78ba74433a4da5dd36))
+
+- Move Traces and Self-Forging from sidebar to Settings tabs ([4a929b5](https://github.com/aliyevaladddin/AladdinAI/commit/4a929b553553ee82d65faf31fc5ebd3d2fd59d85))
+
+- Remove unused os and tempfile imports in ssh known hosts test ([3aa51f4](https://github.com/aliyevaladddin/AladdinAI/commit/3aa51f4dadd55a6cca1c0b04d71d69455ca6354a))
+
+- Extract SQL playground into sub-components (1255→454 lines) ([1431664](https://github.com/aliyevaladddin/AladdinAI/commit/1431664dec66263d41e662b32c26313afa09b737))
+
+
+### Testing
+
+- Add CRM router tests (contacts, deals, products, orders) ([21947cd](https://github.com/aliyevaladddin/AladdinAI/commit/21947cdf53b78f4fec6db1572612d5e8489e8c5b))
+
+- Update webhook test documentation and clean up formatting in guides README ([e9c7864](https://github.com/aliyevaladddin/AladdinAI/commit/e9c786436dc2d1ab90208a8110c4a8dfe1dd3a9c))
+
+- Remove unused datetime import from global traces test suite ([51506fa](https://github.com/aliyevaladddin/AladdinAI/commit/51506fa51a7db97b8d65e9726a8a25c018370c0d))
+
+
+### Merge
+
+- Fix/pydantic-exceptions-validation into main ([1dcc7c9](https://github.com/aliyevaladddin/AladdinAI/commit/1dcc7c92d840c501e0bc75179340cebac261a585))
+
+- Fix/critical-issues into main ([d2d0ff5](https://github.com/aliyevaladddin/AladdinAI/commit/d2d0ff555efaf8eb554ead28edb638290e57c152))
+
+- Fix/important-issues into main ([88ca1a0](https://github.com/aliyevaladddin/AladdinAI/commit/88ca1a091d47741a8f0889cd72dabe8538d86493))
+
+- Fix/ui-loading-states-and-cleanup into main ([4898d27](https://github.com/aliyevaladddin/AladdinAI/commit/4898d27a29a45791f434dd39720756bf46001121))
+
+- Fix/changelog-bot-attribution into main ([f485096](https://github.com/aliyevaladddin/AladdinAI/commit/f4850964ac7e111555f57df60a1491904f49777b))
+
+- Feat/qwen-bot-activity into main ([5e6261a](https://github.com/aliyevaladddin/AladdinAI/commit/5e6261a2d65bea51beeec38c6a3daff47e7f3bc0))
+
+- Feat/webhooks-agents-edit-test into main ([25124eb](https://github.com/aliyevaladddin/AladdinAI/commit/25124eb71e6865e21bdd3dbefb21896097418975))
+
+- Fix/move-traces-forging-to-settings into main ([d0e6be1](https://github.com/aliyevaladddin/AladdinAI/commit/d0e6be115dced0e67d06ff21442be847db2ccbaa))
+
+- Fix/critical-hardcoded-port-async-block into main (resolved conflict) ([22d4bf5](https://github.com/aliyevaladddin/AladdinAI/commit/22d4bf5b26a072dbcfa3b706a441f0f5eb47f73c))
+
+- Fix/ssh-known-hosts-tofu into main (resolved conflict, kept CodeQL-safe test data) ([494306c](https://github.com/aliyevaladddin/AladdinAI/commit/494306c5025cffc23f5604892f31353afa144f00))
+
+- Feat/agent-trace-view into main (resolved conflicts, took branch version) ([dae4f78](https://github.com/aliyevaladddin/AladdinAI/commit/dae4f78f95fc6845e655ac7c558b620f9b3f3b04))
+
+- Feat/traces-forging-ui into main (resolved conflicts — kept validation + accessibility, took branch UX for tracing toggle) ([20fd20f](https://github.com/aliyevaladddin/AladdinAI/commit/20fd20fcf49d5edabf2e4206144acb9bc937cb10))
+
+- Feat/ui-polish-chat-perf into main (resolved conflicts — kept theme tokens, count badges, removed Gates) ([6fd16cc](https://github.com/aliyevaladddin/AladdinAI/commit/6fd16cc0cf46694f3f7b4291e861f136accfe1e1))
+
+- Fix/remaining-issues into main ([8c36715](https://github.com/aliyevaladddin/AladdinAI/commit/8c36715190b84745333fd9bbaa67752ca7bbcdc5))
 
 ## [v2.2.4] - 2026-08-18
 
