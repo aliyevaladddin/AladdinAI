@@ -35,6 +35,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#677) ([d50fc14](https://github.com/aliyevaladddin/AladdinAI/commit/d50fc143115e8c1a7ad560d4401d6a62a4f5d093))
 
+- Add Antigravity to contributors list ([7828c8e](https://github.com/aliyevaladddin/AladdinAI/commit/7828c8e40259328571aebac15ba00d6ddeb2898f))
+
 
 ### Features
 
@@ -78,6 +80,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#673) ([10f7c69](https://github.com/aliyevaladddin/AladdinAI/commit/10f7c6943d71fce185646763767c6c48de5a371b))
 
 - Update changelog [skip ci] (#679) ([c8d75de](https://github.com/aliyevaladddin/AladdinAI/commit/c8d75de853e7db04205f24ea8a94f753095fa09d))
+
+- Update changelog [skip ci] (#683) ([122f8de](https://github.com/aliyevaladddin/AladdinAI/commit/122f8ded3a732e7a5b328ad7aa901dd81c9f38b8))
 
 
 ### Refactor
