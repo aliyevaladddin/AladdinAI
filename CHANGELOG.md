@@ -46,6 +46,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Replace known_hosts=None with TOFU verification (issue #356) ([46040d7](https://github.com/aliyevaladddin/AladdinAI/commit/46040d7166cbf049b14c13f297d466d7d0a11ab3))
 
+- Telegram photo bytes, doctor DB check, add Cursor contributor ([7b80c00](https://github.com/aliyevaladddin/AladdinAI/commit/7b80c00b3615cc29b369b777a77dcb7e5a12e556))
+
 
 ### Documentation
 
@@ -126,6 +128,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#683) ([122f8de](https://github.com/aliyevaladddin/AladdinAI/commit/122f8ded3a732e7a5b328ad7aa901dd81c9f38b8))
 
 - Ignore frontend coverage directory in git ([d0fe0c9](https://github.com/aliyevaladddin/AladdinAI/commit/d0fe0c9cd69746b46788516b507684cf63c2966f))
+
+- Update changelog [skip ci] (#689) ([79d199e](https://github.com/aliyevaladddin/AladdinAI/commit/79d199e95d3d8d2576bfc9596989a78b07a7c5ab))
 
 
 ### Performance
