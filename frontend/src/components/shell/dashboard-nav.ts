@@ -31,7 +31,6 @@ export const DASHBOARD_PRIMARY: ActivityItem[] = [
   { href: "/dashboard/deals",       title: "Deals",        icon: Briefcase },
   { href: "/dashboard/orders",      title: "Orders",       icon: ShoppingCart },
   { href: "/dashboard/chat",        title: "Playground",   icon: Sparkles },
-  { href: "/dashboard/traces",      title: "Traces",        icon: Activity },
   { href: "/dashboard/forging",     title: "Self-Forging",  icon: FlaskConical },
 ];
 
