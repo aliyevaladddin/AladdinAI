@@ -1699,8 +1699,7 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "string",
-                  "pattern": "^[a-z_]{1,50}$"
+                  "type": "string"
                 },
                 {
                   "type": "null"
