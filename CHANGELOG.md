@@ -48,6 +48,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Telegram photo bytes, doctor DB check, add Cursor contributor ([7b80c00](https://github.com/aliyevaladddin/AladdinAI/commit/7b80c00b3615cc29b369b777a77dcb7e5a12e556))
 
+- Nested button hydration error in agent traces panel ([172e909](https://github.com/aliyevaladddin/AladdinAI/commit/172e9094a450ec44aa158a1339380f6fb1b5661a))
+
 
 ### Documentation
 
@@ -134,6 +136,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#689) ([79d199e](https://github.com/aliyevaladddin/AladdinAI/commit/79d199e95d3d8d2576bfc9596989a78b07a7c5ab))
 
 - Update changelog [skip ci] (#690) ([a4c9bf7](https://github.com/aliyevaladddin/AladdinAI/commit/a4c9bf7dcef8af0be59ec955348c83ed77a93f33))
+
+- Update changelog [skip ci] (#693) ([ad5cb1e](https://github.com/aliyevaladddin/AladdinAI/commit/ad5cb1e2233e23d6148d4c8f4b6637ba597adce0))
 
 
 ### Performance
