@@ -18,6 +18,7 @@ import {
   History,
   Inbox,
   Search,
+  type LucideIcon,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/providers/auth-provider";
@@ -94,8 +95,8 @@ interface Stats {
     by_gate: Record<string, Record<string, number>>;
   };
   channels: {
-    messaging: { total: number; connected: number; errors: number; list: any[] };
-    email: { total: number; connected: number; errors: number; list: any[] };
+    messaging: { total: number; connected: number; errors: number; list: { id: number; name: string; status: string }[] };
+    email: { total: number; connected: number; errors: number; list: { id: number; name: string; status: string }[] };
   };
   total_providers: number;
   total_memories: number;
@@ -439,7 +440,7 @@ function MetricCard({
 }: {
   title: string;
   value: number;
-  icon: any;
+  icon: LucideIcon;
   color: string;
   bg: string;
   footer?: React.ReactNode;
@@ -475,7 +476,7 @@ function OnboardingCard({
   title: string;
   desc: string;
   href: string;
-  icon: any;
+  icon: LucideIcon;
   btn: string;
 }) {
   return (

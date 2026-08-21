@@ -445,9 +445,11 @@ export const ChatMessageItem = React.memo(function ChatMessageItem({
                           try {
                             // No command in the body: the server runs what the agent
                             // registered, so a stale card cannot smuggle one in.
-                            const res: any = requestId
-                              ? await api.post(`/terminal/approval/${requestId}/approve`)
-                              : await api.post(`/terminal/approval/approve_latest`);
+                            const res = await api.post<{ status: string }>(
+                              requestId
+                                ? `/terminal/approval/${requestId}/approve`
+                                : `/terminal/approval/approve_latest`
+                            );
                             if (res?.status === "approved") {
                               btn.innerText = "Approved ✓";
                               btn.className = "px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white font-medium text-xs flex items-center gap-1.5";

@@ -56,8 +56,9 @@ export default function ForgingPage() {
     try {
       const data = await api.get<GoldenExample[]>("/forging/golden-set", { bypassCache: true });
       setGoldenSet(data);
-    } catch (err: any) {
-      if (err?.status === 403) {
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      if (status === 403) {
         setError("Self-Forging requires a non-community edition.");
       } else {
         setError(err instanceof Error ? err.message : "Failed to load golden set");
@@ -79,8 +80,9 @@ export default function ForgingPage() {
       setFreezeResult(result);
       toast.success(`Frozen ${result.frozen} examples`);
       loadGolden();
-    } catch (err: any) {
-      if (err?.status === 403) {
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      if (status === 403) {
         toast.error("Self-Forging requires a non-community edition.");
       } else {
         toast.error("Failed to freeze golden set");

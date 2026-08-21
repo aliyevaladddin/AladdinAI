@@ -76,9 +76,10 @@ export default function TerminalProvidersPage() {
       const res = await listProviders();
       setInstalled(res);
       setError(null);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
       // 404 on first run is acceptable — backend may not have wired the route yet.
-      setError(e?.message ?? "Failed to load installed providers");
+      setError(msg || "Failed to load installed providers");
       setInstalled([]);
     } finally {
       setLoading(false);
@@ -120,8 +121,9 @@ export default function TerminalProvidersPage() {
       await installPreset(mp.id, mp.name, vmId);
       toast.success(`${mp.name} install queued`);
       load();
-    } catch (e: any) {
-      toast.error(e?.message || `Failed to install ${mp.name}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg || `Failed to install ${mp.name}`);
       setInstalled((p) => p.filter((x) => x.slug !== mp.id || x.id > 0));
     }
   };
@@ -153,8 +155,9 @@ export default function TerminalProvidersPage() {
       toast.success(`${draft.name} install queued`);
       setTab("installed");
       load();
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to install custom provider");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg || "Failed to install custom provider");
     }
   };
 
@@ -167,8 +170,9 @@ export default function TerminalProvidersPage() {
         await startProvider(p.id);
       }
       load();
-    } catch (e: any) {
-      toast.error(e?.message || "Action failed");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg || "Action failed");
     }
   };
 
@@ -179,8 +183,9 @@ export default function TerminalProvidersPage() {
       // Optimistic — flip locally then reload.
       setInstalled((list) => list.map((x) => ({ ...x, active: x.id === p.id })));
       load();
-    } catch (e: any) {
-      toast.error(e?.message || "Could not set active");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg || "Could not set active");
     }
   };
 
@@ -191,8 +196,9 @@ export default function TerminalProvidersPage() {
       await uninstallProvider(p.id);
       toast.success(`${p.name} uninstalled`);
       load();
-    } catch (e: any) {
-      toast.error(e?.message || "Uninstall failed");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg || "Uninstall failed");
     }
   };
 

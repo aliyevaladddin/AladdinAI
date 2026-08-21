@@ -546,17 +546,18 @@ export default function ChatPage() {
           return copy;
         });
       }
-    } catch (err: any) {
-      if (err.name === "AbortError") {
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") {
         // User cancelled — silently ignore
         return;
       }
+      const msg = err instanceof Error ? err.message : String(err);
       console.error(err);
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `Error: ${err.message || "Failed to communicate with AladdinAI"}`,
+          content: `Error: ${msg || "Failed to communicate with AladdinAI"}`,
         },
       ]);
     } finally {

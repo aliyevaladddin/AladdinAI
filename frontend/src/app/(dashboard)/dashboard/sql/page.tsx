@@ -16,7 +16,7 @@ import { SQLResults } from "./SQLResults";
 
 interface QueryResult {
   success: boolean;
-  rows: any[];
+  rows: Record<string, unknown>[];
   columns: string[];
   row_count: number;
   error?: string;
