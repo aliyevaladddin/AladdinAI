@@ -126,17 +126,16 @@ jobs:
         env:
           TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
-          # Resolve the bot identity from the installation token.
-          # The noreply email MUST be {numeric_id}+{login}@users.noreply.github.com
-          # or the commit is anonymous and never counts toward contributors.
-          RESPONSE=$(curl -s -H "Authorization: Bearer $TOKEN" \
+          # Installation tokens can NOT call /user (403).
+          # Instead fetch the bot's public profile via /users/{login}[bot] —
+          # this is a public endpoint and works fine with any token.
+          BOT_LOGIN="qwen-agent-bot[bot]"
+          BOT_ID=$(curl -s \
             -H "Accept: application/vnd.github+json" \
-            https://api.github.com/user)
-          BOT_LOGIN=$(echo "$RESPONSE" | jq -r '.login // empty')
-          BOT_ID=$(echo "$RESPONSE" | jq -r '.id // empty')
-          if [ -z "$BOT_LOGIN" ] || [ -z "$BOT_ID" ]; then
-            echo "::error::Could not resolve the Qwen app bot identity from /user"
-            echo "$RESPONSE"
+            "https://api.github.com/users/qwen-agent-bot%5Bbot%5D" \
+            | jq -r '.id // empty')
+          if [ -z "$BOT_ID" ]; then
+            echo "::error::Could not resolve qwen-agent-bot[bot] user ID"
             exit 1
           fi
           git config user.name "$BOT_LOGIN"
