@@ -45,7 +45,7 @@ export function RouterSettings() {
   }, []);
 
 
-  const buildConfig = (type: string, rls: any[], fallbackId: string) => {
+  const buildConfig = (type: string, rls: { keywords: string; agent_id: string }[], fallbackId: string) => {
     if (type === "keyword" || type === "hybrid") {
       return {
         rules: rls.map((r) => ({
@@ -77,8 +77,8 @@ export function RouterSettings() {
     setEditId(c.id);
     const cfg = c.config || {};
 
-    const rulesFromConfig = (cfg.rules as any[])?.map((r: any) => ({
-      keywords: (r.keywords as string[]).join(", "),
+    const rulesFromConfig = (cfg.rules as { keywords: string[]; agent_id: number | null }[])?.map((r) => ({
+      keywords: r.keywords.join(", "),
       agent_id: r.agent_id ? r.agent_id.toString() : "",
     })) || [{ keywords: "", agent_id: "" }];
 

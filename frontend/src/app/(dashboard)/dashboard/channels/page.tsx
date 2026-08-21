@@ -129,9 +129,10 @@ export default function ChannelsPage() {
       setEditEmailId(null);
       await loadEmails();
       toast.success("Email account updated. Please re-test the connection.");
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail || err?.message || "Unknown error";
-      toast.error(`Failed to update: ${detail}`);
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+        || (err instanceof Error ? err.message : String(err));
+      toast.error(`Failed to update: ${detail || "Unknown error"}`);
     } finally {
       setSaving(false);
     }
@@ -235,8 +236,9 @@ export default function ChannelsPage() {
       } else {
         setQrModal({ open: true, image: null, loading: false, error: res.message || "Failed to load QR" });
       }
-    } catch (e: any) {
-      setQrModal({ open: true, image: null, loading: false, error: e.message || "Error fetching QR" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setQrModal({ open: true, image: null, loading: false, error: msg || "Error fetching QR" });
     }
   };
 
@@ -255,8 +257,9 @@ export default function ChannelsPage() {
         data: { ...res, webhook_url: absoluteUrl },
         error: null,
       });
-    } catch (e: any) {
-      setWebhookModal({ open: true, loading: false, channel: c, data: null, error: e.message || "Failed to fetch webhook config" });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setWebhookModal({ open: true, loading: false, channel: c, data: null, error: msg || "Failed to fetch webhook config" });
     }
   };
 

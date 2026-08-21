@@ -21,7 +21,7 @@ interface Activity {
     from_email?: string;
     to_name?: string;
     to_email?: string;
-    attachments?: any[];
+    attachments?: { filename: string; content_type?: string; size?: number }[];
   } | null;
 }
 

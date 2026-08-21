@@ -5,7 +5,7 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 
 interface QueryResult {
   success: boolean;
-  rows: any[];
+  rows: Record<string, unknown>[];
   columns: string[];
   row_count: number;
   error?: string;

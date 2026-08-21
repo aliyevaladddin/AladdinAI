@@ -79,8 +79,9 @@ export function ImportExcelModal({ onClose, onSuccess }: Props) {
       setResult(data);
       setStep("done");
       onSuccess();
-    } catch (e: any) {
-      setError(e.message || "Import failed");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg || "Import failed");
       setStep("map");
     }
   };
