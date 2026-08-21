@@ -24,7 +24,7 @@
     Exceeding a limit returns HTTP 429 with a `Retry-After` header.
     
 
-## Version: 2.2.4
+## Version: 2.2.5
 
 ### Terms of service
 https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE
