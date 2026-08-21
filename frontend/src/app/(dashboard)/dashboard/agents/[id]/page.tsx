@@ -11,7 +11,6 @@ import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
 import { AgentMemoryPanel } from "@/components/agent-memory-panel";
 import { AgentActivityTab } from "@/components/agent-activity-tab";
 import { AgentTracesPanel } from "@/components/agent-traces-panel";
-import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 import { ArrowLeft, Bot, Shield, Database, Activity, ListTree, Lock, Zap, Check, X, Pencil } from "lucide-react";
 import Link from "next/link";
 
@@ -99,7 +98,7 @@ export default function AgentDetailsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{agent.name}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-widest ${isRunning ? "bg-success-soft text-success border border-success/20" : "bg-muted text-muted-foreground border border-border"
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono uppercase tracking-widest ${isRunning ? "bg-green-500/10 text-green-500 border border-green-500/20" : "bg-zinc-500/10 text-zinc-500 border border-zinc-500/20"
                 }`}>
                 {agent.status}
               </span>
@@ -117,18 +116,33 @@ export default function AgentDetailsPage() {
       </div>
 
       {/* Tabs Navigation */}
-      <SegmentedTabs
-        tabs={[
+      <div className="flex items-center gap-1 border-b border-border/50 pb-px overflow-x-auto">
+        {[
           { id: "overview", label: "Overview", icon: Zap },
           { id: "memory", label: "Memory", icon: Database },
           { id: "gates", label: "Gates", icon: Lock },
           { id: "safety", label: "Safety", icon: Shield },
           { id: "activity", label: "Activity", icon: Activity },
           { id: "traces", label: "Traces", icon: ListTree },
-        ] as TabDef<TabId>[]}
-        active={activeTab}
-        onChange={(id) => setActiveTab(id)}
-      />
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as TabId)}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all relative whitespace-nowrap ${isActive ? "text-accent" : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <Icon size={16} />
+              {tab.label}
+              {isActive && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent shadow-[0_0_8px_rgba(var(--color-accent-rgb),0.5)]" />
+              )}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Tab Content */}
       <div className="min-h-[400px]">
@@ -270,7 +284,7 @@ function BaseModelField({
         </div>
         <p className="text-sm font-mono mt-1">{agent.model}</p>
         {isVisionModel(agent.model) && (
-          <p className="text-[11px] text-warning mt-1">
+          <p className="text-[11px] text-amber-500 mt-1">
             Vision model — tool calls disabled. Switch to a text model for full
             agent capabilities (the agent will use the `analyze_image` tool to
             inspect photos).
@@ -300,12 +314,12 @@ function BaseModelField({
         ))}
       </select>
       {isVisionModel(selected) && (
-        <p className="text-[11px] text-warning mt-1">
+        <p className="text-[11px] text-amber-500 mt-1">
           Vision models cannot call tools (analyze_image / send_image / delegate).
           The agent will only describe images directly.
         </p>
       )}
-      {error && <p className="text-[11px] text-danger mt-1">{error}</p>}
+      {error && <p className="text-[11px] text-red-500 mt-1">{error}</p>}
       <div className="flex items-center gap-2 mt-2">
         <Button size="sm" onClick={save} disabled={saving}>
           <Check size={12} className="mr-1" /> Save

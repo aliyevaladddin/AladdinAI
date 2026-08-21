@@ -1,7 +1,5 @@
 # NOTICE: This file is protected under RCF-PL
 import asyncio
-import json as _json
-import logging
 from datetime import datetime, timezone
 from typing import Any
 
@@ -16,23 +14,23 @@ from app.models.agent import Agent
 from app.models.agent_message import AgentMessage
 from app.models.activity import Activity
 from app.models.agent_trigger import AgentTrigger
-from app.models.llm_provider import LLMProvider
 from app.models.user import User
 from app.schemas.agents import AgentCreate, AgentResponse, AgentUpdate
 from app.security import get_current_user
+import json as _json
+
+from app.models.llm_provider import LLMProvider
 from app.services import gate_log, memory as memory_service
 from app.services.agent_runner import run_agent
 from app.services.llm_service import LLMError
 from app.services.memory import MemoryError as MemoryServiceError
 from app.services.memory import get_mongo_db
+from app.services.tracing import TRACE_COLLECTION
 from app.services.recommended_models import (
     resolve_extraction as resolve_extraction_recs,
     resolve_gates as resolve_gates_recs,
     resolve_safety as resolve_safety_recs,
 )
-from app.services.tracing import TRACE_COLLECTION
-
-log = logging.getLogger(__name__)
 
 GATE_NAMES = {"handoff", "memory_write", "recall_rerank"}
 SAFETY_NAMES = {"ingress", "egress", "pii"}
@@ -56,12 +54,6 @@ class ExtractionUpdate(BaseModel):
     enabled: bool | None = None
     model: str | None = None
     max_facts: int | None = None
-
-
-# [RCF:PROTECTED]
-class TracingUpdate(BaseModel):
-    enabled: bool | None = None
-    redact_pii: bool | None = None
 
 
 # [RCF:PROTECTED]
@@ -142,7 +134,7 @@ async def get_agent_stats(
         decisions = await gate_log.list_decisions(db, user_id=user.id, agent_id=agent_id, limit=1000)
         gate_decisions_count = len(decisions)
     except Exception:
-        log.debug("Failed to count gate decisions for agent %s", agent_id, exc_info=True)
+        pass
 
     # Format uptime for display
     if uptime_seconds < 3600:
@@ -565,64 +557,6 @@ async def get_agent_extraction_recommendations(
 
 
 # [RCF:PROTECTED]
-@router.get("/{agent_id}/tracing")
-# [RCF:PROTECTED]
-async def get_agent_tracing(
-    agent_id: int,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    agent = (await db.execute(
-        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
-    )).scalar_one_or_none()
-    if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
-
-    cfg = agent.tools_config or {}
-    sub = cfg.get("tracing") or {}
-    return {
-        "enabled": bool(sub.get("enabled", False)),
-        "redact_pii": bool(sub.get("redact_pii", False)),
-    }
-
-
-# [RCF:PROTECTED]
-@router.patch("/{agent_id}/tracing")
-# [RCF:PROTECTED]
-async def patch_agent_tracing(
-    agent_id: int,
-    body: TracingUpdate,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    agent = (await db.execute(
-        select(Agent).where(Agent.id == agent_id, Agent.user_id == user.id)
-    )).scalar_one_or_none()
-    if not agent:
-        raise HTTPException(status_code=404, detail="Agent not found")
-
-    cfg = dict(agent.tools_config or {})
-    sub = dict(cfg.get("tracing") or {})
-
-    if body.enabled is not None:
-        sub["enabled"] = bool(body.enabled)
-    if body.redact_pii is not None:
-        sub["redact_pii"] = bool(body.redact_pii)
-
-    cfg["tracing"] = sub
-    agent.tools_config = cfg
-    flag_modified(agent, "tools_config")
-    await db.commit()
-    await db.refresh(agent)
-
-    sub = (agent.tools_config or {}).get("tracing") or {}
-    return {
-        "enabled": bool(sub.get("enabled", False)),
-        "redact_pii": bool(sub.get("redact_pii", False)),
-    }
-
-
-# [RCF:PROTECTED]
 @router.get("/{agent_id}/extraction")
 # [RCF:PROTECTED]
 async def get_agent_extraction(
@@ -928,6 +862,9 @@ async def _process_agent_message(message_id: int) -> None:
     never holds a connection open. SQLite WAL + busy_timeout handle the
     rare case where two short writes collide.
     """
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
+
     # ── Phase 1: mark in_progress ──────────────────────────────────────────
     async with async_session() as db:
         msg = (await db.execute(
@@ -991,7 +928,7 @@ async def _process_agent_message(message_id: int) -> None:
     except LLMError as e:
         error_text = str(e)
     except Exception as e:  # noqa: BLE001
-        log.exception(
+        _log.exception(
             "_process_agent_message: unexpected error for msg %s", message_id
         )
         error_text = f"{type(e).__name__}: {e}"
@@ -1016,7 +953,7 @@ async def _process_agent_message(message_id: int) -> None:
             if ("locked" in err or "busy" in err) and attempt < 4:
                 await asyncio.sleep(2 ** attempt)
             else:
-                log.exception(
+                _log.exception(
                     "_process_agent_message: could not persist result for msg %s",
                     message_id,
                 )
@@ -1045,7 +982,7 @@ async def _process_agent_message(message_id: int) -> None:
             db.add(notif)
             await db.commit()
     except Exception:  # noqa: BLE001
-        log.warning(
+        _log.warning(
             "_process_agent_message: notification failed for msg %s (non-fatal)",
             message_id,
         )
@@ -1095,7 +1032,7 @@ async def list_agent_traces(
     agent_id: int,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    outcome: str | None = Query(default=None, pattern=r"^[a-z_]{1,50}$"),
+    outcome: str | None = Query(default=None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -1148,61 +1085,5 @@ async def get_agent_trace(
     if doc is None:
         raise HTTPException(status_code=404, detail="Trace not found")
     return _serialise_trace(doc)
-
-
-# [RCF:PROTECTED]
-class TraceFeedback(BaseModel):
-    value: str  # "thumbs_up" | "thumbs_down"
-
-
-# [RCF:PROTECTED]
-@router.post("/{agent_id}/traces/{trace_id}/feedback")
-# [RCF:PROTECTED]
-async def post_trace_feedback(
-    agent_id: int,
-    trace_id: str,
-    body: TraceFeedback,
-    user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """Apply human 👍/👎 feedback directly to a trace.
-
-    Mirrors the logic in tracing.human_score but operates synchronously on a
-    specific trace (no session_id matching needed).
-    """
-    from bson import ObjectId
-    from app.services.tracing import human_score
-
-    if body.value not in ("thumbs_up", "thumbs_down"):
-        raise HTTPException(status_code=400, detail="value must be thumbs_up or thumbs_down")
-
-    await _get_agent_or_404(db, user.id, agent_id)
-    mdb = await _mongo_for_user(db, user.id)
-
-    try:
-        oid = ObjectId(trace_id)
-    except Exception:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail="Invalid trace id")
-
-    doc = await mdb[TRACE_COLLECTION].find_one(
-        {"_id": oid, "user_id": user.id, "agent_id": agent_id}
-    )
-    if doc is None:
-        raise HTTPException(status_code=404, detail="Trace not found")
-
-    reward, label = human_score(body.value)
-    if reward is None:
-        raise HTTPException(status_code=400, detail="Unknown feedback value")
-
-    await mdb[TRACE_COLLECTION].update_one(
-        {"_id": oid},
-        {"$set": {
-            "reward": reward,
-            "quality_label": label,
-            "human_labeled": True,
-            "human_labeled_at": datetime.now(timezone.utc),
-        }},
-    )
-    return {"ok": True, "reward": reward, "quality_label": label}
 
 
