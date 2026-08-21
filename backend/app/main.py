@@ -196,12 +196,12 @@ async def readiness(request: Request):
         async with async_session() as db:
             await db.execute(text("SELECT 1"))
         return {"status": "ready"}
-    except Exception:
+    except Exception as exc:
         from fastapi.responses import JSONResponse
         log.exception("Readiness check failed")
         return JSONResponse(
             status_code=503,
-            content={"status": "not ready", "error": "service unavailable"},
+            content={"status": "not ready", "error": str(exc)},
         )
 
 
