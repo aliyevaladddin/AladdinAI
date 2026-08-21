@@ -52,6 +52,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Direct push to main so bot appears in contributors ([2e3faba](https://github.com/aliyevaladddin/AladdinAI/commit/2e3faba8c8bb75c5324bfcb764d47b55eed79f62))
 
+- Resolve bot ID via public /users endpoint ([874a640](https://github.com/aliyevaladddin/AladdinAI/commit/874a640e1320b834f0c7a2156d2f7efbe681efc0))
+
 
 ### Documentation
 
@@ -150,6 +152,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update bot activity log (#700) ([562a25e](https://github.com/aliyevaladddin/AladdinAI/commit/562a25e56b68fde38ba043604863b7c2baa8aa22))
 
 - Update nvidia bot activity log (#701) ([37cd302](https://github.com/aliyevaladddin/AladdinAI/commit/37cd302bd2f98909ec7e514c56f5c5c01102de18))
+
+- Update changelog [skip ci] (#703) ([996327d](https://github.com/aliyevaladddin/AladdinAI/commit/996327df967dbb6fbde7abee45d4965c12207d40))
+
+- Update bot activity log (#704) ([663bb8a](https://github.com/aliyevaladddin/AladdinAI/commit/663bb8abca73072ed7896d3eaaee0c0a4c5459a4))
 
 
 ### Performance
