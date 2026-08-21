@@ -50,6 +50,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Nested button hydration error in agent traces panel ([172e909](https://github.com/aliyevaladddin/AladdinAI/commit/172e9094a450ec44aa158a1339380f6fb1b5661a))
 
+- Direct push to main so bot appears in contributors ([2e3faba](https://github.com/aliyevaladddin/AladdinAI/commit/2e3faba8c8bb75c5324bfcb764d47b55eed79f62))
+
 
 ### Documentation
 
@@ -142,6 +144,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#693) ([ad5cb1e](https://github.com/aliyevaladddin/AladdinAI/commit/ad5cb1e2233e23d6148d4c8f4b6637ba597adce0))
 
 - Remove unused Activity and FlaskConical imports from dashboard-nav ([24d17fc](https://github.com/aliyevaladddin/AladdinAI/commit/24d17fc3ee1d4c55e60c960acc8b319b1873ae1e))
+
+- Update changelog [skip ci] (#698) ([5762e31](https://github.com/aliyevaladddin/AladdinAI/commit/5762e311d83839cc367754fd4f6f8bf7a68942fd))
 
 
 ### Performance
