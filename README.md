@@ -338,7 +338,7 @@ AladdinAI is built by a mixed human + AI team.
     <td align="center"><a href="https://github.com/aliyevaladddin"><img src="https://github.com/aliyevaladddin.png" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Aladdin Aliyev</b></sub></a><br /> founder, architecture, product</td>
     <td align="center"><a href="https://github.com/apps/aladdinai-bot"><img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80" height="80" style="border-radius:50%" /><br /><sub><b>AladdinAI[bot]</b></sub></a><br /> autonomous engineering agent</td>
     <td align="center"><a href="https://claude.ai"><img src="https://avatars.githubusercontent.com/u/59769286?s=200&v=4" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Claude</b></sub></a><br /> pair programming, infrastructure</td>
-    <td align="center"><img src="https://ui-avatars.com/api/?name=Antigravity&background=6366f1&color=fff&size=80&bold=true&format=svg" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Antigravity</b></sub><br /> security hardening, refactoring, bug fixes</td>
+    <td align="center"><a href="docs/profiles/antigravity.md"><img src="https://ui-avatars.com/api/?name=Antigravity&background=6366f1&color=fff&size=80&bold=true&format=svg" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Antigravity</b></sub></a><br /> security hardening, refactoring, bug fixes</td>
     <td align="center"><a href="https://qwen.aliyun.com"><img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Qwen</b></sub></a><br /> image generation backbone</td>
   </tr>
 </table>
