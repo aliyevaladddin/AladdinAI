@@ -10,8 +10,6 @@ import {
   Settings,
   Briefcase,
   ShoppingCart,
-  Activity,
-  FlaskConical,
 } from "lucide-react";
 import type { ActivityItem } from "./ActivityBar";
 
