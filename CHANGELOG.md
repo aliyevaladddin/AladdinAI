@@ -151,6 +151,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update nvidia bot activity log (#701) ([37cd302](https://github.com/aliyevaladddin/AladdinAI/commit/37cd302bd2f98909ec7e514c56f5c5c01102de18))
 
+- Update changelog [skip ci] (#703) ([996327d](https://github.com/aliyevaladddin/AladdinAI/commit/996327df967dbb6fbde7abee45d4965c12207d40))
+
+- Update bot activity log (#704) ([663bb8a](https://github.com/aliyevaladddin/AladdinAI/commit/663bb8abca73072ed7896d3eaaee0c0a4c5459a4))
+
 
 ### Performance
 
