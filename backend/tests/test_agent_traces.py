@@ -215,3 +215,146 @@ def test_get_trace_invalid_id_400(client, auth_headers):
 def test_get_trace_agent_404(client, auth_headers):
     r = client.get("/api/agents/999999/traces/507f1f77bcf86cd799439011", headers=auth_headers)
     assert r.status_code == 404
+
+
+# ── tracing config (GET / PATCH) ─────────────────────────────────────────
+
+# [RCF:PROTECTED]
+def test_get_tracing_config_defaults_to_off(client, auth_headers):
+    agent_id = _make_agent(client, auth_headers)
+    r = client.get(f"/api/agents/{agent_id}/tracing", headers=auth_headers)
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data["enabled"] is False
+    assert data["redact_pii"] is False
+
+
+# [RCF:PROTECTED]
+def test_patch_tracing_toggle_enabled(client, auth_headers):
+    agent_id = _make_agent(client, auth_headers)
+    r = client.patch(
+        f"/api/agents/{agent_id}/tracing",
+        headers=auth_headers,
+        json={"enabled": True},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["enabled"] is True
+
+    # Persists: GET reflects the change
+    r2 = client.get(f"/api/agents/{agent_id}/tracing", headers=auth_headers)
+    assert r2.json()["enabled"] is True
+
+
+# [RCF:PROTECTED]
+def test_patch_tracing_toggle_redact_pii(client, auth_headers):
+    agent_id = _make_agent(client, auth_headers)
+    r = client.patch(
+        f"/api/agents/{agent_id}/tracing",
+        headers=auth_headers,
+        json={"redact_pii": True},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["redact_pii"] is True
+    assert r.json()["enabled"] is False  # unchanged
+
+
+# [RCF:PROTECTED]
+def test_patch_tracing_disable_after_enable(client, auth_headers):
+    agent_id = _make_agent(client, auth_headers)
+    client.patch(
+        f"/api/agents/{agent_id}/tracing",
+        headers=auth_headers,
+        json={"enabled": True},
+    )
+    r = client.patch(
+        f"/api/agents/{agent_id}/tracing",
+        headers=auth_headers,
+        json={"enabled": False},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["enabled"] is False
+
+
+# [RCF:PROTECTED]
+def test_tracing_config_agent_404(client, auth_headers):
+    r = client.get("/api/agents/999999/tracing", headers=auth_headers)
+    assert r.status_code == 404
+
+
+# ── trace feedback ─────────────────────────────────────────────────────────
+
+# [RCF:PROTECTED]
+def test_trace_feedback_thumbs_up(client, auth_headers, test_user):
+    agent_id = _make_agent(client, auth_headers)
+    trace_id = "507f1f77bcf86cd799439011"
+    mdb = _fake_mdb([
+        _trace_doc(oid=trace_id, agent_id=agent_id, user_id=test_user["user_id"]),
+    ])
+    # Patch update_one so it doesn't fail
+    mdb.__getitem__.return_value.update_one = AsyncMock()
+
+    with patch("app.routers.agents.get_mongo_db", new_callable=AsyncMock, return_value=mdb):
+        r = client.post(
+            f"/api/agents/{agent_id}/traces/{trace_id}/feedback",
+            headers=auth_headers,
+            json={"value": "thumbs_up"},
+        )
+
+    assert r.status_code == 200, r.text
+    assert r.json()["reward"] == 1.0
+    assert r.json()["quality_label"] == "good"
+
+
+# [RCF:PROTECTED]
+def test_trace_feedback_thumbs_down(client, auth_headers, test_user):
+    agent_id = _make_agent(client, auth_headers)
+    trace_id = "507f1f77bcf86cd799439011"
+    mdb = _fake_mdb([
+        _trace_doc(oid=trace_id, agent_id=agent_id, user_id=test_user["user_id"]),
+    ])
+    mdb.__getitem__.return_value.update_one = AsyncMock()
+
+    with patch("app.routers.agents.get_mongo_db", new_callable=AsyncMock, return_value=mdb):
+        r = client.post(
+            f"/api/agents/{agent_id}/traces/{trace_id}/feedback",
+            headers=auth_headers,
+            json={"value": "thumbs_down"},
+        )
+
+    assert r.status_code == 200, r.text
+    assert r.json()["reward"] == -1.0
+    assert r.json()["quality_label"] == "bad"
+
+
+# [RCF:PROTECTED]
+def test_trace_feedback_invalid_value(client, auth_headers, test_user):
+    agent_id = _make_agent(client, auth_headers)
+    trace_id = "507f1f77bcf86cd799439011"
+    mdb = _fake_mdb([
+        _trace_doc(oid=trace_id, agent_id=agent_id, user_id=test_user["user_id"]),
+    ])
+
+    with patch("app.routers.agents.get_mongo_db", new_callable=AsyncMock, return_value=mdb):
+        r = client.post(
+            f"/api/agents/{agent_id}/traces/{trace_id}/feedback",
+            headers=auth_headers,
+            json={"value": "neutral"},
+        )
+
+    assert r.status_code == 400
+
+
+# [RCF:PROTECTED]
+def test_trace_feedback_not_found(client, auth_headers, test_user):
+    agent_id = _make_agent(client, auth_headers)
+    trace_id = "507f1f77bcf86cd799439011"
+    mdb = _fake_mdb([])  # no trace found
+
+    with patch("app.routers.agents.get_mongo_db", new_callable=AsyncMock, return_value=mdb):
+        r = client.post(
+            f"/api/agents/{agent_id}/traces/{trace_id}/feedback",
+            headers=auth_headers,
+            json={"value": "thumbs_up"},
+        )
+
+    assert r.status_code == 404

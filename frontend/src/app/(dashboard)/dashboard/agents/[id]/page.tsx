@@ -11,6 +11,7 @@ import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
 import { AgentMemoryPanel } from "@/components/agent-memory-panel";
 import { AgentActivityTab } from "@/components/agent-activity-tab";
 import { AgentTracesPanel } from "@/components/agent-traces-panel";
+import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 import { ArrowLeft, Bot, Shield, Database, Activity, ListTree, Lock, Zap, Check, X, Pencil } from "lucide-react";
 import Link from "next/link";
 
@@ -116,33 +117,18 @@ export default function AgentDetailsPage() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-1 border-b border-border/50 pb-px overflow-x-auto">
-        {[
+      <SegmentedTabs
+        tabs={[
           { id: "overview", label: "Overview", icon: Zap },
           { id: "memory", label: "Memory", icon: Database },
           { id: "gates", label: "Gates", icon: Lock },
           { id: "safety", label: "Safety", icon: Shield },
           { id: "activity", label: "Activity", icon: Activity },
           { id: "traces", label: "Traces", icon: ListTree },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as TabId)}
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all relative whitespace-nowrap ${isActive ? "text-accent" : "text-muted-foreground hover:text-foreground"
-                }`}
-            >
-              <Icon size={16} />
-              {tab.label}
-              {isActive && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent shadow-[0_0_8px_rgba(var(--color-accent-rgb),0.5)]" />
-              )}
-            </button>
-          );
-        })}
-      </div>
+        ] as TabDef<TabId>[]}
+        active={activeTab}
+        onChange={(id) => setActiveTab(id)}
+      />
 
       {/* Tab Content */}
       <div className="min-h-[400px]">
