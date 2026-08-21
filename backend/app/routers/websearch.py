@@ -77,16 +77,36 @@ async def web_search(
             e.strip() for e in engines.split(",") if e.strip() in _ALL_ENGINES
         )
         if parsed:
-            selected = parsed  # type: ignore[assignment]
+            selected = tuple(e for e in parsed if e in _ALL_ENGINES)  # type: ignore[assignment]  # narrowed at runtime: subset of Engine
 
     data = await meta_search(q, engines=selected, lang=lang, limit=limit)
-    results = data["results"]
+    results: list[WebSearchResult] = [
+        WebSearchResult(
+            title=r["title"],
+            link=r["link"],
+            snippet=r["snippet"],
+            source=r["source"],
+        )
+        for r in data["results"]
+    ]
+    by_source: dict[str, list[WebSearchResult]] = {
+        src: [
+            WebSearchResult(
+                title=r["title"],
+                link=r["link"],
+                snippet=r["snippet"],
+                source=r["source"],
+            )
+            for r in items
+        ]
+        for src, items in data["by_source"].items()
+    }
     return WebSearchResponse(
         query=data["query"],
-        results=results,          # type: ignore[arg-type]
-        by_source=data["by_source"],  # type: ignore[arg-type]
-        errors=data["errors"],    # type: ignore[arg-type]
-        total=len(results),       # type: ignore[arg-type]
+        results=results,
+        by_source=by_source,
+        errors={k: str(v) for k, v in data["errors"].items()},
+        total=len(results),
     )
 
 

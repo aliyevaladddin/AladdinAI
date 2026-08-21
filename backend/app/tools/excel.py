@@ -103,7 +103,8 @@ async def excel_read(ctx: ToolContext, file_path: str, sheet: str | None = None)
     df, error = _load_df(file_path, sheet)
     if error:
         return {"error": error}
-    return _summarize_df(df)  # type: ignore[arg-type]
+    assert df is not None
+    return _summarize_df(df)
 
 
 # ── Tool 2: Query / filter rows ───────────────────────────────────────────────
@@ -142,12 +143,12 @@ async def excel_query(
     if error:
         return {"error": error}
 
-    if column not in df.columns:  # type: ignore[union-attr]
-        return {"error": f"Column '{column}' not found. Available: {df.columns.tolist()}"}  # type: ignore[union-attr]
+    if column not in df.columns:
+        return {"error": f"Column '{column}' not found. Available: {df.columns.tolist()}"}
 
     limit = min(max(1, limit), 200)
-    mask = df[column].astype(str).str.contains(value, case=False, na=False)  # type: ignore[index]
-    filtered = df[mask].head(limit).fillna("").astype(str)  # type: ignore[index]
+    mask = df[column].astype(str).str.contains(value, case=False, na=False)
+    filtered = df[mask].head(limit).fillna("").astype(str)
     return {
         "matched_rows": int(mask.sum()),
         "returned": len(filtered),
@@ -189,6 +190,7 @@ async def excel_import_contacts(
     df, error = _load_df(file_path, sheet)
     if error:
         return {"error": error}
+    assert df is not None
 
     # Auto-detect column names (case-insensitive, EN + RU aliases)
     ALIASES: dict[str, list[str]] = {
@@ -199,7 +201,7 @@ async def excel_import_contacts(
         "tags":    ["tags", "tag", "labels", "теги", "метки"],
         "notes":   ["notes", "note", "comments", "заметки", "примечания"],
     }
-    lower_cols = {c.lower(): c for c in df.columns}  # type: ignore[union-attr]
+    lower_cols = {c.lower(): c for c in df.columns}
     col_map: dict[str, str] = {}
     for field, names in ALIASES.items():
         for n in names:
@@ -210,11 +212,11 @@ async def excel_import_contacts(
     if "name" not in col_map:
         return {
             "error": "Could not find a 'name' column. "
-                     f"Available columns: {df.columns.tolist()}"  # type: ignore[union-attr]
+                     f"Available columns: {df.columns.tolist()}"
         }
 
     created, skipped = 0, 0
-    for _, row in df.iterrows():  # type: ignore[union-attr]
+    for _, row in df.iterrows():
         name = _safe_str(row.get(col_map["name"], ""))
         if not name:
             skipped += 1
@@ -254,7 +256,7 @@ async def excel_import_contacts(
     return {
         "created": created,
         "skipped": skipped,
-        "total_rows": len(df),  # type: ignore[arg-type]
+        "total_rows": len(df),
         "detected_columns": col_map,
         "message": f"Successfully imported {created} contacts from Excel.",
     }

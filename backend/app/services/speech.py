@@ -211,7 +211,7 @@ async def _transcribe_riva(
     provider: LLMProvider, audio_bytes: bytes, *, language: str | None
 ) -> str:
     try:
-        import riva.client  # type: ignore
+        import riva.client  # type: ignore[import-untyped]  # nvidia-riva-client lacks type stubs
     except ImportError as e:  # pragma: no cover - optional dep
         raise LLMError(
             "riva_grpc backend needs the 'nvidia-riva-client' package"
@@ -366,7 +366,7 @@ async def _synthesize_riva(
     provider: LLMProvider, text: str, *, voice: str | None
 ) -> tuple[bytes, str]:
     try:
-        import riva.client  # type: ignore
+        import riva.client  # type: ignore[import-untyped]  # nvidia-riva-client lacks type stubs
     except ImportError as e:  # pragma: no cover - optional dep
         raise LLMError(
             "riva_grpc backend needs the 'nvidia-riva-client' package"

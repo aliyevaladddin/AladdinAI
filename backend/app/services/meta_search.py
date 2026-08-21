@@ -60,7 +60,8 @@ async def _with_retry(coro_factory, attempts: int = _RETRY_ATTEMPTS):
             if attempt < attempts - 1:
                 await asyncio.sleep(_RETRY_DELAY * (attempt + 1))
                 logger.debug("meta_search retry %d/%d after: %s", attempt + 1, attempts, exc)
-    raise last_exc  # type: ignore[misc]
+    assert last_exc is not None
+    raise last_exc
 
 # ── HTML tag stripper ────────────────────────────────────────────────────────
 _TAG_RE = re.compile(r"<[^>]+>")
@@ -348,8 +349,9 @@ async def meta_search(
             errors[engine] = str(outcome)
             by_source[engine] = []
             continue
-        by_source[engine] = outcome  # type: ignore[assignment]
-        merged.extend(outcome)  # type: ignore[arg-type]
+        assert isinstance(outcome, list)
+        by_source[engine] = outcome
+        merged.extend(outcome)
 
     # Log source issues gracefully: if we got results overall, individual source fails are non-fatal
     for engine, err in errors.items():
