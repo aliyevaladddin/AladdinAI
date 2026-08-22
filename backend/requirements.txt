@@ -23,7 +23,7 @@ sqlparse==0.6.0
 slowapi==0.1.10
 openpyxl==3.1.5
 pandas==3.0.5
-nvidia-riva-client==2.26.0
+nvidia-riva-client==2.27.0
 pypdf==6.15.0
 # Headless browser for services/browser.py (fetch_url tool + /websearch/synthesize
 # deep-scrape). The chromium binary is installed in the Dockerfile; without it the
