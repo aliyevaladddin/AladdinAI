@@ -105,7 +105,7 @@ async def web_search(ctx: ToolContext, query: str) -> dict[str, Any]:
         data = await meta_search(query)
         results = [
             {"title": r["title"], "link": r["link"], "snippet": r["snippet"]}
-            for r in data["results"]
+            for r in data["results"]  # MetaSearchResponse.results: list[SearchResult]
         ]
         out: dict[str, Any] = {"query": query, "results": results}
         # Surface an error only when every source failed and nothing came back.
