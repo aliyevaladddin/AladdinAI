@@ -16,11 +16,18 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update API documentation [skip ci] (#713) ([43cce1c](https://github.com/aliyevaladddin/AladdinAI/commit/43cce1cf0cb41fbd95e395d2753769615f519c5a))
 
 
+### Features
+
+- Add error boundaries and loading skeletons to all dashboard pages (#723) ([fd2f865](https://github.com/aliyevaladddin/AladdinAI/commit/fd2f865f0c732c499b2ad04cdf03491e9fb1f0ec))
+
+
 ### Maintenance
 
 - Bump version to 2.2.5 and update deps [skip ci] ([f2f404c](https://github.com/aliyevaladddin/AladdinAI/commit/f2f404cf94bca10ea83f5574e4a91fd1d03bb5ff))
 
 - Update changelog [skip ci] (#712) ([3a19f0f](https://github.com/aliyevaladddin/AladdinAI/commit/3a19f0ffa398033c6c7b25c4cc3ab9e889582f05))
+
+- Update changelog [skip ci] (#715) ([0894613](https://github.com/aliyevaladddin/AladdinAI/commit/0894613da95e53efbd170d4ba7755958e6698233))
 
 ## [v2.2.5] - 2026-08-21
 
