@@ -51,6 +51,9 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "AladdinAI",
   description: "Sovereign AI agents for sales, support, and operations.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
