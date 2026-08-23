@@ -1,4 +1,10 @@
 # NOTICE: This file is protected under RCF-PL
+"""Dashboard overview endpoints.
+
+Provides aggregate statistics (agents, channels, messages, memory entries,
+gate activity, daily message volumes, and active providers) for the main
+overviews screen.
+"""
 import logging
 from datetime import datetime, timedelta, timezone
 

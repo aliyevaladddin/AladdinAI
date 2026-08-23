@@ -1,4 +1,8 @@
 # NOTICE: This file is protected under RCF-PL
+"""In-app notification management.
+
+Endpoints for listing, marking-read, and bulk-clearing user notifications.
+"""
 from fastapi import APIRouter, Depends
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession

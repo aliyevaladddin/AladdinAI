@@ -79,6 +79,18 @@ class SearchResult(TypedDict):
     source: str
 
 
+class MetaSearchResponse(TypedDict, total=False):
+    """Return type for :func:`meta_search`.
+
+    Callers always receive all four keys; ``total=False`` only keeps the
+    TypedDict lightweight — every key is populated by the orchestrator.
+    """
+    query: str
+    results: list[SearchResult]
+    by_source: dict[str, list[SearchResult]]
+    errors: dict[str, str]
+
+
 # ── DuckDuckGo Instant Answer API ────────────────────────────────────────────
 # [RCF:PROTECTED]
 async def _search_duckduckgo(
@@ -316,7 +328,7 @@ async def meta_search(
     engines: tuple[Engine, ...] | list[Engine] = DEFAULT_ENGINES,
     lang: str = "en",
     limit: int = 10,
-) -> dict[str, object]:
+) -> MetaSearchResponse:
     """Run the requested engines concurrently and merge their results.
 
     Returns ``{"query", "results", "by_source", "errors"}``. A failing engine
