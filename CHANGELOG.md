@@ -22,6 +22,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add error boundaries and loading skeletons to all dashboard pages (#723) ([fd2f865](https://github.com/aliyevaladddin/AladdinAI/commit/fd2f865f0c732c499b2ad04cdf03491e9fb1f0ec))
 
+- Native C binaries in prod image, Settings tab, tests (#733) ([34b8e5f](https://github.com/aliyevaladddin/AladdinAI/commit/34b8e5fe5a0cb428b840269671185273612896d3))
+
 
 ### Maintenance
 
@@ -38,6 +40,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#728) ([d7d5357](https://github.com/aliyevaladddin/AladdinAI/commit/d7d5357c6d67676e9c0b87767b204ce26d43943d))
 
 - Update changelog [skip ci] (#730) ([031d18b](https://github.com/aliyevaladddin/AladdinAI/commit/031d18b7c24b188c132a8dad5bbd806a404971b0))
+
+- Update changelog [skip ci] (#732) ([5c986a9](https://github.com/aliyevaladddin/AladdinAI/commit/5c986a9a9fe06c4e392bf390505abd919dacd276))
 
 ## [v2.2.5] - 2026-08-21
 
