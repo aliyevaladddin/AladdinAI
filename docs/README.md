@@ -22,6 +22,10 @@ Comprehensive documentation for the AladdinAI multi-agent AI system.
 - **[Agent Development](./guides/AGENT_DEVELOPMENT.md)** - Creating custom agents
 - **[Tool Development](./guides/TOOL_DEVELOPMENT.md)** - Adding new tools
 - **[Agent Delegation](./guides/AGENT_DELEGATION.md)** - Multi-agent coordination and handoff
+- **[Triggers & Automations](./guides/TRIGGERS_AUTOMATIONS.md)** - Scheduled agent runs (presets & cron)
+- **[Web Search](./guides/WEB_SEARCH.md)** - Native zero-key meta-search service
+- **[SQL Playground](./guides/SQL_PLAYGROUND.md)** - Read-only SQL exploration & security model
+- **[Terminal System](./guides/TERMINAL_SYSTEM.md)** - Pluggable terminal providers & sessions
 - **[Memory System](./ARCHITECTURE.md#memory)** - Understanding the memory architecture
 
 ### Deployment
