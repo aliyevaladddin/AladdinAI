@@ -1,10 +1,26 @@
 # Production image for the AladdinAI FastAPI backend.
 #
-# - Single-stage (Python apps don't benefit from multi-stage as much as Node).
+# - Multi-stage: stage 1 compiles the native C tools (aladdin-term terminal
+#   daemon, aladdin-grep, aladdin-log-stream); stage 2 is a slim Python
+#   runtime that receives only the prebuilt binaries — no gcc in prod.
 # - Runs alembic migrations on container start before launching uvicorn, so
 #   the user doesn't have to remember to run them after `docker compose up`.
 # - No --reload, no volume mounts — the image is the source of truth.
 
+# ── Stage 1: compile native C binaries ──────────────────────────────────────
+FROM python:3.12-slim AS native-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      gcc \
+      make \
+      libc6-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /native
+COPY native/ .
+RUN make all
+
+# ── Stage 2: Python runtime ─────────────────────────────────────────────────
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -25,6 +41,13 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY . .
+
+# Overlay prebuilt native binaries over the sources copied above, so
+# native_terminal_daemon finds them and skips its (doomed) make attempt.
+COPY --from=native-builder /native/aladdin-term         backend/native/aladdin-term
+COPY --from=native-builder /native/aladdin-grep         backend/native/aladdin-grep
+COPY --from=native-builder /native/aladdin-log-stream   backend/native/aladdin-log-stream
+RUN chmod +x backend/native/aladdin-term backend/native/aladdin-grep backend/native/aladdin-log-stream
 
 # Migrations + launch
 RUN printf '#!/bin/sh\nset -e\necho "Running database migrations..."\nalembic upgrade head\nexec uvicorn app.main:app --host 0.0.0.0 --port 8000 "$@"\n' \

@@ -8,16 +8,17 @@ import { VmsSettings } from "@/components/settings/VmsSettings";
 import { MongoSettings } from "@/components/settings/MongoSettings";
 import { BentoSettings } from "@/components/settings/BentoSettings";
 import { RouterSettings } from "@/components/settings/RouterSettings";
+import { Button } from "@/components/ui/button";
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 import { StorageSettings } from "@/components/settings/StorageSettings";
 import { SecuritySettings } from "@/components/settings/SecuritySettings";
 import { ShortcutsSettings } from "@/components/settings/ShortcutsSettings";
 import { ObservabilitySettings } from "@/components/settings/ObservabilitySettings";
 import { TrainingSettings } from "@/components/settings/TrainingSettings";
-import { Cpu, Cloud, Database, Server, Network, Palette, HardDrive, Shield, Keyboard, Activity, FlaskConical } from "lucide-react";
+import { Cpu, Cloud, Database, Server, Network, Palette, HardDrive, Shield, Keyboard, Activity, FlaskConical, Terminal } from "lucide-react";
 
 
-type TabId = "appearance" | "storage" | "shortcuts" | "providers" | "vms" | "mongo" | "bento" | "router" | "security" | "observability" | "training";
+type TabId = "appearance" | "storage" | "shortcuts" | "providers" | "vms" | "mongo" | "bento" | "router" | "security" | "observability" | "training" | "terminal";
 
 const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
   { id: "appearance", label: "Appearance", icon: Palette },
@@ -31,6 +32,7 @@ const tabs: { id: TabId; label: string; icon: React.ComponentType<{ size?: numbe
   { id: "security", label: "Security & Safety", icon: Shield },
   { id: "observability", label: "Observability", icon: Activity },
   { id: "training", label: "Training", icon: FlaskConical },
+  { id: "terminal", label: "Terminal", icon: Terminal },
 ];
 
 
@@ -92,6 +94,14 @@ export default function SettingsPage() {
               >
                 <Icon size={15} className={isActive ? "text-[var(--color-accent)]" : "opacity-50"} />
                 {tab.label}
+                {tab.id === "terminal" && (
+                  <span
+                    className="ml-auto text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                    style={{ background: "var(--violet-soft, rgba(139,92,246,.15))", color: "var(--violet, #8b5cf6)" }}
+                  >
+                    Beta
+                  </span>
+                )}
               </button>
             );
           })}
@@ -110,9 +120,42 @@ export default function SettingsPage() {
           {activeTab === "security" && <SecuritySettings />}
           {activeTab === "observability" && <ObservabilitySettings />}
           {activeTab === "training" && <TrainingSettings />}
+          {activeTab === "terminal" && <TerminalSettingsTeaser />}
 
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Beta teaser for the Terminal settings — the full UI lives at
+ * /dashboard/settings/terminal (marketplace, install stepper, sessions).
+ * Shown inside the main Settings page until the terminal feature graduates
+ * from beta and is embedded here directly.
+ */
+function TerminalSettingsTeaser() {
+  const router = useRouter();
+  return (
+    <div className="flex flex-col items-start gap-4 max-w-md">
+      <div className="flex items-center gap-2">
+        <h2 className="text-sm font-semibold text-[var(--color-fg)]">Terminal Providers</h2>
+        <span
+          className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded"
+          style={{ background: "var(--violet-soft, rgba(139,92,246,.15))", color: "var(--violet, #8b5cf6)" }}
+        >
+          Beta
+        </span>
+      </div>
+      <p className="text-xs leading-relaxed text-[var(--color-fg-muted)]">
+        Install pluggable web terminals (ttyd, gotty and more) as isolated
+        containers, manage sessions and SSH proxies. Powered by the native C
+        terminal daemon with an automatic Python PTY fallback.
+      </p>
+      <Button onClick={() => router.push("/dashboard/settings/terminal")}>
+        <Terminal size={13} strokeWidth={2.4} />
+        Open Terminal Settings
+      </Button>
     </div>
   );
 }
