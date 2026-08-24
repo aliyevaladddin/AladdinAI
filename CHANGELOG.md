@@ -43,6 +43,13 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#732) ([5c986a9](https://github.com/aliyevaladddin/AladdinAI/commit/5c986a9a9fe06c4e392bf390505abd919dacd276))
 
+- Update changelog [skip ci] (#734) ([1079001](https://github.com/aliyevaladddin/AladdinAI/commit/1079001b751b63fd6150db85eab2701c99b30ada))
+
+
+### Refactor
+
+- Unified TerminalBackend abstraction (stage A) ([a238145](https://github.com/aliyevaladddin/AladdinAI/commit/a238145a77eb351e0dec245f1b40229382f53537))
+
 ## [v2.2.5] - 2026-08-21
 
 ### Bug Fixes
