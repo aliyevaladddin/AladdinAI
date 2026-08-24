@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -170,6 +170,25 @@ app.include_router(websearch.router, prefix="/api")
 # [RCF:PROTECTED]
 async def root(request: Request):
     return {"message": "AladdinAI API is running", "version": VERSION, "protocol": "RCF/2.0.3"}
+
+
+_FAVICON_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+    '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+    '<stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/>'
+    '</linearGradient></defs>'
+    '<rect width="32" height="32" rx="6" fill="url(#g)"/>'
+    '<text x="16" y="23" font-family="Inter,system-ui,sans-serif" font-weight="700" '
+    'font-size="20" fill="#fff" text-anchor="middle">A</text></svg>'
+)
+
+
+# [RCF:PROTECTED]
+@app.get("/favicon.ico", include_in_schema=False)
+# [RCF:PROTECTED]
+async def favicon():
+    """Serve an inline SVG icon so browsers hitting the API directly don't log 404s."""
+    return Response(content=_FAVICON_SVG, media_type="image/svg+xml")
 
 
 # [RCF:PROTECTED]

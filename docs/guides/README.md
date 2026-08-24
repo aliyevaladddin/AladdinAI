@@ -18,6 +18,10 @@ Each guide is self-contained and assumes a working local dev setup
 | [Outgoing Webhooks](WEBHOOKS.md) | Push events to Zapier or any HTTP endpoint — event list, RCF signing, agent tools, edit/test from the UI |
 | [Self-Forging](SELF_FORGING.md) | Freeze a golden set of labeled traces and run the base-vs-forged evaluation harness |
 | [Agent Sandbox](AGENT_SANDBOX.md) | How agent code execution is isolated in Docker containers — creation, lifecycle, security, fallback |
+| [Triggers & Automations](TRIGGERS_AUTOMATIONS.md) | Run agents on a schedule — presets, cron validation, manual runs, task templates |
+| [Web Search](WEB_SEARCH.md) | Native zero-key meta-search — four engines, retries, synthesis endpoint, agent tool |
+| [SQL Playground](SQL_PLAYGROUND.md) | Read-only SQL exploration for users — schema introspection and the layered security model |
+| [Modular Terminal System](TERMINAL_SYSTEM.md) | Pluggable terminal providers — manifests, marketplace, sessions, token broker, SSH proxy |
 
 ---
 
@@ -27,7 +31,7 @@ If you are new to the codebase, read in this order:
 
 1. **[Agent Development](AGENT_DEVELOPMENT.md)** — understand how an agent is structured and persisted
 2. **[Tool Development](TOOL_DEVELOPMENT.md)** — add capabilities to agents by writing tools
-3. **[Agent Delegation](AGENT_DELEGATION.md)** — compose multiple agents into a pipeline
+3. **[Triggers & Automations](TRIGGERS_AUTOMATIONS.md)** — schedule agents to work without supervision
 
 ---
 
