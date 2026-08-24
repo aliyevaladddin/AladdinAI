@@ -15,6 +15,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#713) ([43cce1c](https://github.com/aliyevaladddin/AladdinAI/commit/43cce1cf0cb41fbd95e395d2753769615f519c5a))
 
+- Add guides for SQL playground, terminal system, web search, triggers (#731) ([3337dbe](https://github.com/aliyevaladddin/AladdinAI/commit/3337dbea1bc99ba312d2c3b402292f42e67dbec1))
+
 
 ### Features
 
@@ -34,6 +36,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#726) ([bd24036](https://github.com/aliyevaladddin/AladdinAI/commit/bd24036ac12bf31cdcb1fd92ac9dcc454d7f1c39))
 
 - Update changelog [skip ci] (#728) ([d7d5357](https://github.com/aliyevaladddin/AladdinAI/commit/d7d5357c6d67676e9c0b87767b204ce26d43943d))
+
+- Update changelog [skip ci] (#730) ([031d18b](https://github.com/aliyevaladddin/AladdinAI/commit/031d18b7c24b188c132a8dad5bbd806a404971b0))
 
 ## [v2.2.5] - 2026-08-21
 
