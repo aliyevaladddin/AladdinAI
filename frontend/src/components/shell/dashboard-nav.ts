@@ -10,6 +10,7 @@ import {
   Settings,
   Briefcase,
   ShoppingCart,
+  FolderClosed,
 } from "lucide-react";
 import type { ActivityItem } from "./ActivityBar";
 
@@ -23,6 +24,7 @@ export const DASHBOARD_PRIMARY: ActivityItem[] = [
   { href: "/dashboard",             title: "Overview",     icon: LayoutDashboard },
   { href: "/dashboard/agents",      title: "Agents",       icon: Bot },
   { href: "/dashboard/automations", title: "Automations",  icon: Zap },
+  { href: "/dashboard/files",       title: "Files",        icon: FolderClosed },
   { href: "/dashboard/comms",       title: "Conversations",icon: MessageSquare },
   { href: "/dashboard/mail",        title: "Mail",         icon: Mailbox },
   { href: "/dashboard/crm",         title: "CRM",          icon: Users },

@@ -242,9 +242,12 @@ export const api = {
     return res.json();
   },
 
-  upload: async <T = any>(path: string, file: File): Promise<T> => {
+  upload: async <T = any>(path: string, file: File, extraFields?: Record<string, string>): Promise<T> => {
     const fd = new FormData();
     fd.append("file", file);
+    if (extraFields) {
+      for (const [key, value] of Object.entries(extraFields)) fd.append(key, value);
+    }
     const res = await apiFetch(`${API_URL}${path}`, { method: "POST", body: fd });
     if (!res.ok) {
       const errorText = await res.text().catch(() => "No error body");
