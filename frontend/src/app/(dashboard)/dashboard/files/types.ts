@@ -36,6 +36,8 @@ export interface FileEntry {
   created_by_user_id: number;
   deleted_at: string | null;
   created_at: string;
+  /** When the latest version was added (server-computed). */
+  updated_at?: string | null;
 }
 
 export interface FileVersion {

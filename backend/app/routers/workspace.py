@@ -29,8 +29,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -60,12 +59,22 @@ from app.schemas.workspace import (
 )
 from app.security import get_current_user
 from app.services import media_storage
+# Authorization & audit helpers live in the service layer so the agent tools
+# (`app/tools/files_ws.py`) enforce exactly the same rules as these endpoints.
+from app.services.file_workspace import (  # noqa: F401
+    ROLE_ORDER,
+    _add_event,
+    _commit_version,
+    _require_file,
+    _require_file_with_history,
+    _require_role,
+    blob_handle,
+    require_member,
+)
 
 log = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Workspace"])
-
-ROLE_ORDER = {"viewer": 0, "editor": 1, "owner": 2}
 
 # Keep in sync with media_mongo.MAX_FILE_SIZE (mongo raises ValueError past it;
 # we pre-check so local backend enforces the same limit).
@@ -73,97 +82,6 @@ MAX_FILE_SIZE = 50 * 1024 * 1024
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────
-
-
-def _require_role(member: SpaceMember, min_role: str) -> None:
-    if ROLE_ORDER.get(member.role, -1) < ROLE_ORDER[min_role]:
-        raise HTTPException(status_code=403, detail="Insufficient role")
-
-
-# [RCF:PROTECTED]
-async def require_member(
-    db: AsyncSession, user_id: int, space_id: int, min_role: str = "viewer"
-) -> SpaceMember:
-    result = await db.execute(
-        select(SpaceMember).where(
-            SpaceMember.space_id == space_id,
-            SpaceMember.user_id == user_id,
-        )
-    )
-    member = result.scalar_one_or_none()
-    # A missing membership and an insufficient role are the same answer from
-    # the outside: you may not act here. Distinguishing them leaks layout.
-    if member is None or ROLE_ORDER.get(member.role, -1) < ROLE_ORDER[min_role]:
-        raise HTTPException(status_code=403, detail="No access to this space")
-    return member
-
-
-# [RCF:PROTECTED]
-async def _require_file(
-    db: AsyncSession, user_id: int, file_id: int, min_role: str = "viewer"
-) -> tuple[WorkspaceFile, SpaceMember]:
-    result = await db.execute(select(WorkspaceFile).where(WorkspaceFile.id == file_id))
-    file = result.scalar_one_or_none()
-    if file is None or file.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="File not found")
-    member = await require_member(db, user_id, file.space_id, min_role)
-    return file, member
-
-
-# [RCF:PROTECTED]
-async def _require_file_with_history(
-    db: AsyncSession, user_id: int, file_id: int
-) -> tuple[WorkspaceFile, SpaceMember]:
-    """Like _require_file but tolerates soft-deleted files: the versions and
-    the audit timeline outlive a delete — that is their purpose."""
-    result = await db.execute(select(WorkspaceFile).where(WorkspaceFile.id == file_id))
-    file = result.scalar_one_or_none()
-    if file is None:
-        raise HTTPException(status_code=404, detail="File not found")
-    member = await require_member(db, user_id, file.space_id)
-    return file, member
-
-
-# [RCF:PROTECTED]
-def _add_event(
-    db: AsyncSession,
-    file_id: int,
-    event_type: str,
-    actor_user_id: int | None,
-    payload: dict | None = None,
-) -> None:
-    db.add(FileEvent(
-        file_id=file_id,
-        event_type=event_type,
-        actor_type="human",
-        actor_user_id=actor_user_id,
-        payload=json.dumps(payload) if payload else None,
-    ))
-
-
-# [RCF:PROTECTED]
-def _blob_handle(storage_ref: str) -> str:
-    """Extract the backend-specific handle from a stored storage_ref JSON."""
-    ref = json.loads(storage_ref)
-    handle = ref.get("file_id") or ref.get("path")
-    if not handle:
-        raise HTTPException(status_code=500, detail="Corrupt storage reference")
-    return handle
-
-
-# [RCF:PROTECTED]
-async def _commit_version(db: AsyncSession) -> None:
-    """Commit a version-number bump. Two concurrent writers can race for the
-    same next version_no — the unique constraint turns that into a clean 409
-    instead of an unhandled 500."""
-    try:
-        await db.commit()
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail="File was modified concurrently, please retry",
-        )
 
 
 # ── spaces ──────────────────────────────────────────────────────────────────
@@ -474,8 +392,24 @@ async def list_files(
         query = query.where(WorkspaceFile.folder_id.is_(None))
     elif folder_id is not None:
         query = query.where(WorkspaceFile.folder_id == folder_id)
-    result = await db.execute(query.order_by(WorkspaceFile.name))
-    return result.scalars().all()
+    files = (await db.execute(query.order_by(WorkspaceFile.name))).scalars().all()
+
+    # "Last changed" for the whole listing in one query: the newest version
+    # timestamp per file.
+    updated: dict[int, datetime] = {}
+    if files:
+        latest = await db.execute(
+            select(FileVersion.file_id, func.max(FileVersion.created_at))
+            .where(FileVersion.file_id.in_([f.id for f in files]))
+            .group_by(FileVersion.file_id)
+        )
+        updated = dict(latest.all())
+
+    return [
+        {c.name: getattr(f, c.name) for c in WorkspaceFile.__table__.columns}
+        | {"updated_at": updated.get(f.id)}
+        for f in files
+    ]
 
 
 @router.post("/spaces/{space_id}/files/upload", response_model=FileOut, status_code=201)
@@ -555,7 +489,7 @@ async def download_file(
         raise HTTPException(status_code=404, detail="Version not found")
 
     data = await media_storage.get_bytes(
-        db, version.uploader_user_id, _blob_handle(version.storage_ref),
+        db, version.uploader_user_id, blob_handle(version.storage_ref),
     )
     if data is None:
         raise HTTPException(status_code=404, detail="Stored content unavailable")

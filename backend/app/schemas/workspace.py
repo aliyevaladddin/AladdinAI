@@ -117,6 +117,8 @@ class FileOut(BaseModel):
     created_by_user_id: int
     deleted_at: Optional[datetime] = None
     created_at: datetime
+    # When the latest version was added (None for files without versions).
+    updated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

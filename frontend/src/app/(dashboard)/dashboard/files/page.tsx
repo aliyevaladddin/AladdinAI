@@ -5,9 +5,10 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
+  Bot,
   Clock,
   Download,
-  File as FileIcon,
+  ChevronRight,
   Folder as FolderIcon,
   FolderOpen,
   FolderPlus,
@@ -25,6 +26,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 import * as api from "./api";
 import type { AssistantContext } from "./AssistantPanel";
+import { fileVisual } from "./fileIcons";
 import type { FileEntry, FileEvent, FileVersion, Folder, Space } from "./types";
 
 /* Lazy: the assistant bundle loads only when the panel first mounts. */
@@ -48,6 +50,33 @@ function formatDate(iso: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function formatRelative(iso: string): string {
+  const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 31) return `${days} d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { dateStyle: "medium" });
+}
+
+function ActorLine({ event }: { event: FileEvent }) {
+  if (event.actor_type === "agent") {
+    return (
+      <>
+        by{" "}
+        <span className="inline-flex items-center gap-1 font-medium text-primary">
+          <Bot size={11} /> AI agent
+        </span>
+        {event.actor_name ? ` for ${event.actor_name}` : ""}
+      </>
+    );
+  }
+  return <>by {event.actor_name ?? event.actor_type}</>;
 }
 
 export default function FilesPage() {
@@ -339,6 +368,18 @@ export default function FilesPage() {
     return map;
   }, [folders]);
 
+  /* Chain from the space root down to the open folder — for breadcrumbs. */
+  const folderPath = useMemo(() => {
+    const byId = new Map(folders.map((f) => [f.id, f]));
+    const path: Folder[] = [];
+    let cur = folderId != null ? byId.get(folderId) : undefined;
+    while (cur) {
+      path.push(cur);
+      cur = cur.parent_id != null ? byId.get(cur.parent_id) : undefined;
+    }
+    return path.reverse();
+  }, [folders, folderId]);
+
   const renderTree = useCallback(
     (parent: number | null, depth: number): React.ReactNode =>
       (childrenOf.get(parent) ?? []).map((folder) => (
@@ -509,6 +550,32 @@ export default function FilesPage() {
               dragOver ? "border-primary bg-primary/5" : "border-border"
             }`}
           >
+            {/* Breadcrumbs: Space ▸ folder path to the open folder. */}
+            <nav className="mb-3 flex items-center gap-1 text-sm text-muted-foreground">
+              <button
+                onClick={() => setFolderId(null)}
+                className={`flex items-center gap-1 rounded px-1 py-0.5 hover:bg-surface-1 hover:text-foreground ${
+                  folderId === null ? "font-medium text-foreground" : ""
+                }`}
+              >
+                <Home size={13} /> {activeSpace?.name ?? "Home"}
+              </button>
+              {folderPath.map((folder, i) => (
+                <span key={folder.id} className="flex items-center gap-1">
+                  <ChevronRight size={13} className="shrink-0 opacity-50" />
+                  <button
+                    onClick={() => setFolderId(folder.id)}
+                    className={`rounded px-1 py-0.5 hover:bg-surface-1 hover:text-foreground ${
+                      i === folderPath.length - 1
+                        ? "font-medium text-foreground"
+                        : ""
+                    }`}
+                  >
+                    {folder.name}
+                  </button>
+                </span>
+              ))}
+            </nav>
             {files.length === 0 ? (
               <EmptyState
                 icon={<Upload size={28} className="text-muted-foreground" />}
@@ -526,11 +593,14 @@ export default function FilesPage() {
                     <th className="pb-2">Name</th>
                     <th className="pb-2">Size</th>
                     <th className="pb-2">Version</th>
+                    <th className="pb-2">Changed</th>
                     <th className="pb-2" />
                   </tr>
                 </thead>
                 <tbody>
-                  {files.map((file) => (
+                  {files.map((file) => {
+                    const visual = fileVisual(file.name);
+                    return (
                     <tr
                       key={file.id}
                       onClick={() => setSelectedFile(file)}
@@ -540,12 +610,18 @@ export default function FilesPage() {
                     >
                       <td className="py-2">
                         <span className="flex items-center gap-2">
-                          <FileIcon size={15} className="text-muted-foreground" />
+                          <visual.Icon size={15} className={visual.className} />
                           {file.name}
                         </span>
                       </td>
                       <td className="py-2 text-muted-foreground">{formatBytes(file.byte_size)}</td>
                       <td className="py-2 text-muted-foreground">v{file.current_version_no}</td>
+                      <td
+                        className="py-2 text-muted-foreground"
+                        title={file.updated_at ? formatDate(file.updated_at) : undefined}
+                      >
+                        {file.updated_at ? formatRelative(file.updated_at) : "—"}
+                      </td>
                       <td className="py-2 text-right">
                         <span className="inline-flex gap-1">
                           <Button
@@ -573,7 +649,8 @@ export default function FilesPage() {
                         </span>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             )}
@@ -634,6 +711,11 @@ export default function FilesPage() {
                                 current
                               </span>
                             )}
+                            {v.author_type === "agent" && (
+                              <span className="ml-2 inline-flex items-center gap-0.5 rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-normal text-primary">
+                                <Bot size={10} /> AI
+                              </span>
+                            )}
                           </div>
                           <div className="truncate text-xs text-muted-foreground">
                             {formatDate(v.created_at)}
@@ -668,7 +750,7 @@ export default function FilesPage() {
                         <span className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-primary" />
                         <div className="font-medium">{ev.event_type.replace(/_/g, " ")}</div>
                         <div className="text-xs text-muted-foreground">
-                          {formatDate(ev.created_at)} · by {ev.actor_name ?? ev.actor_type}
+                          {formatDate(ev.created_at)} · <ActorLine event={ev} />
                         </div>
                       </li>
                     ))}
