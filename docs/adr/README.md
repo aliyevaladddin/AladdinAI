@@ -26,6 +26,7 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 | [0010](0010-native-agent-meta-search.md) | Native Agent Meta-Search Engine & Universal Tool Discovery | ✅ Accepted | 2026-07-20 |
 | [0011](0011-multi-agent-swarm-and-tools.md) | Multi-Agent Swarm Orchestration & Autonomous Tools Architecture | ✅ Accepted | 2026-07-20 |
 | [0012](0012-pluggable-image-gen-backends.md) | Pluggable Image Generation Backends (NIM FLUX sunset → DashScope) | ✅ Accepted | 2026-08-16 |
+| [0013](0013-file-workspace-append-only-agent-safety.md) | File Workspace — Append-Only Versions & Agent Actions Under Human Membership | ✅ Accepted | 2026-08-25 |
 
 ## Status Definitions
 
@@ -71,6 +72,7 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 - [ADR-0009](0009-golden-set-and-harness.md) - Golden Set + Evaluation Harness
 - [ADR-0010](0010-native-agent-meta-search.md) - Native Agent Meta-Search & Universal Tool Discovery
 - [ADR-0012](0012-pluggable-image-gen-backends.md) - Pluggable Image Generation Backends
+- [ADR-0013](0013-file-workspace-append-only-agent-safety.md) - File Workspace: Append-Only Versions & Agent Safety
 
 ### Safety & Voice
 - [ADR-0004](0004-nemo-guardrails-deferred.md) - NeMo Guardrails Deferred
