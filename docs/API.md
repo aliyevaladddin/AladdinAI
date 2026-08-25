@@ -3680,6 +3680,536 @@ Github Webhook
 | ---- | ----------- |
 | 200 | Successful Response |
 
+### /api/spaces
+
+#### GET
+##### Summary:
+
+List Spaces
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### POST
+##### Summary:
+
+Create Space
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/spaces/{space_id}
+
+#### PATCH
+##### Summary:
+
+Rename Space
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### DELETE
+##### Summary:
+
+Delete Space
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/spaces/{space_id}/members
+
+#### POST
+##### Summary:
+
+Add Member
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### GET
+##### Summary:
+
+List Members
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/spaces/{space_id}/members/{user_id}
+
+#### PATCH
+##### Summary:
+
+Update Member
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+| user_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### DELETE
+##### Summary:
+
+Remove Member
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+| user_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/spaces/{space_id}/folders
+
+#### POST
+##### Summary:
+
+Create Folder
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### GET
+##### Summary:
+
+List Folders
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/folders/{folder_id}
+
+#### PATCH
+##### Summary:
+
+Update Folder
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| folder_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### DELETE
+##### Summary:
+
+Delete Folder
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| folder_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/spaces/{space_id}/files
+
+#### GET
+##### Summary:
+
+List Files
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+| folder_id | query |  | No |  |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/spaces/{space_id}/files/upload
+
+#### POST
+##### Summary:
+
+Upload File
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| space_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/files/{file_id}/download
+
+#### GET
+##### Summary:
+
+Download File
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| file_id | path |  | Yes | integer |
+| version | query |  | No |  |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/files/{file_id}/upload_version
+
+#### POST
+##### Summary:
+
+Upload New Version
+
+##### Description:
+
+Upload updated content as the next version of an existing file.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| file_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/files/{file_id}/restore
+
+#### POST
+##### Summary:
+
+Restore Version
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| file_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/files/{file_id}/move
+
+#### PATCH
+##### Summary:
+
+Move File
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| file_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/files/{file_id}
+
+#### DELETE
+##### Summary:
+
+Delete File
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| file_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/files/{file_id}/versions
+
+#### GET
+##### Summary:
+
+List Versions
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| file_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/files/{file_id}/events
+
+#### GET
+##### Summary:
+
+List Events
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| file_id | path |  | Yes | integer |
+| limit | query |  | No | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/ssh/exec
 
 #### POST
@@ -4800,6 +5330,21 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | ---- | ---- | ----------- | -------- |
 | file | string |  | Yes |
 
+#### Body_upload_file_api_spaces__space_id__files_upload_post
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| file | string |  | Yes |
+| folder_id |  |  | No |
+| comment |  |  | No |
+
+#### Body_upload_new_version_api_files__file_id__upload_version_post
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| file | string |  | Yes |
+| comment |  |  | No |
+
 #### ChatMessageResponse
 
 | Name | Type | Description | Required |
@@ -4957,6 +5502,18 @@ Lightweight PATCH — only updates the agent binding on an email account.
 | ---- | ---- | ----------- | -------- |
 | agent_id |  |  | No |
 
+#### EventOut
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| id | integer |  | Yes |
+| file_id | integer |  | Yes |
+| event_type | string |  | Yes |
+| actor_type | string |  | Yes |
+| actor_user_id |  |  | No |
+| payload |  |  | No |
+| created_at | dateTime |  | Yes |
+
 #### ExtractionUpdate
 
 | Name | Type | Description | Required |
@@ -4977,6 +5534,57 @@ Lightweight PATCH — only updates the agent binding on an email account.
 | ---- | ---- | ----------- | -------- |
 | message_id | integer |  | Yes |
 | value | string |  | Yes |
+
+#### FileMove
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| folder_id |  |  | No |
+
+#### FileOut
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| id | integer |  | Yes |
+| space_id | integer |  | Yes |
+| folder_id |  |  | No |
+| name | string |  | Yes |
+| mime_type |  |  | No |
+| byte_size | integer |  | Yes |
+| current_version_no | integer |  | Yes |
+| created_by_user_id | integer |  | Yes |
+| deleted_at |  |  | No |
+| created_at | dateTime |  | Yes |
+
+#### FileRestore
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| version_no | integer |  | Yes |
+
+#### FolderCreate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name | string |  | Yes |
+| parent_id |  |  | No |
+
+#### FolderOut
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| id | integer |  | Yes |
+| space_id | integer |  | Yes |
+| parent_id |  |  | No |
+| name | string |  | Yes |
+| created_at | dateTime |  | Yes |
+
+#### FolderUpdate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name |  |  | No |
+| parent_id |  |  | No |
 
 #### GatesUpdate
 
@@ -5095,6 +5703,31 @@ One row in the dashboard marketplace — read straight from a YAML manifest.
 | image | string |  | Yes |
 | internal_port | integer |  | Yes |
 | requires_ssh_proxy | boolean |  | No |
+
+#### MemberAdd
+
+Add a member by user id (preferred) or email lookup.
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| user_id |  |  | No |
+| email |  |  | No |
+| role | string |  | No |
+
+#### MemberOut
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| user_id | integer |  | Yes |
+| email | string |  | Yes |
+| name |  |  | No |
+| role | string |  | Yes |
+
+#### MemberUpdate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| role | string |  | Yes |
 
 #### MemoryCreate
 
@@ -5469,6 +6102,28 @@ ttyd adapter ignores it.
 | provider_type | string |  | Yes |
 | provider_session_id |  |  | No |
 
+#### SpaceCreate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name | string |  | Yes |
+
+#### SpaceOut
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| id | integer |  | Yes |
+| name | string |  | Yes |
+| created_by_user_id | integer |  | Yes |
+| my_role | string |  | Yes |
+| created_at | dateTime |  | Yes |
+
+#### SpaceUpdate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name | string |  | Yes |
+
 #### SuggestReplyResponse
 
 | Name | Type | Description | Required |
@@ -5604,6 +6259,20 @@ ttyd adapter ignores it.
 | type | string |  | Yes |
 | input |  |  | No |
 | ctx | object |  | No |
+
+#### VersionOut
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| id | integer |  | Yes |
+| file_id | integer |  | Yes |
+| version_no | integer |  | Yes |
+| byte_size | integer |  | Yes |
+| uploader_user_id | integer |  | Yes |
+| author_type | string |  | Yes |
+| agent_run_id |  |  | No |
+| comment |  |  | No |
+| created_at | dateTime |  | Yes |
 
 #### WebSearchResponse
 
