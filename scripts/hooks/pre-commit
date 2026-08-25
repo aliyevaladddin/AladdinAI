@@ -1,0 +1,12 @@
+#!/bin/sh
+# Pre-commit guard: block direct commits to main.
+# Install once per clone:  scripts/install-git-hooks.sh
+branch="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$branch" = "main" ]; then
+  echo ""
+  echo "  ✖  Direct commits to 'main' are not allowed."
+  echo "     Create a feature branch first:"
+  echo "       git checkout -b feat/my-change"
+  echo ""
+  exit 1
+fi
