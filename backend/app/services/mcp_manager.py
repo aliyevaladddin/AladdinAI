@@ -375,10 +375,31 @@ CATALOG: list[dict] = [
         "headers_hint": {},
     },
     {
+        "name": "Context7",
+        "url": "https://mcp.context7.com/mcp",
+        "category": "documentation",
+        "description": "Up-to-date docs for thousands of libraries and frameworks, pulled into agent context.",
+        "headers_hint": {},
+    },
+    {
+        "name": "Exa",
+        "url": "https://mcp.exa.ai/mcp",
+        "category": "search",
+        "description": "Web search and page fetching tuned for AI agents (anonymous free tier).",
+        "headers_hint": {},
+    },
+    {
         "name": "Microsoft Learn",
         "url": "https://learn.microsoft.com/api/mcp",
         "category": "documentation",
         "description": "Official Microsoft documentation and Learn catalog search.",
+        "headers_hint": {},
+    },
+    {
+        "name": "AWS Knowledge",
+        "url": "https://knowledge-mcp.global.api.aws/mcp",
+        "category": "documentation",
+        "description": "Official AWS docs search, region and availability lookups.",
         "headers_hint": {},
     },
     {
