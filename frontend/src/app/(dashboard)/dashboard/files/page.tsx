@@ -214,6 +214,42 @@ export default function FilesPage() {
     }
   }, []);
 
+  const handleRenameSpace = useCallback(async () => {
+    if (!activeSpace) return;
+    const name = window.prompt("New space name", activeSpace.name);
+    if (!name?.trim() || name.trim() === activeSpace.name) return;
+    try {
+      const updated = await api.renameSpace(activeSpace.id, name.trim());
+      setSpaces((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+      toast.success("Space renamed");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Rename failed");
+    }
+  }, [activeSpace]);
+
+  const handleDeleteSpace = useCallback(async () => {
+    if (!activeSpace) return;
+    if (
+      !window.confirm(
+        `Delete space "${activeSpace.name}" with ALL its files, folders and history? This cannot be undone.`,
+      )
+    )
+      return;
+    try {
+      await api.deleteSpace(activeSpace.id);
+      setSpaces((prev) => {
+        const rest = prev.filter((s) => s.id !== activeSpace.id);
+        setSpaceId(rest[0]?.id ?? null);
+        return rest;
+      });
+      setFolderId(null);
+      setSelectedFile(null);
+      toast.success("Space deleted");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Delete failed");
+    }
+  }, [activeSpace]);
+
   const handleMove = useCallback(
     async (targetFolderId: number | null) => {
       if (!selectedFile) return;
@@ -381,6 +417,16 @@ export default function FilesPage() {
           <Button variant="outline" onClick={handleCreateSpace} title="New space">
             <Plus size={16} />
           </Button>
+          {activeSpace?.my_role === "owner" && (
+            <>
+              <Button variant="ghost" onClick={handleRenameSpace} title="Rename space">
+                <Pencil size={15} />
+              </Button>
+              <Button variant="ghost" onClick={handleDeleteSpace} title="Delete space">
+                <Trash2 size={15} className="text-destructive" />
+              </Button>
+            </>
+          )}
           {canEdit && (
             <>
               <Button variant="outline" onClick={handleNewFolder}>

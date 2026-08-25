@@ -23,6 +23,14 @@ export function createSpace(name: string): Promise<Space> {
   return api.post<Space>("/spaces", { name });
 }
 
+export function renameSpace(spaceId: number, name: string): Promise<Space> {
+  return api.patch<Space>(`/spaces/${spaceId}`, { name });
+}
+
+export async function deleteSpace(spaceId: number): Promise<void> {
+  await api.delete(`/spaces/${spaceId}`);
+}
+
 /* ── Folders ────────────────────────────────────────────────────── */
 
 export function listFolders(spaceId: number): Promise<Folder[]> {

@@ -88,6 +88,31 @@ def test_rename_requires_owner(client):
     ).status_code == 200
 
 
+def test_owner_can_delete_space(client):
+    alice = _register(client)
+    bob = _register(client)
+    space = _create_space(client, alice["headers"])
+    _upload(client, alice["headers"], space["id"])
+    r = client.post(
+        f"/api/spaces/{space['id']}/members",
+        json={"user_id": bob["user_id"], "role": "editor"},
+        headers=alice["headers"],
+    )
+    assert r.status_code == 201
+
+    # Non-owners cannot delete a space.
+    assert client.delete(
+        f"/api/spaces/{space['id']}", headers=bob["headers"]
+    ).status_code == 403
+
+    # Owner deletion removes the space from every listing.
+    assert client.delete(
+        f"/api/spaces/{space['id']}", headers=alice["headers"]
+    ).status_code == 204
+    mine = client.get("/api/spaces", headers=alice["headers"]).json()
+    assert all(s["id"] != space["id"] for s in mine)
+
+
 # ── upload / download / versions ────────────────────────────────────────────
 
 
