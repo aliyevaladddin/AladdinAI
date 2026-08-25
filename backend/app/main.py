@@ -16,7 +16,7 @@ from app.limiter import limiter
 from app.config import settings as app_settings
 from app.routers import (
     agents, auth, bentoml, channels_email, channels_messaging,
-    chat, crm_activities, crm_contacts, crm_deals, crm_orders, crm_products, dashboard, digest, forging, mongodb,
+    chat, crm_activities, crm_contacts, crm_deals, crm_orders, crm_products, dashboard, digest, forging, mcp as mcp_router, mongodb,
     notifications, native_tools, providers, reports as reports_router, router_config, search,
     settings, sql, ssh_exec,
     terminal_approval, terminal_providers, terminal_ws, traces, triggers as triggers_router, vms, webhooks,
@@ -153,6 +153,7 @@ app.include_router(mongodb.router, prefix="/api")
 app.include_router(bentoml.router, prefix="/api/bentoml", tags=["BentoML"])
 app.include_router(webhooks.router, prefix="/api")
 app.include_router(workspace.router, prefix="/api")
+app.include_router(mcp_router.router, prefix="/api")
 app.include_router(ssh_exec.router, prefix="/api")
 app.include_router(triggers_router.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")

@@ -23,6 +23,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.agent import Agent
 from app.models.llm_provider import LLMProvider
+from app.models.mcp_server import MCPServer
+from app.services import mcp_manager
 from app.services.extraction import schedule_extraction
 from app.services.llm_service import LLMError, chat_completion
 from app.services.memory import build_shared_context_block
@@ -110,6 +112,48 @@ def _allowed_tools(agent: Agent) -> list[str]:
         tools = [t for t in tools if t not in _INTER_AGENT_TOOLS]
 
     return tools
+
+
+async def _mcp_schemas(db: AsyncSession, agent: Agent) -> list[dict[str, Any]]:
+    """OpenAI function schemas for the agent's enabled MCP servers.
+
+    Schemas come from each server's cached `tools_cache` (refreshed by the
+    Test button in settings), so no live round-trip happens mid-chat. Tools
+    are NOT registered in the global REGISTRY — it is process-wide and
+    shared across users; per-agent access is gated by
+    `tools_config["mcp_servers"]` here and re-checked on every call in
+    `mcp_manager.call_tool`.
+    """
+    cfg = agent.tools_config if isinstance(agent.tools_config, dict) else {}
+    ids = [int(i) for i in (cfg.get("mcp_servers") or [])]
+    if not ids:
+        return []
+    servers = (
+        await db.execute(
+            select(MCPServer).where(
+                MCPServer.user_id == agent.user_id,
+                MCPServer.enabled.is_(True),
+                MCPServer.id.in_(ids),
+            )
+        )
+    ).scalars().all()
+
+    schemas: list[dict[str, Any]] = []
+    for server in servers:
+        prefix = f"mcp__{mcp_manager.server_slug(server.name)}__"
+        for tool in server.tools_cache or []:
+            if not isinstance(tool, dict) or not tool.get("name"):
+                continue
+            schemas.append({
+                "type": "function",
+                "function": {
+                    "name": prefix + str(tool["name"]),
+                    "description": str(tool.get("description") or tool["name"]),
+                    "parameters": tool.get("inputSchema")
+                    or {"type": "object", "properties": {}},
+                },
+            })
+    return schemas
 
 
 # [RCF:PROTECTED]
@@ -280,8 +324,13 @@ async def run_agent(
                 "content": f"{base}{sys_msg}" if base else sys_msg,
             }
 
+    # External MCP tools ride alongside registry tools; names are prefixed
+    # mcp__<server_slug>__<tool> and dispatched in _execute_tool_call.
+    mcp_schemas = await _mcp_schemas(db, agent)
+    allowed = [*allowed, *(s["function"]["name"] for s in mcp_schemas)]
+
     use_tools = bool(allowed) and model_supports_tools(agent.model)
-    schemas = openai_schemas(allowed) if use_tools else None
+    schemas = ([*openai_schemas(allowed), *mcp_schemas] if use_tools else mcp_schemas) or None
 
     ctx = ToolContext(
         db=db, user_id=agent.user_id, agent_id=agent.id,
@@ -412,7 +461,9 @@ async def _execute_tool_call(call: dict, ctx: ToolContext) -> dict[str, Any]:
     except json.JSONDecodeError as e:
         result: Any = {"error": f"Invalid JSON arguments: {e}"}
     else:
-        if name not in REGISTRY:
+        if name.startswith("mcp__"):
+            result = await _execute_mcp_call(name, args, ctx)
+        elif name not in REGISTRY:
             result = {"error": f"Unknown tool: {name}"}
         else:
             try:
@@ -426,3 +477,35 @@ async def _execute_tool_call(call: dict, ctx: ToolContext) -> dict[str, Any]:
         "tool_call_id": call_id,
         "content": json.dumps(result, default=str),
     }
+
+
+async def _execute_mcp_call(name: str, args: dict[str, Any], ctx: ToolContext) -> dict[str, Any]:
+    """Route an `mcp__<server_slug>__<tool_name>` call to its server.
+
+    The slug is resolved against the *chatting user's* servers only; a slug
+    the user has no enabled server for is an error, never another tenant's
+    server. Ownership/enabled is re-checked inside mcp_manager.call_tool.
+    """
+    try:
+        server_slug, tool_name = name[len("mcp__"):].rsplit("__", 1)
+    except ValueError:
+        return {"error": f"Malformed MCP tool name: {name}"}
+
+    servers = (
+        await ctx.db.execute(
+            select(MCPServer).where(
+                MCPServer.user_id == ctx.user_id,
+                MCPServer.enabled.is_(True),
+            )
+        )
+    ).scalars().all()
+    server = next(
+        (s for s in servers if mcp_manager.server_slug(s.name) == server_slug), None,
+    )
+    if server is None:
+        return {"error": f"Unknown MCP server for tool {name}"}
+
+    out = await mcp_manager.call_tool(ctx.db, ctx.user_id, server.id, tool_name, args)
+    if out.get("status") != "success":
+        return {"error": out.get("message") or "MCP call failed"}
+    return out

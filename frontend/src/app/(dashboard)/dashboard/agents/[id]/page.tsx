@@ -11,8 +11,9 @@ import { AgentExtractionPanel } from "@/components/agent-extraction-panel";
 import { AgentMemoryPanel } from "@/components/agent-memory-panel";
 import { AgentActivityTab } from "@/components/agent-activity-tab";
 import { AgentTracesPanel } from "@/components/agent-traces-panel";
+import { AgentMcpPanel } from "@/components/agent-mcp-panel";
 import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
-import { ArrowLeft, Bot, Shield, Database, Activity, ListTree, Lock, Zap, Check, X, Pencil } from "lucide-react";
+import { ArrowLeft, Bot, Shield, Database, Activity, ListTree, Lock, Zap, Check, X, Pencil, Wrench } from "lucide-react";
 import Link from "next/link";
 
 const VISION_HINT_SUBSTRINGS = ["-vision", "vision-instruct"];
@@ -34,7 +35,7 @@ interface Agent {
   status: string;
 }
 
-type TabId = "overview" | "memory" | "gates" | "safety" | "activity" | "traces";
+type TabId = "overview" | "memory" | "tools" | "gates" | "safety" | "activity" | "traces";
 
 export default function AgentDetailsPage() {
   const { id } = useParams();
@@ -121,6 +122,7 @@ export default function AgentDetailsPage() {
         tabs={[
           { id: "overview", label: "Overview", icon: Zap },
           { id: "memory", label: "Memory", icon: Database },
+          { id: "tools", label: "Tools", icon: Wrench },
           { id: "gates", label: "Gates", icon: Lock },
           { id: "safety", label: "Safety", icon: Shield },
           { id: "activity", label: "Activity", icon: Activity },
@@ -164,6 +166,8 @@ export default function AgentDetailsPage() {
         )}
 
         {activeTab === "memory" && <AgentMemoryPanel agentId={agent.id} />}
+
+        {activeTab === "tools" && <AgentMcpPanel agentId={agent.id} />}
 
         {activeTab === "gates" && (
           <AgentGatesPanel agentId={agent.id} providerId={agent.llm_provider_id} />
