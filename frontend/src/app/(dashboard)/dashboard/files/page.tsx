@@ -541,7 +541,7 @@ export default function FilesPage() {
                         <span className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-primary" />
                         <div className="font-medium">{ev.event_type.replace(/_/g, " ")}</div>
                         <div className="text-xs text-muted-foreground">
-                          {formatDate(ev.created_at)} · by {ev.actor_type}
+                          {formatDate(ev.created_at)} · by {ev.actor_name ?? ev.actor_type}
                         </div>
                       </li>
                     ))}

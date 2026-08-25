@@ -722,9 +722,22 @@ async def list_events(
 ):
     ws_file, _member = await _require_file_with_history(db, user.id, file_id)
     result = await db.execute(
-        select(FileEvent)
+        select(FileEvent, User)
+        .join(User, User.id == FileEvent.actor_user_id, isouter=True)
         .where(FileEvent.file_id == file_id)
         .order_by(FileEvent.created_at.desc(), FileEvent.id.desc())
         .limit(min(limit, 500))
     )
-    return result.scalars().all()
+    return [
+        EventOut(
+            id=ev.id,
+            file_id=ev.file_id,
+            event_type=ev.event_type,
+            actor_type=ev.actor_type,
+            actor_user_id=ev.actor_user_id,
+            actor_name=(getattr(u, "name", None) or u.email) if u else None,
+            payload=ev.payload,
+            created_at=ev.created_at,
+        )
+        for ev, u in result.all()
+    ]

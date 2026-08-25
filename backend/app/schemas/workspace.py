@@ -143,6 +143,8 @@ class EventOut(BaseModel):
     event_type: str
     actor_type: str
     actor_user_id: Optional[int] = None
+    # Display name resolved from the actor's user row (None for system).
+    actor_name: Optional[str] = None
     payload: Optional[str] = None
     created_at: datetime
 

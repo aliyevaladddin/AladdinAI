@@ -190,6 +190,8 @@ def test_rename_file_records_event(client, auth_headers):
     events = client.get(f"/api/files/{file['id']}/events", headers=auth_headers).json()
     renamed = [e for e in events if e["event_type"] == "renamed"]
     assert len(renamed) == 1
+    # The timeline shows who acted, not just that "a human" acted.
+    assert renamed[0]["actor_name"] == "Test User"  # name from auth_headers fixture
 
 
 # ── roles ───────────────────────────────────────────────────────────────────

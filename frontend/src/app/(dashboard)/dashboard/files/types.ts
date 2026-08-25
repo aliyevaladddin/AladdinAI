@@ -65,6 +65,8 @@ export interface FileEvent {
   event_type: FileEventType;
   actor_type: "human" | "agent" | "system";
   actor_user_id: number | null;
+  /** Display name resolved server-side; null for system events. */
+  actor_name?: string | null;
   payload: string | null;
   created_at: string;
 }
