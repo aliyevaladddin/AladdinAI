@@ -26,12 +26,14 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
   - [ADR-0002: MongoDB vs Postgres](./adr/0002-mongodb-vs-postgres.md)
   - [ADR-0003: RCF Webhook Auth](./adr/0003-rcf-webhook-auth.md)
   - [ADR-0008: Orders Entity & Status History](./adr/0008-orders-status-history-in-activity-metadata.md)
+  - [ADR-0013: File Workspace — Append-Only Versions & Agent Safety](./adr/0013-file-workspace-append-only-agent-safety.md)
 
 ### 📚 Developer Guides
 - **[Agent Development](./guides/AGENT_DEVELOPMENT.md)** - Creating custom AI agents
 - **[Tool Development](./guides/TOOL_DEVELOPMENT.md)** - Building agent tools
 - **[Agent Delegation](./guides/AGENT_DELEGATION.md)** - Multi-agent coordination and handoff
 - **[Orders & Sales](./guides/ORDERS.md)** - Product catalog, orders, sales/marketing metrics, and `sales`-role tools
+- **[File Workspace](./guides/FILE_WORKSPACE.md)** - Spaces & roles, append-only versions, audit timeline, safe agent file-tools
 - **[Memory System](./ARCHITECTURE.md#memory)** - Understanding memory architecture
 - **[Self-Forging](./guides/SELF_FORGING.md)** - Golden set + base-vs-forged harness (guide); design in ADR-0001 / ADR-0009
 
