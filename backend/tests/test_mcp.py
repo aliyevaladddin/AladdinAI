@@ -42,6 +42,8 @@ class FakeMCP:
         garbage: bool = False,
         session_mode: bool = False,
         huge_result: bool = False,
+        crlf: bool = False,
+        reject_lists: bool = False,
     ):
         self.sse = sse
         self.omit_id = omit_id
@@ -66,6 +68,8 @@ class FakeMCP:
         self.garbage = garbage
         self.session_mode = session_mode
         self.huge_result = huge_result
+        self.crlf = crlf
+        self.reject_lists = reject_lists
         self.init_count = 0
         self.list_count = 0
         self.call_count = 0
@@ -83,10 +87,19 @@ class FakeMCP:
         if self.garbage:
             text = "<<not json>>"
         if self.sse:
+            eol = "\r\n" if self.crlf else "\n"
+            sep = eol + eol
+            # A leading notification event forces multi-event parsing.
+            progress = (
+                f'event: message{eol}data: '
+                + json.dumps({"jsonrpc": "2.0", "method": "notifications/progress"})
+                + sep
+            )
+            answer = f"event: message{eol}data: {text}{sep}"
             return httpx.Response(
                 200,
                 headers={"content-type": "text/event-stream"},
-                content=f"event: message\ndata: {text}\n\n".encode(),
+                content=(progress + answer).encode(),
             )
         return httpx.Response(
             200, headers={"content-type": "application/json"}, content=text.encode(),
@@ -117,7 +130,11 @@ class FakeMCP:
             return httpx.Response(202)
         if method == "tools/list":
             self.list_count += 1
+            if self.reject_lists:
+                return httpx.Response(404)
             return self._respond(payload, {"tools": self.tools})
+        if method == "tools/call" and self.reject_lists:
+            return httpx.Response(404)
         if method == "tools/call":
             self.call_count += 1
             params = payload.get("params") or {}
@@ -241,6 +258,7 @@ def test_test_endpoint_refreshes_cache(monkeypatch, client, auth_headers):
     cached = client.get(f"/api/mcp/servers/{server['id']}/tools", headers=auth_headers).json()
     assert [t["name"] for t in cached] == ["create_issue", "list_repos"]
     assert fake.init_count == 1  # handshake ran exactly once for both calls
+    assert fake.list_count == 1  # the endpoint lists tools a single time
 
 
 def test_test_endpoint_reports_errors_as_200(monkeypatch, client, auth_headers):
@@ -251,6 +269,90 @@ def test_test_endpoint_reports_errors_as_200(monkeypatch, client, auth_headers):
     data = client.post(f"/api/mcp/servers/{server['id']}/test", headers=auth_headers).json()
     assert data["status"] == "error"
     assert data["message"]
+
+
+def test_sse_with_crlf_separators_parses(monkeypatch, db_session):
+    """sse_starlette-style servers end events with \\r\\n\\r\\n."""
+    fake = FakeMCP(sse=True, crlf=True)
+    use_fake_server(monkeypatch, fake)
+
+    async def scenario(db):
+        server = mcp_manager.MCPServer(name="C", url="https://c.example/mcp", user_id=2)
+        db.add(server)
+        await db.commit()
+        await db.refresh(server)
+        tools = await mcp_manager.fetch_tools(server, 2)
+        assert [t["name"] for t in tools] == ["create_issue", "list_repos"]
+
+    _run(scenario(db_session))
+
+
+def test_double_session_expiry_friendly_message(monkeypatch, db_session):
+    """A server that keeps rejecting sessions yields a clean error, never
+    the internal retry marker."""
+    fake = FakeMCP(session_mode=True, reject_lists=True)
+    use_fake_server(monkeypatch, fake)
+
+    async def scenario(db):
+        server = mcp_manager.MCPServer(name="R", url="https://r2.example/mcp", user_id=13)
+        db.add(server)
+        await db.commit()
+        await db.refresh(server)
+        out = await mcp_manager.call_tool(db, 13, server.id, "create_issue", {})
+        assert out["status"] == "error"
+        assert "session expired" in out["message"]
+        assert "__session_expired__" not in out["message"]
+
+    _run(scenario(db_session))
+
+
+def test_tool_catalog_caps(monkeypatch, db_session):
+    many = [
+        {"name": f"tool_{i}", "description": "", "inputSchema": {"type": "object"}}
+        for i in range(150)
+    ]
+    oversized = [{
+        "name": "huge", "description": "",
+        "inputSchema": {"type": "object", "properties": {
+            k: {"type": "string"} for k in ("x" * 40 + str(i) for i in range(400))
+        }},
+    }]
+    fake = FakeMCP(tools=many + oversized)
+    use_fake_server(monkeypatch, fake)
+
+    async def scenario(db):
+        server = mcp_manager.MCPServer(name="Cap", url="https://cap.example/mcp", user_id=5)
+        db.add(server)
+        await db.commit()
+        await db.refresh(server)
+        tools = await mcp_manager.fetch_tools(server, 5)
+        assert len(tools) == mcp_manager.MAX_TOOLS_PER_SERVER
+        names = {t["name"] for t in tools}
+        assert "huge" not in names and "tool_0" in names
+
+    _run(scenario(db_session))
+
+
+def test_slug_collision_rejected(client, auth_headers):
+    first = _make_server(client, auth_headers, name="GitHub Tools")
+    r = client.post(
+        "/api/mcp/servers",
+        json={"name": "github TOOLS", "url": "https://other.example/mcp"},
+        headers=auth_headers,
+    )
+    assert r.status_code == 422
+    assert "prefix" in r.json()["detail"]
+    # Renaming another server into the collision is rejected too.
+    other = _make_server(client, auth_headers, name="Distinct")
+    upd = client.patch(
+        f"/api/mcp/servers/{other['id']}",
+        json={"name": "GitHub-Tools"},
+        headers=auth_headers,
+    )
+    assert upd.status_code == 422
+    # And the original is untouched.
+    listed = client.get("/api/mcp/servers", headers=auth_headers).json()
+    assert {s["id"] for s in listed} == {first["id"], other["id"]}
 
 
 # ── manager: sessions, shapes, caps ──────────────────────────────────────────
@@ -471,6 +573,14 @@ def test_bridge_schemas_gated_by_config(db_session):
         agent4 = await _make_agent(db, mcp_ids=[foreign.id])
         assert await _mcp_schemas(db, agent4) == []
 
+        # Malformed entries in tools_config are skipped, not fatal.
+        agent5 = await _make_agent(
+            db, mcp_ids=["github", None, "not-an-id", server.id],
+        )
+        schemas5 = await _mcp_schemas(db, agent5)
+        assert len(schemas5) == 1
+        assert schemas5[0]["function"]["name"] == "mcp__repo_tools__create_issue"
+
     _run(scenario(db_session))
 
 
@@ -481,7 +591,7 @@ def test_bridge_execution_routes_to_server(monkeypatch, db_session):
     async def scenario(db):
         from app.services.agent_runner import _execute_mcp_call
 
-        await _make_server_row(db, user_id=41)
+        server = await _make_server_row(db, user_id=41)
         ctx = ToolContext(db=db, user_id=41, agent_id=1)
 
         out = await _execute_mcp_call("mcp__repo_tools__create_issue", {"title": "hi"}, ctx)
@@ -496,5 +606,25 @@ def test_bridge_execution_routes_to_server(monkeypatch, db_session):
         # Malformed name → error.
         out = await _execute_mcp_call("mcp__broken", {}, ctx)
         assert "Malformed" in out["error"]
+
+        # Tool names may legally contain "__" — split on the FIRST one,
+        # so the slug resolves correctly instead of mangling the tool.
+        out = await _execute_mcp_call("mcp__repo_tools__build__cache", {"k": 1}, ctx)
+        assert out["status"] == "success"
+
+        # Agent-level allowlist: a slug the operator never attached to the
+        # agent must not execute even though the user owns such a server.
+        limited = ToolContext(
+            db=db, user_id=41, agent_id=1,
+            extra={"mcp_allowed_server_ids": [server.id + 10000]},
+        )
+        out = await _execute_mcp_call("mcp__repo_tools__create_issue", {}, limited)
+        assert "error" in out
+
+        # No allowlist key at all (direct/legacy callers) falls back to
+        # ownership-only resolution.
+        bare_ctx = ToolContext(db=db, user_id=41, agent_id=1, extra={})
+        out = await _execute_mcp_call("mcp__repo_tools__create_issue", {}, bare_ctx)
+        assert out["status"] == "success"
 
     _run(scenario(db_session))

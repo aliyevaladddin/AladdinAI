@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { api, clearApiCache } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
@@ -44,8 +45,23 @@ const EMPTY_FORM = {
   name: "",
   url: "",
   timeout_seconds: "30",
-  headers: [] as { key: string; value: string }[],
+  headers: [] as HeaderRow[],
 };
+
+interface HeaderRow {
+  id: string;
+  key: string;
+  value: string;
+  /** Shown as the value-input placeholder (e.g. catalog token hints). */
+  hint?: string;
+}
+
+const newHeaderRow = (key = "", value = "", hint?: string): HeaderRow => ({
+  id: Math.random().toString(36).slice(2),
+  key,
+  value,
+  hint,
+});
 
 export function McpSettings() {
   const [view, setView] = useState<"servers" | "catalog">("servers");
@@ -85,7 +101,12 @@ export function McpSettings() {
 
   const handleTest = async (id: number) => {
     setBusy((p) => ({ ...p, [id]: true }));
-    setTests((p) => ({ ...p, [id]: { status: "error", message: undefined } }));
+    // Drop any previous result so the stale badge doesn't linger mid-test.
+    setTests((p) => {
+      const next = { ...p };
+      delete next[id];
+      return next;
+    });
     try {
       const res = await api.post<TestResult>(`/mcp/servers/${id}/test`);
       setTests((p) => ({ ...p, [id]: res }));
@@ -107,6 +128,7 @@ export function McpSettings() {
       for (const h of form.headers) {
         if (h.key.trim() && h.value.trim()) headers[h.key.trim()] = h.value.trim();
       }
+
       await api.post("/mcp/servers", {
         name: form.name,
         url: form.url,
@@ -132,7 +154,10 @@ export function McpSettings() {
         name: entry.name,
         url: entry.url,
         timeout_seconds: "30",
-        headers: Object.entries(entry.headers_hint).map(([key, value]) => ({ key, value })),
+        // Hint values go into placeholders — the user types their real token.
+        headers: Object.entries(entry.headers_hint).map(([key, hint]) =>
+          newHeaderRow(key, "", hint),
+        ),
       });
       setShowForm(true);
       setView("servers");
@@ -144,7 +169,7 @@ export function McpSettings() {
         setView("servers");
         load();
       })
-      .catch((err) => alert(err instanceof Error ? err.message : "Install failed"));
+      .catch((err) => toast.error(err instanceof Error ? err.message : "Install failed"));
   };
 
   return (
@@ -191,29 +216,31 @@ export function McpSettings() {
             <div className="flex items-center justify-between">
               <label className="text-xs font-medium text-[var(--color-fg-muted)]">Headers <span className="opacity-40">(optional — auth tokens, stored encrypted)</span></label>
               <button type="button" className="text-[11px] text-[var(--color-accent)] hover:underline flex items-center gap-1"
-                onClick={() => setForm({ ...form, headers: [...form.headers, { key: "", value: "" }] })}>
+                onClick={() => setForm({ ...form, headers: [...form.headers, newHeaderRow()] })}>
                 <Plus size={11} /> Add header
               </button>
             </div>
             {form.headers.length === 0 && (
               <p className="text-[11px] text-[var(--color-fg-subtle)]">No custom headers</p>
             )}
-            {form.headers.map((h, i) => (
-              <div key={i} className="flex gap-2">
+            {form.headers.map((h) => (
+              <div key={h.id} className="flex gap-2">
                 <input className="input font-mono text-[12px]" placeholder="Authorization" value={h.key}
                   onChange={(e) => {
-                    const next = [...form.headers];
-                    next[i] = { ...next[i], key: e.target.value };
+                    const next = form.headers.map((r) =>
+                      r.id === h.id ? { ...r, key: e.target.value } : r,
+                    );
                     setForm({ ...form, headers: next });
                   }} />
-                <input className="input font-mono text-[12px]" placeholder="Bearer …" value={h.value}
+                <input className="input font-mono text-[12px]" placeholder={h.hint || "Bearer …"} value={h.value}
                   onChange={(e) => {
-                    const next = [...form.headers];
-                    next[i] = { ...next[i], value: e.target.value };
+                    const next = form.headers.map((r) =>
+                      r.id === h.id ? { ...r, value: e.target.value } : r,
+                    );
                     setForm({ ...form, headers: next });
                   }} />
                 <Button type="button" variant="ghost" size="icon-sm" title="Remove header"
-                  onClick={() => setForm({ ...form, headers: form.headers.filter((_, j) => j !== i) })}>
+                  onClick={() => setForm({ ...form, headers: form.headers.filter((r) => r.id !== h.id) })}>
                   <X size={12} />
                 </Button>
               </div>

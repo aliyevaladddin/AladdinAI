@@ -61,6 +61,24 @@ async def _owned_server(server_id: int, user: User, db: AsyncSession) -> MCPServ
     return server
 
 
+async def _ensure_slug_free(
+    db: AsyncSession, user_id: int, name: str, exclude_id: int | None = None,
+) -> None:
+    """Tool prefixes are built from name slugs — two same-slug servers would
+    collide into identical `mcp__<slug>__` tool names. Reject up front."""
+    slug = mcp_manager.server_slug(name)
+    result = await db.execute(
+        select(MCPServer).where(MCPServer.user_id == user_id)
+    )
+    for other in result.scalars().all():
+        if other.id != exclude_id and mcp_manager.server_slug(other.name) == slug:
+            raise HTTPException(
+                status_code=422,
+                detail=f"A server named '{other.name}' already produces the "
+                f"tool prefix '{slug}' — pick a distinct name",
+            )
+
+
 @router.get("/catalog", response_model=list[CatalogEntry])
 async def get_catalog(user: User = Depends(get_current_user)):
     """Curated public MCP servers («стор-lite») for one-click install."""
@@ -79,6 +97,7 @@ async def create_server(
 ):
     if not body.url.lower().startswith(("http://", "https://")):
         raise HTTPException(status_code=422, detail="URL must be http(s)")
+    await _ensure_slug_free(db, user.id, body.name.strip())
     server = MCPServer(
         user_id=user.id,
         name=body.name.strip(),
@@ -102,7 +121,10 @@ async def update_server(
 ):
     server = await _owned_server(server_id, user, db)
     if body.name is not None:
-        server.name = body.name.strip()
+        new_name = body.name.strip()
+        if new_name != server.name:
+            await _ensure_slug_free(db, user.id, new_name, exclude_id=server.id)
+        server.name = new_name
     if body.url is not None:
         if not body.url.lower().startswith(("http://", "https://")):
             raise HTTPException(status_code=422, detail="URL must be http(s)")
@@ -145,11 +167,10 @@ async def test_server(
     """Live tools/list; refreshes the cache so agents pick up new tools."""
     server = await _owned_server(server_id, user, db)
     try:
-        names = await mcp_manager.test_connection(server, user.id)
         tools = await mcp_manager.fetch_tools(server, user.id)
     except mcp_manager.McpError as e:
         return McpTestResult(status="error", message=str(e))
     server.tools_cache = tools
     server.last_checked_at = datetime.now(timezone.utc)
     await db.commit()
-    return McpTestResult(status="success", tools=names)
+    return McpTestResult(status="success", tools=[t["name"] for t in tools])

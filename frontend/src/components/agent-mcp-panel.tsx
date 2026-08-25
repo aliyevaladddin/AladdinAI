@@ -23,11 +23,13 @@ interface McpServer {
 
 export function AgentMcpPanel({ agentId }: { agentId: number }) {
   const [servers, setServers] = useState<McpServer[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [baseCfg, setBaseCfg] = useState<Record<string, unknown>>({});
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoadError(null);
     let cancelled = false;
     Promise.all([
       api.get<McpServer[]>("/mcp/servers", { bypassCache: true }),
@@ -41,11 +43,17 @@ export function AgentMcpPanel({ agentId }: { agentId: number }) {
         const ids = Array.isArray(cfg.mcp_servers) ? cfg.mcp_servers : [];
         setSelected(new Set(ids.map(Number)));
       })
-      .catch((e) => !cancelled && console.error("Failed to load MCP config", e));
+      .catch((e) => {
+        if (cancelled) return;
+        console.error("Failed to load MCP config", e);
+        setLoadError(e instanceof Error ? e.message : "Failed to load");
+      });
     return () => {
       cancelled = true;
     };
   }, [agentId]);
+
+  useEffect(() => load(), [load]);
 
   const toggle = (id: number, disabled: boolean) => {
     if (disabled) return;
@@ -59,9 +67,11 @@ export function AgentMcpPanel({ agentId }: { agentId: number }) {
   const save = useCallback(async () => {
     setSaving(true);
     try {
-      await api.patch(`/agents/${agentId}`, {
+      // The agents router exposes PUT (exclude_unset semantics), not PATCH.
+      await api.put(`/agents/${agentId}`, {
         tools_config: { ...baseCfg, mcp_servers: Array.from(selected) },
       });
+      setBaseCfg((prev) => ({ ...prev, mcp_servers: Array.from(selected) }));
       toast.success("MCP servers updated");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save");
@@ -71,6 +81,14 @@ export function AgentMcpPanel({ agentId }: { agentId: number }) {
   }, [agentId, baseCfg, selected]);
 
   if (servers === null) {
+    if (loadError) {
+      return (
+        <div className="p-6 rounded-2xl bg-surface-1 border border-border/50 flex items-center gap-3 text-sm text-muted-foreground">
+          Failed to load MCP config: {loadError}
+          <Button variant="outline" size="sm" onClick={load}>Retry</Button>
+        </div>
+      );
+    }
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground p-6">
         <Loader2 size={14} className="animate-spin" /> Loading MCP servers…
@@ -129,16 +147,23 @@ export function AgentMcpPanel({ agentId }: { agentId: number }) {
                 </button>
               );
             })}
-            {disabledServers.map((s) => (
-              <div key={s.id} className="flex items-center gap-3 px-4 py-3 opacity-40 cursor-not-allowed"
-                title="Server is disabled in Settings → MCP Servers">
-                <span className="mt-0.5 w-4 h-4 rounded border border-input shrink-0" />
-                <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-medium line-through">{s.name}</span>
-                  <span className="block text-[11px] text-muted-foreground mt-0.5">Disabled server</span>
-                </span>
-              </div>
-            ))}
+            {disabledServers.map((s) => {
+              const wasOn = selected.has(s.id);
+              return (
+                <div key={s.id} className="flex items-center gap-3 px-4 py-3 opacity-40 cursor-not-allowed"
+                  title="Server is disabled in Settings → MCP Servers">
+                  <span className={`mt-0.5 flex items-center justify-center w-4 h-4 rounded border shrink-0 ${wasOn ? "bg-accent border-accent text-white" : "border-input"}`}>
+                    {wasOn && <Check size={11} strokeWidth={3} />}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className={`block text-sm font-medium ${wasOn ? "" : "line-through"}`}>{s.name}</span>
+                    <span className="block text-[11px] text-muted-foreground mt-0.5">
+                      Disabled server{wasOn ? " — selection kept, inactive until re-enabled" : ""}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
 

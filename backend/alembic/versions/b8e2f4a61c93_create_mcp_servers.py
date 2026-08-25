@@ -51,4 +51,6 @@ def upgrade() -> None:
 
 # [RCF:PROTECTED]
 def downgrade() -> None:
-    op.drop_table("mcp_servers")
+    bind = op.get_bind()
+    if "mcp_servers" in set(sa.inspect(bind).get_table_names()):
+        op.drop_table("mcp_servers")

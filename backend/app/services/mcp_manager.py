@@ -38,6 +38,10 @@ PROTOCOL_VERSION = "2025-06-18"
 CLIENT_INFO = {"name": "aladdinai", "version": "1.0"}
 MAX_RESULT_BYTES = 256 * 1024
 SESSION_TTL_SECONDS = 600
+# Per-server tool-catalog caps: one hostile/buggy server must not be able to
+# flood the model context (or this column) with thousands of definitions.
+MAX_TOOLS_PER_SERVER = 100
+MAX_TOOL_SCHEMA_BYTES = 8 * 1024
 
 # In-process session cache: (user_id, server_id) -> (session_id, acquired_at).
 # A stored "" means "stateless server, handshake already done" — no header
@@ -47,6 +51,10 @@ _sessions: dict[tuple[int, int], tuple[str, float]] = {}
 # [RCF:PROTECTED]
 class McpError(Exception):
     """Protocol/transport failure with a user-presentable message."""
+
+
+class SessionExpired(McpError):
+    """The server rejected our MCP-Session-Id (404); safe to re-initialize."""
 
 
 def _decrypt_headers(server: MCPServer) -> dict[str, str]:
@@ -66,8 +74,10 @@ def server_slug(name: str) -> str:
 
 def _parse_sse(text: str) -> list[dict]:
     """Extract the JSON payloads from an SSE body (data: lines)."""
+    # Normalize CRLF first — real servers (sse_starlette, the MCP SDK) end
+    # events with \r\n\r\n, which plain "\n\n" splitting would never split.
     messages: list[dict] = []
-    for chunk in text.split("\n\n"):
+    for chunk in text.replace("\r\n", "\n").split("\n\n"):
         data_lines = [
             line[5:].strip() for line in chunk.splitlines()
             if line.startswith("data:")
@@ -145,7 +155,7 @@ async def _rpc(
 
     new_session = resp.headers.get("MCP-Session-Id") or session_id
     if resp.status_code == 404 and session_id:
-        raise McpError("__session_expired__")
+        raise SessionExpired("MCP session expired")
     if resp.status_code >= 400:
         raise McpError(f"MCP server returned HTTP {resp.status_code}")
     if notify:
@@ -164,9 +174,14 @@ async def _ensure_session(
     transport: httpx.AsyncTransport | None = None,
 ) -> str | None:
     """Return the cached session id or run the initialize handshake."""
+    now = time.monotonic()
+    # Opportunistic TTL sweep keeps the process-wide dict bounded.
+    for k in [k for k, v in _sessions.items() if now - v[1] >= SESSION_TTL_SECONDS]:
+        _sessions.pop(k, None)
+
     key = (user_id, server.id)
     cached = _sessions.get(key)
-    if cached and time.monotonic() - cached[1] < SESSION_TTL_SECONDS:
+    if cached and now - cached[1] < SESSION_TTL_SECONDS:
         return cached[0]
 
     result, sid = await _rpc(
@@ -206,9 +221,8 @@ async def _with_session(
         result, _ = await _rpc(
             server, method, params=params, session_id=sid, transport=transport,
         )
-    except McpError as e:
-        if str(e) != "__session_expired__":
-            raise
+    except SessionExpired:
+        # Exactly one clean re-initialize; a second expiry propagates.
         _sessions.pop((user_id, server.id), None)
         sid = await _ensure_session(server, user_id, transport=transport)
         result, _ = await _rpc(
@@ -221,15 +235,24 @@ async def _with_session(
 
 
 def _normalize_tools(raw_tools: list) -> list[dict]:
-    return [
-        {
-            "name": str(t.get("name", "")),
+    out: list[dict] = []
+    for t in raw_tools:
+        if not (isinstance(t, dict) and t.get("name")):
+            continue
+        schema = t.get("inputSchema") or {"type": "object", "properties": {}}
+        try:
+            if len(json.dumps(schema)) > MAX_TOOL_SCHEMA_BYTES:
+                continue  # oversized definition — skip rather than flood context
+        except (TypeError, ValueError):
+            continue
+        out.append({
+            "name": str(t["name"]),
             "description": str(t.get("description") or ""),
-            "inputSchema": t.get("inputSchema") or {"type": "object", "properties": {}},
-        }
-        for t in raw_tools
-        if isinstance(t, dict) and t.get("name")
-    ]
+            "inputSchema": schema,
+        })
+        if len(out) >= MAX_TOOLS_PER_SERVER:
+            break
+    return out
 
 
 async def fetch_tools(
