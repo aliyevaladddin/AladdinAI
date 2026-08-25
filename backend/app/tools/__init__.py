@@ -18,6 +18,7 @@ from app.tools import vision  # noqa: F401
 from app.tools import image  # noqa: F401
 from app.tools import github_tools  # noqa: F401
 from app.tools import workspace_management  # noqa: F401
+from app.tools import files_ws  # noqa: F401 — file-workspace tools (safe set)
 from app.tools import orders  # noqa: F401
 from app.tools import webhooks  # noqa: F401
 from app.tools import web_search  # noqa: F401
