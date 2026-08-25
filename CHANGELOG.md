@@ -12,6 +12,7 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Repair C terminal JSON parsing — key leak and \uXXXX esc… (#737) ([9799aa0](https://github.com/aliyevaladddin/AladdinAI/commit/9799aa0601d541be89c7c18132bfc9165965eb31))
 
+
 ### Documentation
 
 - Update API documentation [skip ci] (#713) ([43cce1c](https://github.com/aliyevaladddin/AladdinAI/commit/43cce1cf0cb41fbd95e395d2753769615f519c5a))
@@ -47,6 +48,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#734) ([1079001](https://github.com/aliyevaladddin/AladdinAI/commit/1079001b751b63fd6150db85eab2701c99b30ada))
 
 - Update changelog [skip ci] (#735) ([c5242d7](https://github.com/aliyevaladddin/AladdinAI/commit/c5242d72ea089babe6bdc62a48890bfdd1360670))
+
+- Update changelog [skip ci] (#738) ([7d30898](https://github.com/aliyevaladddin/AladdinAI/commit/7d30898a32bb08b85f49683a8fbe9e0237deb766))
+
+- Update changelog (#736) ([f2b1609](https://github.com/aliyevaladddin/AladdinAI/commit/f2b1609d98bf9204a995a64e29117709e87a3b16))
 
 
 ### Refactor
