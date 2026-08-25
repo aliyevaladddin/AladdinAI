@@ -30,6 +30,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -44,6 +45,7 @@ from app.schemas.workspace import (
     EventOut,
     FileMove,
     FileOut,
+    FileRename,
     FileRestore,
     FolderCreate,
     FolderOut,
@@ -147,6 +149,21 @@ def _blob_handle(storage_ref: str) -> str:
     if not handle:
         raise HTTPException(status_code=500, detail="Corrupt storage reference")
     return handle
+
+
+# [RCF:PROTECTED]
+async def _commit_version(db: AsyncSession) -> None:
+    """Commit a version-number bump. Two concurrent writers can race for the
+    same next version_no — the unique constraint turns that into a clean 409
+    instead of an unhandled 500."""
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="File was modified concurrently, please retry",
+        )
 
 
 # ── spaces ──────────────────────────────────────────────────────────────────
@@ -582,11 +599,28 @@ async def upload_new_version(
     db.add(version)
 
     ws_file.current_version_no = new_no
+    ws_file.byte_size = len(data)
     _add_event(db, file_id, "version_added", member.user_id,
                {"version_no": new_no})
-    await db.commit()
+    await _commit_version(db)
     await db.refresh(version)
     return version
+
+
+@router.patch("/files/{file_id}", response_model=FileOut)
+async def rename_file(
+    file_id: int,
+    body: FileRename,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    ws_file, member = await _require_file(db, user.id, file_id, "editor")
+    payload = {"from": ws_file.name, "to": body.name}
+    ws_file.name = body.name
+    _add_event(db, file_id, "renamed", member.user_id, payload)
+    await db.commit()
+    await db.refresh(ws_file)
+    return ws_file
 
 
 @router.post("/files/{file_id}/restore", response_model=VersionOut)
@@ -622,9 +656,10 @@ async def restore_version(
     )
     db.add(version)
     ws_file.current_version_no = new_no
+    ws_file.byte_size = source.byte_size
     _add_event(db, file_id, "restored", member.user_id,
                {"from_version": source.version_no, "new_version": new_no})
-    await db.commit()
+    await _commit_version(db)
     await db.refresh(version)
     return version
 

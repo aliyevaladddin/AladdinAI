@@ -11,6 +11,7 @@ import {
   FolderPlus,
   History,
   Loader2,
+  Pencil,
   Plus,
   RotateCcw,
   Trash2,
@@ -189,6 +190,19 @@ export default function FilesPage() {
     },
     [selectedFile, refreshSelected],
   );
+
+  const handleRename = useCallback(async () => {
+    if (!selectedFile) return;
+    const name = window.prompt("New name", selectedFile.name);
+    if (!name?.trim() || name.trim() === selectedFile.name) return;
+    try {
+      await api.renameFile(selectedFile.id, name.trim());
+      toast.success("Renamed");
+      await refreshSelected(selectedFile.id);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Rename failed");
+    }
+  }, [selectedFile, refreshSelected]);
 
   const handleDelete = useCallback(
     async (file: FileEntry) => {
@@ -446,7 +460,19 @@ export default function FilesPage() {
               </p>
             ) : (
               <>
-                <div className="mb-3 truncate font-medium">{selectedFile.name}</div>
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <span className="truncate font-medium">{selectedFile.name}</span>
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Rename"
+                      onClick={() => void handleRename()}
+                    >
+                      <Pencil size={14} />
+                    </Button>
+                  )}
+                </div>
                 {canEdit && (
                   <select
                     value={selectedFile.folder_id ?? ""}

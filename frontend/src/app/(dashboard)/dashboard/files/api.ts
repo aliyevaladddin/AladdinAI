@@ -76,6 +76,10 @@ export function moveFile(fileId: number, folderId: number | null): Promise<FileE
   return api.patch<FileEntry>(`/files/${fileId}/move`, { folder_id: folderId });
 }
 
+export function renameFile(fileId: number, name: string): Promise<FileEntry> {
+  return api.patch<FileEntry>(`/files/${fileId}`, { name });
+}
+
 export async function deleteFile(fileId: number): Promise<void> {
   await api.delete(`/files/${fileId}`);
 }

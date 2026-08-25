@@ -148,6 +148,50 @@ def test_restore_appends_never_rewrites(client, auth_headers):
     assert nos == [3, 2, 1]  # desc order, nothing rewritten
 
 
+def test_listed_byte_size_tracks_current_version(client, auth_headers):
+    space = _create_space(client, auth_headers)
+    file = _upload(client, auth_headers, space["id"], content=b"short")
+    v2_body = b"a much longer second version body"
+    client.post(
+        f"/api/files/{file['id']}/upload_version",
+        files={"file": ("report.txt", v2_body, "text/plain")},
+        headers=auth_headers,
+    )
+
+    listed = client.get(
+        f"/api/spaces/{space['id']}/files", headers=auth_headers
+    ).json()
+    assert listed[0]["byte_size"] == len(v2_body)
+
+    # Restoring an old version rolls the advertised size back with it.
+    client.post(
+        f"/api/files/{file['id']}/restore",
+        json={"version_no": 1},
+        headers=auth_headers,
+    )
+    listed = client.get(
+        f"/api/spaces/{space['id']}/files", headers=auth_headers
+    ).json()
+    assert listed[0]["byte_size"] == len(b"short")
+
+
+def test_rename_file_records_event(client, auth_headers):
+    space = _create_space(client, auth_headers)
+    file = _upload(client, auth_headers, space["id"])
+
+    r = client.patch(
+        f"/api/files/{file['id']}",
+        json={"name": "Q3-report.txt"},
+        headers=auth_headers,
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["name"] == "Q3-report.txt"
+
+    events = client.get(f"/api/files/{file['id']}/events", headers=auth_headers).json()
+    renamed = [e for e in events if e["event_type"] == "renamed"]
+    assert len(renamed) == 1
+
+
 # ── roles ───────────────────────────────────────────────────────────────────
 
 

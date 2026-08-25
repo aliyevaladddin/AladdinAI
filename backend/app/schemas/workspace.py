@@ -91,6 +91,11 @@ class FolderOut(BaseModel):
 
 
 # [RCF:PROTECTED]
+class FileRename(BaseModel):
+    name: str = Field(..., min_length=1, max_length=500)
+
+
+# [RCF:PROTECTED]
 class FileMove(BaseModel):
     folder_id: Optional[int] = None
 

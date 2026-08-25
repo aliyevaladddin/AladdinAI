@@ -56,6 +56,7 @@ export type FileEventType =
   | "downloaded"
   | "restored"
   | "moved"
+  | "renamed"
   | "deleted";
 
 export interface FileEvent {
