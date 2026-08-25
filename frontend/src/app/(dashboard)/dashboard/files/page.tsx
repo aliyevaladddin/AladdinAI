@@ -1,6 +1,7 @@
 // NOTICE: This file is protected under RCF-PL
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -23,7 +24,11 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 import * as api from "./api";
+import type { AssistantContext } from "./AssistantPanel";
 import type { FileEntry, FileEvent, FileVersion, Folder, Space } from "./types";
+
+/* Lazy: the assistant bundle loads only when the panel first mounts. */
+const AssistantPanel = dynamic(() => import("./AssistantPanel"), { ssr: false });
 
 type PanelTab = "versions" | "timeline";
 
@@ -64,6 +69,12 @@ export default function FilesPage() {
 
   const activeSpace = spaces.find((s) => s.id === spaceId) ?? null;
   const canEdit = activeSpace?.my_role === "owner" || activeSpace?.my_role === "editor";
+
+  const assistantContext: AssistantContext = {
+    space: activeSpace?.name ?? null,
+    folder: folders.find((f) => f.id === folderId)?.name ?? null,
+    file: selectedFile?.name ?? null,
+  };
 
   /* ── data loading ─────────────────────────────────────────────── */
 
@@ -668,6 +679,8 @@ export default function FilesPage() {
           </aside>
         </div>
       )}
+
+      <AssistantPanel context={assistantContext} />
     </div>
   );
 }
