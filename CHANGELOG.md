@@ -10,6 +10,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Replace 23 of 26 any types with proper TypeScript types (#714) ([5f450c6](https://github.com/aliyevaladddin/AladdinAI/commit/5f450c6f3a8a1cbe0a12efffca384eb3267cec94))
 
+- Repair C terminal JSON parsing — key leak and \uXXXX escapes ([c85628e](https://github.com/aliyevaladddin/AladdinAI/commit/c85628e8b86952ab2f3f668c756905c107201b3c))
+
 
 ### Documentation
 
@@ -44,6 +46,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#732) ([5c986a9](https://github.com/aliyevaladddin/AladdinAI/commit/5c986a9a9fe06c4e392bf390505abd919dacd276))
 
 - Update changelog [skip ci] (#734) ([1079001](https://github.com/aliyevaladddin/AladdinAI/commit/1079001b751b63fd6150db85eab2701c99b30ada))
+
+- Update changelog [skip ci] (#735) ([c5242d7](https://github.com/aliyevaladddin/AladdinAI/commit/c5242d72ea089babe6bdc62a48890bfdd1360670))
 
 
 ### Refactor
