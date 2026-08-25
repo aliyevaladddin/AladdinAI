@@ -330,6 +330,38 @@ def test_move_file_into_folder(client, auth_headers):
     assert [f["id"] for f in listed] == [file["id"]]
 
 
+def test_root_listing_excludes_filed_documents(client, auth_headers):
+    """A file inside a folder must not also appear at the space root."""
+    space = _create_space(client, auth_headers)
+    loose = _upload(client, auth_headers, space["id"], filename="loose.txt")
+    filed = _upload(client, auth_headers, space["id"], filename="filed.txt")
+    folder = client.post(
+        f"/api/spaces/{space['id']}/folders", json={"name": "F"},
+        headers=auth_headers,
+    ).json()
+    client.patch(
+        f"/api/files/{filed['id']}/move", json={"folder_id": folder["id"]},
+        headers=auth_headers,
+    )
+
+    root_ids = [
+        f["id"]
+        for f in client.get(
+            f"/api/spaces/{space['id']}/files?root=true", headers=auth_headers
+        ).json()
+    ]
+    assert root_ids == [loose["id"]]
+
+    folder_ids = [
+        f["id"]
+        for f in client.get(
+            f"/api/spaces/{space['id']}/files?folder_id={folder['id']}",
+            headers=auth_headers,
+        ).json()
+    ]
+    assert folder_ids == [filed["id"]]
+
+
 def test_soft_deleted_files_disappear_but_history_stays(client, auth_headers):
     space = _create_space(client, auth_headers)
     file = _upload(client, auth_headers, space["id"])

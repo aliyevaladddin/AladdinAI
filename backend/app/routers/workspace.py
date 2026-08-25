@@ -459,15 +459,20 @@ async def delete_folder(
 async def list_files(
     space_id: int,
     folder_id: Optional[int] = None,
+    root: bool = False,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
+    """List files of a space. ?root=true → only files not in any folder;
+    ?folder_id=N → that folder; without params → everything (search etc.)."""
     await require_member(db, user.id, space_id)
     query = select(WorkspaceFile).where(
         WorkspaceFile.space_id == space_id,
         WorkspaceFile.deleted_at.is_(None),
     )
-    if folder_id is not None:
+    if root:
+        query = query.where(WorkspaceFile.folder_id.is_(None))
+    elif folder_id is not None:
         query = query.where(WorkspaceFile.folder_id == folder_id)
     result = await db.execute(query.order_by(WorkspaceFile.name))
     return result.scalars().all()

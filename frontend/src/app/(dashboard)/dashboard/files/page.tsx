@@ -8,8 +8,10 @@ import {
   Download,
   File as FileIcon,
   Folder as FolderIcon,
+  FolderOpen,
   FolderPlus,
   History,
+  Home,
   Loader2,
   Pencil,
   Plus,
@@ -162,6 +164,41 @@ export default function FilesPage() {
     }
   }, [spaceId, folderId, reloadFiles]);
 
+  const handleRenameFolder = useCallback(
+    async (folder: Folder) => {
+      const name = window.prompt("New folder name", folder.name);
+      if (!name?.trim() || name.trim() === folder.name) return;
+      try {
+        await api.renameFolder(folder.id, name.trim());
+        await reloadFiles();
+        toast.success("Folder renamed");
+      } catch (e: unknown) {
+        toast.error(e instanceof Error ? e.message : "Rename failed");
+      }
+    },
+    [reloadFiles],
+  );
+
+  const handleDeleteFolder = useCallback(
+    async (folder: Folder) => {
+      if (
+        !window.confirm(
+          `Delete folder "${folder.name}"? Files inside move back to the space root.`,
+        )
+      )
+        return;
+      try {
+        await api.deleteFolder(folder.id);
+        if (folderId === folder.id) setFolderId(null);
+        await reloadFiles();
+        toast.success("Folder deleted");
+      } catch (e: unknown) {
+        toast.error(e instanceof Error ? e.message : "Delete failed");
+      }
+    },
+    [folderId, reloadFiles],
+  );
+
   const handleCreateSpace = useCallback(async () => {
     const name = window.prompt("Space name");
     if (!name?.trim()) return;
@@ -259,22 +296,50 @@ export default function FilesPage() {
     (parent: number | null, depth: number): React.ReactNode =>
       (childrenOf.get(parent) ?? []).map((folder) => (
         <div key={folder.id}>
-          <button
-            onClick={() => setFolderId(folder.id)}
-            className={`flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
-              folderId === folder.id
-                ? "bg-surface-2 font-medium text-foreground"
-                : "text-muted-foreground hover:bg-surface-1 hover:text-foreground"
-            }`}
-            style={{ paddingLeft: `${12 + depth * 16}px` }}
-          >
-            <FolderIcon size={14} />
-            <span className="truncate">{folder.name}</span>
-          </button>
+          <div className="group flex items-center">
+            <button
+              onClick={() => setFolderId(folder.id)}
+              className={`flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1.5 pr-1 text-sm transition-colors ${
+                folderId === folder.id
+                  ? "bg-surface-2 font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-surface-1 hover:text-foreground"
+              }`}
+              style={{ paddingLeft: `${12 + depth * 16}px` }}
+            >
+              {folderId === folder.id ? (
+                <FolderOpen size={14} className="shrink-0" />
+              ) : (
+                <FolderIcon size={14} className="shrink-0" />
+              )}
+              <span className="truncate">{folder.name}</span>
+            </button>
+            <span className="mr-1 hidden shrink-0 gap-0.5 group-hover:flex">
+              <button
+                title="Rename folder"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleRenameFolder(folder);
+                }}
+                className="rounded p-1 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground"
+              >
+                <Pencil size={12} />
+              </button>
+              <button
+                title="Delete folder"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleDeleteFolder(folder);
+                }}
+                className="rounded p-1 text-muted-foreground transition-colors hover:bg-surface-2 hover:text-destructive"
+              >
+                <Trash2 size={12} />
+              </button>
+            </span>
+          </div>
           {renderTree(folder.id, depth + 1)}
         </div>
       )),
-    [childrenOf, folderId],
+    [childrenOf, folderId, handleRenameFolder, handleDeleteFolder],
   );
 
   /* ── render ───────────────────────────────────────────────────── */
@@ -361,8 +426,13 @@ export default function FilesPage() {
                   : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
               }`}
             >
-              <FolderIcon size={14} /> Root
+              <Home size={14} /> Home
             </button>
+            {folders.length > 0 && (
+              <div className="mt-1 mb-1 px-3 text-[11px] uppercase tracking-wide text-muted-foreground/60">
+                Folders
+              </div>
+            )}
             {renderTree(null, 0)}
           </aside>
 
@@ -482,7 +552,7 @@ export default function FilesPage() {
                     className="mb-3 w-full rounded-lg border border-border bg-surface-1 px-2 py-1.5 text-xs"
                     title="Move to folder"
                   >
-                    <option value="">Root</option>
+                    <option value="">Home</option>
                     {folders.map((f) => (
                       <option key={f.id} value={f.id}>
                         {f.name}

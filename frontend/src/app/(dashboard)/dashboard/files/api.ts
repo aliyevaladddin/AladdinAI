@@ -40,6 +40,10 @@ export function createFolder(
   });
 }
 
+export function renameFolder(folderId: number, name: string): Promise<Folder> {
+  return api.patch<Folder>(`/folders/${folderId}`, { name });
+}
+
 export function deleteFolder(folderId: number): Promise<void> {
   return api.delete(`/folders/${folderId}`);
 }
@@ -47,7 +51,8 @@ export function deleteFolder(folderId: number): Promise<void> {
 /* ── Files ──────────────────────────────────────────────────────── */
 
 export function listFiles(spaceId: number, folderId?: number | null): Promise<FileEntry[]> {
-  const query = folderId != null ? `?folder_id=${folderId}` : "";
+  // Root asks explicitly for loose files — otherwise the API returns everything.
+  const query = folderId != null ? `?folder_id=${folderId}` : "?root=true";
   return api.get<FileEntry[]>(`/spaces/${spaceId}/files${query}`, { bypassCache: true });
 }
 
