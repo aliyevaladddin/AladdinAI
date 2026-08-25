@@ -23,6 +23,12 @@ from app.models.notification import Notification
 from app.models.system_settings import SystemSettings
 from app.models.message_feedback import MessageFeedback
 from app.models.terminal_approval import TerminalApproval
+from app.models.space import Space
+from app.models.space_member import SpaceMember
+from app.models.folder import Folder
+from app.models.workspace_file import WorkspaceFile
+from app.models.file_version import FileVersion
+from app.models.file_event import FileEvent
 
 __all__ = [
     "User", "VMConnection", "LLMProvider", "MongoConnection", "BentoMLConnection",
@@ -30,4 +36,5 @@ __all__ = [
     "EmailAccount", "MessagingChannel", "ChatSession", "ChatMessage", "OutgoingWebhook",
     "AgentMessage", "AgentTrigger", "TerminalProvider", "Notification", "SystemSettings",
     "MessageFeedback", "TerminalApproval",
+    "Space", "SpaceMember", "Folder", "WorkspaceFile", "FileVersion", "FileEvent",
 ]

@@ -20,7 +20,7 @@ from app.routers import (
     notifications, native_tools, providers, reports as reports_router, router_config, search,
     settings, sql, ssh_exec,
     terminal_approval, terminal_providers, terminal_ws, traces, triggers as triggers_router, vms, webhooks,
-    websearch,
+    websearch, workspace,
 )
 from app.services import triggers as triggers_service
 from app.services import telegram_poller
@@ -152,6 +152,7 @@ app.include_router(vms.router, prefix="/api/vms")
 app.include_router(mongodb.router, prefix="/api")
 app.include_router(bentoml.router, prefix="/api/bentoml", tags=["BentoML"])
 app.include_router(webhooks.router, prefix="/api")
+app.include_router(workspace.router, prefix="/api")
 app.include_router(ssh_exec.router, prefix="/api")
 app.include_router(triggers_router.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
