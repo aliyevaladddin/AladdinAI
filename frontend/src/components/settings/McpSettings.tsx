@@ -1,7 +1,7 @@
 // NOTICE: This file is protected under RCF-PL
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api, clearApiCache } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -74,12 +74,24 @@ export function McpSettings() {
   const [busy, setBusy] = useState<Record<number, boolean>>({});
   const [tests, setTests] = useState<Record<number, TestResult>>({});
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const load = () => {
-    api.get<McpServer[]>("/mcp/servers", { bypassCache: true }).then(setServers);
-    api.get<CatalogEntry[]>("/mcp/catalog").then(setCatalog).catch(() => {});
-  };
-  useEffect(() => { load(); }, []);
+  const load = useCallback(() => {
+    setLoadError(null);
+    // Catalog is static — its failure must not block the servers list.
+    Promise.all([
+      api.get<McpServer[]>("/mcp/servers", { bypassCache: true }),
+      api.get<CatalogEntry[]>("/mcp/catalog").catch(() => [] as CatalogEntry[]),
+    ])
+      .then(([serverList, catalogList]) => {
+        setServers(serverList);
+        setCatalog(catalogList);
+      })
+      .catch((err) =>
+        setLoadError(err instanceof Error ? err.message : "Failed to load"),
+      );
+  }, []);
+  useEffect(() => { load(); }, [load]);
 
   const toggleEnabled = async (s: McpServer) => {
     setBusy((p) => ({ ...p, [s.id]: true }));
@@ -268,7 +280,17 @@ export function McpSettings() {
         onChange={setView}
       />
 
-      {view === "servers" && (
+      {view === "servers" && loadError && (
+        <div className="flex items-center gap-3 text-xs px-3 py-2 rounded-lg bg-[var(--color-danger-soft)] text-[var(--color-danger)] w-fit">
+          <XCircle size={13} />
+          Failed to load MCP servers: {loadError}
+          <button type="button" className="underline font-medium" onClick={load}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {view === "servers" && !loadError && (
         <div className="rounded-xl border border-[var(--color-border)] overflow-hidden">
           {servers.length === 0 ? (
             <div className="py-12 text-center space-y-2">
