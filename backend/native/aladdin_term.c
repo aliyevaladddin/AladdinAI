@@ -118,14 +118,19 @@ void parse_and_process_payload(int pty_master, const char *payload) {
     if (!data_pos) data_pos = strstr(payload, "\"type\": \"data\"");
 
     if (data_pos) {
-        const char *val_pos = strstr(payload, "\"data\":");
+        const char *val_pos = strstr(payload, "\"data\"");
         if (val_pos) {
-            val_pos = strchr(val_pos, '"');
+            // Skip past the key name and colon to the opening quote of the
+            // VALUE. strchr(val_pos, '"') would find the key's own opening
+            // quote and leak "data": " into the terminal input.
+            val_pos = strchr(val_pos, ':');
             if (val_pos) {
-                val_pos++; // skip starting quote
-                const char *end_pos = strrchr(val_pos, '"');
-                if (end_pos && end_pos > val_pos) {
-                    // Process unescaping of \\n, \\r, \\", \\\\ etc.
+                val_pos = strchr(val_pos, '"');
+                if (val_pos) {
+                    val_pos++; // skip opening quote of value
+                    const char *end_pos = strrchr(val_pos, '"');
+                    if (end_pos && end_pos > val_pos) {
+                    // Process unescaping of \n, \r, \t, \b, \\, \" and \uXXXX.
                     char *unencoded = malloc(end_pos - val_pos + 1);
                     if (unencoded) {
                         size_t uidx = 0;
@@ -136,6 +141,17 @@ void parse_and_process_payload(int pty_master, const char *payload) {
                                 else if (*p == 'r') unencoded[uidx++] = '\r';
                                 else if (*p == 't') unencoded[uidx++] = '\t';
                                 else if (*p == 'b') unencoded[uidx++] = '\b';
+                                else if (*p == 'f') unencoded[uidx++] = '\f';
+                                else if (*p == 'u' && p + 4 < end_pos) {
+                                    // \uXXXX -> UTF-8 (covers ASCII escapes like \u001b)
+                                    unsigned int cp = 0;
+                                    if (sscanf(p + 1, "%4x", &cp) == 1 && cp < 0x80) {
+                                        unencoded[uidx++] = (unsigned char)cp;
+                                        p += 4;
+                                    } else {
+                                        unencoded[uidx++] = *p;
+                                    }
+                                }
                                 else unencoded[uidx++] = *p;
                             } else {
                                 unencoded[uidx++] = *p;
@@ -144,6 +160,7 @@ void parse_and_process_payload(int pty_master, const char *payload) {
                         write(pty_master, unencoded, uidx);
                         free(unencoded);
                         return;
+                    }
                     }
                 }
             }
