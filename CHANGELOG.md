@@ -32,6 +32,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - File workspace — spaces, append-only versions, audit tim… (#742) ([5a21a44](https://github.com/aliyevaladddin/AladdinAI/commit/5a21a44234770ab9cf2509836451e0291ba0c38f))
 
+- Native MCP client, per-agent server picker, and server catalog (#747) ([1d1fb65](https://github.com/aliyevaladddin/AladdinAI/commit/1d1fb65319fffbfdfd110d9e531189625fe5f019))
+
 
 ### Maintenance
 
@@ -62,6 +64,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#739) ([883c04f](https://github.com/aliyevaladddin/AladdinAI/commit/883c04f244990dc122e0282f6a95ba657071baa9))
 
 - Update changelog [skip ci] (#743) ([13695d3](https://github.com/aliyevaladddin/AladdinAI/commit/13695d3877032a6d048ca4d5885b1045512de195))
+
+- Update changelog [skip ci] (#746) ([a2b0266](https://github.com/aliyevaladddin/AladdinAI/commit/a2b02660ddcf28edd8bca653d731c0401dc38efa))
 
 
 ### Refactor
