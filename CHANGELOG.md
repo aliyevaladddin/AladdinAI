@@ -26,6 +26,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Native C binaries in prod image, Settings tab, tests (#733) ([34b8e5f](https://github.com/aliyevaladddin/AladdinAI/commit/34b8e5fe5a0cb428b840269671185273612896d3))
 
+- File workspace — spaces, append-only versions, audit timeline ([0053dae](https://github.com/aliyevaladddin/AladdinAI/commit/0053daeb694c4959bc078671262a39dee0819a2a))
+
 
 ### Maintenance
 
@@ -52,6 +54,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#738) ([7d30898](https://github.com/aliyevaladddin/AladdinAI/commit/7d30898a32bb08b85f49683a8fbe9e0237deb766))
 
 - Update changelog (#736) ([f2b1609](https://github.com/aliyevaladddin/AladdinAI/commit/f2b1609d98bf9204a995a64e29117709e87a3b16))
+
+- Update changelog [skip ci] (#739) ([883c04f](https://github.com/aliyevaladddin/AladdinAI/commit/883c04f244990dc122e0282f6a95ba657071baa9))
 
 
 ### Refactor
