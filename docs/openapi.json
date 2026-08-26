@@ -8239,6 +8239,304 @@
         }
       }
     },
+    "/api/mcp/catalog": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "Get Catalog",
+        "description": "Curated public MCP servers (\u00ab\u0441\u0442\u043e\u0440-lite\u00bb) for one-click install.",
+        "operationId": "get_catalog_api_mcp_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CatalogEntry"
+                  },
+                  "type": "array",
+                  "title": "Response Get Catalog Api Mcp Catalog Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/mcp/servers": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "List Servers",
+        "operationId": "list_servers_api_mcp_servers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/McpServerResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Servers Api Mcp Servers Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "Create Server",
+        "operationId": "create_server_api_mcp_servers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpServerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpServerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/mcp/servers/{server_id}": {
+      "patch": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "Update Server",
+        "operationId": "update_server_api_mcp_servers__server_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "server_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Server Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpServerUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpServerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "Delete Server",
+        "operationId": "delete_server_api_mcp_servers__server_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "server_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Server Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/servers/{server_id}/tools": {
+      "get": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "Get Tools",
+        "description": "Cached tool list (what agents would see) without a live round-trip.",
+        "operationId": "get_tools_api_mcp_servers__server_id__tools_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "server_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Server Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {},
+                  "title": "Response Get Tools Api Mcp Servers  Server Id  Tools Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mcp/servers/{server_id}/test": {
+      "post": {
+        "tags": [
+          "mcp"
+        ],
+        "summary": "Test Server",
+        "description": "Live tools/list; refreshes the cache so agents pick up new tools.",
+        "operationId": "test_server_api_mcp_servers__server_id__test_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "server_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Server Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpTestResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/ssh/exec": {
       "post": {
         "tags": [
@@ -10486,6 +10784,42 @@
         ],
         "title": "Body_upload_new_version_api_files__file_id__upload_version_post"
       },
+      "CatalogEntry": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "headers_hint": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Headers Hint",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "url",
+          "category",
+          "description"
+        ],
+        "title": "CatalogEntry"
+      },
       "ChatMessageResponse": {
         "properties": {
           "id": {
@@ -12173,6 +12507,248 @@
         ],
         "title": "MarketplaceEntry",
         "description": "One row in the dashboard marketplace \u2014 read straight from a YAML manifest."
+      },
+      "McpServerCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Url"
+          },
+          "headers": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headers"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "maximum": 300.0,
+            "minimum": 5.0,
+            "title": "Timeout Seconds",
+            "default": 30
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "url"
+        ],
+        "title": "McpServerCreate"
+      },
+      "McpServerResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "timeout_seconds": {
+            "type": "integer",
+            "title": "Timeout Seconds"
+          },
+          "header_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Header Names",
+            "default": []
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/McpToolInfo"
+            },
+            "type": "array",
+            "title": "Tools",
+            "default": []
+          },
+          "last_checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Checked At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "url",
+          "enabled",
+          "timeout_seconds",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "McpServerResponse"
+      },
+      "McpServerUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "headers": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headers"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "timeout_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 300.0,
+                "minimum": 5.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timeout Seconds"
+          }
+        },
+        "type": "object",
+        "title": "McpServerUpdate"
+      },
+      "McpTestResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "tools": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tools",
+            "default": []
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "McpTestResult"
+      },
+      "McpToolInfo": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "inputSchema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Inputschema",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "McpToolInfo"
       },
       "MemberAdd": {
         "properties": {

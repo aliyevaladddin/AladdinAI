@@ -4240,6 +4240,176 @@ List Events
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/mcp/catalog
+
+#### GET
+##### Summary:
+
+Get Catalog
+
+##### Description:
+
+Curated public MCP servers («стор-lite») for one-click install.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/mcp/servers
+
+#### GET
+##### Summary:
+
+List Servers
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### POST
+##### Summary:
+
+Create Server
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/mcp/servers/{server_id}
+
+#### PATCH
+##### Summary:
+
+Update Server
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| server_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### DELETE
+##### Summary:
+
+Delete Server
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| server_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 204 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/mcp/servers/{server_id}/tools
+
+#### GET
+##### Summary:
+
+Get Tools
+
+##### Description:
+
+Cached tool list (what agents would see) without a live round-trip.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| server_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/mcp/servers/{server_id}/test
+
+#### POST
+##### Summary:
+
+Test Server
+
+##### Description:
+
+Live tools/list; refreshes the cache so agents pick up new tools.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| server_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/ssh/exec
 
 #### POST
@@ -5375,6 +5545,16 @@ commercial boundary (e.g. whether to surface forge UI). Public, non-secret.
 | file | string |  | Yes |
 | comment |  |  | No |
 
+#### CatalogEntry
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name | string |  | Yes |
+| url | string |  | Yes |
+| category | string |  | Yes |
+| description | string |  | Yes |
+| headers_hint | object |  | No |
+
 #### ChatMessageResponse
 
 | Name | Type | Description | Required |
@@ -5741,6 +5921,56 @@ One row in the dashboard marketplace — read straight from a YAML manifest.
 | image | string |  | Yes |
 | internal_port | integer |  | Yes |
 | requires_ssh_proxy | boolean |  | No |
+
+#### McpServerCreate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name | string |  | Yes |
+| url | string |  | Yes |
+| headers |  |  | No |
+| timeout_seconds | integer |  | No |
+
+#### McpServerResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| id | integer |  | Yes |
+| name | string |  | Yes |
+| url | string |  | Yes |
+| enabled | boolean |  | Yes |
+| timeout_seconds | integer |  | Yes |
+| header_names | [ string ] |  | No |
+| tools | [ [McpToolInfo](#mcptoolinfo) ] |  | No |
+| last_checked_at |  |  | No |
+| created_at | dateTime |  | Yes |
+| updated_at | dateTime |  | Yes |
+
+#### McpServerUpdate
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name |  |  | No |
+| url |  |  | No |
+| headers |  |  | No |
+| enabled |  |  | No |
+| timeout_seconds |  |  | No |
+
+#### McpTestResult
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| status | string |  | Yes |
+| tools | [ string ] |  | No |
+| message |  |  | No |
+
+#### McpToolInfo
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| name | string |  | Yes |
+| description | string |  | No |
+| inputSchema | object |  | No |
 
 #### MemberAdd
 
