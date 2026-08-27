@@ -15,6 +15,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Content-Disposition injection + rate limits on upload/MCP test (#752) ([7321117](https://github.com/aliyevaladddin/AladdinAI/commit/7321117c5037cd8b804a955324211612c3cf53d2))
 
 
+### CI
+
+- Test NIM model upgrade to llama-3.3 (#755) ([5ffa5d5](https://github.com/aliyevaladddin/AladdinAI/commit/5ffa5d501dcf38a37f7de0e7c369d4a737719e62))
+
+
 ### Documentation
 
 - Update API documentation [skip ci] (#713) ([43cce1c](https://github.com/aliyevaladddin/AladdinAI/commit/43cce1cf0cb41fbd95e395d2753769615f519c5a))
@@ -76,6 +81,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#748) ([ddb6d24](https://github.com/aliyevaladddin/AladdinAI/commit/ddb6d24439871455f8d513a8c81b62b8cd1390a9))
 
 - Update changelog [skip ci] (#751) ([2cd1f48](https://github.com/aliyevaladddin/AladdinAI/commit/2cd1f489c7ff8c1c99ebba26a2f4518756843c3a))
+
+- Update changelog [skip ci] (#754) ([ce112ef](https://github.com/aliyevaladddin/AladdinAI/commit/ce112ef4478e938795f8f99f523d9c2ad3b94234))
 
 
 ### Refactor
