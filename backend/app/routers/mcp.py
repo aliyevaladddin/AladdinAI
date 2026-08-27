@@ -10,11 +10,12 @@ cached tool catalog that agent runners build schemas from.
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.limiter import limiter
 from app.models.mcp_server import MCPServer
 from app.models.user import User
 from app.schemas.mcp import (
@@ -161,7 +162,9 @@ async def get_tools(
 
 
 @router.post("/servers/{server_id}/test", response_model=McpTestResult)
+@limiter.limit("5/minute")
 async def test_server(
+    request: Request,
     server_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db),
 ):
     """Live tools/list; refreshes the cache so agents pick up new tools."""
