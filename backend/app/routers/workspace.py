@@ -28,11 +28,12 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.limiter import limiter
 from app.models.file_event import FileEvent
 from app.models.file_version import FileVersion
 from app.models.folder import Folder
@@ -413,7 +414,9 @@ async def list_files(
 
 
 @router.post("/spaces/{space_id}/files/upload", response_model=FileOut, status_code=201)
+@limiter.limit("10/minute")
 async def upload_file(
+    request: Request,
     space_id: int,
     file: UploadFile = File(...),
     folder_id: Optional[int] = Form(None),
@@ -498,11 +501,20 @@ async def download_file(
                {"version_no": wanted})
     await db.commit()
 
-    filename = ws_file.name.replace('"', "")
+    from urllib.parse import quote
+
+    # RFC 5987: encode filename to avoid header injection via crafted names.
+    safe_name = ws_file.name.encode("ascii", "ignore").decode() or "download"
+    ascii_name = safe_name.replace('"', "").replace("\\", "")
+    encoded_name = quote(ws_file.name, safe="")
+    disposition = (
+        f'attachment; filename="{ascii_name}"; '
+        f"filename*=UTF-8''{encoded_name}"
+    )
     return Response(
         content=data,
         media_type=ws_file.mime_type or "application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": disposition},
     )
 
 
