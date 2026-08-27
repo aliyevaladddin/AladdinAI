@@ -7,7 +7,7 @@ Environment variables required:
     PATH_TOKEN or GITHUB_TOKEN - GitHub API token
     NIM_API_KEY - NVIDIA NIM API key
     NIM_BASE_URL - NVIDIA NIM base URL (default: https://integrate.api.nvidia.com/v1)
-    NIM_MODEL - Model to use (default: meta/llama-3.1-70b-instruct)
+    NIM_MODEL - Model to use (default: meta/llama-3.3-70b-instruct)
     PR_NUMBER - Pull request number
     REPO_OWNER - Repository owner
     REPO_NAME - Repository name
@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from tools.github_tools import get_pr_diff, list_pr_files, post_pr_review
 
 try:
-    from openai import OpenAI
+    from openai import APIError, OpenAI
 except ImportError:
     print("Error: openai package not installed. Run: pip install openai", file=sys.stderr)
     sys.exit(1)
@@ -138,7 +138,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
         sys.exit(1)
 
     base_url = os.getenv("NIM_BASE_URL", "https://integrate.api.nvidia.com/v1")
-    model = os.getenv("NIM_MODEL", "meta/llama-3.1-70b-instruct")
+    model = os.getenv("NIM_MODEL", "meta/llama-3.3-70b-instruct")
 
     client = OpenAI(
         base_url=base_url,
@@ -162,7 +162,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
 
         review_body = response.choices[0].message.content
 
-    except (OSError, ValueError, RuntimeError) as e:
+    except (APIError, OSError, ValueError, RuntimeError) as e:
         print(f"Error calling NIM API: {e}", file=sys.stderr)
         sys.exit(1)
 
@@ -195,7 +195,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
 
 ---
 
-<sub>Powered by NVIDIA NIM · [meta/llama-3.1-70b-instruct](https://build.nvidia.com/meta/llama-3_1-70b-instruct)</sub>"""
+<sub>Powered by NVIDIA NIM · [meta/llama-3.3-70b-instruct](https://build.nvidia.com/meta/llama-3_3-70b-instruct)</sub>"""
 
     try:
         result = await post_pr_review(
