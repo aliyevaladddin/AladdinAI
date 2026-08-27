@@ -23,6 +23,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add File Workspace documentation, architectural design record, and README links (#745) ([4bb0fbd](https://github.com/aliyevaladddin/AladdinAI/commit/4bb0fbdf88779132f623648729708675e160d19f))
 
+- Update API documentation [skip ci] (#749) ([2fdf077](https://github.com/aliyevaladddin/AladdinAI/commit/2fdf077ba7a459e3aeabc7ff2089f30851bc25d6))
+
+- Add MCP Servers guide (#750) ([cb7aea7](https://github.com/aliyevaladddin/AladdinAI/commit/cb7aea7cb180c030c72c271b4f4dee202799489b))
+
 
 ### Features
 
@@ -66,6 +70,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#743) ([13695d3](https://github.com/aliyevaladddin/AladdinAI/commit/13695d3877032a6d048ca4d5885b1045512de195))
 
 - Update changelog [skip ci] (#746) ([a2b0266](https://github.com/aliyevaladddin/AladdinAI/commit/a2b02660ddcf28edd8bca653d731c0401dc38efa))
+
+- Update changelog [skip ci] (#748) ([ddb6d24](https://github.com/aliyevaladddin/AladdinAI/commit/ddb6d24439871455f8d513a8c81b62b8cd1390a9))
 
 
 ### Refactor
