@@ -117,23 +117,6 @@ export default function FilesPage() {
     onCancel: () => void;
   }>({ open: false, title: "", onConfirm: () => {}, onCancel: () => {} });
 
-  // Modal state — replaces window.prompt / window.confirm
-  const [promptModal, setPromptModal] = useState<{
-    open: boolean;
-    title: string;
-    defaultValue?: string;
-    onConfirm: (v: string) => void;
-    onCancel: () => void;
-  }>({ open: false, title: "", onConfirm: () => {}, onCancel: () => {} });
-  const [confirmModal, setConfirmModal] = useState<{
-    open: boolean;
-    title: string;
-    description?: string;
-    destructive?: boolean;
-    onConfirm: () => void;
-    onCancel: () => void;
-  }>({ open: false, title: "", onConfirm: () => {}, onCancel: () => {} });
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   /** Show a prompt modal — drop-in for window.prompt. */
