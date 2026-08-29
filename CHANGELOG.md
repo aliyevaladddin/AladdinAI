@@ -45,6 +45,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Native MCP client, per-agent server picker, and server catalog (#747) ([1d1fb65](https://github.com/aliyevaladddin/AladdinAI/commit/1d1fb65319fffbfdfd110d9e531189625fe5f019))
 
+- Batch polish — modals, boundaries, 72 tests, SSH key, pagination (#757) ([13d4f8d](https://github.com/aliyevaladddin/AladdinAI/commit/13d4f8d21cfba31db12b405543fa19680c735cbe))
+
 
 ### Maintenance
 
@@ -83,6 +85,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#751) ([2cd1f48](https://github.com/aliyevaladddin/AladdinAI/commit/2cd1f489c7ff8c1c99ebba26a2f4518756843c3a))
 
 - Update changelog [skip ci] (#754) ([ce112ef](https://github.com/aliyevaladddin/AladdinAI/commit/ce112ef4478e938795f8f99f523d9c2ad3b94234))
+
+- Update changelog [skip ci] (#756) ([23c00d4](https://github.com/aliyevaladddin/AladdinAI/commit/23c00d43c4c38a621db46eda5239129e0bc29380))
 
 
 ### Refactor
