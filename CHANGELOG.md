@@ -22,6 +22,19 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Test NIM model upgrade to llama-3.3 (#755) ([5ffa5d5](https://github.com/aliyevaladddin/AladdinAI/commit/5ffa5d501dcf38a37f7de0e7c369d4a737719e62))
 
 
+### Dependencies
+
+- Bump python-docx from 1.1.2 to 1.2.0 (#766) ([453a921](https://github.com/aliyevaladddin/AladdinAI/commit/453a921529d99ca1b625cf785eb7a4a849f968ab))
+
+- Bump pypdf from 6.15.0 to 6.16.2 (#767) ([c538243](https://github.com/aliyevaladddin/AladdinAI/commit/c53824382663631aa696660042bb60009263ceb6))
+
+- Bump the security-patches group across 1 directory with 6 updates (#768) ([2fae7ad](https://github.com/aliyevaladddin/AladdinAI/commit/2fae7adbcf344a4a32c41ebdda9d8a7804bd58ae))
+
+- Bump shadcn from 4.17.0 to 4.19.0 in /frontend (#771) ([2f36ac6](https://github.com/aliyevaladddin/AladdinAI/commit/2f36ac6bd7c481eeda8eebd0718d8f920271b398))
+
+- Bump lucide-react from 1.31.0 to 1.34.0 in /frontend (#772) ([9c4c45b](https://github.com/aliyevaladddin/AladdinAI/commit/9c4c45b2486695bdd5443e52fd01b3609cd5e33c))
+
+
 ### Documentation
 
 - Update API documentation [skip ci] (#713) ([43cce1c](https://github.com/aliyevaladddin/AladdinAI/commit/43cce1cf0cb41fbd95e395d2753769615f519c5a))
@@ -97,6 +110,20 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#759) ([72e6109](https://github.com/aliyevaladddin/AladdinAI/commit/72e61095ff1439027c1c6b8d06f49c4c121468a9))
 
 - Update changelog [skip ci] (#762) ([0a1c5e3](https://github.com/aliyevaladddin/AladdinAI/commit/0a1c5e3ff3eafc4830fe9ac5a0a1ac554106544f))
+
+- Update changelog [skip ci] (#765) ([4278818](https://github.com/aliyevaladddin/AladdinAI/commit/427881880ff35c83870f64588333760b0ef6e22f))
+
+- Bump electron from 43.4.0 to 44.0.0 in /frontend (#773) ([c90e87f](https://github.com/aliyevaladddin/AladdinAI/commit/c90e87fd4ab93cbe0d8a863c81331538fecfe986))
+
+- Update package-lock.json dependencies (#775) ([06a9f62](https://github.com/aliyevaladddin/AladdinAI/commit/06a9f62cf4d0f7447ae9c867b32506a4ed32deae))
+
+- Bump eslint from 10.8.1 to 10.9.1 in /frontend (#769) ([e9ed7be](https://github.com/aliyevaladddin/AladdinAI/commit/e9ed7be8b0018a5d99318d252574bd274f424cb6))
+
+- Bump @types/node from 26.2.0 to 26.3.0 in /frontend (#770) ([d338525](https://github.com/aliyevaladddin/AladdinAI/commit/d338525f6d143a2d71c1eb99c45aff14a4d57263))
+
+- Update lockfile dependencies (#782) ([7e30fe4](https://github.com/aliyevaladddin/AladdinAI/commit/7e30fe4483d5f9a9140117f16086ed3d9cfea082))
+
+- Update lockfile dependencies for frontend package-lock.json (#785) ([14e1af9](https://github.com/aliyevaladddin/AladdinAI/commit/14e1af9d50c6bec2742f2093b64191a276a3245c))
 
 
 ### Refactor
