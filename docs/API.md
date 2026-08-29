@@ -3682,23 +3682,6 @@ Github Webhook
 
 ### /api/spaces
 
-#### GET
-##### Summary:
-
-List Spaces
-
-##### Responses
-
-| Code | Description |
-| ---- | ----------- |
-| 200 | Successful Response |
-
-##### Security
-
-| Security Schema | Scopes |
-| --- | --- |
-| OAuth2PasswordBearer | |
-
 #### POST
 ##### Summary:
 
@@ -3709,6 +3692,31 @@ Create Space
 | Code | Description |
 | ---- | ----------- |
 | 201 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+#### GET
+##### Summary:
+
+List Spaces
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| limit | query |  | No | integer |
+| offset | query |  | No | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
 | 422 | Validation Error |
 
 ##### Security
@@ -3803,6 +3811,8 @@ List Members
 | Name | Located in | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
 | space_id | path |  | Yes | integer |
+| limit | query |  | No | integer |
+| offset | query |  | No | integer |
 
 ##### Responses
 
@@ -3905,6 +3915,8 @@ List Folders
 | Name | Located in | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
 | space_id | path |  | Yes | integer |
+| limit | query |  | No | integer |
+| offset | query |  | No | integer |
 
 ##### Responses
 
@@ -3988,6 +4000,8 @@ List files of a space. ?root=true → only files not in any folder;
 | space_id | path |  | Yes | integer |
 | folder_id | query |  | No |  |
 | root | query |  | No | boolean |
+| limit | query |  | No | integer |
+| offset | query |  | No | integer |
 
 ##### Responses
 
@@ -4199,6 +4213,8 @@ List Versions
 | Name | Located in | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
 | file_id | path |  | Yes | integer |
+| limit | query |  | No | integer |
+| offset | query |  | No | integer |
 
 ##### Responses
 
@@ -4226,6 +4242,7 @@ List Events
 | ---- | ---------- | ----------- | -------- | ---- |
 | file_id | path |  | Yes | integer |
 | limit | query |  | No | integer |
+| offset | query |  | No | integer |
 
 ##### Responses
 
