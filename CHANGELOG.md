@@ -22,6 +22,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Test NIM model upgrade to llama-3.3 (#755) ([5ffa5d5](https://github.com/aliyevaladddin/AladdinAI/commit/5ffa5d501dcf38a37f7de0e7c369d4a737719e62))
 
 
+### Dependencies
+
+- Bump python-docx from 1.1.2 to 1.2.0 (#766) ([453a921](https://github.com/aliyevaladddin/AladdinAI/commit/453a921529d99ca1b625cf785eb7a4a849f968ab))
+
+
 ### Documentation
 
 - Update API documentation [skip ci] (#713) ([43cce1c](https://github.com/aliyevaladddin/AladdinAI/commit/43cce1cf0cb41fbd95e395d2753769615f519c5a))
@@ -97,6 +102,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#759) ([72e6109](https://github.com/aliyevaladddin/AladdinAI/commit/72e61095ff1439027c1c6b8d06f49c4c121468a9))
 
 - Update changelog [skip ci] (#762) ([0a1c5e3](https://github.com/aliyevaladddin/AladdinAI/commit/0a1c5e3ff3eafc4830fe9ac5a0a1ac554106544f))
+
+- Update changelog [skip ci] (#765) ([4278818](https://github.com/aliyevaladddin/AladdinAI/commit/427881880ff35c83870f64588333760b0ef6e22f))
+
+- Bump electron from 43.4.0 to 44.0.0 in /frontend (#773) ([c90e87f](https://github.com/aliyevaladddin/AladdinAI/commit/c90e87fd4ab93cbe0d8a863c81331538fecfe986))
+
+- Update package-lock.json dependencies (#775) ([06a9f62](https://github.com/aliyevaladddin/AladdinAI/commit/06a9f62cf4d0f7447ae9c867b32506a4ed32deae))
 
 
 ### Refactor
