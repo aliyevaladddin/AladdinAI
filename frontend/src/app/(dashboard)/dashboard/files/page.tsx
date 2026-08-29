@@ -101,14 +101,16 @@ export default function FilesPage() {
     title: string;
     defaultValue?: string;
     onConfirm: (v: string) => void;
-  }>({ open: false, title: "", onConfirm: () => {} });
+    onCancel: () => void;
+  }>({ open: false, title: "", onConfirm: () => {}, onCancel: () => {} });
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean;
     title: string;
     description?: string;
     destructive?: boolean;
     onConfirm: () => void;
-  }>({ open: false, title: "", onConfirm: () => {} });
+    onCancel: () => void;
+  }>({ open: false, title: "", onConfirm: () => {}, onCancel: () => {} });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -123,6 +125,10 @@ export default function FilesPage() {
           onConfirm: (v) => {
             setPromptModal((p) => ({ ...p, open: false }));
             resolve(v);
+          },
+          onCancel: () => {
+            setPromptModal((p) => ({ ...p, open: false }));
+            resolve(null);
           },
         });
       }),
@@ -141,6 +147,10 @@ export default function FilesPage() {
           onConfirm: () => {
             setConfirmModal((c) => ({ ...c, open: false }));
             resolve(true);
+          },
+          onCancel: () => {
+            setConfirmModal((c) => ({ ...c, open: false }));
+            resolve(false);
           },
         });
       }),
@@ -825,7 +835,7 @@ export default function FilesPage() {
         title={promptModal.title}
         defaultValue={promptModal.defaultValue}
         onConfirm={promptModal.onConfirm}
-        onCancel={() => setPromptModal((p) => ({ ...p, open: false }))}
+        onCancel={promptModal.onCancel}
       />
       <ConfirmModal
         open={confirmModal.open}
@@ -833,7 +843,7 @@ export default function FilesPage() {
         description={confirmModal.description}
         destructive={confirmModal.destructive}
         onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal((c) => ({ ...c, open: false }))}
+        onCancel={confirmModal.onCancel}
       />
     </div>
   );

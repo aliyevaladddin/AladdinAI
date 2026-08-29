@@ -28,7 +28,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -109,8 +109,8 @@ async def create_space(
 
 @router.get("/spaces", response_model=list[SpaceOut])
 async def list_spaces(
-    limit: int = 50,
-    offset: int = 0,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -211,8 +211,8 @@ async def add_member(
 @router.get("/spaces/{space_id}/members", response_model=list[MemberOut])
 async def list_members(
     space_id: int,
-    limit: int = 50,
-    offset: int = 0,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -320,8 +320,8 @@ async def create_folder(
 @router.get("/spaces/{space_id}/folders", response_model=list[FolderOut])
 async def list_folders(
     space_id: int,
-    limit: int = 50,
-    offset: int = 0,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -393,8 +393,8 @@ async def list_files(
     space_id: int,
     folder_id: Optional[int] = None,
     root: bool = False,
-    limit: int = 50,
-    offset: int = 0,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -668,8 +668,8 @@ async def delete_file(
 @router.get("/files/{file_id}/versions", response_model=list[VersionOut])
 async def list_versions(
     file_id: int,
-    limit: int = 50,
-    offset: int = 0,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -687,8 +687,8 @@ async def list_versions(
 @router.get("/files/{file_id}/events", response_model=list[EventOut])
 async def list_events(
     file_id: int,
-    limit: int = 50,
-    offset: int = 0,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):

@@ -15,6 +15,8 @@ Adapters stay pure and never see secrets.
 
 from __future__ import annotations
 
+import atexit
+import os
 import tempfile
 from typing import Optional
 
@@ -94,14 +96,21 @@ class SshProxyTransport(TransportLayer):
             config_overrides["ssh_password"] = ssh_password
         if ssh_key:
             # Write the private key to a temp file so the adapter can mount it.
-            # The file is cleaned up when the session ends (tempfile handles this).
             key_file = tempfile.NamedTemporaryFile(
                 mode="w", suffix=".pem", delete=False, prefix="ssh_key_",
             )
-            key_file.write(ssh_key)
-            key_file.close()
-            config_overrides["ssh_key_file"] = key_file.name
-            env_overrides = {"SSH_KEY_FILE": key_file.name}
+            try:
+                os.chmod(key_file.name, 0o600)
+                key_file.write(ssh_key)
+                key_file.close()
+                config_overrides["ssh_key_file"] = key_file.name
+                env_overrides = {"SSH_KEY_FILE": key_file.name}
+                # Clean up when process exits
+                atexit.register(lambda p=key_file.name: os.unlink(p) if os.path.exists(p) else None)
+            except Exception:
+                key_file.close()
+                os.unlink(key_file.name)
+                raise
         else:
             env_overrides = {}
 
