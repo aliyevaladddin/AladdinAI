@@ -34,6 +34,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add MCP Servers guide (#750) ([cb7aea7](https://github.com/aliyevaladddin/AladdinAI/commit/cb7aea7cb180c030c72c271b4f4dee202799489b))
 
+- Update API documentation [skip ci] (#760) ([6e0ba62](https://github.com/aliyevaladddin/AladdinAI/commit/6e0ba62c8ae76b87901b4ee9ff67eb18db0bf54d))
+
 
 ### Features
 
@@ -87,6 +89,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#754) ([ce112ef](https://github.com/aliyevaladddin/AladdinAI/commit/ce112ef4478e938795f8f99f523d9c2ad3b94234))
 
 - Update changelog [skip ci] (#756) ([23c00d4](https://github.com/aliyevaladddin/AladdinAI/commit/23c00d43c4c38a621db46eda5239129e0bc29380))
+
+- Update changelog [skip ci] (#759) ([72e6109](https://github.com/aliyevaladddin/AladdinAI/commit/72e61095ff1439027c1c6b8d06f49c4c121468a9))
 
 
 ### Refactor
