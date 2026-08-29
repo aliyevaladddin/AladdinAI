@@ -9,6 +9,7 @@ import {
   Clock,
   Download,
   ChevronRight,
+  Eye,
   Folder as FolderIcon,
   FolderOpen,
   FolderPlus,
@@ -25,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmModal, PromptModal } from "@/components/ui/prompt-modal";
 import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
+import { WrtViewer, isWrtContent } from "@/components/wrt-viewer";
 import * as api from "./api";
 import type { AssistantContext } from "./AssistantPanel";
 import { fileVisual } from "./fileIcons";
@@ -33,9 +35,10 @@ import type { FileEntry, FileEvent, FileVersion, Folder, Space } from "./types";
 /* Lazy: the assistant bundle loads only when the panel first mounts. */
 const AssistantPanel = dynamic(() => import("./AssistantPanel"), { ssr: false });
 
-type PanelTab = "versions" | "timeline";
+type PanelTab = "preview" | "versions" | "timeline";
 
 const PANEL_TABS: TabDef<PanelTab>[] = [
+  { id: "preview", label: "Preview", icon: Eye },
   { id: "versions", label: "Versions", icon: History },
   { id: "timeline", label: "Timeline", icon: Clock },
 ];
@@ -91,9 +94,28 @@ export default function FilesPage() {
   const [dragOver, setDragOver] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
-  const [panelTab, setPanelTab] = useState<PanelTab>("versions");
+  const [panelTab, setPanelTab] = useState<PanelTab>("preview");
   const [versions, setVersions] = useState<FileVersion[]>([]);
   const [events, setEvents] = useState<FileEvent[]>([]);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [contentLoading, setContentLoading] = useState(false);
+
+  // Modal state — replaces window.prompt / window.confirm
+  const [promptModal, setPromptModal] = useState<{
+    open: boolean;
+    title: string;
+    defaultValue?: string;
+    onConfirm: (v: string) => void;
+    onCancel: () => void;
+  }>({ open: false, title: "", onConfirm: () => {}, onCancel: () => {} });
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    description?: string;
+    destructive?: boolean;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }>({ open: false, title: "", onConfirm: () => {}, onCancel: () => {} });
 
   // Modal state — replaces window.prompt / window.confirm
   const [promptModal, setPromptModal] = useState<{
@@ -203,7 +225,10 @@ export default function FilesPage() {
   }, [reloadFiles]);
 
   useEffect(() => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      setFileContent(null);
+      return;
+    }
     let cancelled = false;
     api
       .listVersions(selectedFile.id)
@@ -219,6 +244,23 @@ export default function FilesPage() {
       cancelled = true;
     };
   }, [selectedFile]);
+
+  // Fetch file content when preview tab is active
+  useEffect(() => {
+    if (!selectedFile || panelTab !== "preview") {
+      return;
+    }
+    let cancelled = false;
+    setContentLoading(true);
+    api
+      .getFileContent(selectedFile.id)
+      .then((r) => !cancelled && setFileContent(r.content))
+      .catch(() => !cancelled && setFileContent(null))
+      .finally(() => !cancelled && setContentLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFile, panelTab]);
 
   /* ── actions ──────────────────────────────────────────────────── */
 
@@ -761,7 +803,29 @@ export default function FilesPage() {
                 )}
                 <SegmentedTabs tabs={PANEL_TABS} active={panelTab} onChange={setPanelTab} />
 
-                {panelTab === "versions" ? (
+                {panelTab === "preview" ? (
+                  <div className="mt-4">
+                    {contentLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 size={20} className="animate-spin text-muted-foreground" />
+                      </div>
+                    ) : fileContent ? (
+                      <div className="max-h-[60vh] overflow-y-auto rounded-xl border border-border/60 p-4">
+                        {isWrtContent(fileContent) ? (
+                          <WrtViewer content={fileContent} />
+                        ) : (
+                          <pre className="whitespace-pre-wrap font-mono text-sm text-foreground/80">
+                            {fileContent}
+                          </pre>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="py-8 text-center text-sm text-muted-foreground">
+                        No preview available for this file type.
+                      </p>
+                    )}
+                  </div>
+                ) : panelTab === "versions" ? (
                   <ul className="mt-4 space-y-2">
                     {versions.map((v) => (
                       <li

@@ -34,6 +34,7 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
 - **[Agent Delegation](./guides/AGENT_DELEGATION.md)** - Multi-agent coordination and handoff
 - **[Orders & Sales](./guides/ORDERS.md)** - Product catalog, orders, sales/marketing metrics, and `sales`-role tools
 - **[File Workspace](./guides/FILE_WORKSPACE.md)** - Spaces & roles, append-only versions, audit timeline, safe agent file-tools
+- **[MCP Servers](./guides/MCP_SERVERS.md)** - Native MCP client — server catalog, per-agent tool selection, settings UI
 - **[Memory System](./ARCHITECTURE.md#memory)** - Understanding memory architecture
 - **[Self-Forging](./guides/SELF_FORGING.md)** - Golden set + base-vs-forged harness (guide); design in ADR-0001 / ADR-0009
 

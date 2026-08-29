@@ -250,10 +250,16 @@ users ──┬── agents ──┬── agent_messages         (per-turn le
         ├── mongo_connections
         ├── vms                                 (ssh credentials)
         ├── bentoml_connections
-        └── router_config
+        ├── router_config
+
+        ├── spaces ──┬── space_members          (access boundary + roles)
+        │            └── folders                (tree inside a space)
+        ├── files ──┬── file_versions           (append-only, each with storage_ref)
+        │           └── file_events             (audit timeline, actor_type: human|agent)
+        └── mcp_servers                         (MCP tool catalog, encrypted headers)
 ```
 
-Relational state lives in SQLite or Postgres. Vector memory lives in MongoDB Atlas. Gate decisions and activities are append-only.
+Relational state lives in SQLite or Postgres. Vector memory lives in MongoDB Atlas. Gate decisions, activities, file versions, and file events are append-only.
 
 ---
 

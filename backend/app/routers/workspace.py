@@ -488,6 +488,78 @@ async def upload_file(
     return ws_file
 
 
+@router.get("/files/{file_id}/content")
+async def get_file_content(
+    file_id: int,
+    version: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Return the text content of a file (with .docx→.wrt conversion).
+
+    Used by the frontend preview panel. Returns JSON with a `content`
+    field. Documents (.docx, .pdf, .xlsx) are auto-converted to .wrt
+    tagged text."""
+    ws_file, member = await _require_file(db, user.id, file_id)
+
+    wanted = version or ws_file.current_version_no
+    result = await db.execute(
+        select(FileVersion).where(
+            FileVersion.file_id == file_id, FileVersion.version_no == wanted,
+        )
+    )
+    ver = result.scalar_one_or_none()
+    if ver is None:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    data = await media_storage.get_bytes(
+        db, ver.uploader_user_id, blob_handle(ver.storage_ref),
+    )
+    if data is None:
+        raise HTTPException(status_code=404, detail="Stored content unavailable")
+
+    import os as _os
+    name_lower = ws_file.name.lower()
+    ext = _os.path.splitext(name_lower)[1]
+
+    if ext == ".docx":
+        try:
+            from app.services.docx_converter import docx_to_wrt
+            content = docx_to_wrt(data)
+        except Exception:
+            content = data.decode("utf-8", errors="replace")
+    elif ext == ".pdf":
+        try:
+            from pypdf import PdfReader
+            import io as _io
+            reader = PdfReader(_io.BytesIO(data))
+            content = "\n\n".join(page.extract_text() or "" for page in reader.pages)
+        except Exception:
+            content = data.decode("utf-8", errors="replace")
+    elif ext in (".xlsx", ".xls"):
+        try:
+            from openpyxl import load_workbook
+            import io as _io
+            wb = load_workbook(_io.BytesIO(data), read_only=True)
+            parts = []
+            for sn in wb.sheetnames:
+                ws = wb[sn]
+                parts.append(f"=== {sn} ===")
+                for row in ws.iter_rows(values_only=True):
+                    parts.append("\t".join(str(c) if c is not None else "" for c in row))
+            content = "\n".join(parts)
+        except Exception:
+            content = data.decode("utf-8", errors="replace")
+    else:
+        content = data.decode("utf-8", errors="replace")
+
+    _add_event(db, ws_file.id, "viewed", member.user_id,
+               {"version_no": wanted})
+    await db.commit()
+
+    return {"content": content, "name": ws_file.name, "version_no": wanted}
+
+
 @router.get("/files/{file_id}/download")
 async def download_file(
     file_id: int,
@@ -517,6 +589,22 @@ async def download_file(
                {"version_no": wanted})
     await db.commit()
 
+    # ── .wrt → .docx conversion on download ──
+    # When the agent edits a .docx file, it stores the new version as .wrt
+    # text.  At download time, if the filename says .docx but the stored
+    # bytes are text with .wrt tags, convert back to .docx automatically.
+    name_lower = ws_file.name.lower()
+    content_type = ws_file.mime_type or "application/octet-stream"
+    if name_lower.endswith(".docx") and not data[:4] == b"PK\x03\x04":
+        # Not a real ZIP/docx — likely .wrt text from agent edit
+        try:
+            from app.services.docx_converter import wrt_to_docx
+            wrt_text = data.decode("utf-8", errors="replace")
+            data = wrt_to_docx(wrt_text)
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        except Exception:
+            pass  # Fall through to raw download
+
     from urllib.parse import quote
 
     # RFC 5987: encode filename to avoid header injection via crafted names.
@@ -529,7 +617,7 @@ async def download_file(
     )
     return Response(
         content=data,
-        media_type=ws_file.mime_type or "application/octet-stream",
+        media_type=content_type,
         headers={"Content-Disposition": disposition},
     )
 

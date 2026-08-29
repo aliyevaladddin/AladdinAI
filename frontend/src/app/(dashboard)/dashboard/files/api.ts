@@ -105,6 +105,19 @@ export function listEvents(fileId: number): Promise<FileEvent[]> {
   return api.get<FileEvent[]>(`/files/${fileId}/events`, { bypassCache: true });
 }
 
+/* ── Content (text preview for .wrt viewer) ─────────────────────── */
+
+export async function getFileContent(
+  fileId: number,
+  versionNo?: number,
+): Promise<{ content: string; name: string; version_no: number }> {
+  const query = versionNo != null ? `?version=${versionNo}` : "";
+  return api.get<{ content: string; name: string; version_no: number }>(
+    `/files/${fileId}/content${query}`,
+    { bypassCache: true },
+  );
+}
+
 /* ── Download (blob → browser save dialog) ──────────────────────── */
 
 export async function downloadFileVersion(fileId: number, versionNo?: number): Promise<void> {

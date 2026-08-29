@@ -23,6 +23,7 @@ Each guide is self-contained and assumes a working local dev setup
 | [Web Search](WEB_SEARCH.md) | Native zero-key meta-search — four engines, retries, synthesis endpoint, agent tool |
 | [SQL Playground](SQL_PLAYGROUND.md) | Read-only SQL exploration for users — schema introspection and the layered security model |
 | [Modular Terminal System](TERMINAL_SYSTEM.md) | Pluggable terminal providers — manifests, marketplace, sessions, token broker, SSH proxy |
+| [MCP Servers](MCP_SERVERS.md) | Native MCP client — server catalog, per-agent selection, tool schemas, settings UI |
 
 ---
 
