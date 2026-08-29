@@ -128,6 +128,50 @@ context nor smuggle binaries past the UI upload path. Errors follow the
 registry convention `{"status": "error", "message": …}` — the agent sees a
 sentence like "editor role required", not a stack trace.
 
+### Document format support
+
+`files_read` auto-converts office documents to text the agent can work with:
+
+| Format | Conversion |
+|--------|-----------|
+| `.docx` | → `.wrt` tagged text (our lightweight format) |
+| `.pdf` | → plain text (via pypdf) |
+| `.xlsx` / `.xls` | → tab-separated text per sheet (via openpyxl) |
+| `.txt`, `.md`, `.json`, `.csv`, `.html`, etc. | → raw text (unchanged) |
+| Binary (images, zip, etc.) | → error: download via UI |
+
+**The `.wrt` format** is a lightweight tagged-text representation of documents:
+
+```
+[h1]Chapter Title[/h1]
+This is a paragraph with [b]bold[/b] and [i]italic[/i] text.
+
+[list]
+* First item
+* Second item with [b]bold[/b]
+[/list]
+
+[table]
+| Header 1 | Header 2 |
+| Cell 1   | Cell 2   |
+[/table]
+```
+
+Supported tags: `[h1]`–`[h3]`, `[b]`, `[i]`, `[u]`, `[s]`, `[code]`,
+`[quote]`, `[list]`, `[table]`.
+
+**Round-trip flow:**
+1. User uploads `report.docx` → stored as-is in workspace.
+2. Agent calls `files_read` → backend converts `.docx` to `.wrt` on-the-fly.
+3. Agent edits the `.wrt` text and uploads a new version via `files_upload_version`.
+4. User downloads `report.docx` → backend detects `.wrt` content, converts back to `.docx`.
+
+The agent never needs to know about binary formats — it works entirely with
+`.wrt` tagged text. The conversion is transparent.
+
+Converter: `backend/app/services/docx_converter.py`
+Frontend viewer: `frontend/src/components/wrt-viewer.tsx`
+
 ### The assistant panel
 
 The Files page has a floating 🤖 button opening a slide-over chat with any of
@@ -164,7 +208,7 @@ reference):
 | Members | `POST/GET /spaces/{id}/members`, `PATCH/DELETE .../members/{user_id}` |
 | Folders | `POST/GET /spaces/{id}/folders`, `PATCH/DELETE /folders/{id}` |
 | Files | `GET /spaces/{id}/files`, `POST /spaces/{id}/files/upload` |
-| File ops | `GET /files/{id}/download?version=N`, `POST /files/{id}/upload_version`, `PATCH /files/{id}` (rename), `PATCH /files/{id}/move`, `POST /files/{id}/restore`, `DELETE /files/{id}` (soft) |
+| File ops | `GET /files/{id}/download?version=N`, `GET /files/{id}/content`, `POST /files/{id}/upload_version`, `PATCH /files/{id}` (rename), `PATCH /files/{id}/move`, `POST /files/{id}/restore`, `DELETE /files/{id}` (soft) |
 | History | `GET /files/{id}/versions`, `GET /files/{id}/events` |
 
 ## 🗺️ Where things live
@@ -175,6 +219,8 @@ reference):
 | `backend/app/routers/workspace.py` | REST endpoints, thin over the service |
 | `backend/app/tools/files_ws.py` | the five agent tools |
 | `backend/app/models/*.py` | `WorkspaceSpace`, `SpaceMember`, `Folder`, `WorkspaceFile`, `FileVersion`, `FileEvent` |
+| `backend/app/services/docx_converter.py` | `.docx` ↔ `.wrt` bidirectional converter |
+| `frontend/src/components/wrt-viewer.tsx` | `.wrt` format renderer |
 | `frontend/src/app/(dashboard)/dashboard/files/` | page, assistant panel, type icons |
 | `backend/tests/test_files_workspace.py`, `test_files_tools.py` | isolation/roles/history tests + agent-tool tests |
 
