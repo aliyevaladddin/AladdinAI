@@ -14,6 +14,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Content-Disposition injection + rate limits on upload/MCP test (#752) ([7321117](https://github.com/aliyevaladddin/AladdinAI/commit/7321117c5037cd8b804a955324211612c3cf53d2))
 
+- Remove duplicate modal state declarations in files page (#764) ([1caafed](https://github.com/aliyevaladddin/AladdinAI/commit/1caafed012b3e4070748860d05536bad812bd065))
+
 
 ### CI
 
@@ -35,6 +37,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add MCP Servers guide (#750) ([cb7aea7](https://github.com/aliyevaladddin/AladdinAI/commit/cb7aea7cb180c030c72c271b4f4dee202799489b))
 
 - Update API documentation [skip ci] (#760) ([6e0ba62](https://github.com/aliyevaladddin/AladdinAI/commit/6e0ba62c8ae76b87901b4ee9ff67eb18db0bf54d))
+
+- Update API documentation [skip ci] (#763) ([f5e02c0](https://github.com/aliyevaladddin/AladdinAI/commit/f5e02c063ba7cc70b18ce329ed74de04dc7248af))
 
 
 ### Features
@@ -91,6 +95,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#756) ([23c00d4](https://github.com/aliyevaladddin/AladdinAI/commit/23c00d43c4c38a621db46eda5239129e0bc29380))
 
 - Update changelog [skip ci] (#759) ([72e6109](https://github.com/aliyevaladddin/AladdinAI/commit/72e61095ff1439027c1c6b8d06f49c4c121468a9))
+
+- Update changelog [skip ci] (#762) ([0a1c5e3](https://github.com/aliyevaladddin/AladdinAI/commit/0a1c5e3ff3eafc4830fe9ac5a0a1ac554106544f))
 
 
 ### Refactor
