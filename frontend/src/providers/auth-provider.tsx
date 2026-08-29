@@ -50,7 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("refresh_token", data.refresh_token);
     api.setToken(data.access_token);
-    const me = await api.get<User>("/auth/me");
+    api.clearCache("/auth/me");
+    const me = await api.get<User>("/auth/me", { bypassCache: true });
     setUser(me);
   };
 
@@ -60,7 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("access_token", data.access_token);
     localStorage.setItem("refresh_token", data.refresh_token);
     api.setToken(data.access_token);
-    const me = await api.get<User>("/auth/me");
+    api.clearCache("/auth/me");
+    const me = await api.get<User>("/auth/me", { bypassCache: true });
     setUser(me);
   };
 
