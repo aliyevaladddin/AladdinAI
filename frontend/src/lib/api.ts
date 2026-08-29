@@ -65,10 +65,16 @@ async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> 
   if (res.status === 401) {
     const newToken = await tryRefresh();
     if (!newToken) {
-      // Refresh failed — clear session and redirect to login
+      // Refresh failed — clear session.
+      // Only redirect to login if not already there (avoids redirect loop).
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
-      if (typeof window !== "undefined") window.location.href = "/login";
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/login")
+      ) {
+        window.location.href = "/login";
+      }
       return res;
     }
     // Retry with new token
