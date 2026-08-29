@@ -16,11 +16,19 @@ and on whose behalf.
 Text-only surface: reads and writes are capped to MAX_TOOL_BYTES so a
 single tool call cannot flood the model context or smuggle binaries past
 the UI upload path.
+
+Supported document formats for agent reading:
+  .docx  → converted to .wrt (own tagged-text format) on read
+  .pdf   → text extracted on read (pypdf)
+  .xlsx  → text extracted on read (openpyxl)
+  .txt / .md / .json / .csv / .html → raw text
 """
 from __future__ import annotations
 
+import io
 import json
 import logging
+import os
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -99,8 +107,9 @@ async def files_list(ctx: ToolContext, space_id: int, folder_id: int | None = No
 @tool(
     name="files_read",
     description="Read the text content of a workspace file (current or a "
-                "specific version). Text files up to 256 KB only; binary or "
-                "larger files must be downloaded through the UI.",
+                "specific version). Text files up to 256 KB. Documents (.docx, "
+                ".pdf, .xlsx) are auto-converted to .wrt tagged text on read. "
+                "Binary files (images, zip) cannot be read — download via UI.",
     parameters={
         "type": "object",
         "properties": {
@@ -135,9 +144,62 @@ async def files_read(ctx: ToolContext, file_id: int, version_no: int | None = No
         if len(data) > MAX_TOOL_BYTES:
             return {"status": "error",
                     "message": f"File too large to read (limit {MAX_TOOL_BYTES} bytes)"}
-        if b"\x00" in data[:1024]:
+        name_lower = ws_file.name.lower()
+        ext = os.path.splitext(name_lower)[1]
+
+        # ── document format conversion for agent ──
+        if ext == ".docx":
+            try:
+                from app.services.docx_converter import docx_to_wrt
+                content = docx_to_wrt(data)
+            except Exception as e:
+                log.warning("docx→wrt failed for file %s: %s", ws_file.name, e)
+                return {"status": "error",
+                        "message": f"Cannot convert .docx to .wrt: {e}"}
+        elif ext == ".pdf":
+            try:
+                from pypdf import PdfReader
+                reader = PdfReader(io.BytesIO(data))
+                content = "\n\n".join(
+                    page.extract_text() or "" for page in reader.pages
+                )
+            except Exception as e:
+                log.warning("pdf extract failed for file %s: %s", ws_file.name, e)
+                return {"status": "error",
+                        "message": f"Cannot extract PDF text: {e}"}
+        elif ext in (".xlsx", ".xls"):
+            try:
+                from openpyxl import load_workbook
+                wb = load_workbook(io.BytesIO(data), read_only=True)
+                parts: list[str] = []
+                for sheet_name in wb.sheetnames:
+                    ws = wb[sheet_name]
+                    parts.append(f"=== Sheet: {sheet_name} ===")
+                    for row in ws.iter_rows(values_only=True):
+                        cells = [str(c) if c is not None else "" for c in row]
+                        parts.append("\t".join(cells))
+                content = "\n".join(parts)
+            except Exception as e:
+                log.warning("xlsx extract failed for file %s: %s", ws_file.name, e)
+                return {"status": "error",
+                        "message": f"Cannot extract Excel data: {e}"}
+        elif ext in (".txt", ".md", ".json", ".csv", ".html", ".xml",
+                     ".py", ".js", ".ts", ".c", ".h", ".java", ".go",
+                     ".yaml", ".yml", ".toml", ".ini", ".sh", ".sql"):
+            # Known text formats
+            content = data.decode("utf-8", errors="replace")
+        elif b"\x00" in data[:1024]:
             return {"status": "error",
-                    "message": "Binary file — download it through the UI instead"}
+                    "message": (
+                        f"Binary file ({ext}) — cannot read as text. "
+                        "Download it through the UI instead."
+                    )}
+        else:
+            # Unknown extension but looks like text
+            content = data.decode("utf-8", errors="replace")
+
+        if len(content) > MAX_TOOL_BYTES:
+            content = content[:MAX_TOOL_BYTES] + "\n\n[...truncated]"
 
         _add_event(ctx.db, ws_file.id, "downloaded", member.user_id,
                    {"version_no": no, "agent_id": ctx.agent_id}, actor_type="agent")
@@ -147,7 +209,7 @@ async def files_read(ctx: ToolContext, file_id: int, version_no: int | None = No
             "status": "success",
             "name": ws_file.name,
             "version_no": no,
-            "content": data.decode("utf-8", errors="replace"),
+            "content": content,
         }
     except Exception as e:
         return _error(e)
@@ -157,8 +219,10 @@ async def files_read(ctx: ToolContext, file_id: int, version_no: int | None = No
 @tool(
     name="files_upload_version",
     description="Add a new version to an existing workspace file with the "
-                "given text content (UTF-8, up to 256 KB). The previous "
-                "versions stay readable — nothing is ever overwritten.",
+                "given text content (UTF-8, up to 256 KB). When editing a .docx "
+                "file, use .wrt tagged format ([b]bold[/b], [i]italic[/i], "
+                "[h1]heading[/h1], etc.) — the download endpoint auto-converts "
+                "back to .docx. Previous versions are preserved.",
     parameters={
         "type": "object",
         "properties": {
