@@ -4042,6 +4042,41 @@ Upload File
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/files/{file_id}/content
+
+#### GET
+##### Summary:
+
+Get File Content
+
+##### Description:
+
+Return the text content of a file (with .docx→.wrt conversion).
+
+Used by the frontend preview panel. Returns JSON with a `content`
+field. Documents (.docx, .pdf, .xlsx) are auto-converted to .wrt
+tagged text.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| file_id | path |  | Yes | integer |
+| version | query |  | No |  |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/files/{file_id}/download
 
 #### GET
