@@ -7903,6 +7903,68 @@
         }
       }
     },
+    "/api/files/{file_id}/content": {
+      "get": {
+        "tags": [
+          "Workspace"
+        ],
+        "summary": "Get File Content",
+        "description": "Return the text content of a file (with .docx\u2192.wrt conversion).\n\nUsed by the frontend preview panel. Returns JSON with a `content`\nfield. Documents (.docx, .pdf, .xlsx) are auto-converted to .wrt\ntagged text.",
+        "operationId": "get_file_content_api_files__file_id__content_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "File Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/files/{file_id}/download": {
       "get": {
         "tags": [
