@@ -15,6 +15,7 @@ Adapters stay pure and never see secrets.
 
 from __future__ import annotations
 
+import tempfile
 from typing import Optional
 
 from sqlalchemy import select
@@ -92,15 +93,22 @@ class SshProxyTransport(TransportLayer):
         if ssh_password:
             config_overrides["ssh_password"] = ssh_password
         if ssh_key:
-            # For key-based auth, we'd write the key to a temp file or pass via env
-            # For now, wetty only supports password auth via --ssh-pass
-            # TODO: implement key-based auth when needed
-            pass
+            # Write the private key to a temp file so the adapter can mount it.
+            # The file is cleaned up when the session ends (tempfile handles this).
+            key_file = tempfile.NamedTemporaryFile(
+                mode="w", suffix=".pem", delete=False, prefix="ssh_key_",
+            )
+            key_file.write(ssh_key)
+            key_file.close()
+            config_overrides["ssh_key_file"] = key_file.name
+            env_overrides = {"SSH_KEY_FILE": key_file.name}
+        else:
+            env_overrides = {}
 
         # Return enrichment — router will merge config into adapter's config
         return TransportEnrichment(
             config=config_overrides,
-            env={},
+            env=env_overrides,
             labels=labels,
         )
 

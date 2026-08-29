@@ -109,6 +109,8 @@ async def create_space(
 
 @router.get("/spaces", response_model=list[SpaceOut])
 async def list_spaces(
+    limit: int = 50,
+    offset: int = 0,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -117,6 +119,8 @@ async def list_spaces(
         .join(SpaceMember, SpaceMember.space_id == Space.id)
         .where(SpaceMember.user_id == user.id)
         .order_by(Space.id)
+        .limit(min(limit, 200))
+        .offset(offset)
     )
     return [
         SpaceOut(
@@ -207,6 +211,8 @@ async def add_member(
 @router.get("/spaces/{space_id}/members", response_model=list[MemberOut])
 async def list_members(
     space_id: int,
+    limit: int = 50,
+    offset: int = 0,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -216,6 +222,8 @@ async def list_members(
         .join(SpaceMember, SpaceMember.user_id == User.id)
         .where(SpaceMember.space_id == space_id)
         .order_by(User.id)
+        .limit(min(limit, 200))
+        .offset(offset)
     )
     return [
         MemberOut(user_id=u.id, email=u.email, name=getattr(u, "name", None), role=role)
@@ -312,12 +320,18 @@ async def create_folder(
 @router.get("/spaces/{space_id}/folders", response_model=list[FolderOut])
 async def list_folders(
     space_id: int,
+    limit: int = 50,
+    offset: int = 0,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     await require_member(db, user.id, space_id)
     result = await db.execute(
-        select(Folder).where(Folder.space_id == space_id).order_by(Folder.name)
+        select(Folder)
+        .where(Folder.space_id == space_id)
+        .order_by(Folder.name)
+        .limit(min(limit, 200))
+        .offset(offset)
     )
     return result.scalars().all()
 
@@ -379,6 +393,8 @@ async def list_files(
     space_id: int,
     folder_id: Optional[int] = None,
     root: bool = False,
+    limit: int = 50,
+    offset: int = 0,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -393,7 +409,7 @@ async def list_files(
         query = query.where(WorkspaceFile.folder_id.is_(None))
     elif folder_id is not None:
         query = query.where(WorkspaceFile.folder_id == folder_id)
-    files = (await db.execute(query.order_by(WorkspaceFile.name))).scalars().all()
+    files = (await db.execute(query.order_by(WorkspaceFile.name).limit(min(limit, 200)).offset(offset))).scalars().all()
 
     # "Last changed" for the whole listing in one query: the newest version
     # timestamp per file.
@@ -652,6 +668,8 @@ async def delete_file(
 @router.get("/files/{file_id}/versions", response_model=list[VersionOut])
 async def list_versions(
     file_id: int,
+    limit: int = 50,
+    offset: int = 0,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -660,6 +678,8 @@ async def list_versions(
         select(FileVersion)
         .where(FileVersion.file_id == file_id)
         .order_by(FileVersion.version_no.desc())
+        .limit(min(limit, 200))
+        .offset(offset)
     )
     return result.scalars().all()
 
@@ -667,7 +687,8 @@ async def list_versions(
 @router.get("/files/{file_id}/events", response_model=list[EventOut])
 async def list_events(
     file_id: int,
-    limit: int = 200,
+    limit: int = 50,
+    offset: int = 0,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -677,7 +698,8 @@ async def list_events(
         .join(User, User.id == FileEvent.actor_user_id, isouter=True)
         .where(FileEvent.file_id == file_id)
         .order_by(FileEvent.created_at.desc(), FileEvent.id.desc())
-        .limit(min(limit, 500))
+        .limit(min(limit, 200))
+        .offset(offset)
     )
     return [
         EventOut(

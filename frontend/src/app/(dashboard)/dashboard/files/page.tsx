@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ConfirmModal, PromptModal } from "@/components/ui/prompt-modal";
 import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 import * as api from "./api";
 import type { AssistantContext } from "./AssistantPanel";
@@ -94,7 +95,57 @@ export default function FilesPage() {
   const [versions, setVersions] = useState<FileVersion[]>([]);
   const [events, setEvents] = useState<FileEvent[]>([]);
 
+  // Modal state — replaces window.prompt / window.confirm
+  const [promptModal, setPromptModal] = useState<{
+    open: boolean;
+    title: string;
+    defaultValue?: string;
+    onConfirm: (v: string) => void;
+  }>({ open: false, title: "", onConfirm: () => {} });
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    description?: string;
+    destructive?: boolean;
+    onConfirm: () => void;
+  }>({ open: false, title: "", onConfirm: () => {} });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /** Show a prompt modal — drop-in for window.prompt. */
+  const prompt = useCallback(
+    (title: string, defaultValue?: string) =>
+      new Promise<string | null>((resolve) => {
+        setPromptModal({
+          open: true,
+          title,
+          defaultValue,
+          onConfirm: (v) => {
+            setPromptModal((p) => ({ ...p, open: false }));
+            resolve(v);
+          },
+        });
+      }),
+    [],
+  );
+
+  /** Show a confirm modal — drop-in for window.confirm. */
+  const confirm = useCallback(
+    (title: string, description?: string, destructive = false) =>
+      new Promise<boolean>((resolve) => {
+        setConfirmModal({
+          open: true,
+          title,
+          description,
+          destructive,
+          onConfirm: () => {
+            setConfirmModal((c) => ({ ...c, open: false }));
+            resolve(true);
+          },
+        });
+      }),
+    [],
+  );
 
   const activeSpace = spaces.find((s) => s.id === spaceId) ?? null;
   const canEdit = activeSpace?.my_role === "owner" || activeSpace?.my_role === "editor";
@@ -194,7 +245,7 @@ export default function FilesPage() {
 
   const handleNewFolder = useCallback(async () => {
     if (spaceId == null) return;
-    const name = window.prompt("Folder name");
+    const name = await prompt("Folder name");
     if (!name?.trim()) return;
     try {
       await api.createFolder(spaceId, name.trim(), folderId);
@@ -206,7 +257,7 @@ export default function FilesPage() {
 
   const handleRenameFolder = useCallback(
     async (folder: Folder) => {
-      const name = window.prompt("New folder name", folder.name);
+      const name = await prompt("New folder name", folder.name);
       if (!name?.trim() || name.trim() === folder.name) return;
       try {
         await api.renameFolder(folder.id, name.trim());
@@ -222,9 +273,11 @@ export default function FilesPage() {
   const handleDeleteFolder = useCallback(
     async (folder: Folder) => {
       if (
-        !window.confirm(
-          `Delete folder "${folder.name}"? Files inside move back to the space root.`,
-        )
+        !(await confirm(
+          `Delete folder "${folder.name}"?`,
+          "Files inside move back to the space root.",
+          true,
+        ))
       )
         return;
       try {
@@ -240,7 +293,7 @@ export default function FilesPage() {
   );
 
   const handleCreateSpace = useCallback(async () => {
-    const name = window.prompt("Space name");
+    const name = await prompt("Space name");
     if (!name?.trim()) return;
     try {
       const space = await api.createSpace(name.trim());
@@ -256,7 +309,7 @@ export default function FilesPage() {
 
   const handleRenameSpace = useCallback(async () => {
     if (!activeSpace) return;
-    const name = window.prompt("New space name", activeSpace.name);
+    const name = await prompt("New space name", activeSpace.name);
     if (!name?.trim() || name.trim() === activeSpace.name) return;
     try {
       const updated = await api.renameSpace(activeSpace.id, name.trim());
@@ -270,9 +323,11 @@ export default function FilesPage() {
   const handleDeleteSpace = useCallback(async () => {
     if (!activeSpace) return;
     if (
-      !window.confirm(
-        `Delete space "${activeSpace.name}" with ALL its files, folders and history? This cannot be undone.`,
-      )
+      !(await confirm(
+        `Delete space "${activeSpace.name}"?`,
+        "This removes ALL files, folders and history. This cannot be undone.",
+        true,
+      ))
     )
       return;
     try {
@@ -306,7 +361,7 @@ export default function FilesPage() {
 
   const handleRename = useCallback(async () => {
     if (!selectedFile) return;
-    const name = window.prompt("New name", selectedFile.name);
+    const name = await prompt("New name", selectedFile.name);
     if (!name?.trim() || name.trim() === selectedFile.name) return;
     try {
       await api.renameFile(selectedFile.id, name.trim());
@@ -319,7 +374,7 @@ export default function FilesPage() {
 
   const handleDelete = useCallback(
     async (file: FileEntry) => {
-      if (!window.confirm(`Delete "${file.name}"? History stays recoverable.`)) return;
+      if (!(await confirm(`Delete "${file.name}"?`, "History stays recoverable.", true))) return;
       try {
         await api.deleteFile(file.id);
         toast.success("Deleted");
@@ -763,6 +818,23 @@ export default function FilesPage() {
       )}
 
       <AssistantPanel context={assistantContext} />
+
+      {/* Modals */}
+      <PromptModal
+        open={promptModal.open}
+        title={promptModal.title}
+        defaultValue={promptModal.defaultValue}
+        onConfirm={promptModal.onConfirm}
+        onCancel={() => setPromptModal((p) => ({ ...p, open: false }))}
+      />
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        description={confirmModal.description}
+        destructive={confirmModal.destructive}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal((c) => ({ ...c, open: false }))}
+      />
     </div>
   );
 }
