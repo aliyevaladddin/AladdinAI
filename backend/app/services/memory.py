@@ -222,12 +222,24 @@ async def ensure_vector_indexes(
 # Provider priority for embeddings fallback
 EMBEDDING_PROVIDER_PRIORITY = ["nvidia_nim", "openai", "custom", "huggingface"]
 
-# Model mapping per provider type
+# Model mapping per provider type with fallback chains
+# Each provider can have multiple models listed in priority order (first available wins)
 EMBEDDING_MODELS = {
-    "nvidia_nim": "nvidia/llama-nemotron-embed-1b-v2",
-    "openai": "text-embedding-3-large",  # 3072 dim, can be truncated to 2048
+    "nvidia_nim": [
+        "nvidia/nv-embedqa-e5-v5",  # Current recommended model (2048 dim)
+        "nvidia/nv-embed-v2",        # Alternative (4096 dim, can be truncated)
+        "baai/bge-m3",              # Fallback (1024 dim, needs padding)
+    ],
+    "openai": [
+        "text-embedding-3-large",   # 3072 dim, can be truncated to 2048
+        "text-embedding-3-small",   # 1536 dim, needs padding
+        "text-embedding-ada-002",   # 1536 dim, legacy fallback
+    ],
     "custom": None,  # Use whatever the custom endpoint provides
-    "huggingface": "sentence-transformers/all-mpnet-base-v2",  # 768 dim, needs padding
+    "huggingface": [
+        "sentence-transformers/all-mpnet-base-v2",  # 768 dim, needs padding
+        "BAAI/bge-large-en-v1.5",                   # 1024 dim, fallback
+    ],
 }
 
 
@@ -276,8 +288,18 @@ async def embed(
     # Use user-selected embedding model from UI, or fall back to defaults
     model = provider.embedding_model
     if not model:
-        # Fallback to default model for provider type
-        model = EMBEDDING_MODELS.get(provider.type)
+        # Fallback to default models for provider type (try each in order)
+        default_models = EMBEDDING_MODELS.get(provider.type)
+        if isinstance(default_models, list):
+            # Try each model in the fallback chain
+            model = default_models[0]  # Start with first model
+            # Store the full chain for retry logic
+            model_chain = default_models
+        elif default_models:
+            model = default_models
+            model_chain = [default_models]
+        else:
+            model_chain = []
 
     if not model and provider.models_available:
         # Try to extract first model from models_available (could be JSON string or text)
@@ -286,12 +308,18 @@ async def embed(
             models = json.loads(provider.models_available) if isinstance(provider.models_available, str) else provider.models_available
             if isinstance(models, list) and models:
                 model = models[0]
+                model_chain = models
         except Exception:
-            pass
+            model_chain = []
 
     # Final fallback: use a generic embedding model name
     if not model:
         model = "text-embedding-model"
+        model_chain = [model]
+
+    # Ensure model_chain is defined
+    if 'model_chain' not in locals():
+        model_chain = [model] if model else []
 
     url = f"{provider.base_url.rstrip('/')}/v1/embeddings"
 
@@ -314,16 +342,32 @@ async def embed(
     if provider.type == "openai" and "text-embedding-3" in (model or ""):
         payload["dimensions"] = EMBED_DIM
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            resp = await client.post(url, json=payload, headers=headers)
-            resp.raise_for_status()
-        except httpx.HTTPStatusError as e:
-            raise MemoryError(
-                f"Embedding failed ({provider.type}): HTTP {e.response.status_code}: {e.response.text[:300]}"
-            ) from e
-        except httpx.HTTPError as e:
-            raise MemoryError(f"Embedding request failed ({provider.type}): {e}") from e
+    # Try each model in the chain until one succeeds
+    last_error = None
+    for attempt_model in model_chain:
+        payload["model"] = attempt_model
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            try:
+                resp = await client.post(url, json=payload, headers=headers)
+                resp.raise_for_status()
+                # Success! Break out of retry loop
+                break
+            except httpx.HTTPStatusError as e:
+                last_error = e
+                # If model reached EOL (410) or not found (404), try next model in chain
+                if e.response.status_code in (404, 410) and model_chain.index(attempt_model) < len(model_chain) - 1:
+                    log.warning(
+                        f"Embedding model {attempt_model} unavailable (HTTP {e.response.status_code}), "
+                        f"trying fallback model..."
+                    )
+                    continue
+                # For other errors or last model in chain, raise
+                raise MemoryError(
+                    f"Embedding failed ({provider.type}): HTTP {e.response.status_code}: {e.response.text[:300]}"
+                ) from e
+            except httpx.HTTPError as e:
+                raise MemoryError(f"Embedding request failed ({provider.type}): {e}") from e
 
     data = resp.json()
     try:

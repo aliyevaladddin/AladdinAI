@@ -38,6 +38,10 @@ SAFETY_RECOMMENDATIONS: dict[str, list[str]] = {
         "gliner",
         "piiranha",
         "deberta-pii",
+        # Fallback: use general-purpose LLM for PII detection if specialized models unavailable
+        "llama-3.1-8b-instruct",
+        "llama-3.2-3b-instruct",
+        "mistral-7b-instruct",
     ],
 }
 
