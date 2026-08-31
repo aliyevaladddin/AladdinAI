@@ -66,6 +66,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Batch polish — modals, boundaries, 72 tests, SSH key, pagination (#757) ([13d4f8d](https://github.com/aliyevaladddin/AladdinAI/commit/13d4f8d21cfba31db12b405543fa19680c735cbe))
 
+- Add WRT editor and embedding model fallback chains (#790) ([babe7bc](https://github.com/aliyevaladddin/AladdinAI/commit/babe7bc34bf0b5780381d6fec6b07fcf2461d2e2))
+
 
 ### Maintenance
 
@@ -126,6 +128,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update lockfile dependencies for frontend package-lock.json (#785) ([14e1af9](https://github.com/aliyevaladddin/AladdinAI/commit/14e1af9d50c6bec2742f2093b64191a276a3245c))
 
 - Update lockfile dependencies (#788) ([c79191d](https://github.com/aliyevaladddin/AladdinAI/commit/c79191d3514a239a0777178552ee8a8c00ae88db))
+
+- Update changelog [skip ci] (#789) ([3f73c05](https://github.com/aliyevaladddin/AladdinAI/commit/3f73c05b5c3d0ee9de7e198fa584bd901d097aa4))
 
 
 ### Refactor
