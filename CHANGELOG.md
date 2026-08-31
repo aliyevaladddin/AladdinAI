@@ -53,6 +53,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#763) ([f5e02c0](https://github.com/aliyevaladddin/AladdinAI/commit/f5e02c063ba7cc70b18ce329ed74de04dc7248af))
 
+- Add WRT Editor comprehensive guide (#792) ([02c5774](https://github.com/aliyevaladddin/AladdinAI/commit/02c57749da7411468bad1c5948888d911386a0fb))
+
 
 ### Features
 
@@ -130,6 +132,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update lockfile dependencies (#788) ([c79191d](https://github.com/aliyevaladddin/AladdinAI/commit/c79191d3514a239a0777178552ee8a8c00ae88db))
 
 - Update changelog [skip ci] (#789) ([3f73c05](https://github.com/aliyevaladddin/AladdinAI/commit/3f73c05b5c3d0ee9de7e198fa584bd901d097aa4))
+
+- Update changelog [skip ci] (#791) ([3f0c3d4](https://github.com/aliyevaladddin/AladdinAI/commit/3f0c3d442418cc5431fb14f1f22b6e4dea6490aa))
 
 
 ### Refactor
