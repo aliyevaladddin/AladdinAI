@@ -81,6 +81,21 @@ export function uploadNewVersion(fileId: number, file: File, comment?: string): 
   return api.upload<FileVersion>(`/files/${fileId}/upload_version`, file, fields);
 }
 
+/**
+ * Upload a new version from text content (for .wrt editor)
+ * Creates a Blob from text and uploads it as a new version
+ */
+export async function uploadTextVersion(
+  fileId: number,
+  content: string,
+  filename: string,
+  comment?: string,
+): Promise<FileVersion> {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const file = new File([blob], filename, { type: "text/plain" });
+  return uploadNewVersion(fileId, file, comment);
+}
+
 export function restoreVersion(fileId: number, versionNo: number): Promise<FileVersion> {
   return api.post<FileVersion>(`/files/${fileId}/restore`, { version_no: versionNo });
 }

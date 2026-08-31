@@ -27,6 +27,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmModal, PromptModal } from "@/components/ui/prompt-modal";
 import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 import { WrtViewer, isWrtContent } from "@/components/wrt-viewer";
+import { WrtEditor } from "@/components/wrt-editor";
 import * as api from "./api";
 import type { AssistantContext } from "./AssistantPanel";
 import { fileVisual } from "./fileIcons";
@@ -99,6 +100,11 @@ export default function FilesPage() {
   const [events, setEvents] = useState<FileEvent[]>([]);
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [contentLoading, setContentLoading] = useState(false);
+
+  // Edit mode state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState<string>("");
+  const [saving, setSaving] = useState(false);
 
   // Modal state — replaces window.prompt / window.confirm
   const [promptModal, setPromptModal] = useState<{
@@ -447,6 +453,44 @@ export default function FilesPage() {
     [],
   );
 
+  const handleEdit = useCallback(() => {
+    if (!fileContent) return;
+    setEditedContent(fileContent);
+    setIsEditing(true);
+  }, [fileContent]);
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setEditedContent("");
+  }, []);
+
+  const handleSaveEdit = useCallback(
+    async (content: string) => {
+      if (!selectedFile) return;
+      setSaving(true);
+      try {
+        await api.uploadTextVersion(
+          selectedFile.id,
+          content,
+          selectedFile.name,
+          "Edited in browser",
+        );
+        toast.success("Saved new version");
+        setIsEditing(false);
+        setEditedContent("");
+        await refreshSelected(selectedFile.id);
+        // Reload content
+        const fresh = await api.getFileContent(selectedFile.id);
+        setFileContent(fresh.content);
+      } catch (e: unknown) {
+        toast.error(e instanceof Error ? e.message : "Save failed");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [selectedFile, refreshSelected],
+  );
+
   /* ── folder tree ──────────────────────────────────────────────── */
 
   const childrenOf = useMemo(() => {
@@ -793,15 +837,69 @@ export default function FilesPage() {
                         <Loader2 size={20} className="animate-spin text-muted-foreground" />
                       </div>
                     ) : fileContent ? (
-                      <div className="max-h-[60vh] overflow-y-auto rounded-xl border border-border/60 p-4">
-                        {isWrtContent(fileContent) ? (
-                          <WrtViewer content={fileContent} />
-                        ) : (
-                          <pre className="whitespace-pre-wrap font-mono text-sm text-foreground/80">
-                            {fileContent}
-                          </pre>
+                      <>
+                        {!isEditing && canEdit && isWrtContent(fileContent) && (
+                          <div className="mb-3 flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleEdit}
+                              className="gap-1.5"
+                            >
+                              <Pencil size={14} />
+                              Edit
+                            </Button>
+                          </div>
                         )}
-                      </div>
+                        {isEditing ? (
+                          <div className="space-y-3">
+                            <div className="h-[60vh] overflow-hidden rounded-xl border border-border/60">
+                              <WrtEditor
+                                content={editedContent}
+                                onChange={setEditedContent}
+                                onSave={handleSaveEdit}
+                                className="h-full"
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                                disabled={saving}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleSaveEdit(editedContent)}
+                                disabled={saving}
+                                className="gap-1.5"
+                              >
+                                {saving ? (
+                                  <>
+                                    <Loader2 size={14} className="animate-spin" />
+                                    Saving...
+                                  </>
+                                ) : (
+                                  "Save Version"
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="max-h-[60vh] overflow-y-auto rounded-xl border border-border/60 p-4">
+                            {isWrtContent(fileContent) ? (
+                              <WrtViewer content={fileContent} />
+                            ) : (
+                              <pre className="whitespace-pre-wrap font-mono text-sm text-foreground/80">
+                                {fileContent}
+                              </pre>
+                            )}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <p className="py-8 text-center text-sm text-muted-foreground">
                         No preview available for this file type.

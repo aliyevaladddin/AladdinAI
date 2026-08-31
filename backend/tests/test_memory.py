@@ -160,7 +160,7 @@ async def test_embed_nim_uses_correct_input_type_passage():
     vec = [0.1] * EMBED_DIM
     db = _make_db()
     provider = _make_provider("nvidia_nim", "https://integrate.api.nvidia.com")
-    provider.embedding_model = "nvidia/llama-nemotron-embed-1b-v2"
+    provider.embedding_model = "nvidia/nv-embedqa-e5-v5"
 
     captured_payload = {}
 
@@ -196,7 +196,7 @@ async def test_embed_nim_uses_query_for_search():
     vec = [0.1] * EMBED_DIM
     db = _make_db()
     provider = _make_provider("nvidia_nim", "https://integrate.api.nvidia.com")
-    provider.embedding_model = "nvidia/llama-nemotron-embed-1b-v2"
+    provider.embedding_model = "nvidia/nv-embedqa-e5-v5"
 
     captured_payload = {}
 
