@@ -139,6 +139,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#793) ([1087103](https://github.com/aliyevaladddin/AladdinAI/commit/108710319bb9998688625249f9d5afcb6687f877))
 
+- Update changelog [skip ci] (#795) ([fcd9fc4](https://github.com/aliyevaladddin/AladdinAI/commit/fcd9fc4b6d35063dd43d462e4d4b73a3bb65e816))
+
+- Update pillow requirement and fix ruff lint errors (#797) ([ac84d3b](https://github.com/aliyevaladddin/AladdinAI/commit/ac84d3b6ce283d099bbef5ca71cfab6e4e5d1376))
+
 
 ### Refactor
 
