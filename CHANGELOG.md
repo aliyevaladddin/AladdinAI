@@ -34,6 +34,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump lucide-react from 1.31.0 to 1.34.0 in /frontend (#772) ([9c4c45b](https://github.com/aliyevaladddin/AladdinAI/commit/9c4c45b2486695bdd5443e52fd01b3609cd5e33c))
 
+- Bump pillow from 11.1.0 to 12.3.0 in /backend (#796) ([5a5f213](https://github.com/aliyevaladddin/AladdinAI/commit/5a5f213d85c3d16c5a5f711851e68c9265682e36))
+
 
 ### Documentation
 
