@@ -34,6 +34,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump lucide-react from 1.31.0 to 1.34.0 in /frontend (#772) ([9c4c45b](https://github.com/aliyevaladddin/AladdinAI/commit/9c4c45b2486695bdd5443e52fd01b3609cd5e33c))
 
+- Bump pillow from 11.1.0 to 12.3.0 in /backend (#796) ([5a5f213](https://github.com/aliyevaladddin/AladdinAI/commit/5a5f213d85c3d16c5a5f711851e68c9265682e36))
+
 
 ### Documentation
 
@@ -138,6 +140,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#791) ([3f0c3d4](https://github.com/aliyevaladddin/AladdinAI/commit/3f0c3d442418cc5431fb14f1f22b6e4dea6490aa))
 
 - Update changelog [skip ci] (#793) ([1087103](https://github.com/aliyevaladddin/AladdinAI/commit/108710319bb9998688625249f9d5afcb6687f877))
+
+- Update changelog [skip ci] (#795) ([fcd9fc4](https://github.com/aliyevaladddin/AladdinAI/commit/fcd9fc4b6d35063dd43d462e4d4b73a3bb65e816))
+
+- Update pillow requirement and fix ruff lint errors (#797) ([ac84d3b](https://github.com/aliyevaladddin/AladdinAI/commit/ac84d3b6ce283d099bbef5ca71cfab6e4e5d1376))
 
 
 ### Refactor
