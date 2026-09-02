@@ -36,6 +36,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump pillow from 11.1.0 to 12.3.0 in /backend (#796) ([5a5f213](https://github.com/aliyevaladddin/AladdinAI/commit/5a5f213d85c3d16c5a5f711851e68c9265682e36))
 
+- Bump browserslist from 4.28.2 to 4.28.8 in /frontend (#800) ([8318bb1](https://github.com/aliyevaladddin/AladdinAI/commit/8318bb16dc551e96ed13ac5af2bbcb9d1ccfdba9))
+
 
 ### Documentation
 
@@ -144,6 +146,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#795) ([fcd9fc4](https://github.com/aliyevaladddin/AladdinAI/commit/fcd9fc4b6d35063dd43d462e4d4b73a3bb65e816))
 
 - Update pillow requirement and fix ruff lint errors (#797) ([ac84d3b](https://github.com/aliyevaladddin/AladdinAI/commit/ac84d3b6ce283d099bbef5ca71cfab6e4e5d1376))
+
+- Update changelog [skip ci] (#798) ([df6a9db](https://github.com/aliyevaladddin/AladdinAI/commit/df6a9db4062e08877eaa8223bb9588be2001c875))
+
+- Update changelog [skip ci] (#799) ([cda2381](https://github.com/aliyevaladddin/AladdinAI/commit/cda238138dd6b854719427dc4574501301c15f18))
 
 
 ### Refactor
