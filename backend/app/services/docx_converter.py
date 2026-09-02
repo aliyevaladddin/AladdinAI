@@ -274,7 +274,6 @@ def wrt_to_docx(wrt_text: str) -> bytes:
         # Image tag with base64 data
         img_match = _IMG_TAG_RE.match(stripped)
         if img_match:
-            img_format = img_match.group(1)  # png, jpeg, jpg, gif, bmp
             b64_data = img_match.group(2)
             alt_text = img_match.group(3)
 

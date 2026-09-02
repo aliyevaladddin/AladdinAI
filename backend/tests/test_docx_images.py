@@ -2,7 +2,6 @@
 """Tests for .docx ↔ .wrt image round-trip support."""
 import base64
 import io
-from pathlib import Path
 
 import pytest
 from docx import Document
@@ -83,15 +82,14 @@ Text after image.
     assert "Text before image." in text_paras
     assert "Text after image." in text_paras
 
-    # Verify image was embedded (check for inline shapes)
+    # Verify image was embedded
     has_image = False
     for para in doc.paragraphs:
         if para._element.xpath('.//w:drawing'):
             has_image = True
             break
 
-    # Note: python-docx doesn't expose inline shapes easily,
-    # so we check that the conversion didn't error out
+    assert has_image
 
 
 def test_image_round_trip():
