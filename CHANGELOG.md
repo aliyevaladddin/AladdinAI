@@ -70,6 +70,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add WRT editor and embedding model fallback chains (#790) ([babe7bc](https://github.com/aliyevaladddin/AladdinAI/commit/babe7bc34bf0b5780381d6fec6b07fcf2461d2e2))
 
+- Add image round-trip support to .wrt format (#794) ([5f36fb2](https://github.com/aliyevaladddin/AladdinAI/commit/5f36fb24cd6f783ca2812e59a2f5775e9ba0829f))
+
 
 ### Maintenance
 
@@ -134,6 +136,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#789) ([3f73c05](https://github.com/aliyevaladddin/AladdinAI/commit/3f73c05b5c3d0ee9de7e198fa584bd901d097aa4))
 
 - Update changelog [skip ci] (#791) ([3f0c3d4](https://github.com/aliyevaladddin/AladdinAI/commit/3f0c3d442418cc5431fb14f1f22b6e4dea6490aa))
+
+- Update changelog [skip ci] (#793) ([1087103](https://github.com/aliyevaladddin/AladdinAI/commit/108710319bb9998688625249f9d5afcb6687f877))
 
 
 ### Refactor
