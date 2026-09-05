@@ -158,18 +158,38 @@ int wrt_editor_save(wrt_editor_t *ed) {
 void wrt_editor_render(wrt_editor_t *ed) {
     char buf[65536];
     size_t len = 0;
+    int truncated = 0;
 
 #define APPEND_FMT(...) do { \
-    int n;
-    size_t remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-    if (remaining > 0) {
+    if (!truncated) { \
+        size_t rem = (len >= 0 && len < (int)sizeof(buf)) ? (sizeof(buf) - (size_t)len) : 0; \
+        if (rem == 0) { \
+            truncated = 1; \
+        } else { \
+            int n = snprintf(buf + len, rem, __VA_ARGS__); \
+            if (n < 0) { \
+                truncated = 1; \
+            } else if ((size_t)n >= rem) { \
+                len = (int)sizeof(buf) - 1; \
+                truncated = 1; \
+            } else { \
+                len += n; \
+            } \
+        } \
+    } \
+} while (0)
+
+#define APPEND_FMT(...) do { \
+    APPEND_FMT(CLEAR_SCREEN);
+    APPEND_FMT(CURSOR_HOME);
+    APPEND_FMT(CURSOR_HIDE);
         n = snprintf(buf + len, remaining, CLEAR_SCREEN);
         if (n < 0) return;
         if ((size_t)n >= remaining) len = sizeof(buf) - 1;
         else len += (size_t)n;
     }
     remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-    if (remaining > 0) {
+            APPEND_FMT(COLOR_DIM "~" COLOR_RESET);
         n = snprintf(buf + len, remaining, CURSOR_HOME);
         if (n < 0) return;
         if ((size_t)n >= remaining) len = sizeof(buf) - 1;
@@ -180,45 +200,64 @@ void wrt_editor_render(wrt_editor_t *ed) {
         n = snprintf(buf + len, remaining, CURSOR_HIDE);
         if (n < 0) return;
         if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-        else len += (size_t)n;
+                        APPEND_FMT(COLOR_CYAN);
     }
-            len = sizeof(buf); \
+                            if (len < (int)sizeof(buf) - 1) {
+                                buf[len++] = line[k];
+                            } else {
+                                truncated = 1;
+                                break;
+                            }
         } else if ((size_t)_n >= sizeof(buf) - len) { \
-            len = sizeof(buf); \
+                        APPEND_FMT(COLOR_RESET);
         } else { \
             len += (size_t)_n; \
         } \
             remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-            if (remaining > 0) {
+                if (len < (int)sizeof(buf) - 1) {
+                    buf[len++] = line[i];
+                } else {
+                    truncated = 1;
+                    break;
+                }
                 n = snprintf(buf + len, remaining, COLOR_DIM "~" COLOR_RESET);
                 if (n < 0) return;
                 if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-                else len += (size_t)n;
+        APPEND_FMT("\r\n");
             }
 } while (0)
 
-#define APPEND_CH(_c) do { \
+    APPEND_FMT(COLOR_BOLD COLOR_BLUE);
     if (len < sizeof(buf)) { \
         buf[len++] = (_c); \
     } \
 } while (0)
 
     // Clear screen and move cursor to home
-    APPEND_FMT(CLEAR_SCREEN);
+    APPEND_FMT("%s", status);
                         remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-                        if (remaining > 0) {
+        if (len < (int)sizeof(buf) - 1) {
+            buf[len++] = ' ';
+        } else {
+            truncated = 1;
+            break;
+        }
                             n = snprintf(buf + len, remaining, COLOR_CYAN);
-                            if (n < 0) return;
+    APPEND_FMT(COLOR_RESET "\r\n");
                             if ((size_t)n >= remaining) len = sizeof(buf) - 1;
                             else len += (size_t)n;
-                        }
+    APPEND_FMT(COLOR_GREEN "WRT Editor - Lightweight document editing" COLOR_RESET);
     APPEND_FMT(CURSOR_HIDE);
                             if (len < sizeof(buf) - 1) {
                                 buf[len++] = line[k];
-                            }
-    // Render visible lines
+    APPEND_FMT("\033[%d;%dH", screen_y + 1, ed->cursor_x + 1);
+    APPEND_FMT(CURSOR_SHOW);
                         remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-                        if (remaining > 0) {
+#undef APPEND_FMT
+
+    if (len < 0) len = 0;
+    if (len > (int)sizeof(buf)) len = (int)sizeof(buf);
+    write(STDOUT_FILENO, buf, (size_t)len);
                             n = snprintf(buf + len, remaining, COLOR_RESET);
                             if (n < 0) return;
                             if ((size_t)n >= remaining) len = sizeof(buf) - 1;
