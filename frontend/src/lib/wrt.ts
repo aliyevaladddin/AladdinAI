@@ -253,7 +253,7 @@ function childNodesToWrt(node: Element): string {
 function tableToWrt(table: HTMLTableElement): string {
   const rows = Array.from(table.rows).map((row) => {
     const cells = Array.from(row.cells).map((cell) =>
-      childNodesToWrt(cell).replace(/\|/g, "\\|"),
+      childNodesToWrt(cell).replace(/\\/g, "\\\\").replace(/\|/g, "\\|"),
     );
     return `| ${cells.join(" | ")} |`;
   });
