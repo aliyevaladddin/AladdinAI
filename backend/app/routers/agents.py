@@ -30,7 +30,6 @@ from app.services.recommended_models import (
     resolve_extraction as resolve_extraction_recs,
     resolve_gates as resolve_gates_recs,
     resolve_safety as resolve_safety_recs,
-    resolve_embedding as resolve_embedding_recs,
 )
 
 GATE_NAMES = {"handoff", "memory_write", "recall_rerank"}

@@ -12,11 +12,9 @@ Format mapping:
 """
 from __future__ import annotations
 
-import base64
 import io
 import logging
 import re
-from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -24,8 +22,8 @@ log = logging.getLogger(__name__)
 def odt_to_wrt(odt_bytes: bytes) -> str:
     """Convert a .odt file (bytes) to .wrt text format."""
     from odf.opendocument import load
-    from odf.text import P, H, List, ListItem
-    from odf.table import Table, TableRow, TableCell
+    from odf.text import ListItem
+    from odf.table import TableRow, TableCell
     from odf import teletype
 
     doc = load(io.BytesIO(odt_bytes))
@@ -80,7 +78,7 @@ def wrt_to_odt(wrt_text: str) -> bytes:
     from odf.opendocument import OpenDocumentText
     from odf.text import P, H, List, ListItem
     from odf.table import Table, TableRow, TableCell
-    from odf.style import Style, TextProperties, ParagraphProperties
+    from odf.style import Style, TextProperties
     from odf import teletype
 
     doc = OpenDocumentText()

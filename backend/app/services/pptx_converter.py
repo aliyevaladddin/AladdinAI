@@ -17,11 +17,9 @@ Format in .wrt:
 """
 from __future__ import annotations
 
-import base64
 import io
 import logging
 import re
-from typing import Any
 
 log = logging.getLogger(__name__)
 
