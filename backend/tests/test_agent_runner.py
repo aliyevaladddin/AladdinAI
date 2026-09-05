@@ -351,7 +351,11 @@ async def test_run_agent_max_iterations_exhausted():
 async def test_run_agent_injects_shared_context():
     """Shared context block is appended to the system message."""
     db = AsyncMock()
-    agent = _make_full_agent()
+    agent = _make_full_agent(tools_config={
+        "gates": {
+            "recall_rerank": {"enabled": True}
+        }
+    })
     provider = _make_provider()
 
     db.execute = AsyncMock(return_value=MagicMock(scalar_one_or_none=MagicMock(return_value=provider)))

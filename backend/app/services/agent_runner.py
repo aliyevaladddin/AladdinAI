@@ -258,13 +258,20 @@ async def run_agent(
             _capture("ingress_blocked", "")
             return block_response(agent)
 
-        try:
-            shared_block = await build_shared_context_block(
-                db, user_id=agent.user_id, query=last_user, limit=5
-            )
-        except Exception as e:  # noqa: BLE001
-            log.warning("shared_context injection failed for agent %s: %s", agent.id, e)
-            shared_block = ""
+        # Only inject shared context if recall_rerank gate is enabled
+        cfg = agent.tools_config or {}
+        recall_enabled = cfg.get("gates", {}).get("recall_rerank", {}).get("enabled", False)
+
+        shared_block = ""
+        if recall_enabled:
+            try:
+                shared_block = await build_shared_context_block(
+                    db, user_id=agent.user_id, query=last_user, limit=5
+                )
+            except Exception as e:  # noqa: BLE001
+                log.warning("shared_context injection failed for agent %s: %s", agent.id, e)
+                shared_block = ""
+
         if shared_block:
             sys_idx = next(
                 (i for i, m in enumerate(messages) if m.get("role") == "system"),
