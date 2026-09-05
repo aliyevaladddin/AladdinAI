@@ -102,7 +102,7 @@
     "eslint": "^10",
     "eslint-config-next": "^16.3.3",
     "identity-obj-proxy": "^3.0.0",
-    "jest": "^30.4.2",
+    "jest": "^30.5.1",
     "jest-environment-jsdom": "^30.4.1",
     "tailwindcss": "^4",
     "typescript": "^6",
