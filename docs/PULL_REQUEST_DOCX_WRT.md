@@ -186,6 +186,16 @@ The agent sees `.wrt` text transparently.
 
 ## Next Steps
 
-- [ ] C-based `.wrt` editor in aladdin_term (lightweight document editing mode)
-- [ ] Image round-trip support (embed images as base64 in `.wrt`)
-- [ ] `.pptx` / `.odt` support in the converter
+All major features completed! ✅
+
+- [x] **C-based `.wrt` editor** — Implemented! See [`WRT_EDITOR.md`](WRT_EDITOR.md)
+- [x] **Image round-trip support** — Base64 embedded images in `.wrt` format (lines 20, 64-139 in `docx_converter.py`)
+- [x] **`.pptx` / `.odt` support** — Converters implemented (`pptx_converter.py`, `odt_converter.py`)
+
+### Future Enhancements
+
+- [ ] Live preview mode in WRT Editor
+- [ ] Syntax validation for unclosed tags
+- [ ] Search/replace in WRT Editor (Ctrl+F/Ctrl+H)
+- [ ] Advanced table editing in `.wrt` format
+- [ ] Collaborative editing features
