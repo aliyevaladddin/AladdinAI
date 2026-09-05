@@ -157,19 +157,38 @@ int wrt_editor_save(wrt_editor_t *ed) {
 /* Render editor screen */
 void wrt_editor_render(wrt_editor_t *ed) {
     char buf[65536];
-    int len = 0;
+    size_t len = 0;
+
+#define APPEND_FMT(...) do { \
+    if (len < sizeof(buf)) { \
+        int _n = snprintf(buf + len, sizeof(buf) - len, __VA_ARGS__); \
+        if (_n < 0) { \
+            len = sizeof(buf); \
+        } else if ((size_t)_n >= sizeof(buf) - len) { \
+            len = sizeof(buf); \
+        } else { \
+            len += (size_t)_n; \
+        } \
+    } \
+} while (0)
+
+#define APPEND_CH(_c) do { \
+    if (len < sizeof(buf)) { \
+        buf[len++] = (_c); \
+    } \
+} while (0)
 
     // Clear screen and move cursor to home
-    len += snprintf(buf + len, sizeof(buf) - len, CLEAR_SCREEN);
-    len += snprintf(buf + len, sizeof(buf) - len, CURSOR_HOME);
-    len += snprintf(buf + len, sizeof(buf) - len, CURSOR_HIDE);
+    APPEND_FMT(CLEAR_SCREEN);
+    APPEND_FMT(CURSOR_HOME);
+    APPEND_FMT(CURSOR_HIDE);
 
     // Render visible lines
     for (int y = 0; y < ed->screen_rows; y++) {
         int file_row = y + ed->offset_y;
 
         if (file_row >= ed->num_lines) {
-            len += snprintf(buf + len, sizeof(buf) - len, COLOR_DIM "~" COLOR_RESET);
+            APPEND_FMT(COLOR_DIM "~" COLOR_RESET);
         } else {
             // Highlight .wrt tags for visibility
             char *line = ed->lines[file_row];
@@ -180,45 +199,48 @@ void wrt_editor_render(wrt_editor_t *ed) {
                     while (line[j] && line[j] != ']') j++;
                     if (line[j] == ']') {
                         // Complete tag found
-                        len += snprintf(buf + len, sizeof(buf) - len, COLOR_CYAN);
+                        APPEND_FMT(COLOR_CYAN);
                         for (int k = i; k <= j; k++) {
-                            buf[len++] = line[k];
+                            APPEND_CH(line[k]);
                         }
-                        len += snprintf(buf + len, sizeof(buf) - len, COLOR_RESET);
+                        APPEND_FMT(COLOR_RESET);
                         i = j;
                         continue;
                     }
                 }
-                buf[len++] = line[i];
+                APPEND_CH(line[i]);
             }
         }
 
-        len += snprintf(buf + len, sizeof(buf) - len, "\r\n");
+        APPEND_FMT("\r\n");
     }
 
     // Status bar
-    len += snprintf(buf + len, sizeof(buf) - len, COLOR_BOLD COLOR_BLUE);
+    APPEND_FMT(COLOR_BOLD COLOR_BLUE);
     char status[256];
     snprintf(status, sizeof(status), " %s %s | Line %d/%d Col %d | ^S:Save ^Q:Quit ^B:Bold ^I:Italic ^U:Underline ^K:Code ^H:Heading ",
              ed->filename, ed->modified ? "[+]" : "",
              ed->cursor_y + 1, ed->num_lines, ed->cursor_x + 1);
 
     int padding = ed->screen_cols - strlen(status);
-    len += snprintf(buf + len, sizeof(buf) - len, "%s", status);
+    APPEND_FMT("%s", status);
     for (int i = 0; i < padding; i++) {
-        buf[len++] = ' ';
+        APPEND_CH(' ');
     }
-    len += snprintf(buf + len, sizeof(buf) - len, COLOR_RESET "\r\n");
+    APPEND_FMT(COLOR_RESET "\r\n");
 
     // Message bar
-    len += snprintf(buf + len, sizeof(buf) - len, COLOR_GREEN "WRT Editor - Lightweight document editing" COLOR_RESET);
+    APPEND_FMT(COLOR_GREEN "WRT Editor - Lightweight document editing" COLOR_RESET);
 
     // Position cursor
     int screen_y = ed->cursor_y - ed->offset_y;
-    len += snprintf(buf + len, sizeof(buf) - len, "\033[%d;%dH", screen_y + 1, ed->cursor_x + 1);
-    len += snprintf(buf + len, sizeof(buf) - len, CURSOR_SHOW);
+    APPEND_FMT("\033[%d;%dH", screen_y + 1, ed->cursor_x + 1);
+    APPEND_FMT(CURSOR_SHOW);
 
-    write(STDOUT_FILENO, buf, len);
+    write(STDOUT_FILENO, buf, len < sizeof(buf) ? len : sizeof(buf));
+
+#undef APPEND_CH
+#undef APPEND_FMT
 }
 
 /* Insert character at cursor */
