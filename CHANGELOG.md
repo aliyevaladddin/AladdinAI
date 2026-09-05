@@ -16,6 +16,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Remove duplicate modal state declarations in files page (#764) ([1caafed](https://github.com/aliyevaladddin/AladdinAI/commit/1caafed012b3e4070748860d05536bad812bd065))
 
+- Clean up node_modules and update dependencies (#804) ([12600f2](https://github.com/aliyevaladddin/AladdinAI/commit/12600f23bec253d4580e08c798a0c178e9f8d679))
+
 
 ### CI
 
@@ -37,6 +39,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump pillow from 11.1.0 to 12.3.0 in /backend (#796) ([5a5f213](https://github.com/aliyevaladddin/AladdinAI/commit/5a5f213d85c3d16c5a5f711851e68c9265682e36))
 
 - Bump browserslist from 4.28.2 to 4.28.8 in /frontend (#800) ([8318bb1](https://github.com/aliyevaladddin/AladdinAI/commit/8318bb16dc551e96ed13ac5af2bbcb9d1ccfdba9))
+
+- Bump fast-uri from 3.1.5 to 3.1.7 in /frontend (#803) ([1816220](https://github.com/aliyevaladddin/AladdinAI/commit/1816220f40a03ce7d80f09e20c5d379e6218a79d))
 
 
 ### Documentation
@@ -150,6 +154,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#798) ([df6a9db](https://github.com/aliyevaladddin/AladdinAI/commit/df6a9db4062e08877eaa8223bb9588be2001c875))
 
 - Update changelog [skip ci] (#799) ([cda2381](https://github.com/aliyevaladddin/AladdinAI/commit/cda238138dd6b854719427dc4574501301c15f18))
+
+- Update changelog [skip ci] (#801) ([8a4bd6e](https://github.com/aliyevaladddin/AladdinAI/commit/8a4bd6ebcbc4d24190bfbaaef74358d7439fa033))
 
 
 ### Refactor
