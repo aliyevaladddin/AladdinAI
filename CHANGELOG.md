@@ -16,6 +16,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Remove duplicate modal state declarations in files page (#764) ([1caafed](https://github.com/aliyevaladddin/AladdinAI/commit/1caafed012b3e4070748860d05536bad812bd065))
 
+- Clean up node_modules and update dependencies (#804) ([12600f2](https://github.com/aliyevaladddin/AladdinAI/commit/12600f23bec253d4580e08c798a0c178e9f8d679))
+
 
 ### CI
 
@@ -150,6 +152,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#798) ([df6a9db](https://github.com/aliyevaladddin/AladdinAI/commit/df6a9db4062e08877eaa8223bb9588be2001c875))
 
 - Update changelog [skip ci] (#799) ([cda2381](https://github.com/aliyevaladddin/AladdinAI/commit/cda238138dd6b854719427dc4574501301c15f18))
+
+- Update changelog [skip ci] (#801) ([8a4bd6e](https://github.com/aliyevaladddin/AladdinAI/commit/8a4bd6ebcbc4d24190bfbaaef74358d7439fa033))
 
 
 ### Refactor
