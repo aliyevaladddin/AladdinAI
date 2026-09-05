@@ -30,4 +30,7 @@
 size_t json_escape_pty_data(const char *src, size_t src_len, char *dst, size_t dst_max);
 void parse_and_process_payload(int pty_master, const char *payload);
 
+/* WRT Editor integration */
+int wrt_editor_run(const char *filename);
+
 #endif /* ALADDIN_TERM_H */

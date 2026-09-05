@@ -118,3 +118,5 @@ RCF-AUDIT-REPORT.json
 # git filter-branch temp leftovers
 .git-rewrite/
 frontend/coverage
+backend/native/wrt-edit
+backend/native/wrt-validate
