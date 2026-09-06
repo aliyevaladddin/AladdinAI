@@ -42,6 +42,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump fast-uri from 3.1.5 to 3.1.7 in /frontend (#803) ([1816220](https://github.com/aliyevaladddin/AladdinAI/commit/1816220f40a03ce7d80f09e20c5d379e6218a79d))
 
+- Bump pydantic from 2.13.4 to 2.13.5 (#807) ([de7884a](https://github.com/aliyevaladddin/AladdinAI/commit/de7884a6274dd1b1a95490c28423b44a026fe687))
+
 
 ### Documentation
 
@@ -156,6 +158,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#799) ([cda2381](https://github.com/aliyevaladddin/AladdinAI/commit/cda238138dd6b854719427dc4574501301c15f18))
 
 - Update changelog [skip ci] (#801) ([8a4bd6e](https://github.com/aliyevaladddin/AladdinAI/commit/8a4bd6ebcbc4d24190bfbaaef74358d7439fa033))
+
+- Update changelog [skip ci] (#806) ([19d1516](https://github.com/aliyevaladddin/AladdinAI/commit/19d15167bfcbd31faa55beec98875b24a6d7f13f))
 
 
 ### Refactor
