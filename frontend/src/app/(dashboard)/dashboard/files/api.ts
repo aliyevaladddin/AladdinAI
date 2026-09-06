@@ -59,9 +59,12 @@ export function deleteFolder(folderId: number): Promise<void> {
 /* ── Files ──────────────────────────────────────────────────────── */
 
 export function listFiles(spaceId: number, folderId?: number | null): Promise<FileEntry[]> {
-  // Root asks explicitly for loose files — otherwise the API returns everything.
-  const query = folderId != null ? `?folder_id=${folderId}` : "?root=true";
+  const query = folderId === undefined ? "" : folderId !== null ? `?folder_id=${folderId}` : "?root=true";
   return api.get<FileEntry[]>(`/spaces/${spaceId}/files${query}`, { bypassCache: true });
+}
+
+export function listAllFiles(spaceId: number): Promise<FileEntry[]> {
+  return api.get<FileEntry[]>(`/spaces/${spaceId}/files`, { bypassCache: true });
 }
 
 export function uploadFile(
@@ -74,6 +77,21 @@ export function uploadFile(
   if (folderId != null) fields.folder_id = String(folderId);
   if (comment) fields.comment = comment;
   return api.upload<FileEntry>(`/spaces/${spaceId}/files/upload`, file, fields);
+}
+
+/**
+ * Create a new text file directly in a space (for .wrt editor)
+ */
+export async function createTextFile(
+  spaceId: number,
+  filename: string,
+  content: string,
+  folderId?: number | null,
+  comment?: string,
+): Promise<FileEntry> {
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const file = new File([blob], filename, { type: "text/plain" });
+  return uploadFile(spaceId, file, folderId ?? null, comment);
 }
 
 export function uploadNewVersion(fileId: number, file: File, comment?: string): Promise<FileVersion> {

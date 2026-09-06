@@ -4,7 +4,7 @@ sqlalchemy[asyncio]==2.0.52
 asyncpg==0.31.0
 psycopg2-binary==2.9.12
 alembic==1.19.1
-pydantic[email]==2.13.4
+pydantic[email]==2.13.5
 pydantic-settings==2.15.0
 python-jose[cryptography]==3.5.0
 bcrypt==5.0.0
@@ -26,6 +26,8 @@ pandas==3.0.5
 nvidia-riva-client==2.26.0
 pypdf==6.16.2
 python-docx==1.1.2
+python-pptx==1.0.2
+odfpy==1.4.1
 pillow>=12.3.0
 # Headless browser for services/browser.py (fetch_url tool + /websearch/synthesize
 # deep-scrape). The chromium binary is installed in the Dockerfile; without it the

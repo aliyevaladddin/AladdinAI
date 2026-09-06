@@ -27,6 +27,7 @@ Comprehensive documentation for the AladdinAI multi-agent AI system.
 - **[SQL Playground](./guides/SQL_PLAYGROUND.md)** - Read-only SQL exploration & security model
 - **[Terminal System](./guides/TERMINAL_SYSTEM.md)** - Pluggable terminal providers & sessions
 - **[Memory System](./ARCHITECTURE.md#memory)** - Understanding the memory architecture
+- **[WRT Editor](./WRT_EDITOR.md)** - Native C-based terminal editor for `.wrt` document files
 
 ### Deployment
 - **[CLI Wizard](./CLI_WIZARD.md)** - `npx aladdin-ai` setup walkthrough

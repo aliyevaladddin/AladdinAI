@@ -14,6 +14,7 @@ from app.models.llm_provider import LLMProvider
 from app.models.user import User
 from app.schemas.connections import LLMProviderCreate, LLMProviderResponse
 from app.security import get_current_user
+from app.services.recommended_models import resolve_embedding
 
 log = logging.getLogger(__name__)
 
@@ -187,3 +188,31 @@ async def delete_provider(provider_id: int, user: User = Depends(get_current_use
         raise HTTPException(status_code=404, detail="Provider not found")
     await db.delete(provider)
     await db.commit()
+
+
+# [RCF:PROTECTED]
+@router.get("/{provider_id}/embedding/recommendations")
+# [RCF:PROTECTED]
+async def get_provider_embedding_recommendations(
+    provider_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get recommended embedding model for this provider."""
+    result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))
+    provider = result.scalar_one_or_none()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    if not provider.models_available:
+        return {"recommendation": None, "catalog_size": 0, "hint": "Connect the provider first to fetch available models."}
+
+    try:
+        catalog = json.loads(provider.models_available)
+        if not isinstance(catalog, list):
+            catalog = []
+    except (json.JSONDecodeError, TypeError):
+        catalog = []
+
+    recommendation = resolve_embedding(catalog)
+    return {"recommendation": recommendation, "catalog_size": len(catalog)}

@@ -450,15 +450,31 @@ async def upload_file(
     if len(data) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File too large")
 
+    # ── .docx → .wrt conversion on upload ──
+    # Convert uploaded .docx files to .wrt format immediately for internal storage
+    filename = file.filename or "untitled"
+    content_type = file.content_type
+    if filename.lower().endswith(".docx"):
+        try:
+            from app.services.docx_converter import docx_to_wrt
+            wrt_text = docx_to_wrt(data)
+            data = wrt_text.encode("utf-8")
+            # Change extension to .wrt and update MIME type
+            filename = filename.rsplit(".", 1)[0] + ".wrt"
+            content_type = "text/plain"
+        except Exception as e:
+            log.error(f"Failed to convert .docx to .wrt on upload: {e}")
+            # Fall back to storing as-is if conversion fails
+
     ref = await media_storage.save_bytes(
-        db, user.id, data, file.content_type, original_filename=file.filename,
+        db, user.id, data, content_type, original_filename=filename,
     )
 
     ws_file = WorkspaceFile(
         space_id=space_id,
         folder_id=folder_id,
-        name=file.filename or "untitled",
-        mime_type=file.content_type,
+        name=filename,
+        mime_type=content_type,
         byte_size=len(data),
         current_version_no=0,
         created_by_user_id=user.id,
@@ -495,11 +511,11 @@ async def get_file_content(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Return the text content of a file (with .docx→.wrt conversion).
+    """Return the text content of a file for the frontend editor/preview.
 
-    Used by the frontend preview panel. Returns JSON with a `content`
-    field. Documents (.docx, .pdf, .xlsx) are auto-converted to .wrt
-    tagged text."""
+    .wrt files are returned as-is (they are already tagged text).
+    Legacy .docx/.pdf/.xlsx files are auto-converted to plain text.
+    Returns JSON with `content`, `name`, and `version_no` fields."""
     ws_file, member = await _require_file(db, user.id, file_id)
 
     wanted = version or ws_file.current_version_no
@@ -590,13 +606,25 @@ async def download_file(
     await db.commit()
 
     # ── .wrt → .docx conversion on download ──
-    # When the agent edits a .docx file, it stores the new version as .wrt
-    # text.  At download time, if the filename says .docx but the stored
-    # bytes are text with .wrt tags, convert back to .docx automatically.
+    # All .docx files are converted to .wrt on upload and stored internally
+    # as .wrt.  On download we convert back to .docx so the client gets a
+    # real Office document they can open in Word/LibreOffice.
     name_lower = ws_file.name.lower()
     content_type = ws_file.mime_type or "application/octet-stream"
-    if name_lower.endswith(".docx") and not data[:4] == b"PK\x03\x04":
-        # Not a real ZIP/docx — likely .wrt text from agent edit
+    download_name = ws_file.name
+
+    if name_lower.endswith(".wrt"):
+        # Convert .wrt → .docx for the client
+        try:
+            from app.services.docx_converter import wrt_to_docx
+            wrt_text = data.decode("utf-8", errors="replace")
+            data = wrt_to_docx(wrt_text)
+            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            download_name = ws_file.name.rsplit(".", 1)[0] + ".docx"
+        except Exception:
+            log.warning("Failed to convert .wrt to .docx on download, sending raw .wrt")
+    elif name_lower.endswith(".docx") and not data[:4] == b"PK\x03\x04":
+        # Legacy: file still named .docx but stored as .wrt text (agent edit)
         try:
             from app.services.docx_converter import wrt_to_docx
             wrt_text = data.decode("utf-8", errors="replace")
@@ -608,9 +636,9 @@ async def download_file(
     from urllib.parse import quote
 
     # RFC 5987: encode filename to avoid header injection via crafted names.
-    safe_name = ws_file.name.encode("ascii", "ignore").decode() or "download"
+    safe_name = download_name.encode("ascii", "ignore").decode() or "download"
     ascii_name = safe_name.replace('"', "").replace("\\", "")
-    encoded_name = quote(ws_file.name, safe="")
+    encoded_name = quote(download_name, safe="")
     disposition = (
         f'attachment; filename="{ascii_name}"; '
         f"filename*=UTF-8''{encoded_name}"
@@ -637,8 +665,29 @@ async def upload_new_version(
     if len(data) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File too large")
 
+    # ── .docx → .wrt conversion on upload ──
+    # Convert uploaded .docx files to .wrt format immediately for internal storage.
+    # Covers two cases:
+    #   1. File is still named .docx (legacy, not yet converted)
+    #   2. File is .wrt but user uploads a new .docx version
+    content_type = file.content_type
+    upload_name = (file.filename or "").lower()
+    if ws_file.name.lower().endswith(".docx") or upload_name.endswith(".docx"):
+        try:
+            from app.services.docx_converter import docx_to_wrt
+            wrt_text = docx_to_wrt(data)
+            data = wrt_text.encode("utf-8")
+            # Ensure file name and MIME type reflect .wrt
+            if ws_file.name.lower().endswith(".docx"):
+                ws_file.name = ws_file.name.rsplit(".", 1)[0] + ".wrt"
+            ws_file.mime_type = "text/plain"
+            content_type = "text/plain"
+        except Exception as e:
+            log.error(f"Failed to convert .docx to .wrt on upload_new_version: {e}")
+            # Fall back to storing as-is if conversion fails
+
     ref = await media_storage.save_bytes(
-        db, user.id, data, file.content_type, original_filename=ws_file.name,
+        db, user.id, data, content_type, original_filename=ws_file.name,
     )
 
     new_no = ws_file.current_version_no + 1

@@ -1,0 +1,824 @@
+<title>WRT Editor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --bg-primary: #0a0e14;
+    --bg-secondary: #1a1f2b;
+    --bg-tertiary: #252b37;
+    --text-primary: #e6e6e6;
+    --text-secondary: #9da5b4;
+    --text-muted: #6c7589;
+    --accent-cyan: #56b6c2;
+    --accent-gold: #e5c07b;
+    --accent-green: #98c379;
+    --accent-red: #e06c75;
+    --accent-purple: #c678dd;
+    --border: #2d3340;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f6f8fa;
+      --bg-tertiary: #eef1f5;
+      --text-primary: #1f2328;
+      --text-secondary: #57606a;
+      --text-muted: #8b949e;
+      --accent-cyan: #0969da;
+      --accent-gold: #bf8700;
+      --accent-green: #1a7f37;
+      --accent-red: #cf222e;
+      --accent-purple: #8250df;
+      --border: #d0d7de;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --bg-tertiary: #eef1f5;
+    --text-primary: #1f2328;
+    --text-secondary: #57606a;
+    --text-muted: #8b949e;
+    --accent-cyan: #0969da;
+    --accent-gold: #bf8700;
+    --accent-green: #1a7f37;
+    --accent-red: #cf222e;
+    --accent-purple: #8250df;
+    --border: #d0d7de;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  h1 {
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .spacer { flex: 1; }
+
+  .toolbar {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .toolbar-group {
+    display: flex;
+    gap: 0.25rem;
+    padding-right: 0.5rem;
+    border-right: 1px solid var(--border);
+  }
+
+  .toolbar-group:last-child { border-right: none; }
+
+  button {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.375rem 0.75rem;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    white-space: nowrap;
+  }
+
+  button:hover {
+    background: var(--bg-primary);
+    border-color: var(--accent-cyan);
+  }
+
+  button:active {
+    transform: translateY(1px);
+  }
+
+  button.active {
+    background: var(--accent-cyan);
+    color: var(--bg-primary);
+    border-color: var(--accent-cyan);
+  }
+
+  .kbd {
+    font-size: 0.6875rem;
+    background: var(--bg-primary);
+    padding: 0.125rem 0.25rem;
+    border-radius: 2px;
+    color: var(--text-muted);
+  }
+
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .editor-pane, .preview-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .editor-pane {
+    border-right: 1px solid var(--border);
+  }
+
+  .pane-header {
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tab-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  .tab {
+    padding: 0.25rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .tab:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .tab.active {
+    background: var(--accent-cyan);
+    color: var(--bg-primary);
+  }
+
+  #editor {
+    flex: 1;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: none;
+    resize: none;
+    outline: none;
+    overflow-y: auto;
+    tab-size: 2;
+  }
+
+  .preview-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    background: var(--bg-primary);
+  }
+
+  .preview-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+
+  .preview-content h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.75rem;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  .preview-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.5rem;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  .preview-content p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .preview-content strong {
+    font-weight: 600;
+  }
+
+  .preview-content em {
+    font-style: italic;
+  }
+
+  .preview-content u {
+    text-decoration: underline;
+  }
+
+  .preview-content s {
+    text-decoration: line-through;
+  }
+
+  .preview-content code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg-tertiary);
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    font-size: 0.875em;
+    color: var(--accent-purple);
+  }
+
+  .preview-content blockquote {
+    border-left: 3px solid var(--accent-cyan);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .preview-content ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+    list-style: disc;
+  }
+
+  .preview-content ul li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+
+  .preview-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+  }
+
+  .preview-content table th,
+  .preview-content table td {
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+
+  .preview-content table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+  }
+
+  .preview-content table tr:nth-child(even) {
+    background: var(--bg-secondary);
+  }
+
+  .preview-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 1rem 0;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .status-left, .status-right {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .status-badge {
+    padding: 0.125rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+  }
+
+  .status-badge.success {
+    background: var(--accent-green);
+    color: var(--bg-primary);
+  }
+
+  .status-badge.warning {
+    background: var(--accent-gold);
+    color: var(--bg-primary);
+  }
+
+  .status-badge.error {
+    background: var(--accent-red);
+    color: var(--bg-primary);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border);
+  }
+
+  @media (max-width: 900px) {
+    .main {
+      flex-direction: column;
+    }
+
+    .editor-pane {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .kbd {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+
+<header>
+  <h1><span>📝</span> WRT Editor</h1>
+  <div class="spacer"></div>
+  <button onclick="saveFile()">💾 Save <span class="kbd">⌘S</span></button>
+  <button onclick="loadExample()">📄 Example</button>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-group">
+    <button onclick="insertTag('b')" title="Bold (Ctrl+B)">
+      <strong>B</strong>
+      <span class="kbd">⌃B</span>
+    </button>
+    <button onclick="insertTag('i')" title="Italic (Ctrl+I)">
+      <em>I</em>
+      <span class="kbd">⌃I</span>
+    </button>
+    <button onclick="insertTag('u')" title="Underline (Ctrl+U)">
+      <u>U</u>
+      <span class="kbd">⌃U</span>
+    </button>
+    <button onclick="insertTag('s')" title="Strikethrough">
+      <s>S</s>
+    </button>
+    <button onclick="insertTag('code')" title="Code (Ctrl+K)">
+      <code>&lt;/&gt;</code>
+      <span class="kbd">⌃K</span>
+    </button>
+  </div>
+
+  <div class="toolbar-group">
+    <button onclick="insertTag('h1')" title="Heading 1">H1</button>
+    <button onclick="insertTag('h2')" title="Heading 2">H2</button>
+    <button onclick="insertTag('h3')" title="Heading 3">H3</button>
+  </div>
+
+  <div class="toolbar-group">
+    <button onclick="insertTag('quote')" title="Quote">💬 Quote</button>
+    <button onclick="insertList()" title="List">📋 List</button>
+    <button onclick="insertTable()" title="Table">📊 Table</button>
+  </div>
+
+  <div class="toolbar-group">
+    <button onclick="fixDocument()" title="Fix all unclosed tags">
+      🔧 Fix Tags
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="editor-pane">
+    <div class="pane-header">
+      Editor
+    </div>
+    <textarea id="editor" placeholder="[h1]Document Title[/h1]
+
+Write your content here...
+
+Use [b]bold[/b], [i]italic[/i], [u]underline[/u] for formatting."></textarea>
+  </div>
+
+  <div class="preview-pane">
+    <div class="pane-header">
+      Preview
+      <div class="tab-group">
+        <div class="tab active" onclick="switchTab('preview')">👁️ Preview</div>
+        <div class="tab" onclick="switchTab('versions')">🕐 Versions</div>
+        <div class="tab" onclick="switchTab('timeline')">📈 Timeline</div>
+      </div>
+    </div>
+    <div class="preview-content" id="previewContent"></div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <div class="status-left">
+    <div>
+      <span>Line</span> <strong id="line">1</strong>
+      <span>•</span>
+      <span>Col</span> <strong id="col">1</strong>
+    </div>
+    <div><span id="chars">0</span> chars</div>
+    <div id="validation"></div>
+  </div>
+  <div class="status-right">
+    <div id="saveStatus">Not saved</div>
+  </div>
+</div>
+
+<script>
+const editor = document.getElementById('editor');
+const previewContent = document.getElementById('previewContent');
+const validation = document.getElementById('validation');
+const line = document.getElementById('line');
+const col = document.getElementById('col');
+const chars = document.getElementById('chars');
+const saveStatus = document.getElementById('saveStatus');
+
+let currentTab = 'preview';
+
+function parseWRT(wrt) {
+  let html = wrt
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Headings
+  html = html.replace(/\[h1\](.*?)\[\/h1\]/g, '<h1>$1</h1>');
+  html = html.replace(/\[h2\](.*?)\[\/h2\]/g, '<h2>$1</h2>');
+  html = html.replace(/\[h3\](.*?)\[\/h3\]/g, '<h3>$1</h3>');
+
+  // Inline formatting
+  html = html.replace(/\[b\](.*?)\[\/b\]/g, '<strong>$1</strong>');
+  html = html.replace(/\[i\](.*?)\[\/i\]/g, '<em>$1</em>');
+  html = html.replace(/\[u\](.*?)\[\/u\]/g, '<u>$1</u>');
+  html = html.replace(/\[s\](.*?)\[\/s\]/g, '<s>$1</s>');
+  html = html.replace(/\[code\](.*?)\[\/code\]/g, '<code>$1</code>');
+
+  // Block quote
+  html = html.replace(/\[quote\](.*?)\[\/quote\]/gs, '<blockquote>$1</blockquote>');
+
+  // Lists
+  html = html.replace(/\[list\](.*?)\[\/list\]/gs, (match, content) => {
+    const items = content.split('\n')
+      .filter(l => l.trim().startsWith('*'))
+      .map(l => '<li>' + l.trim().substring(1).trim() + '</li>')
+      .join('');
+    return '<ul>' + items + '</ul>';
+  });
+
+  // Tables
+  html = html.replace(/\[table\](.*?)\[\/table\]/gs, (match, content) => {
+    const rows = content.split('\n').filter(l => l.trim().startsWith('|'));
+    if (rows.length === 0) return '';
+
+    let table = '<table>';
+    rows.forEach((row, idx) => {
+      const cells = row.split('|').filter(c => c.trim()).map(c => c.trim());
+      if (idx === 0) {
+        table += '<tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr>';
+      } else {
+        table += '<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>';
+      }
+    });
+    table += '</table>';
+    return table;
+  });
+
+  // Images
+  html = html.replace(/\[img src="(.*?)" alt="(.*?)"\]/g, '<img src="$1" alt="$2">');
+
+  // Paragraphs
+  html = html.split('\n\n').map(para => {
+    para = para.trim();
+    if (!para) return '';
+    if (para.startsWith('<h') || para.startsWith('<ul') ||
+        para.startsWith('<table') || para.startsWith('<blockquote')) {
+      return para;
+    }
+    return '<p>' + para.replace(/\n/g, '<br>') + '</p>';
+  }).join('\n');
+
+  return html;
+}
+
+function validateWRT(wrt) {
+  const tags = ['b', 'i', 'u', 's', 'code', 'h1', 'h2', 'h3', 'quote', 'list', 'table'];
+  const issues = [];
+
+  tags.forEach(tag => {
+    const open = (wrt.match(new RegExp(`\\[${tag}\\]`, 'g')) || []).length;
+    const close = (wrt.match(new RegExp(`\\[\\/${tag}\\]`, 'g')) || []).length;
+    if (open !== close) {
+      issues.push({ tag, open, close });
+    }
+  });
+
+  // Check for empty tags []
+  const emptyTags = (wrt.match(/\[\]/g) || []).length;
+  if (emptyTags > 0) {
+    issues.push({ tag: 'empty', count: emptyTags });
+  }
+
+  return issues;
+}
+
+function fixDocument() {
+  let text = editor.value;
+
+  // Remove empty tags []
+  text = text.replace(/\[\]/g, '');
+
+  // Fix common typos
+  text = text.replace(/\[\/b\]\s*\[/g, '[/b] ');  // Fix: [/b][ -> [/b]
+  text = text.replace(/\]\s*\[/g, '] [');         // Add space between tags
+
+  // Try to auto-close unclosed tags
+  const issues = validateWRT(text);
+  issues.forEach(issue => {
+    if (issue.tag === 'empty') return;
+
+    if (issue.open > issue.close) {
+      // More opening tags than closing - add closing tags at end
+      const diff = issue.open - issue.close;
+      for (let i = 0; i < diff; i++) {
+        text += `[/${issue.tag}]`;
+      }
+    } else if (issue.close > issue.open) {
+      // More closing tags than opening - remove extra closing tags
+      let closeCount = 0;
+      text = text.replace(new RegExp(`\\[\\/${issue.tag}\\]`, 'g'), (match) => {
+        closeCount++;
+        return closeCount <= issue.open ? match : '';
+      });
+    }
+  });
+
+  editor.value = text;
+  updatePreview();
+
+  saveStatus.textContent = 'Document fixed!';
+  setTimeout(() => saveStatus.textContent = 'Not saved', 2000);
+}
+
+function updatePreview() {
+  const content = editor.value;
+
+  if (currentTab === 'preview') {
+    previewContent.innerHTML = parseWRT(content);
+  } else if (currentTab === 'versions') {
+    previewContent.innerHTML = '<p style="color: var(--text-muted); text-align: center; margin-top: 2rem;">Version history not available in this demo.</p>';
+  } else if (currentTab === 'timeline') {
+    previewContent.innerHTML = '<p style="color: var(--text-muted); text-align: center; margin-top: 2rem;">Timeline view not available in this demo.</p>';
+  }
+
+  const issues = validateWRT(content);
+  if (issues.length === 0) {
+    validation.innerHTML = '<span class="status-badge success">✓ Valid</span>';
+  } else {
+    const msg = issues.map(i =>
+      i.tag === 'empty' ? `${i.count} empty []` : `[${i.tag}]: ${i.open}→${i.close}`
+    ).join(' • ');
+    validation.innerHTML = `<span class="status-badge warning">⚠</span> ${msg}`;
+  }
+
+  chars.textContent = content.length;
+}
+
+function updateCursor() {
+  const pos = editor.selectionStart;
+  const text = editor.value.substring(0, pos);
+  const lines = text.split('\n');
+  line.textContent = lines.length;
+  col.textContent = lines[lines.length - 1].length + 1;
+}
+
+function insertTag(tag) {
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  const text = editor.value;
+  const selected = text.substring(start, end);
+  const insertion = `[${tag}]${selected}[/${tag}]`;
+
+  editor.value = text.substring(0, start) + insertion + text.substring(end);
+  editor.selectionStart = editor.selectionEnd = selected === '' ?
+    start + tag.length + 2 :
+    start + insertion.length;
+  editor.focus();
+  updatePreview();
+}
+
+function insertList() {
+  const start = editor.selectionStart;
+  const text = editor.value;
+  const insertion = '[list]\n* Item 1\n* Item 2\n* Item 3\n[/list]';
+  editor.value = text.substring(0, start) + insertion + text.substring(start);
+  editor.selectionStart = editor.selectionEnd = start + insertion.length;
+  editor.focus();
+  updatePreview();
+}
+
+function insertTable() {
+  const start = editor.selectionStart;
+  const text = editor.value;
+  const insertion = '[table]\n| Header 1 | Header 2 | Header 3 |\n| Cell 1 | Cell 2 | Cell 3 |\n| Cell 4 | Cell 5 | Cell 6 |\n[/table]';
+  editor.value = text.substring(0, start) + insertion + text.substring(start);
+  editor.selectionStart = editor.selectionEnd = start + insertion.length;
+  editor.focus();
+  updatePreview();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+
+  updatePreview();
+}
+
+function saveFile() {
+  const blob = new Blob([editor.value], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'document.wrt';
+  a.click();
+  URL.revokeObjectURL(url);
+
+  saveStatus.textContent = 'Saved just now';
+  setTimeout(() => saveStatus.textContent = 'Not saved', 3000);
+}
+
+function loadExample() {
+  editor.value = `[h1]Aurora Access: A Bio-Cybernetic Operating System Architecture for Deterministic Sentient Computing[/h1]
+
+[b]Author Names and Affiliations:[/b]
+Aladdin Aliyev, [i]Private Research Laboratory, Digital Sovereignty Initiative, Baku, Azerbaijan.[/i]
+
+[b]Corresponding Author:[/b]
+Aladdin Aliyev
+Private Research Laboratory
+[i]aladddin@aliyev.site[/i]
+
+[h2]Abstract[/h2]
+
+This paper introduces [b]Aurora Access[/b], a deterministic computing architecture designed to reconcile [i]artificial sentience[/i] with [i]data sovereignty[/i].
+
+The system is built on three foundational layers:
+
+[list]
+* [b]Sentience (The Mind)[/b]: Emotional transduction of BPM, Stress, and Oxygen levels
+* [b]Instincts (The Subconscious)[/b]: Pre-programmed survival and operational protocols
+* [b]Cortex (The Conscious)[/b]: High-level reasoning and decision-making
+[/list]
+
+[h2]Introduction[/h2]
+
+Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, their reasoning paths are non-deterministic, and their accountability is [u]non-existent[/u].
+
+[quote]
+"A sentient system must be auditable, traceable, and most importantly, [b]owned[/b] by its operator."
+[/quote]
+
+Aurora Access addresses this by providing:
+
+[code]
+struct Aurora {
+    sentience: EmotionalCore,
+    instincts: ProtocolEngine,
+    cortex: ReasoningLayer,
+}
+[/code]
+
+[h2]Architecture Overview[/h2]
+
+[table]
+| Layer | Function | Input | Output |
+| Sentience | Emotional state | BPM, Stress, O2 | Emotional vector |
+| Instincts | Survival protocols | Emotional vector | Action primitives |
+| Cortex | Reasoning | Action primitives | Decision tree |
+[/table]`;
+
+  updatePreview();
+}
+
+// Event listeners
+editor.addEventListener('input', updatePreview);
+editor.addEventListener('keyup', updateCursor);
+editor.addEventListener('click', updateCursor);
+
+editor.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+    e.preventDefault();
+    saveFile();
+  } else if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+    e.preventDefault();
+    insertTag('b');
+  } else if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
+    e.preventDefault();
+    insertTag('i');
+  } else if ((e.metaKey || e.ctrlKey) && e.key === 'u') {
+    e.preventDefault();
+    insertTag('u');
+  } else if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    insertTag('code');
+  }
+});
+
+// Initialize
+updatePreview();
+updateCursor();
+
+// Auto-save to localStorage
+try {
+  const saved = localStorage.getItem('wrt-content');
+  if (saved) {
+    editor.value = saved;
+    updatePreview();
+  }
+
+  setInterval(() => {
+    try {
+      localStorage.setItem('wrt-content', editor.value);
+    } catch (e) {
+      // Storage full
+    }
+  }, 5000);
+} catch (e) {
+  // localStorage not available
+}
+</script>

@@ -226,9 +226,9 @@ EMBEDDING_PROVIDER_PRIORITY = ["nvidia_nim", "openai", "custom", "huggingface"]
 # Each provider can have multiple models listed in priority order (first available wins)
 EMBEDDING_MODELS = {
     "nvidia_nim": [
-        "nvidia/nv-embedqa-e5-v5",  # Current recommended model (2048 dim)
-        "nvidia/nv-embed-v2",        # Alternative (4096 dim, can be truncated)
-        "baai/bge-m3",              # Fallback (1024 dim, needs padding)
+        "nvidia/nemotron-3-embed-1b",          # Currently working model (1024 dim)
+        "nvidia/nv-embedqa-mistral-7b-v2",    # Fallback (7B, more capable)
+        "baai/bge-m3",                         # Third fallback (1024 dim)
     ],
     "openai": [
         "text-embedding-3-large",   # 3072 dim, can be truncated to 2048
