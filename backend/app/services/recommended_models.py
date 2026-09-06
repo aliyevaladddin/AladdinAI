@@ -77,6 +77,14 @@ EXTRACTION_RECOMMENDATIONS: list[str] = [
     "mistral-7b-instruct",
 ]
 
+EMBEDDING_RECOMMENDATIONS: list[str] = [
+    "nv-embedqa-mistral-7b-v2",
+    "llama-3.2-nv-embedqa-1b",
+    "embed-qa-4",
+    "nemotron-3-embed-1b",
+    "arctic-embed-l",
+]
+
 
 # [RCF:PROTECTED]
 def _match(catalog: list[str], candidate: str) -> str | None:
@@ -115,3 +123,9 @@ def resolve_gates(catalog: list[str]) -> dict[str, str | None]:
 # [RCF:PROTECTED]
 def resolve_extraction(catalog: list[str]) -> str | None:
     return resolve_one(catalog, EXTRACTION_RECOMMENDATIONS)
+
+
+# [RCF:PROTECTED]
+def resolve_embedding(catalog: list[str]) -> str | None:
+    """First embedding candidate (in order) that has a substring match in the catalog."""
+    return resolve_one(catalog, EMBEDDING_RECOMMENDATIONS)
