@@ -23,7 +23,12 @@ export default function LoginPage() {
       await login(email, password);
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      if (err instanceof Error && err.message.includes("401")) {
+        setError("Неверный email или пароль.");
+      } else {
+        setError("Произошла ошибка при входе. Попробуйте еще раз.");
+      }
+      console.error("Login error:", err);
     } finally {
       setLoading(false);
     }
