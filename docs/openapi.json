@@ -2689,6 +2689,52 @@
         }
       }
     },
+    "/api/providers/{provider_id}/embedding/recommendations": {
+      "get": {
+        "tags": [
+          "providers"
+        ],
+        "summary": "Get Provider Embedding Recommendations",
+        "description": "Get recommended embedding model for this provider.",
+        "operationId": "get_provider_embedding_recommendations_api_providers__provider_id__embedding_recommendations_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Provider Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/router": {
       "get": {
         "tags": [
@@ -7909,7 +7955,7 @@
           "Workspace"
         ],
         "summary": "Get File Content",
-        "description": "Return the text content of a file (with .docx\u2192.wrt conversion).\n\nUsed by the frontend preview panel. Returns JSON with a `content`\nfield. Documents (.docx, .pdf, .xlsx) are auto-converted to .wrt\ntagged text.",
+        "description": "Return the text content of a file for the frontend editor/preview.\n\n.wrt files are returned as-is (they are already tagged text).\nLegacy .docx/.pdf/.xlsx files are auto-converted to plain text.\nReturns JSON with `content`, `name`, and `version_no` fields.",
         "operationId": "get_file_content_api_files__file_id__content_get",
         "security": [
           {

@@ -1402,6 +1402,36 @@ Delete Provider
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/providers/{provider_id}/embedding/recommendations
+
+#### GET
+##### Summary:
+
+Get Provider Embedding Recommendations
+
+##### Description:
+
+Get recommended embedding model for this provider.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| provider_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/router
 
 #### GET
@@ -4051,11 +4081,11 @@ Get File Content
 
 ##### Description:
 
-Return the text content of a file (with .docx→.wrt conversion).
+Return the text content of a file for the frontend editor/preview.
 
-Used by the frontend preview panel. Returns JSON with a `content`
-field. Documents (.docx, .pdf, .xlsx) are auto-converted to .wrt
-tagged text.
+.wrt files are returned as-is (they are already tagged text).
+Legacy .docx/.pdf/.xlsx files are auto-converted to plain text.
+Returns JSON with `content`, `name`, and `version_no` fields.
 
 ##### Parameters
 
