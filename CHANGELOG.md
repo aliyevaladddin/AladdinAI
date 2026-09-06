@@ -42,6 +42,18 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump fast-uri from 3.1.5 to 3.1.7 in /frontend (#803) ([1816220](https://github.com/aliyevaladddin/AladdinAI/commit/1816220f40a03ce7d80f09e20c5d379e6218a79d))
 
+- Bump pydantic from 2.13.4 to 2.13.5 (#807) ([de7884a](https://github.com/aliyevaladddin/AladdinAI/commit/de7884a6274dd1b1a95490c28423b44a026fe687))
+
+- Bump the security-patches group in /frontend with 4 updates (#809) ([f625315](https://github.com/aliyevaladddin/AladdinAI/commit/f6253154b90604a804a5050488408d8ac6457411))
+
+- Bump framer-motion from 13.1.1 to 13.2.0 in /frontend (#811) ([39bbc10](https://github.com/aliyevaladddin/AladdinAI/commit/39bbc101d39575518a97bfb49f5fb3be74d80685))
+
+- Bump x402-fetch from 0.4.2 to 1.2.0 in /frontend (#817) ([377c540](https://github.com/aliyevaladddin/AladdinAI/commit/377c54064157f067195751aa21652430e7b97d10))
+
+- Bump shadcn from 4.19.0 to 4.20.0 in /frontend (#818) ([f0f04da](https://github.com/aliyevaladddin/AladdinAI/commit/f0f04dacb920782b052983a877459e8d549c733d))
+
+- Bump python-docx from 1.1.2 to 1.2.0 (#808) ([4b631b3](https://github.com/aliyevaladddin/AladdinAI/commit/4b631b35684d01f0d71c8bca9b85ec4646cf13e0))
+
 
 ### Documentation
 
@@ -62,6 +74,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update API documentation [skip ci] (#763) ([f5e02c0](https://github.com/aliyevaladddin/AladdinAI/commit/f5e02c063ba7cc70b18ce329ed74de04dc7248af))
 
 - Add WRT Editor comprehensive guide (#792) ([02c5774](https://github.com/aliyevaladddin/AladdinAI/commit/02c57749da7411468bad1c5948888d911386a0fb))
+
+- Update API documentation [skip ci] (#821) ([dea1b1f](https://github.com/aliyevaladddin/AladdinAI/commit/dea1b1ff5349a972c945031c33e73713f10ba4c3))
 
 
 ### Features
@@ -156,6 +170,22 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#799) ([cda2381](https://github.com/aliyevaladddin/AladdinAI/commit/cda238138dd6b854719427dc4574501301c15f18))
 
 - Update changelog [skip ci] (#801) ([8a4bd6e](https://github.com/aliyevaladddin/AladdinAI/commit/8a4bd6ebcbc4d24190bfbaaef74358d7439fa033))
+
+- Update changelog [skip ci] (#806) ([19d1516](https://github.com/aliyevaladddin/AladdinAI/commit/19d15167bfcbd31faa55beec98875b24a6d7f13f))
+
+- Update frontend dependencies in package-lock.json ([bc8cc8a](https://github.com/aliyevaladddin/AladdinAI/commit/bc8cc8a6974a7a45a92281743701d003fc938bea))
+
+- Update dependencies in package-lock.json ([2a455ce](https://github.com/aliyevaladddin/AladdinAI/commit/2a455ce7f412fe4f5704923532a3a04c654cc3b7))
+
+- Bump @types/node from 26.3.0 to 26.4.1 in /frontend (#810) ([bf73806](https://github.com/aliyevaladddin/AladdinAI/commit/bf7380601b06a4fcd35dee45dff23eb929636634))
+
+- Update dependencies in package-lock.json ([8542abe](https://github.com/aliyevaladddin/AladdinAI/commit/8542abeabc52bc3c70214e64e0c50bdffce2030a))
+
+- Bump jest from 30.4.2 to 30.5.1 in /frontend (#812) ([48abca7](https://github.com/aliyevaladddin/AladdinAI/commit/48abca75228c34aee24d0a3d5c6b7a86a8aa6ffd))
+
+- Update frontend dependencies in package-lock.json ([246c89a](https://github.com/aliyevaladddin/AladdinAI/commit/246c89aabe21ca44301872d510c2b93ecec9f197))
+
+- Bump jest-environment-jsdom in /frontend (#816) ([e0b2842](https://github.com/aliyevaladddin/AladdinAI/commit/e0b2842dfec1407fad52a4372c43c026e733ee56))
 
 
 ### Refactor
