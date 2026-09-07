@@ -133,10 +133,26 @@ async def get_provider_models(provider_id: int, user: User = Depends(get_current
         return {"models": [], "hint": "Connect the provider first to fetch available models."}
 
     try:
-        models = json.loads(provider.models_available)
+        catalog = json.loads(provider.models_available)
+        if not isinstance(catalog, list):
+            catalog = []
+
+        # Filter out models that are known to cause issues (embed, guard, vision)
+        # while keeping instruct/chat models.
+        # We classify them to help the UI.
+        enriched_models = []
+        for m in catalog:
+            m_lower = m.lower()
+            is_bad = any(bad in m_lower for bad in ["embed", "guard", "vision"])
+            enriched_models.append({
+                "id": m,
+                "type": "chat" if not is_bad else "other",
+                "is_supported": not is_bad
+            })
+
+        return {"models": enriched_models, "count": len(enriched_models)}
     except (json.JSONDecodeError, TypeError):
         return {"models": [], "hint": "Provider model list is corrupted — reconnect to refresh."}
-    return {"models": models, "count": len(models)}
 
 
 # [RCF:PROTECTED]
@@ -150,6 +166,47 @@ async def disconnect_provider(provider_id: int, user: User = Depends(get_current
     provider.status = "disconnected"
     await db.commit()
     return {"status": "disconnected"}
+
+
+# [RCF:PROTECTED]
+@router.post("/{provider_id}/models/{model_id:path}/ping")
+# [RCF:PROTECTED]
+async def ping_model(
+    provider_id: int,
+    model_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Perform a quick health check on a specific model."""
+    result = await db.execute(select(LLMProvider).where(LLMProvider.id == provider_id, LLMProvider.user_id == user.id))
+    provider = result.scalar_one_or_none()
+    if not provider:
+        raise HTTPException(status_code=404, detail="Provider not found")
+
+    api_key = decrypt(provider.api_key_encrypted) if provider.api_key_encrypted else None
+
+    headers: dict = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    url = f"{provider.base_url.rstrip('/')}/v1/chat/completions"
+    payload = {
+        "model": model_id,
+        "messages": [{"role": "user", "content": "hi"}],
+        "max_tokens": 5
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            # We use a POST request as a health check because many LLM providers
+            # do not have a dedicated GET /health endpoint for specific models.
+            resp = await client.post(url, json=payload, headers=headers)
+            if resp.status_code == 200:
+                return {"status": "ok"}
+            return {"status": "error", "code": resp.status_code}
+    except Exception:
+        return {"status": "error", "message": "unreachable"}
+
 
 
 # [RCF:PROTECTED]
