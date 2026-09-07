@@ -83,6 +83,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#844) ([bb546a4](https://github.com/aliyevaladddin/AladdinAI/commit/bb546a4e156359ae938344b068ca4aeeeac62366))
 
+- Update API documentation [skip ci] (#847) ([bec0239](https://github.com/aliyevaladddin/AladdinAI/commit/bec0239409b3dd6effba3007e09e286e853e2ec2))
+
 
 ### Features
 
@@ -99,6 +101,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add WRT editor and embedding model fallback chains (#790) ([babe7bc](https://github.com/aliyevaladddin/AladdinAI/commit/babe7bc34bf0b5780381d6fec6b07fcf2461d2e2))
 
 - Add image round-trip support to .wrt format (#794) ([5f36fb2](https://github.com/aliyevaladddin/AladdinAI/commit/5f36fb24cd6f783ca2812e59a2f5775e9ba0829f))
+
+- Add beautiful English Thinking Process UI and fix React key warnings (#848) ([68a7e76](https://github.com/aliyevaladddin/AladdinAI/commit/68a7e769f588d9c517b0d0ac35d4ea6910fd20db))
 
 
 ### Maintenance
@@ -206,6 +210,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update lockfile dependencies ([4c7c05f](https://github.com/aliyevaladddin/AladdinAI/commit/4c7c05fe05b550a13d61bbd5d78448f2687a7eda))
 
 - Update changelog [skip ci] (#841) ([95bc82d](https://github.com/aliyevaladddin/AladdinAI/commit/95bc82d3389ced2a32558f7c8833d32c96589c82))
+
+- Update changelog [skip ci] (#846) ([f9ec651](https://github.com/aliyevaladddin/AladdinAI/commit/f9ec651abe0b042ded9e70a5e46bca7465500bd6))
 
 
 ### Refactor
