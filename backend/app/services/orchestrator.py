@@ -14,10 +14,8 @@ from app.services.router_resolver import resolve_agent_id
 from app.services.messaging_service import (
     parse_sms_message,
     parse_telegram_message,
-    parse_whatsapp_message,
     send_sms,
     send_telegram,
-    send_whatsapp,
     send_whatsapp_baileys,
     parse_whatsapp_baileys,
 )
@@ -54,15 +52,8 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
     if channel_type == "telegram":
         sender_id, sender_name, text, attachments = parse_telegram_message(payload)
         is_phone = False
-    elif channel_type == "whatsapp":
-        sender_id, sender_name, text = parse_whatsapp_message(payload)
-        is_phone = True
     elif channel_type == "whatsapp_baileys":
         sender_id, sender_name, text = parse_whatsapp_baileys(payload)
-        is_phone = True
-    elif channel_type == "whatsapp_waha":
-        from app.services.messaging_service import parse_waha_message
-        sender_id, sender_name, text = parse_waha_message(payload)
         is_phone = True
     elif channel_type == "sms":
         sender_id, sender_name, text = parse_sms_message(payload)
@@ -228,15 +219,10 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
         # send_image (via the tool) only queues the file when the channel is
         # web — for messaging channels the tool dispatches inline. Nothing to
         # flush here unless a future channel adopts the queue pattern.
-    elif channel_type == "whatsapp":
-        await send_whatsapp(channel, sender_id, reply)
     elif channel_type == "whatsapp_baileys":
         res = await send_whatsapp_baileys(channel, sender_id, reply)
         if isinstance(res, dict) and res.get("type") == "error":
             log.error("orchestrator: baileys send failed for channel %s: %s", channel.id, res)
-    elif channel_type == "whatsapp_waha":
-        from app.services.messaging_service import send_waha
-        await send_waha(channel, sender_id, reply)
     elif channel_type == "sms":
         await send_sms(channel, sender_id, reply)
 

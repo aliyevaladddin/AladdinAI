@@ -53,6 +53,18 @@ async def run_python_code(
     # 1. Preferred: run inside the agent's Docker sandbox against /workspace.
     from app.services import agent_sandbox
 
+    if not agent_sandbox.host_fallback_allowed():
+        # Production, no Docker: refuse to run agent code on the backend host.
+        # Fail closed instead of silently executing with host privileges.
+        return {
+            "status": "error",
+            "message": (
+                "Python execution unavailable: the Docker sandbox is not reachable "
+                "and host fallback is disabled in production. Ensure the Docker "
+                "daemon is running (or set ALADDIN_ENV=dev for local development)."
+            ),
+        }
+
     try:
         container_id = await agent_sandbox.ensure_sandbox(ctx.user_id, ctx.agent_id)
     except Exception:
@@ -86,7 +98,8 @@ async def run_python_code(
         tmp_path = tmp.name
 
     # Apply the same rlimits the terminal tool uses (CPU/mem/nproc/fsize) so the
-    # host fallback isn't unbounded.
+    # host fallback isn't unbounded, and run with a sanitized env so agent code
+    # cannot read backend secrets (JWT_SECRET, FERNET_KEY, DATABASE_URL, ...).
     from app.tools.terminal_tools import set_rlimits
 
     try:
@@ -96,6 +109,7 @@ async def run_python_code(
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             preexec_fn=set_rlimits,
+            env=agent_sandbox.sanitized_host_env(),
         )
 
         try:

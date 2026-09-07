@@ -39,5 +39,7 @@ async def fetch_url(
 ) -> dict[str, Any]:
     """Fetch and read web page content for the agent context."""
     logger.info("Agent fetching URL content via Chromium/HTTPX: %s", url)
+    # SSRF validation happens inside fetch_url_content (it also backs the
+    # /synthesize deep-scrape); a blocked URL comes back as method=failed.
     res = await fetch_url_content(url, use_chromium=use_chromium)
     return res

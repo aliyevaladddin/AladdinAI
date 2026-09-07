@@ -13,9 +13,9 @@ class MessagingChannel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
-    type: Mapped[str] = mapped_column(String(50))  # telegram, whatsapp, sms
+    type: Mapped[str] = mapped_column(String(50))  # telegram, whatsapp_baileys, sms
     name: Mapped[str] = mapped_column(String(255))
-    config: Mapped[dict] = mapped_column(JSON)  # bot_token for telegram, phone_number_id for whatsapp, etc.
+    config: Mapped[dict] = mapped_column(JSON)  # bot_token for telegram, twilio_sid for sms, etc.
     webhook_secret: Mapped[str | None] = mapped_column(
         String(1024), nullable=True
     )  # Secret token for webhook authentication (supports GitHub's new ghs_... format up to ~520 chars)

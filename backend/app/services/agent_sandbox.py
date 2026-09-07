@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import shlex
 from dataclasses import dataclass
 from typing import Optional
@@ -46,6 +47,52 @@ _LABEL_SANDBOX = "aladdinai.sandbox"
 _MEM_LIMIT = "512m"
 _PIDS_LIMIT = 128
 _NANO_CPUS = 1_000_000_000  # 1.0 CPU
+
+# Environment variables that must NEVER leak into a host-fallback subprocess.
+# When the Docker sandbox is unavailable, agent code would otherwise run with
+# the backend's full environment: JWT_SECRET, FERNET_KEY, DATABASE_URL,
+# provider API keys — a single `cat .env` (or os.environ dump) exfiltrates
+# everything. The fallback therefore runs with a minimal, explicit env.
+_HOST_FALLBACK_ENV_ALLOWLIST = [
+    "PATH",
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "TMPDIR",
+]
+
+
+def _is_production() -> bool:
+    """Mirror config._is_dev_mode: non-dev signals mean production.
+
+    Imported lazily to avoid a circular import (config imports nothing from
+    services, but keeping the boundary lazy is cheap and safe).
+    """
+    from app.config import _is_dev_mode
+    from app.config import settings as app_settings
+
+    return not _is_dev_mode(app_settings.database_url)
+
+
+def host_fallback_allowed() -> bool:
+    """Fail closed in production: no host execution without Docker.
+
+    In dev a host fallback under rlimits keeps local development working when
+    no Docker daemon is around. In production it would run agent-supplied code
+    on the backend host itself (network + filesystem + env exposed), so it is
+    refused outright — the tool returns an error instead.
+    """
+    return not _is_production()
+
+
+def sanitized_host_env() -> dict[str, str]:
+    """Build a minimal env for host-fallback subprocesses.
+
+    Only benign runtime variables survive; everything else (secrets, DB URLs,
+    API keys) is dropped so `env`/`os.environ` inside the executed code shows
+    nothing sensitive.
+    """
+    return {k: os.environ[k] for k in _HOST_FALLBACK_ENV_ALLOWLIST if k in os.environ}
 
 
 @dataclass

@@ -28,7 +28,7 @@ interface Agent {
   id: number; name: string; role: string; model: string;
 }
 
-const CHANNEL_TYPES = ["telegram", "whatsapp", "whatsapp_baileys", "whatsapp_waha", "sms"];
+const CHANNEL_TYPES = ["telegram", "whatsapp_baileys", "sms"];
 
 /* ── Page ────────────────────────────────────────────────────────── */
 export default function ChannelsPage() {
@@ -52,10 +52,8 @@ export default function ChannelsPage() {
   // Channel form
   const [showChannelForm, setShowChannelForm] = useState(false);
   const [channelForm, setChannelForm] = useState({
-    type: "telegram", name: "", bot_token: "", access_token: "",
-    phone_number_id: "", app_secret: "",
+    type: "telegram", name: "", bot_token: "",
     twilio_sid: "", twilio_token: "", twilio_phone: "",
-    waha_url: "", waha_session: "default", waha_api_key: "",
     agent_id: "" as string,
   });
 
@@ -176,15 +174,7 @@ export default function ChannelsPage() {
     e.preventDefault();
     const config: Record<string, string> = {};
     if (channelForm.type === "telegram") config.bot_token = channelForm.bot_token;
-    if (channelForm.type === "whatsapp") {
-      config.access_token = channelForm.access_token;
-      config.phone_number_id = channelForm.phone_number_id;
-      config.app_secret = channelForm.app_secret;
-    }
-    if (channelForm.type === "whatsapp_baileys") {
-        // No config needed for Baileys yet, handled locally
-    }
-    if (channelForm.type === "whatsapp_waha") { config.waha_url = channelForm.waha_url; config.waha_session = channelForm.waha_session; config.waha_api_key = channelForm.waha_api_key; }
+    // Baileys needs no config: the bridge daemon handles auth via QR link.
     if (channelForm.type === "sms") { config.twilio_sid = channelForm.twilio_sid; config.twilio_token = channelForm.twilio_token; config.twilio_phone = channelForm.twilio_phone; }
     await api.post("/channels/messaging", {
       type: channelForm.type,
@@ -234,21 +224,6 @@ export default function ChannelsPage() {
     }
   };
 
-
-  const handleShowQr = async (id: number) => {
-    setQrModal({ open: true, image: null, loading: true, error: null });
-    try {
-      const res = await api.get<{ status: string; image?: string; message?: string }>(`/channels/messaging/${id}/waha/qr`);
-      if (res.status === "qr" && res.image) {
-        setQrModal({ open: true, image: res.image, loading: false, error: null });
-      } else {
-        setQrModal({ open: true, image: null, loading: false, error: res.message || "Failed to load QR" });
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setQrModal({ open: true, image: null, loading: false, error: msg || "Error fetching QR" });
-    }
-  };
 
   const handleShowQrBaileys = async (id: number) => {
     setQrModal({ open: true, image: null, loading: true, error: null });
@@ -536,34 +511,6 @@ export default function ChannelsPage() {
                   onChange={(e) => setChannelForm({ ...channelForm, bot_token: e.target.value })} required />
               </div>
             )}
-            {channelForm.type === "whatsapp" && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium" style={{ color: "var(--color-fg-muted)" }}>Access Token</label>
-                  <input className="input" type="password" value={channelForm.access_token}
-                    onChange={(e) => setChannelForm({ ...channelForm, access_token: e.target.value })} required />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium" style={{ color: "var(--color-fg-muted)" }}>Phone Number ID</label>
-                  <input className="input" value={channelForm.phone_number_id}
-                    onChange={(e) => setChannelForm({ ...channelForm, phone_number_id: e.target.value })} required />
-                </div>
-              </div>
-            )}
-            {channelForm.type === "whatsapp_waha" && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium" style={{ color: "var(--color-fg-muted)" }}>WAHA URL</label>
-                  <input className="input" placeholder="https://waha.example.com" value={channelForm.waha_url}
-                    onChange={(e) => setChannelForm({ ...channelForm, waha_url: e.target.value })} required />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium" style={{ color: "var(--color-fg-muted)" }}>Session Name</label>
-                  <input className="input" placeholder="default" value={channelForm.waha_session}
-                    onChange={(e) => setChannelForm({ ...channelForm, waha_session: e.target.value })} required />
-                </div>
-              </div>
-            )}
             {channelForm.type === "sms" && (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
@@ -621,22 +568,6 @@ export default function ChannelsPage() {
                     <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border ${c.status === "connected" ? "text-green-400 bg-green-500/10 border-green-500/20" : "border-[var(--color-border)] text-[var(--color-fg-muted)]"}`}>
                       {c.status}
                     </span>
-                    {c.type === "whatsapp_waha" && (
-                      <>
-                        <span
-                          className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full border flex items-center gap-1 text-amber-400 bg-amber-500/10 border-amber-500/20"
-
-                          title="WAHA accepts unsigned webhooks by default. Click Webhook setup to harden."
-                        >
-                          <ShieldAlert size={10} />
-
-                          Unsigned by default
-                        </span>
-                        <Button variant="outline" size="sm" onClick={() => handleShowQr(c.id)}>
-                          <QrCode size={12} /> QR Code
-                        </Button>
-                      </>
-                    )}
                     {c.type === "whatsapp_baileys" && (
                         <Button variant="outline" size="sm" onClick={() => handleShowQrBaileys(c.id)}>
                             <QrCode size={12} /> QR Code
