@@ -83,6 +83,7 @@ backend/scripts/test_vector_search.py
 backend/scripts/test_memory_store.py
 frontend/test_login.html
 frontend/public/debug_login.html
+.freedebuff/*
 # Project specific
 .idx/
 common-main/

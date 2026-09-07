@@ -104,6 +104,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.5.1",
     "jest-environment-jsdom": "^30.5.1",
+    "normalize-path": "^3.0.0",
     "tailwindcss": "^4",
     "typescript": "^6",
     "wait-on": "^9.0.10"
