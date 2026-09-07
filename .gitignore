@@ -89,6 +89,7 @@ common-main/
 
 # Logs
 *.log
+*.err
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -120,3 +121,6 @@ RCF-AUDIT-REPORT.json
 frontend/coverage
 backend/native/wrt-validate
 backend/native/wrt-edit
+*whatsapp_auth*
+.DS_Store
+backend/whatsapp_bridge/node_modules/

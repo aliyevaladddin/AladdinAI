@@ -16,6 +16,8 @@ async def test_channel_connection(channel: MessagingChannel) -> tuple[bool, str]
         return await _test_whatsapp(channel)
     elif channel.type == "whatsapp_waha":
         return await _test_waha(channel)
+    elif channel.type == "whatsapp_baileys":
+        return await _test_whatsapp_baileys(channel)
     elif channel.type == "sms":
         return True, "SMS (Twilio) — verify in Twilio dashboard"
     return False, f"Unknown channel type: {channel.type}"
@@ -135,6 +137,34 @@ def parse_whatsapp_message(payload: dict) -> tuple[str, str, str]:
     name = contacts[0].get("profile", {}).get("name", "") if contacts else ""
     return msg.get("from", ""), name, msg.get("text", {}).get("body", "")
 
+
+
+# [RCF:PROTECTED]
+def parse_whatsapp_baileys(payload: dict) -> tuple[str, str, str]:
+    """Returns (sender_phone, sender_name, text)"""
+    return payload.get("sender_id", ""), payload.get("sender_name", ""), payload.get("text", "")
+
+
+# [RCF:PROTECTED]
+async def _test_whatsapp_baileys(channel: MessagingChannel) -> tuple[bool, str]:
+    """Real health check: ping the channel's bridge daemon, starting it if needed."""
+    from app.services import whatsapp_bridge
+
+    if await whatsapp_bridge.ping(channel.id):
+        return True, "WhatsApp (Baileys) bridge connected"
+    if await whatsapp_bridge.ensure_bridge(channel, timeout=8.0):
+        return True, "WhatsApp (Baileys) bridge started"
+    return False, "WhatsApp (Baileys) bridge did not start — check backend/whatsapp_bridge/bridge.err"
+
+
+# [RCF:PROTECTED]
+async def send_whatsapp_baileys(channel: MessagingChannel, to_phone: str, text: str):
+    from app.services import whatsapp_bridge
+
+    return await whatsapp_bridge.send_command(
+        {"type": "send-message", "to": to_phone, "text": text},
+        channel,
+    )
 
 # [RCF:PROTECTED]
 def parse_sms_message(payload: dict) -> tuple[str, str, str]:

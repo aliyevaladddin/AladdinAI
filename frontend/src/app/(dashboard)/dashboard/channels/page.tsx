@@ -28,7 +28,7 @@ interface Agent {
   id: number; name: string; role: string; model: string;
 }
 
-const CHANNEL_TYPES = ["telegram", "whatsapp", "whatsapp_waha", "sms"];
+const CHANNEL_TYPES = ["telegram", "whatsapp", "whatsapp_baileys", "whatsapp_waha", "sms"];
 
 /* ── Page ────────────────────────────────────────────────────────── */
 export default function ChannelsPage() {
@@ -53,9 +53,10 @@ export default function ChannelsPage() {
   const [showChannelForm, setShowChannelForm] = useState(false);
   const [channelForm, setChannelForm] = useState({
     type: "telegram", name: "", bot_token: "", access_token: "",
-    phone_number_id: "", twilio_sid: "", twilio_token: "", twilio_phone: "",
+    phone_number_id: "", app_secret: "",
+    twilio_sid: "", twilio_token: "", twilio_phone: "",
     waha_url: "", waha_session: "default", waha_api_key: "",
-    agent_id: "" as string,   // "" = no agent bound; otherwise the agent id
+    agent_id: "" as string,
   });
 
   const [qrModal, setQrModal] = useState<{ open: boolean; image: string | null; loading: boolean, error: string | null }>({ open: false, image: null, loading: false, error: null });
@@ -175,7 +176,14 @@ export default function ChannelsPage() {
     e.preventDefault();
     const config: Record<string, string> = {};
     if (channelForm.type === "telegram") config.bot_token = channelForm.bot_token;
-    if (channelForm.type === "whatsapp") { config.access_token = channelForm.access_token; config.phone_number_id = channelForm.phone_number_id; }
+    if (channelForm.type === "whatsapp") {
+      config.access_token = channelForm.access_token;
+      config.phone_number_id = channelForm.phone_number_id;
+      config.app_secret = channelForm.app_secret;
+    }
+    if (channelForm.type === "whatsapp_baileys") {
+        // No config needed for Baileys yet, handled locally
+    }
     if (channelForm.type === "whatsapp_waha") { config.waha_url = channelForm.waha_url; config.waha_session = channelForm.waha_session; config.waha_api_key = channelForm.waha_api_key; }
     if (channelForm.type === "sms") { config.twilio_sid = channelForm.twilio_sid; config.twilio_token = channelForm.twilio_token; config.twilio_phone = channelForm.twilio_phone; }
     await api.post("/channels/messaging", {
@@ -240,6 +248,36 @@ export default function ChannelsPage() {
       const msg = e instanceof Error ? e.message : String(e);
       setQrModal({ open: true, image: null, loading: false, error: msg || "Error fetching QR" });
     }
+  };
+
+  const handleShowQrBaileys = async (id: number) => {
+    setQrModal({ open: true, image: null, loading: true, error: null });
+
+    const pollQr = async () => {
+      try {
+        const res = await api.get<{ status: string; image?: string; message?: string }>(`/channels/messaging/${id}/baileys/qr`);
+        if (res.status === "qr" && res.image) {
+          setQrModal({ open: true, image: res.image, loading: false, error: null });
+          return true;
+        }
+        return false;
+      } catch (e: unknown) {
+        return false;
+      }
+    };
+
+    // Immediate attempt
+    const success = await pollQr();
+    if (success) return;
+
+    // Polling
+    const interval = setInterval(async () => {
+        const success = await pollQr();
+        if (success) clearInterval(interval);
+    }, 2000);
+
+    // Stop polling when modal closes
+    // Actually, simple setInterval is fine here, it will just keep running or we can stop it if need be but user closing modal just hides the UI.
   };
 
 
@@ -598,6 +636,11 @@ export default function ChannelsPage() {
                           <QrCode size={12} /> QR Code
                         </Button>
                       </>
+                    )}
+                    {c.type === "whatsapp_baileys" && (
+                        <Button variant="outline" size="sm" onClick={() => handleShowQrBaileys(c.id)}>
+                            <QrCode size={12} /> QR Code
+                        </Button>
                     )}
                     <Button variant="outline" size="sm" onClick={() => handleTestChannel(c.id)} disabled={testing[c.id]}>
                       {testing[c.id] ? <Loader2 size={12} className="animate-spin" /> : <PlugZap size={12} />}
