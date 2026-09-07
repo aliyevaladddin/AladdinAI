@@ -201,6 +201,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update lockfile dependencies ([4c7c05f](https://github.com/aliyevaladddin/AladdinAI/commit/4c7c05fe05b550a13d61bbd5d78448f2687a7eda))
 
+- Update changelog [skip ci] (#841) ([95bc82d](https://github.com/aliyevaladddin/AladdinAI/commit/95bc82d3389ced2a32558f7c8833d32c96589c82))
+
 
 ### Refactor
 
