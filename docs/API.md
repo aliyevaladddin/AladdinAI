@@ -1352,6 +1352,37 @@ Disconnect Provider
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/providers/{provider_id}/models/{model_id}/ping
+
+#### POST
+##### Summary:
+
+Ping Model
+
+##### Description:
+
+Perform a quick health check on a specific model.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| provider_id | path |  | Yes | integer |
+| model_id | path |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/providers/{provider_id}
 
 #### PUT
@@ -1811,6 +1842,32 @@ essential for production deployments.
 ##### Summary:
 
 Get Waha Qr
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| channel_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/channels/messaging/{channel_id}/baileys/qr
+
+#### GET
+##### Summary:
+
+Get Baileys Qr
 
 ##### Parameters
 
@@ -3663,6 +3720,26 @@ Whatsapp Webhook
 ##### Summary:
 
 Waha Webhook
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| channel_id | path |  | Yes | integer |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+### /api/webhooks/whatsapp_baileys/{channel_id}
+
+#### POST
+##### Summary:
+
+Whatsapp Baileys Webhook
 
 ##### Parameters
 
