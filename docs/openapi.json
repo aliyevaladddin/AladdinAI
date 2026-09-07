@@ -2594,6 +2594,61 @@
         }
       }
     },
+    "/api/providers/{provider_id}/models/{model_id}/ping": {
+      "post": {
+        "tags": [
+          "providers"
+        ],
+        "summary": "Ping Model",
+        "description": "Perform a quick health check on a specific model.",
+        "operationId": "ping_model_api_providers__provider_id__models__model_id__ping_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Provider Id"
+            }
+          },
+          {
+            "name": "model_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/providers/{provider_id}": {
       "put": {
         "tags": [
@@ -3343,6 +3398,51 @@
         ],
         "summary": "Get Waha Qr",
         "operationId": "get_waha_qr_api_channels_messaging__channel_id__waha_qr_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Channel Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/channels/messaging/{channel_id}/baileys/qr": {
+      "get": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "Get Baileys Qr",
+        "operationId": "get_baileys_qr_api_channels_messaging__channel_id__baileys_qr_get",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -7029,6 +7129,46 @@
         ],
         "summary": "Waha Webhook",
         "operationId": "waha_webhook_api_webhooks_whatsapp_waha__channel_id__post",
+        "parameters": [
+          {
+            "name": "channel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Channel Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/whatsapp_baileys/{channel_id}": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Whatsapp Baileys Webhook",
+        "operationId": "whatsapp_baileys_webhook_api_webhooks_whatsapp_baileys__channel_id__post",
         "parameters": [
           {
             "name": "channel_id",
