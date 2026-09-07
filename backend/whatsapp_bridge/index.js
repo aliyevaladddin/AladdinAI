@@ -34,6 +34,47 @@ const WEBHOOK_SECRET = process.env.BRIDGE_WEBHOOK_SECRET || '';
 const AUTH_DIR = path.join(__dirname, `whatsapp_auth_${CHANNEL_ID}`);
 const RECONNECT_DELAY_MS = 3000;
 
+// Silence watchdog: Baileys sometimes keeps the TCP session alive while the
+// logical WhatsApp connection is dead (no frames, no messages). Track both
+// signals separately — reconnect only when the transport is truly silent.
+// Any inbound event (frames, messages) counts as activity.
+const WATCHDOG_SILENCE_MS = 5 * 60 * 1000; // 5 min without any activity
+let lastActivityAt = Date.now();
+let watchdogTimer = null;
+
+function touchActivity() {
+    lastActivityAt = Date.now();
+}
+
+function startWatchdog() {
+    stopWatchdog();
+    watchdogTimer = setInterval(() => {
+        const silentFor = Date.now() - lastActivityAt;
+        if (silentFor > WATCHDOG_SILENCE_MS) {
+            console.log(`[Bridge] Watchdog: no activity for ${Math.round(silentFor / 1000)}s — forcing reconnect`);
+            touchActivity(); // avoid re-triggering while we tear down
+            if (waSock) {
+                try { waSock.end(undefined); } catch { /* already dead */ }
+            }
+            // 'connection.update' with close will fire and schedule the real
+            // reconnect with backoff; if it doesn't, schedule one ourselves.
+            if (!reconnectTimer) {
+                reconnectTimer = setTimeout(() => {
+                    reconnectTimer = null;
+                    startWA().catch((e) => console.error('[Bridge] watchdog reconnect failed', e.message));
+                }, RECONNECT_DELAY_MS);
+            }
+        }
+    }, 60 * 1000);
+}
+
+function stopWatchdog() {
+    if (watchdogTimer) {
+        clearInterval(watchdogTimer);
+        watchdogTimer = null;
+    }
+}
+
 let waSock = null;
 let latestQr = null;
 let reconnectTimer = null;
@@ -73,20 +114,36 @@ async function startWA() {
     waSock.ev.on('creds.update', saveCreds);
 
     waSock.ev.on('messages.upsert', async (m) => {
+        touchActivity();
         if (m.type !== 'notify') return;
         for (const msg of m.messages) {
             if (msg.key.fromMe) continue;
             const senderId = msg.key.remoteJid;
             // Groups are not handled yet — never auto-reply into them.
-            if (senderId.endsWith('@g.us')) continue;
+            // Status/broadcast chats are never handled — skip them too.
+            if (
+                senderId.endsWith('@g.us') ||
+                senderId === 'status@broadcast' ||
+                senderId.endsWith('@broadcast') ||
+                senderId.endsWith('@newsletter')
+            ) {
+                continue;
+            }
             const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text;
             if (!text) continue; // media/sticker messages are skipped for now
             await forwardToBackend(senderId, msg.pushName || 'WhatsApp User', text);
         }
     });
 
+    // Any other WhatsApp event also proves the transport is alive.
+    waSock.ev.on('messages.update', touchActivity);
+    waSock.ev.on('presence.update', touchActivity);
+    waSock.ev.on('groups.upsert', touchActivity);
+    waSock.ev.on('group-participants.update', touchActivity);
+
     waSock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
+        touchActivity();
         console.log(`[Bridge] Connection update: ${connection}, QR present: ${!!qr}`);
         if (qr) {
             QRCode.toDataURL(qr)
@@ -99,6 +156,7 @@ async function startWA() {
             const code = lastDisconnect?.error?.output?.statusCode;
             if (code === DisconnectReason.loggedOut) {
                 console.log('[Bridge] Logged out — not reconnecting. Remove', AUTH_DIR, 'to re-pair.');
+                stopWatchdog();
                 return;
             }
             if (!reconnectTimer) {
@@ -109,6 +167,8 @@ async function startWA() {
             }
         }
     });
+
+    startWatchdog();
 }
 
 async function handleLine(socket, line) {
