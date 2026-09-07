@@ -185,6 +185,26 @@ def _verify_waha(channel: MessagingChannel, request: Request, raw_body: bytes) -
 
 
 # [RCF:PROTECTED]
+def _verify_whatsapp_baileys(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
+    """Internal Baileys bridge webhook.
+
+    The local Node daemon signs every post with the channel's webhook_secret
+    in the X-Bridge-Secret header. When the channel has a secret the check is
+    strict; without one we accept but warn — the endpoint would otherwise be
+    open to anyone who can reach the backend (message injection + replies
+    sent from the user's WhatsApp number)."""
+    if not channel.webhook_secret:
+        log.warning(
+            "baileys channel %s has no webhook_secret — accepting unsigned request; "
+            "open the QR page once to bind the secret to the bridge",
+            channel.id,
+        )
+        return True
+    sent = request.headers.get("X-Bridge-Secret", "")
+    return hmac.compare_digest(sent, channel.webhook_secret)
+
+
+# [RCF:PROTECTED]
 def _verify_twilio(channel: MessagingChannel, request: Request, raw_body: bytes) -> bool:
 # [RCF:PROTECTED]
     """Twilio signs requests with HMAC-SHA1 (base64) over the full URL
@@ -246,6 +266,7 @@ _VERIFIERS = {
     "telegram": _verify_telegram,
     "whatsapp": _verify_whatsapp_cloud,
     "whatsapp_waha": _verify_waha,
+    "whatsapp_baileys": _verify_whatsapp_baileys,
     "sms": _verify_sms,
 }
 
@@ -332,6 +353,18 @@ async def waha_webhook(channel_id: int, request: Request, background_tasks: Back
 
     from app.services.orchestrator import handle_incoming_message
     background_tasks.add_task(handle_incoming_message, channel, "whatsapp_waha", payload)
+    return {"status": "ok"}
+
+
+# [RCF:PROTECTED]
+@router.post("/whatsapp_baileys/{channel_id}")
+# [RCF:PROTECTED]
+async def whatsapp_baileys_webhook(channel_id: int, request: Request, background_tasks: BackgroundTasks):
+    channel, raw_body = await _authorize_channel(channel_id, "whatsapp_baileys", request)
+    payload = _safe_json(raw_body)
+
+    from app.services.orchestrator import handle_incoming_message
+    background_tasks.add_task(handle_incoming_message, channel, "whatsapp_baileys", payload)
     return {"status": "ok"}
 
 

@@ -22,7 +22,7 @@ export function AgentExtractionPanel({
   providerId: number | null;
 }) {
   const [cfg, setCfg] = useState<ExtractionConfig | null>(null);
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<{id: string, type: string, is_supported: boolean}[]>([]);
   const [saving, setSaving] = useState(false);
   const [maxFactsDraft, setMaxFactsDraft] = useState<string>("5");
 
@@ -40,11 +40,11 @@ export function AgentExtractionPanel({
       }
       if (providerId) {
         try {
-          const r = await api.get<{ models: string[] }>(
+          const r = await api.get<{ models: {id: string, type: string, is_supported: boolean}[] }>(
             `/providers/${providerId}/models`,
           );
           if (cancelled) return;
-          setModels(Array.from(new Set(r.models || [])));
+          setModels(r.models || []);
         } catch (e) {
           console.error(e);
         }
@@ -188,8 +188,8 @@ export function AgentExtractionPanel({
           >
             <option value="">— use agent's main model —</option>
             {models.map((m) => (
-              <option key={m} value={m}>
-                {m}
+              <option key={m.id} value={m.id} disabled={!m.is_supported}>
+                {m.id} {m.is_supported ? "" : `(${m.type})`}
               </option>
             ))}
           </select>

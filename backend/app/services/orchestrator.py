@@ -18,6 +18,8 @@ from app.services.messaging_service import (
     send_sms,
     send_telegram,
     send_whatsapp,
+    send_whatsapp_baileys,
+    parse_whatsapp_baileys,
 )
 
 log = logging.getLogger(__name__)
@@ -54,6 +56,9 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
         is_phone = False
     elif channel_type == "whatsapp":
         sender_id, sender_name, text = parse_whatsapp_message(payload)
+        is_phone = True
+    elif channel_type == "whatsapp_baileys":
+        sender_id, sender_name, text = parse_whatsapp_baileys(payload)
         is_phone = True
     elif channel_type == "whatsapp_waha":
         from app.services.messaging_service import parse_waha_message
@@ -225,6 +230,10 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
         # flush here unless a future channel adopts the queue pattern.
     elif channel_type == "whatsapp":
         await send_whatsapp(channel, sender_id, reply)
+    elif channel_type == "whatsapp_baileys":
+        res = await send_whatsapp_baileys(channel, sender_id, reply)
+        if isinstance(res, dict) and res.get("type") == "error":
+            log.error("orchestrator: baileys send failed for channel %s: %s", channel.id, res)
     elif channel_type == "whatsapp_waha":
         from app.services.messaging_service import send_waha
         await send_waha(channel, sender_id, reply)

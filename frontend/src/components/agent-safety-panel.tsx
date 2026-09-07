@@ -59,7 +59,7 @@ export function AgentSafetyPanel({
   providerId: number | null;
 }) {
   const [cfg, setCfg] = useState<SafetyConfig | null>(null);
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<{id: string, type: string, is_supported: boolean}[]>([]);
   const [saving, setSaving] = useState(false);
   const [blockDraft, setBlockDraft] = useState("");
   const [showLog, setShowLog] = useState(false);
@@ -80,12 +80,12 @@ export function AgentSafetyPanel({
       }
       if (providerId) {
         try {
-          const r = await api.get<{ models: string[] }>(
+          const r = await api.get<{ models: {id: string, type: string, is_supported: boolean}[] }>(
             `/providers/${providerId}/models`,
           );
           if (cancelled) return;
           // De-duplicate models to avoid React 'same key' warning
-          const uniqueModels = Array.from(new Set(r.models || []));
+          const uniqueModels = Array.from(new Set(r.models.map(m => m.id))).map(id => r.models.find(m => m.id === id)!);
           setModels(uniqueModels);
         } catch (e) {
           console.error(e);
@@ -269,8 +269,8 @@ export function AgentSafetyPanel({
         >
           <option value="">— none —</option>
           {models.map((m) => (
-            <option key={m} value={m}>
-              {m}
+            <option key={m.id} value={m.id} disabled={!m.is_supported}>
+              {m.id} {m.is_supported ? "" : `(${m.type})`}
             </option>
           ))}
         </select>
@@ -333,8 +333,8 @@ export function AgentSafetyPanel({
                   — use default ({cfg.default_safety_model ?? "none"}) —
                 </option>
                 {models.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
+                  <option key={m.id} value={m.id} disabled={!m.is_supported}>
+                    {m.id} {m.is_supported ? "" : `(${m.type})`}
                   </option>
                 ))}
               </select>

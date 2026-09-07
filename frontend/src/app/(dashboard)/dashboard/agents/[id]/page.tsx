@@ -12,6 +12,7 @@ import { AgentMemoryPanel } from "@/components/agent-memory-panel";
 import { AgentActivityTab } from "@/components/agent-activity-tab";
 import { AgentTracesPanel } from "@/components/agent-traces-panel";
 import { AgentMcpPanel } from "@/components/agent-mcp-panel";
+import { ModelSelectionDrawer } from "@/components/model-selection-drawer";
 import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 import { ArrowLeft, Bot, Shield, Database, Activity, ListTree, Lock, Zap, Check, X, Pencil, Wrench } from "lucide-react";
 import Link from "next/link";
@@ -200,8 +201,9 @@ function BaseModelField({
   onSaved: () => void | Promise<void>;
 }) {
   const [editing, setEditing] = useState(false);
+  const [showDrawer, setShowDrawer] = useState(false);
   const [selected, setSelected] = useState(agent.model);
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<{id: string, type: string, is_supported: boolean}[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -215,10 +217,10 @@ function BaseModelField({
     let cancelled = false;
     setLoadingModels(true);
     api
-      .get<{ models: string[] }>(`/providers/${agent.llm_provider_id}/models`)
+      .get<{ models: {id: string, type: string, is_supported: boolean}[] }>(`/providers/${agent.llm_provider_id}/models`)
       .then((r) => {
         if (cancelled) return;
-        setModels(Array.from(new Set(r.models || [])));
+        setModels(r.models || []);
       })
       .catch((e) => !cancelled && console.error(e))
       .finally(() => !cancelled && setLoadingModels(false));
@@ -273,6 +275,24 @@ function BaseModelField({
           </button>
         </div>
         <p className="text-sm font-mono mt-1">{agent.model}</p>
+
+        {/* Integration point */}
+        <Button size="sm" className="mt-2" onClick={() => setShowDrawer(true)}>
+          Browse / Ping Models
+        </Button>
+        {showDrawer && (
+          <ModelSelectionDrawer
+            agentId={agent.id}
+            providerId={agent.llm_provider_id}
+            currentModel={selected}
+            onSelect={(m) => {
+              setSelected(m);
+              setShowDrawer(false);
+            }}
+            onClose={() => setShowDrawer(false)}
+          />
+        )}
+
         {isVisionModel(agent.model) && (
           <p className="text-[11px] text-warning mt-1">
             Vision model — tool calls disabled. Switch to a text model for full
@@ -293,13 +313,14 @@ function BaseModelField({
         disabled={loadingModels || saving}
         className="w-full text-sm font-mono rounded-md border border-input bg-background px-2 py-1.5"
       >
-        {!models.includes(selected) && (
+        {!models.find(m => m.id === selected) && (
           <option value={selected}>{selected} (current)</option>
         )}
         {models.map((m) => (
-          <option key={m} value={m}>
-            {m}
-            {isVisionModel(m) ? " — vision (no tools)" : ""}
+          <option key={m.id} value={m.id} disabled={!m.is_supported}>
+            {m.id}
+            {isVisionModel(m.id) ? " — vision (no tools)" : ""}
+            {m.is_supported ? "" : ` (${m.type})`}
           </option>
         ))}
       </select>

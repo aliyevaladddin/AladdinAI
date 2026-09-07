@@ -18,7 +18,7 @@ interface Provider {
 export default function NewAgentPage() {
   const router = useRouter();
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<{id: string, type: string, is_supported: boolean}[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsHint, setModelsHint] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -48,10 +48,8 @@ export default function NewAgentPage() {
 
     setModelsLoading(true);
     try {
-      const res = await api.get<{ models: string[]; hint?: string }>(`/providers/${providerId}/models`);
-      // De-duplicate models to avoid React 'same key' warning
-      const uniqueModels = Array.from(new Set(res.models));
-      setModels(uniqueModels);
+      const res = await api.get<{ models: {id: string, type: string, is_supported: boolean}[]; hint?: string }>(`/providers/${providerId}/models`);
+      setModels(res.models || []);
       if (res.hint) setModelsHint(res.hint);
     } catch {
       setModelsHint("Failed to load models. Try connecting the provider first.");
@@ -152,7 +150,9 @@ export default function NewAgentPage() {
             >
               <option value="">Select model...</option>
               {models.map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m.id} value={m.id} disabled={!m.is_supported}>
+                  {m.id} {m.is_supported ? "" : `(${m.type})`}
+                </option>
               ))}
             </select>
           ) : (

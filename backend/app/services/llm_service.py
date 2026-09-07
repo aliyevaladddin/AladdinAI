@@ -274,6 +274,10 @@ async def _openai_compatible(
             payload["tool_choice"] = tool_choice
 
     url = f"{base_url.rstrip('/')}/v1/chat/completions"
+    log.error("LLM request to URL: %s", url)
+    if "localhost" in url or "127.0.0.1" in url:
+        log.error("CRITICAL: LLM request to internal URL: %s", url)
+
 
     if on_token:
         import json
