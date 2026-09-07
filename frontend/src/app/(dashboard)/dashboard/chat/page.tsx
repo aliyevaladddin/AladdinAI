@@ -25,7 +25,7 @@ import { ChatMessageItem, Message, Attachment } from "./ChatMessageItem";
 // Stable client-side ids for optimistic messages (no server id yet). Keys built
 // from these stay stable across stream frames, so React can reuse DOM nodes.
 let clientMsgSeq = 0;
-const nextClientId = (): string => `c-${++clientMsgSeq}`;
+const nextClientId = (): string => `c-${Date.now()}-${++clientMsgSeq}`;
 
 export default function ChatPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -786,7 +786,7 @@ export default function ChatPage() {
                 ) : (
                   messages.map((msg, i) => (
                     <ChatMessageItem
-                      key={msg.clientId ?? msg.id ?? i}
+                      key={msg.id ? `msg-${msg.id}-${i}` : msg.clientId ? `cli-${msg.clientId}-${i}` : `idx-${i}`}
                       msg={msg}
                       index={i}
                       isLast={i === messages.length - 1}

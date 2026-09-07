@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { CustomModelSelect } from "@/components/ui/custom-model-select";
 
 
 interface Provider {
@@ -142,19 +143,12 @@ export default function NewAgentPage() {
               Loading models...
             </div>
           ) : models.length > 0 ? (
-            <select
+            <CustomModelSelect
               value={form.model}
-              onChange={(e) => setForm({ ...form, model: e.target.value })}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              required
-            >
-              <option value="">Select model...</option>
-              {models.map((m) => (
-                <option key={m.id} value={m.id} disabled={!m.is_supported}>
-                  {m.id} {m.is_supported ? "" : `(${m.type})`}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setForm({ ...form, model: val })}
+              models={models}
+              placeholder="Select model..."
+            />
           ) : (
             <>
               <input

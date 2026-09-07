@@ -14,9 +14,110 @@ import {
   Shield,
   Zap,
   RotateCw,
+  Brain,
+  ChevronDown,
+  CheckCircle2,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { AuthAttachment } from "./AuthAttachment";
+
+const ThoughtProcessSection = React.memo(function ThoughtProcessSection({
+  thoughts,
+  isStreaming,
+}: {
+  thoughts: string[];
+  isStreaming: boolean;
+}) {
+  const [isOpen, setIsOpen] = React.useState(isStreaming);
+
+  // Keep open while streaming or if user hasn't explicitly collapsed
+  React.useEffect(() => {
+    if (isStreaming) {
+      setIsOpen(true);
+    }
+  }, [isStreaming, thoughts.length]);
+
+  if (!thoughts || thoughts.length === 0) return null;
+
+  return (
+    <div className="mb-3.5 rounded-xl border border-primary/25 bg-card/90 dark:bg-slate-900/60 backdrop-blur-md shadow-sm transition-all overflow-hidden font-sans group/thought">
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full px-3.5 py-2.5 flex items-center justify-between text-xs select-none bg-muted/40 hover:bg-muted/70 dark:bg-muted/20 dark:hover:bg-muted/40 transition-all cursor-pointer border-b border-transparent group-aria-expanded:border-border/40"
+        aria-expanded={isOpen}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className={`relative flex items-center justify-center w-6 h-6 rounded-lg transition-colors ${
+            isStreaming
+              ? "bg-primary/20 text-primary border border-primary/30"
+              : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
+          }`}>
+            {isStreaming ? (
+              <Brain size={14} className="animate-pulse text-primary" />
+            ) : (
+              <Sparkles size={14} className="text-emerald-500" />
+            )}
+            {isStreaming && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary animate-ping" />
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-foreground tracking-tight text-[12.5px]">
+              {isStreaming ? "Thinking..." : "Thought Process"}
+            </span>
+            {isStreaming && (
+              <span className="inline-flex gap-1 items-center ml-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+              </span>
+            )}
+          </div>
+
+          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10.5px] font-mono border border-primary/20 font-medium">
+            {thoughts.length} {thoughts.length === 1 ? "step" : "steps"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground group-hover/thought:text-foreground transition-colors font-medium">
+          <span>{isOpen ? "Hide" : "Show"}</span>
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-200 ${isOpen ? "rotate-180 text-foreground" : "rotate-0"}`}
+          />
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="px-4 py-3 font-sans border-t border-border/40 bg-background/30 dark:bg-black/20 text-xs">
+          <div className="relative pl-3.5 space-y-2.5 border-l-2 border-primary/20 dark:border-primary/30 ml-1">
+            {thoughts.map((t, idx) => {
+              const isLastStep = idx === thoughts.length - 1;
+              const stepActive = isStreaming && isLastStep;
+              return (
+                <div key={idx} className="relative flex items-start gap-2.5 group/step">
+                  {/* Timeline node */}
+                  <span
+                    className={`absolute -left-[20.5px] top-1 w-2.5 h-2.5 rounded-full border transition-all ${
+                      stepActive
+                        ? "bg-primary border-primary ring-4 ring-primary/25 animate-pulse"
+                        : "bg-emerald-500/90 border-emerald-400/60 shadow-xs"
+                    }`}
+                  />
+                  <div className="flex-1 text-foreground/90 leading-relaxed break-words text-[12px] font-medium">
+                    {t}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
 
 export interface Attachment {
   filename: string;
@@ -222,8 +323,11 @@ export const ChatMessageItem = React.memo(function ChatMessageItem({
   // Heavy parsing is memoized per message content so a stream frame only
   // re-parses the message whose text actually changed.
   const parsedContent = useMemo(() => parseThoughtsAndCleanText(msg.content || ""), [msg.content]);
-  const displayThoughts =
-    msg.thoughts && msg.thoughts.length > 0 ? msg.thoughts : parsedContent.thoughts;
+  const displayThoughts = useMemo(() => {
+    const combined = [...(msg.thoughts || []), ...parsedContent.thoughts];
+    const unique = combined.filter((item, index) => combined.indexOf(item) === index && Boolean(item.trim()));
+    return unique;
+  }, [msg.thoughts, parsedContent.thoughts]);
   const cleanText = msg.role === "user" ? msg.content || "" : parsedContent.cleanText;
   const markdownParts = useMemo(() => parseMarkdownTables(cleanText || ""), [cleanText]);
 
@@ -324,26 +428,10 @@ export const ChatMessageItem = React.memo(function ChatMessageItem({
             )}
             <>
                   {msg.role === "assistant" && displayThoughts.length > 0 && (
-                    <details className="mb-3.5 rounded-xl border border-border/80 bg-card/90 dark:bg-muted/30 text-xs overflow-hidden group shadow-sm transition-all">
-                      <summary className="px-3.5 py-2 cursor-pointer font-mono text-[11px] text-muted-foreground hover:text-foreground flex items-center justify-between select-none bg-muted/50 hover:bg-muted/80 transition-colors">
-                        <span className="flex items-center gap-2 font-medium">
-                          <Sparkles size={13} className="text-primary" />
-                          <span className="font-sans font-semibold text-foreground">Thought Process</span>
-                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-mono border border-primary/20">
-                            {displayThoughts.length} step{displayThoughts.length > 1 ? "s" : ""}
-                          </span>
-                        </span>
-                        <span className="text-[10px] text-muted-foreground group-open:rotate-180 transition-transform">▼</span>
-                      </summary>
-                      <div className="px-3.5 pb-3 pt-2.5 space-y-1.5 font-mono border-t border-border/50 bg-background/50 text-[11px]">
-                        {displayThoughts.map((t, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-muted-foreground leading-relaxed">
-                            <span className="text-emerald-500 dark:text-emerald-400 font-bold text-[10px] mt-0.5">✓</span>
-                            <span className="break-words text-foreground/90">{t}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </details>
+                    <ThoughtProcessSection
+                      thoughts={displayThoughts}
+                      isStreaming={assistantStreaming && isLast}
+                    />
                   )}
                   {(cleanText || msg.role === "assistant") && (
                     <div className={`prose prose-sm max-w-none relative ${msg.role === "user"
