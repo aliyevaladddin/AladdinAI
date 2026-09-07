@@ -132,7 +132,10 @@ async def test_http_get_redirect_to_private_is_blocked(ctx: ToolContext, monkeyp
             return False
 
         async def get(self, url, headers=None):
-            if "public.example.com" in str(url):
+            import httpx
+
+            parsed_url = httpx.URL(str(url))
+            if parsed_url.host == "public.example.com":
                 return FakeResponse(302, {}, "http://169.254.169.254/latest/meta-data/")
             return FakeResponse(200, {"content-type": "text/plain"}, "")
 
