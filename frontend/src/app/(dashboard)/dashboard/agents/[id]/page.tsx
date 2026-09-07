@@ -13,6 +13,7 @@ import { AgentActivityTab } from "@/components/agent-activity-tab";
 import { AgentTracesPanel } from "@/components/agent-traces-panel";
 import { AgentMcpPanel } from "@/components/agent-mcp-panel";
 import { ModelSelectionDrawer } from "@/components/model-selection-drawer";
+import { CustomModelSelect } from "@/components/ui/custom-model-select";
 import { SegmentedTabs, type TabDef } from "@/components/ui/segmented-tabs";
 import { ArrowLeft, Bot, Shield, Database, Activity, ListTree, Lock, Zap, Check, X, Pencil, Wrench } from "lucide-react";
 import Link from "next/link";
@@ -307,23 +308,13 @@ function BaseModelField({
   return (
     <div>
       <p className="text-[11px] text-muted-foreground uppercase mb-2">Base Model</p>
-      <select
+      <CustomModelSelect
         value={selected}
-        onChange={(e) => setSelected(e.target.value)}
+        onChange={(val) => setSelected(val)}
+        models={models}
         disabled={loadingModels || saving}
-        className="w-full text-sm font-mono rounded-md border border-input bg-background px-2 py-1.5"
-      >
-        {!models.find(m => m.id === selected) && (
-          <option value={selected}>{selected} (current)</option>
-        )}
-        {models.map((m) => (
-          <option key={m.id} value={m.id} disabled={!m.is_supported}>
-            {m.id}
-            {isVisionModel(m.id) ? " — vision (no tools)" : ""}
-            {m.is_supported ? "" : ` (${m.type})`}
-          </option>
-        ))}
-      </select>
+        isVisionModel={isVisionModel}
+      />
       {isVisionModel(selected) && (
         <p className="text-[11px] text-warning mt-1">
           Vision models cannot call tools (analyze_image / send_image / delegate).

@@ -44,11 +44,15 @@ export default function MongoDBPage() {
 
 
   const handleTest = async (id: number) => {
-    const res = await api.post<{ status: string; message?: string }>(`/mongodb/${id}/test`);
-    const msg = res.message || res.status;
-    res.status === "ok" || res.status === "success" || res.status === "connected"
-      ? toast.success(msg)
-      : toast.error(msg);
+    try {
+      const res = await api.post<{ status: string; message?: string }>(`/mongodb/${id}/test`);
+      const msg = res.message || res.status;
+      res.status === "ok" || res.status === "success" || res.status === "connected"
+        ? toast.success(msg)
+        : toast.error(msg);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Connection test failed");
+    }
   };
 
 

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { CustomModelSelect } from "@/components/ui/custom-model-select";
 
 
 interface ExtractionConfig {
@@ -180,19 +181,13 @@ export function AgentExtractionPanel({
           <label className="block text-xs text-muted-foreground mb-1">
             Extraction model (leave empty to use the agent's main model)
           </label>
-          <select
-            className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
+          <CustomModelSelect
             value={cfg.model ?? ""}
-            onChange={(e) => setModel(e.target.value || null)}
+            onChange={(val) => setModel(val || null)}
+            models={models}
             disabled={!cfg.enabled}
-          >
-            <option value="">— use agent's main model —</option>
-            {models.map((m) => (
-              <option key={m.id} value={m.id} disabled={!m.is_supported}>
-                {m.id} {m.is_supported ? "" : `(${m.type})`}
-              </option>
-            ))}
-          </select>
+            noneLabel="— use agent's main model —"
+          />
         </div>
 
         <div>

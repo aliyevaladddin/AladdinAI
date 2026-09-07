@@ -31,10 +31,15 @@ export function MongoSettings() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.post("/mongodb", form);
-    setForm({ name: "", connection_string: "", db_name: "" });
-    setShowForm(false);
-    load();
+    try {
+      await api.post("/mongodb", form);
+      setForm({ name: "", connection_string: "", db_name: "" });
+      setShowForm(false);
+      load();
+      toast.success("MongoDB connection created");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to create connection");
+    }
   };
 
 
@@ -45,13 +50,18 @@ export function MongoSettings() {
 
 
   const handleSaveEdit = async (id: number) => {
-    await api.put(`/mongodb/${id}`, {
-      name: editForm.name,
-      db_name: editForm.db_name,
-      ...(editForm.connection_string ? { connection_string: editForm.connection_string } : {}),
-    });
-    setEditId(null);
-    load();
+    try {
+      await api.put(`/mongodb/${id}`, {
+        name: editForm.name,
+        db_name: editForm.db_name,
+        ...(editForm.connection_string ? { connection_string: editForm.connection_string } : {}),
+      });
+      setEditId(null);
+      load();
+      toast.success("Connection updated");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update connection");
+    }
   };
 
 
@@ -61,6 +71,8 @@ export function MongoSettings() {
       const res = await api.post<{ status: string; message?: string }>(`/mongodb/${id}/test`);
       const msg = res.message || res.status;
       ["ok", "success", "connected"].includes(res.status) ? toast.success(msg) : toast.error(msg);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Connection test failed");
     } finally {
       setTesting((p) => ({ ...p, [id]: false }));
     }
@@ -69,8 +81,13 @@ export function MongoSettings() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this connection?")) return;
-    await api.delete(`/mongodb/${id}`);
-    load();
+    try {
+      await api.delete(`/mongodb/${id}`);
+      load();
+      toast.success("Connection deleted");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete connection");
+    }
   };
 
   return (

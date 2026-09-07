@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { CustomModelSelect } from "@/components/ui/custom-model-select";
 
 
 interface CheckState {
@@ -262,18 +263,12 @@ export function AgentSafetyPanel({
         <label className="block text-xs text-muted-foreground mb-1">
           Default safety model (used when a check has no model selected)
         </label>
-        <select
-          className="w-full rounded border border-border bg-background px-2 py-1 text-sm"
+        <CustomModelSelect
           value={cfg.default_safety_model ?? ""}
-          onChange={(e) => setDefaultModel(e.target.value || null)}
-        >
-          <option value="">— none —</option>
-          {models.map((m) => (
-            <option key={m.id} value={m.id} disabled={!m.is_supported}>
-              {m.id} {m.is_supported ? "" : `(${m.type})`}
-            </option>
-          ))}
-        </select>
+          onChange={(val) => setDefaultModel(val || null)}
+          models={models}
+          noneLabel="— none —"
+        />
       </div>
 
       <div>
@@ -323,21 +318,13 @@ export function AgentSafetyPanel({
                   </div>
                 </label>
               </div>
-              <select
-                className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
+              <CustomModelSelect
                 value={state.model ?? ""}
-                onChange={(e) => setCheckModel(name, e.target.value || null)}
+                onChange={(val) => setCheckModel(name, val || null)}
+                models={models}
                 disabled={!state.enabled}
-              >
-                <option value="">
-                  — use default ({cfg.default_safety_model ?? "none"}) —
-                </option>
-                {models.map((m) => (
-                  <option key={m.id} value={m.id} disabled={!m.is_supported}>
-                    {m.id} {m.is_supported ? "" : `(${m.type})`}
-                  </option>
-                ))}
-              </select>
+                noneLabel={`— use default (${cfg.default_safety_model ?? "none"}) —`}
+              />
             </div>
           );
         })}
