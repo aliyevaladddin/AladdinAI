@@ -18,6 +18,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Clean up node_modules and update dependencies (#804) ([12600f2](https://github.com/aliyevaladddin/AladdinAI/commit/12600f23bec253d4580e08c798a0c178e9f8d679))
 
+- SSRF-gate agent HTTP tools, fail-closed webhooks, sandbox host-fallback guard (#845) ([08b01a4](https://github.com/aliyevaladddin/AladdinAI/commit/08b01a46db238e389da33635fcd16b35334508ba))
+
 
 ### CI
 
@@ -78,6 +80,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add WRT Editor comprehensive guide (#792) ([02c5774](https://github.com/aliyevaladddin/AladdinAI/commit/02c57749da7411468bad1c5948888d911386a0fb))
 
 - Update API documentation [skip ci] (#821) ([dea1b1f](https://github.com/aliyevaladddin/AladdinAI/commit/dea1b1ff5349a972c945031c33e73713f10ba4c3))
+
+- Update API documentation [skip ci] (#844) ([bb546a4](https://github.com/aliyevaladddin/AladdinAI/commit/bb546a4e156359ae938344b068ca4aeeeac62366))
 
 
 ### Features
@@ -200,6 +204,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump electron from 44.0.0 to 44.1.1 in /frontend (#814) ([83fbdb1](https://github.com/aliyevaladddin/AladdinAI/commit/83fbdb1f67e67abfc65be2c3cbb82b0cdfe7f9c8))
 
 - Update lockfile dependencies ([4c7c05f](https://github.com/aliyevaladddin/AladdinAI/commit/4c7c05fe05b550a13d61bbd5d78448f2687a7eda))
+
+- Update changelog [skip ci] (#841) ([95bc82d](https://github.com/aliyevaladddin/AladdinAI/commit/95bc82d3389ced2a32558f7c8833d32c96589c82))
 
 
 ### Refactor
