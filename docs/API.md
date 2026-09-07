@@ -1812,37 +1812,6 @@ Get Webhook Config
 
 Return the webhook URL, secret, and setup instructions for this channel.
 
-For self-hosted providers like WAHA, the secret must be configured
-on the provider side too — otherwise the channel runs unsigned and
-incoming requests are accepted with a warning. Knowing this is
-essential for production deployments.
-
-##### Parameters
-
-| Name | Located in | Description | Required | Schema |
-| ---- | ---------- | ----------- | -------- | ---- |
-| channel_id | path |  | Yes | integer |
-
-##### Responses
-
-| Code | Description |
-| ---- | ----------- |
-| 200 | Successful Response |
-| 422 | Validation Error |
-
-##### Security
-
-| Security Schema | Scopes |
-| --- | --- |
-| OAuth2PasswordBearer | |
-
-### /api/channels/messaging/{channel_id}/waha/qr
-
-#### GET
-##### Summary:
-
-Get Waha Qr
-
 ##### Parameters
 
 | Name | Located in | Description | Required | Schema |
@@ -3656,70 +3625,6 @@ URL and (when configured) the RCF signing straight from the settings UI.
 ##### Summary:
 
 Telegram Webhook
-
-##### Parameters
-
-| Name | Located in | Description | Required | Schema |
-| ---- | ---------- | ----------- | -------- | ---- |
-| channel_id | path |  | Yes | integer |
-
-##### Responses
-
-| Code | Description |
-| ---- | ----------- |
-| 200 | Successful Response |
-| 422 | Validation Error |
-
-### /api/webhooks/whatsapp/{channel_id}
-
-#### GET
-##### Summary:
-
-Verify Whatsapp Webhook
-
-##### Description:
-
-Meta verifies the webhook URL by calling GET with hub.verify_token —
-it must match `channel.webhook_secret`. No fallback: an unconfigured
-channel returns 503 instead of accepting a hardcoded value.
-
-##### Parameters
-
-| Name | Located in | Description | Required | Schema |
-| ---- | ---------- | ----------- | -------- | ---- |
-| channel_id | path |  | Yes | integer |
-
-##### Responses
-
-| Code | Description |
-| ---- | ----------- |
-| 200 | Successful Response |
-| 422 | Validation Error |
-
-#### POST
-##### Summary:
-
-Whatsapp Webhook
-
-##### Parameters
-
-| Name | Located in | Description | Required | Schema |
-| ---- | ---------- | ----------- | -------- | ---- |
-| channel_id | path |  | Yes | integer |
-
-##### Responses
-
-| Code | Description |
-| ---- | ----------- |
-| 200 | Successful Response |
-| 422 | Validation Error |
-
-### /api/webhooks/whatsapp_waha/{channel_id}
-
-#### POST
-##### Summary:
-
-Waha Webhook
 
 ##### Parameters
 
