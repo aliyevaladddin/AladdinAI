@@ -9,7 +9,8 @@ async def check_channel():
         c = result.scalar_one_or_none()
         if c:
             has_secret = bool(c.webhook_secret)
-            print(f"Channel {c.id}: type={c.type}, config={c.config}, secret_set={has_secret}")
+            secret_status = "set" if has_secret else "not_set"
+            print(f"Channel {c.id}: type={c.type}, secret_status={secret_status}")
         else:
             print("Channel 5 not found!")
 
