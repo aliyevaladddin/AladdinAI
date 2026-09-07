@@ -1,7 +1,7 @@
 # NOTICE: This file is protected under RCF-PL
 """SSRF protection for outbound HTTP calls to user-configured URLs.
 
-Some channel configs (notably WAHA's `waha_url`) come from the dashboard,
+Some channel configs (user-supplied URLs like a WAHA gateway URL) come from the dashboard,
 which means an authenticated tenant can point them at internal addresses
 like `http://169.254.169.254/...` (cloud metadata) or `http://10.x.x.x`
 (internal services) and have the backend fetch them on their behalf. If
@@ -25,10 +25,19 @@ from urllib.parse import urlparse
 from fastapi import HTTPException
 
 
+class UnsafeURLError(ValueError):
+    """Raised when a URL fails SSRF validation outside a FastAPI request.
+
+    Routers raise HTTPException(400) for the dashboard; agent tools convert
+    this into a tool-level error dict so the LLM sees a readable rejection
+    instead of a 500.
+    """
+
+
 _ALLOWED_SCHEMES = {"http", "https"}
 _ALLOW_LOCALHOST = os.getenv("ALLOW_LOCALHOST_URLS", "false").lower() == "true"
 # Allows private-network addresses (10.x, 172.16.x, 192.168.x) — useful when
-# WAHA / other self-hosted services run in a local Docker / OrbStack network.
+# self-hosted services run in a local Docker / OrbStack network.
 # Never enable in production.
 _ALLOW_PRIVATE = os.getenv("ALLOW_PRIVATE_URLS", "false").lower() == "true"
 if _ALLOW_LOCALHOST:
@@ -69,8 +78,8 @@ def _is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
 
 
 # [RCF:PROTECTED]
-def validate_external_url(url: str) -> None:
-    """Raise HTTPException(400) if `url` is unsafe to fetch from the backend.
+def _validate(url: str) -> None:
+    """Core SSRF check shared by the router and tool entry points.
 
     Rules:
       * scheme must be http or https
@@ -78,20 +87,20 @@ def validate_external_url(url: str) -> None:
       * every address the host resolves to must be a public, routable IP
     """
     if not url:
-        raise HTTPException(status_code=400, detail="URL is empty")
+        raise UnsafeURLError("URL is empty")
 
     parsed = urlparse(url)
     if parsed.scheme.lower() not in _ALLOWED_SCHEMES:
-        raise HTTPException(status_code=400, detail="URL scheme must be http or https")
+        raise UnsafeURLError("URL scheme must be http or https")
 
     host = parsed.hostname
     if not host:
-        raise HTTPException(status_code=400, detail="URL has no host")
+        raise UnsafeURLError("URL has no host")
 
     try:
         infos = socket.getaddrinfo(host, None)
     except socket.gaierror as exc:
-        raise HTTPException(status_code=400, detail=f"Cannot resolve host: {exc}") from exc
+        raise UnsafeURLError(f"Cannot resolve host: {exc}") from exc
 
     seen: set[str] = set()
     for info in infos:
@@ -103,9 +112,44 @@ def validate_external_url(url: str) -> None:
         try:
             ip = ipaddress.ip_address(raw_ip)
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Unparseable resolved address: {raw_ip}")
+            raise UnsafeURLError(f"Unparseable resolved address: {raw_ip}")
         if _is_blocked_ip(ip):
-            raise HTTPException(
-                status_code=400,
-                detail=f"URL host resolves to non-routable address ({raw_ip})",
+            raise UnsafeURLError(
+                f"URL host resolves to non-routable address ({raw_ip})"
             )
+
+
+# [RCF:PROTECTED]
+def validate_external_url(url: str) -> None:
+    """Raise HTTPException(400) if `url` is unsafe to fetch from the backend.
+
+    Router-facing wrapper: converts the core check into an HTTP 400. Use
+    :func:`assert_safe_agent_url` in agent tools instead — they run outside
+    the request/response cycle and must not raise HTTPException.
+    """
+    try:
+        _validate(url)
+    except UnsafeURLError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+# [RCF:PROTECTED]
+def assert_safe_agent_url(url: str) -> str:
+    """SSRF gate for agent tools (http_get/http_post/fetch_url).
+
+    Raises :class:`UnsafeURLError` when the URL targets a private, loopback,
+    link-local, multicast or otherwise non-routable address. Also blocks the
+    credentials-in-URL smell (user:pass@host) so agent-supplied URLs can't
+    smuggle secrets into logs. Dev overrides ALLOW_LOCALHOST_URLS /
+    ALLOW_PRIVATE_URLS still apply.
+
+    Returns the validated URL so callers can use the checked value.
+    """
+    try:
+        _validate(url)
+    except UnsafeURLError:
+        raise
+    parsed = urlparse(url)
+    if parsed.username or parsed.password:
+        raise UnsafeURLError("URL must not embed credentials (user:pass@host)")
+    return url

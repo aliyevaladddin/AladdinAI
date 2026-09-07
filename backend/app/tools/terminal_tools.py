@@ -282,6 +282,15 @@ async def run_approved_command(
         )
 
     # 2. Fallback: host subprocess under rlimits (no docker daemon available).
+    #    Fail closed in production: agent code must never run on the backend
+    #    host itself (network + filesystem + env would be exposed).
+    if not agent_sandbox.host_fallback_allowed():
+        return (
+            "Execution unavailable: the Docker sandbox is not reachable and "
+            "host fallback is disabled in production. Ensure the Docker daemon "
+            "is running (or set ALADDIN_ENV=dev for local development)."
+        )
+
     #    preexec_fn requires a real thread; run_in_executor avoids blocking the event loop.
     def _host_run():
         return subprocess.run(
@@ -291,6 +300,7 @@ async def run_approved_command(
             timeout=15,
             preexec_fn=set_rlimits,
             cwd="/workspaces/AladdinAI",
+            env=agent_sandbox.sanitized_host_env(),
             check=False,
         )
 

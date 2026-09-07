@@ -132,13 +132,7 @@ async def delete_channel(channel_id: int, user: User = Depends(get_current_user)
 @router.get("/{channel_id}/webhook-config")
 # [RCF:PROTECTED]
 async def get_webhook_config(channel_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    """Return the webhook URL, secret, and setup instructions for this channel.
-
-    For self-hosted providers like WAHA, the secret must be configured
-    on the provider side too — otherwise the channel runs unsigned and
-    incoming requests are accepted with a warning. Knowing this is
-    essential for production deployments.
-    """
+    """Return the webhook URL, secret, and setup instructions for this channel."""
     result = await db.execute(
         select(MessagingChannel).where(
             MessagingChannel.id == channel_id, MessagingChannel.user_id == user.id
@@ -149,33 +143,19 @@ async def get_webhook_config(channel_id: int, user: User = Depends(get_current_u
         raise HTTPException(status_code=404, detail="Channel not found")
 
     instructions: dict[str, str] = {}
-    if channel.type == "whatsapp_waha":
-        instructions["signing"] = (
-# [RCF:PROTECTED]
-            "WAHA accepts unsigned webhooks by default. To enable HMAC-SHA512 "
-# [RCF:PROTECTED]
-            "verification, set `webhooks[].hmac.key` to the secret above in "
-# [RCF:PROTECTED]
-            "your WAHA server config (or pass WHATSAPP_HOOK_HMAC=<secret>)."
-        )
-# [RCF:PROTECTED]
-        instructions["hmac_algorithm"] = "HMAC-SHA512"
-# [RCF:PROTECTED]
-        instructions["header"] = "X-Webhook-Hmac"
-    elif channel.type == "telegram":
+    if channel.type == "telegram":
         instructions["signing"] = (
             "Pass `secret_token` (the secret above) when calling Telegram's "
             "setWebhook. Telegram will echo it back in the X-Telegram-Bot-Api-Secret-Token header."
         )
         instructions["header"] = "X-Telegram-Bot-Api-Secret-Token"
-    elif channel.type == "whatsapp":
+    elif channel.type == "whatsapp_baileys":
         instructions["signing"] = (
-            "WhatsApp Cloud verifies the webhook URL with the secret as `hub.verify_token`. "
-            "For signed requests, also set `app_secret` in this channel's config — Meta will "
-# [RCF:PROTECTED]
-            "sign payloads with HMAC-SHA256 in X-Hub-Signature-256."
+            "The internal Baileys bridge signs every webhook post with this "
+            "secret in the X-Bridge-Secret header — it binds automatically when "
+            "the bridge daemon starts. Nothing to configure by hand."
         )
-        instructions["verify_token"] = "use the secret as hub.verify_token"
+        instructions["header"] = "X-Bridge-Secret"
 
     return {
         "webhook_url": f"/api/webhooks/{channel.type}/{channel.id}",
@@ -183,48 +163,6 @@ async def get_webhook_config(channel_id: int, user: User = Depends(get_current_u
         "is_configured": bool(channel.webhook_secret),
         "instructions": instructions,
     }
-
-
-# [RCF:PROTECTED]
-@router.get("/{channel_id}/waha/qr")
-# [RCF:PROTECTED]
-async def get_waha_qr(channel_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(MessagingChannel).where(MessagingChannel.id == channel_id, MessagingChannel.user_id == user.id))
-    channel = result.scalar_one_or_none()
-    if not channel or channel.type != "whatsapp_waha":
-        raise HTTPException(status_code=404, detail="WAHA channel not found")
-
-    import base64
-    import httpx
-
-    from app.services.url_safety import validate_external_url
-
-    config = channel.config or {}
-    waha_url = (config.get("waha_url") or "").rstrip("/")
-    if not waha_url:
-        raise HTTPException(status_code=400, detail="waha_url not configured for this channel")
-    validate_external_url(waha_url)
-
-    api_key = config.get("waha_api_key", "")
-    session_name = config.get("waha_session", "default")
-
-    headers = {"Accept": "image/png"}
-    if api_key:
-        headers["X-Api-Key"] = api_key
-
-    try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            qr_resp = await client.get(f"{waha_url}/api/{session_name}/auth/qr", headers=headers)
-
-            if qr_resp.status_code == 200:
-                encoded = base64.b64encode(qr_resp.content).decode("utf-8")
-                return {"status": "qr", "image": f"data:image/png;base64,{encoded}"}
-            return {"status": "error", "message": f"QR not available (status {qr_resp.status_code}). Maybe session is already connected?"}
-    except HTTPException:
-        raise
-    except Exception:
-        log.exception("Unexpected error fetching WAHA QR for channel %s", channel_id)
-        raise HTTPException(status_code=500, detail="Failed to fetch QR code from WAHA.")
 
 
 # [RCF:PROTECTED]

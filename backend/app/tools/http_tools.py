@@ -8,9 +8,20 @@ import logging
 
 import httpx
 
+from app.services.url_safety import UnsafeURLError, assert_safe_agent_url
 from app.tools.base import ToolContext, tool
 
 log = logging.getLogger(__name__)
+
+
+def _ssrf_error(url: str, exc: UnsafeURLError) -> dict:
+    """Uniform tool-level rejection for unsafe URLs (no 500s to the LLM)."""
+    log.warning("Agent HTTP tool blocked unsafe URL %s: %s", url, exc)
+    return {
+        "error": f"Blocked by SSRF protection: {exc}. "
+        "Only public internet URLs are allowed from agent tools.",
+        "url": url,
+    }
 
 
 # [RCF:PROTECTED]
@@ -29,8 +40,25 @@ log = logging.getLogger(__name__)
 # [RCF:PROTECTED]
 async def http_get(ctx: ToolContext, url: str, headers: dict | None = None) -> dict:
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+        url = assert_safe_agent_url(url)
+    except UnsafeURLError as e:
+        return _ssrf_error(url, e)
+    try:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
             resp = await client.get(url, headers=headers or {})
+            # Follow redirect hops manually: every hop must re-pass the SSRF
+            # check, otherwise a public URL that 302s to 169.254.169.254
+            # becomes an exfiltration primitive.
+            for _ in range(5):
+                if resp.is_redirect:
+                    next_url = str(resp.next_request.url)
+                    try:
+                        next_url = assert_safe_agent_url(next_url)
+                    except UnsafeURLError as e:
+                        return _ssrf_error(next_url, e)
+                    resp = await client.get(next_url, headers=headers or {})
+                else:
+                    break
             is_json = "application/json" in resp.headers.get("content-type", "")
             return {
                 "status_code": resp.status_code,
@@ -64,8 +92,23 @@ async def http_post(
     headers: dict | None = None,
 ) -> dict:
     try:
-        async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+        url = assert_safe_agent_url(url)
+    except UnsafeURLError as e:
+        return _ssrf_error(url, e)
+    try:
+        async with httpx.AsyncClient(timeout=20.0, follow_redirects=False) as client:
             resp = await client.post(url, json=json_data or {}, headers=headers or {})
+            # Same manual redirect handling as http_get: re-validate each hop.
+            for _ in range(5):
+                if resp.is_redirect:
+                    next_url = str(resp.next_request.url)
+                    try:
+                        next_url = assert_safe_agent_url(next_url)
+                    except UnsafeURLError as e:
+                        return _ssrf_error(next_url, e)
+                    resp = await client.post(next_url, json=json_data or {}, headers=headers or {})
+                else:
+                    break
             is_json = "application/json" in resp.headers.get("content-type", "")
             return {
                 "status_code": resp.status_code,

@@ -51,10 +51,15 @@ def test_verify_baileys_with_secret_rejects_missing_header():
     assert _verify_whatsapp_baileys(channel, _make_request({}), b"{}") is False
 
 
-def test_verify_baileys_without_secret_accepts_with_warning(caplog):
+def test_verify_baileys_without_secret_fails_closed(caplog):
+    """A channel without a webhook_secret must reject every request (fail closed).
+
+    Accepting unsigned posts would reopen the message-injection hole this
+    branch exists to close; backfill happens on the first QR open instead.
+    """
     channel = SimpleNamespace(id=2, webhook_secret=None)
-    with caplog.at_level(logging.WARNING):
-        assert _verify_whatsapp_baileys(channel, _make_request({}), b"{}") is True
+    with caplog.at_level(logging.ERROR):
+        assert _verify_whatsapp_baileys(channel, _make_request({}), b"{}") is False
     assert "no webhook_secret" in caplog.text
 
 

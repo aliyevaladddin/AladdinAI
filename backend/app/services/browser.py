@@ -9,6 +9,8 @@ from typing import Any
 
 import httpx
 
+from app.services.url_safety import UnsafeURLError, assert_safe_agent_url
+
 logger = logging.getLogger(__name__)
 
 USER_AGENT = (
@@ -69,6 +71,21 @@ async def fetch_url_content(
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
 
+    # SSRF gate: this function backs the fetch_url agent tool AND the
+    # /synthesize deep-scrape, so a malicious URL (or a search result that
+    # redirects to one) must never reach internal addresses.
+    try:
+        url = assert_safe_agent_url(url)
+    except UnsafeURLError as exc:
+        logger.warning("Blocked unsafe URL fetch: %s", exc)
+        return {
+            "url": url,
+            "title": "Error",
+            "content": f"Blocked by SSRF protection: {exc}. Only public internet URLs are allowed.",
+            "method": "failed",
+            "status": 403,
+        }
+
     # Try Chromium via Playwright first if enabled
     if use_chromium:
         try:
@@ -117,11 +134,29 @@ async def fetch_url_content(
     # Fallback to HTTPX + HTML text extraction
     try:
         async with httpx.AsyncClient(
-            follow_redirects=True,
+            follow_redirects=False,
             timeout=timeout,
             headers={"User-Agent": USER_AGENT},
         ) as client:
             resp = await client.get(url)
+            # Follow redirects manually: re-validate each hop against the
+            # SSRF rules so a public page can't bounce us to an internal IP.
+            for _ in range(5):
+                if not resp.is_redirect:
+                    break
+                next_url = str(resp.next_request.url)
+                try:
+                    next_url = assert_safe_agent_url(next_url)
+                except UnsafeURLError as exc:
+                    logger.warning("Blocked redirect to unsafe URL %s: %s", next_url, exc)
+                    return {
+                        "url": url,
+                        "title": "Error",
+                        "content": f"Blocked redirect to internal address: {exc}",
+                        "method": "failed",
+                        "status": 403,
+                    }
+                resp = await client.get(next_url)
             resp.raise_for_status()
             parser = HTMLTextExtractor()
             parser.feed(resp.text)

@@ -50,9 +50,9 @@ class EmailAccountResponse(BaseModel):
 
 # [RCF:PROTECTED]
 class MessagingChannelCreate(BaseModel):
-    type: str  # telegram, whatsapp, sms
+    type: str  # telegram, whatsapp_baileys, sms
     name: str
-    config: dict  # bot_token, phone_number_id, twilio_sid, etc.
+    config: dict  # bot_token, twilio_sid, etc.
     agent_id: int | None = None
 
 
