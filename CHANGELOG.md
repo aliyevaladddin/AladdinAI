@@ -58,6 +58,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump lucide-react from 1.34.0 to 1.39.0 in /frontend (#813) ([c081e5a](https://github.com/aliyevaladddin/AladdinAI/commit/c081e5acbbb48d4d50ae5b6df319ca3e87ecabac))
 
+- Bump hono from 4.13.1 to 4.13.7 in /frontend (#854) ([7884d33](https://github.com/aliyevaladddin/AladdinAI/commit/7884d33fb4d6d18328526e929215a5ef6f46eda8))
+
+- Bump js-yaml from 4.3.1 to 4.3.2 in /frontend (#857) ([6130909](https://github.com/aliyevaladddin/AladdinAI/commit/613090930dfe72b88efe8e485d7eea1c44e859ae))
+
 
 ### Documentation
 
@@ -214,6 +218,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#846) ([f9ec651](https://github.com/aliyevaladddin/AladdinAI/commit/f9ec651abe0b042ded9e70a5e46bca7465500bd6))
 
 - Update changelog [skip ci] (#849) ([21fd764](https://github.com/aliyevaladddin/AladdinAI/commit/21fd764a0829f869b99302aeb52bfd54259a3382))
+
+- Update changelog [skip ci] (#850) ([df92ae2](https://github.com/aliyevaladddin/AladdinAI/commit/df92ae291b1e262ac0c7c1ef5a0d4b50effadbf8))
+
+- Bump joi from 18.2.3 to 18.2.8 in /frontend (#851) ([77c9d5e](https://github.com/aliyevaladddin/AladdinAI/commit/77c9d5ecd12c8f526a8e93fb7c4ea5e553bbf866))
+
+- Update lockfile dependencies for frontend project ([3912630](https://github.com/aliyevaladddin/AladdinAI/commit/3912630df854a754ca6f379164a33a241f9416b7))
+
+- Update frontend dependencies in package-lock.json ([c2e2a5a](https://github.com/aliyevaladddin/AladdinAI/commit/c2e2a5a4a0b1d87d4884b169d578406fcb12b9db))
+
+- Update frontend dependencies in package-lock.json ([cb5e6dc](https://github.com/aliyevaladddin/AladdinAI/commit/cb5e6dc2a5dc89bd92b612b0bb7d9f1d12120680))
 
 
 ### Refactor
