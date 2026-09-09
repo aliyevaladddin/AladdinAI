@@ -42,7 +42,16 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
 
     # Path traversal validation using Path.is_relative_to
     base_dir = Path(__file__).resolve().parent.parent.parent.parent.resolve()
-    target_path = (base_dir / path).resolve()
+
+    user_path = Path(path)
+    if user_path.is_absolute():
+        raise HTTPException(status_code=400, detail="Absolute paths are not allowed")
+
+    normalized_relative = (Path(".") / user_path)
+    if ".." in normalized_relative.parts:
+        raise HTTPException(status_code=400, detail="Path traversal is not allowed")
+
+    target_path = (base_dir / normalized_relative).resolve()
     if not target_path.is_relative_to(base_dir):
         raise HTTPException(status_code=400, detail="Search path is outside allowed workspace directory")
 
