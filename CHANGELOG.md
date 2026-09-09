@@ -215,6 +215,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#849) ([21fd764](https://github.com/aliyevaladddin/AladdinAI/commit/21fd764a0829f869b99302aeb52bfd54259a3382))
 
+- Update changelog [skip ci] (#850) ([df92ae2](https://github.com/aliyevaladddin/AladdinAI/commit/df92ae291b1e262ac0c7c1ef5a0d4b50effadbf8))
+
+- Bump joi from 18.2.3 to 18.2.8 in /frontend (#851) ([77c9d5e](https://github.com/aliyevaladddin/AladdinAI/commit/77c9d5ecd12c8f526a8e93fb7c4ea5e553bbf866))
+
 
 ### Refactor
 
