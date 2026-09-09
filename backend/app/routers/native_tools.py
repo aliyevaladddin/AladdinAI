@@ -89,12 +89,12 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
     if filter_str:
         args.extend(["--filter", filter_str])
     if log_path:
-        # Path traversal validation using canonicalized relative segments + containment check
+        # Path traversal validation using normalized relative-path checks + containment check
         base_dir = LOGS_ROOT.resolve()
-        normalized_input = Path(log_path).as_posix()
-        user_parts = Path(normalized_input).parts
+        normalized_rel = Path(Path(log_path).as_posix())
+        if normalized_rel.is_absolute() or ".." in normalized_rel.parts:
         if (
-            not user_parts
+        target_path = (base_dir / normalized_rel).resolve()
             or Path(normalized_input).is_absolute()
             or any(part in ("", ".", "..") for part in user_parts)
         ):
