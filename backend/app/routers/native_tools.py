@@ -80,9 +80,12 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
     if filter_str:
         args.extend(["--filter", filter_str])
     if log_path:
-        # Path traversal validation using Path.is_relative_to
+        # Path traversal validation using strict relative-path checks + containment check
         base_dir = LOGS_ROOT.resolve()
-        target_path = (base_dir / log_path).resolve()
+        user_rel_path = Path(log_path)
+        if user_rel_path.is_absolute() or ".." in user_rel_path.parts:
+            raise HTTPException(status_code=400, detail="Invalid log_path")
+        target_path = (base_dir / user_rel_path).resolve()
         if not target_path.is_relative_to(base_dir):
             raise HTTPException(status_code=400, detail="log_path is outside allowed logs directory")
         if not target_path.exists():
