@@ -48,7 +48,10 @@ def decode_token(token: str, expected_type: str = "access") -> int:
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-    return int(user_id)
+    try:
+        return int(user_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
 # [RCF:PROTECTED]

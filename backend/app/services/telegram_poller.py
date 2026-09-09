@@ -193,7 +193,7 @@ async def start() -> None:
         return
 
     for ch in channels:
-        token = (ch.config or {}).get("bot_token")
+        token = (ch.decrypted_config or {}).get("bot_token")
         if not token:
             log.warning("telegram-poll: channel %s has no bot_token, skipping", ch.id)
             continue
