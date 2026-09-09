@@ -7,6 +7,46 @@ from app.models.messaging_channel import MessagingChannel
 
 log = logging.getLogger(__name__)
 
+SENSITIVE_CONFIG_KEYS = {
+    "bot_token",
+    "twilio_sid",
+    "twilio_token",
+    "twilio_auth_token",
+    "api_key",
+    "app_secret",
+    "secret",
+    "password",
+}
+
+
+# [RCF:PROTECTED]
+def encrypt_channel_config(config: dict | None) -> dict:
+    """Encrypt sensitive keys in channel configuration before storing in DB."""
+    if not config or not isinstance(config, dict):
+        return config or {}
+    from app.crypto import encrypt, is_fernet_token
+
+    encrypted = dict(config)
+    for key, value in config.items():
+        if key in SENSITIVE_CONFIG_KEYS and isinstance(value, str) and value:
+            if not is_fernet_token(value):
+                encrypted[key] = encrypt(value)
+    return encrypted
+
+
+# [RCF:PROTECTED]
+def decrypt_channel_config(config: dict | None) -> dict:
+    """Decrypt sensitive keys in channel configuration for runtime use."""
+    if not config or not isinstance(config, dict):
+        return config or {}
+    from app.crypto import decrypt
+
+    decrypted = dict(config)
+    for key, value in config.items():
+        if key in SENSITIVE_CONFIG_KEYS and isinstance(value, str) and value:
+            decrypted[key] = decrypt(value)
+    return decrypted
+
 
 # [RCF:PROTECTED]
 async def test_channel_connection(channel: MessagingChannel) -> tuple[bool, str]:
@@ -21,7 +61,8 @@ async def test_channel_connection(channel: MessagingChannel) -> tuple[bool, str]
 
 # [RCF:PROTECTED]
 async def _test_telegram(channel: MessagingChannel) -> tuple[bool, str]:
-    token = channel.config.get("bot_token")
+    config = channel.decrypted_config or {}
+    token = config.get("bot_token")
     if not token:
         return False, "bot_token not found in config"
     try:
@@ -98,6 +139,7 @@ async def send_whatsapp_baileys(channel: MessagingChannel, to_phone: str, text: 
         channel,
     )
 
+
 # [RCF:PROTECTED]
 def parse_sms_message(payload: dict) -> tuple[str, str, str]:
     """Returns (sender_phone, '', text)"""
@@ -106,7 +148,8 @@ def parse_sms_message(payload: dict) -> tuple[str, str, str]:
 
 # [RCF:PROTECTED]
 async def send_telegram(channel: MessagingChannel, chat_id: str, text: str):
-    token = channel.config.get("bot_token")
+    config = channel.decrypted_config or {}
+    token = config.get("bot_token")
     async with httpx.AsyncClient(timeout=10) as client:
         await client.post(
             f"https://api.telegram.org/bot{token}/sendMessage",
@@ -123,7 +166,8 @@ async def send_telegram_photo(
     caption: str | None = None,
 ):
     """Upload image bytes to a Telegram chat via sendPhoto (multipart)."""
-    token = channel.config.get("bot_token")
+    config = channel.decrypted_config or {}
+    token = config.get("bot_token")
     files = {"photo": (filename, image_bytes, "application/octet-stream")}
     data: dict[str, str] = {"chat_id": str(chat_id)}
     if caption:
@@ -138,13 +182,13 @@ async def send_telegram_photo(
 
 # [RCF:PROTECTED]
 async def send_sms(channel: MessagingChannel, to_phone: str, text: str):
-    sid = channel.config.get("twilio_sid")
-    token = channel.config.get("twilio_token")
-    from_phone = channel.config.get("twilio_phone")
+    config = channel.decrypted_config or {}
+    sid = config.get("twilio_sid")
+    token = config.get("twilio_token") or config.get("twilio_auth_token")
+    from_phone = config.get("twilio_phone")
     async with httpx.AsyncClient(timeout=10) as client:
         await client.post(
             f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
             auth=(sid, token),
             data={"To": to_phone, "From": from_phone, "Body": text},
         )
-

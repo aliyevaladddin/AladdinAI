@@ -161,7 +161,7 @@ def _verify_twilio(channel: MessagingChannel, request: Request, raw_body: bytes)
 
     See https://www.twilio.com/docs/usage/webhooks/webhooks-security
     """
-    token = (channel.config or {}).get("twilio_auth_token")
+    token = (channel.decrypted_config or {}).get("twilio_auth_token") or (channel.decrypted_config or {}).get("twilio_token")
     if not token:
         return False
     sig_header = request.headers.get("X-Twilio-Signature", "")

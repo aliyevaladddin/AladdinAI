@@ -1,12 +1,12 @@
 # NOTICE: This file is protected under RCF-PL
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 # [RCF:PROTECTED]
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str
-    name: str
+    password: str = Field(..., min_length=8, max_length=128)
+    name: str = Field(..., min_length=1, max_length=100)
 
 
 # [RCF:PROTECTED]

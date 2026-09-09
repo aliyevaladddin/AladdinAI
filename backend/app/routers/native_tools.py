@@ -3,11 +3,12 @@
 import asyncio
 import json
 import logging
-import os
 from pathlib import Path
-from fastapi import APIRouter, Depends, Query, HTTPException
-from app.security import get_current_user
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
 from app.models.user import User
+from app.security import get_current_user
 
 log = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ NATIVE_DIR = Path(__file__).resolve().parent.parent.parent / "native"
 GREP_BIN = NATIVE_DIR / "aladdin-grep"
 LOG_BIN = NATIVE_DIR / "aladdin-log-stream"
 LOGS_ROOT = (Path(__file__).resolve().parent.parent.parent / "logs").resolve()
+
 
 async def ensure_binaries():
     if not (GREP_BIN.exists() and LOG_BIN.exists()):
@@ -30,6 +32,7 @@ async def ensure_binaries():
         except Exception as e:
             log.error("Failed to build native C binaries: %s", e)
 
+
 @router.get("/search")
 async def fast_native_search(query: str = Query(..., min_length=1), path: str = Query("."), current_user: User = Depends(get_current_user)):
     """Fast native C project code search using mmap memory mapping."""
@@ -37,18 +40,18 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
     if not GREP_BIN.exists():
         raise HTTPException(status_code=500, detail="Native grep C binary not compiled")
 
-    # CodeQL compliant path normalization and validation
-    base_path = str(Path(__file__).resolve().parent.parent.parent.parent.resolve())
-    fullpath = os.path.normpath(os.path.join(base_path, path))
-    if not fullpath.startswith(base_path):
+    # Path traversal validation using Path.is_relative_to
+    base_dir = Path(__file__).resolve().parent.parent.parent.parent.resolve()
+    target_path = (base_dir / path).resolve()
+    if not target_path.is_relative_to(base_dir):
         raise HTTPException(status_code=400, detail="Search path is outside allowed workspace directory")
-        
-    target_dir = fullpath
+
+    target_dir = str(target_path)
     try:
         proc = await asyncio.create_subprocess_exec(
             str(GREP_BIN), "--path", target_dir, "--query", query,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
         stdout, _ = await proc.communicate()
 
@@ -65,6 +68,7 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
         log.exception("Error running fast native search: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/logs/filter")
 async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query(""), current_user: User = Depends(get_current_user)):
     """High-speed C log stream filtering engine."""
@@ -76,20 +80,20 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
     if filter_str:
         args.extend(["--filter", filter_str])
     if log_path:
-        # CodeQL compliant path normalization and validation
-        base_path = str(LOGS_ROOT)
-        fullpath = os.path.normpath(os.path.join(base_path, log_path))
-        if not fullpath.startswith(base_path):
+        # Path traversal validation using Path.is_relative_to
+        base_dir = LOGS_ROOT.resolve()
+        target_path = (base_dir / log_path).resolve()
+        if not target_path.is_relative_to(base_dir):
             raise HTTPException(status_code=400, detail="log_path is outside allowed logs directory")
-        if not os.path.exists(fullpath):
+        if not target_path.exists():
             raise HTTPException(status_code=400, detail="log_path does not exist")
-        args.extend(["--file", fullpath])
+        args.extend(["--file", str(target_path)])
 
     try:
         proc = await asyncio.create_subprocess_exec(
             *args,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
         stdout, _ = await proc.communicate()
 
