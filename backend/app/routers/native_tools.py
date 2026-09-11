@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -84,9 +84,13 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
     if filter_str:
         args.extend(["--filter", filter_str])
     if log_path:
-        # Path traversal validation using Path.is_relative_to
+        # Path traversal validation using explicit input checks + Path.is_relative_to
+        user_path = PurePath(log_path)
+        if user_path.is_absolute() or ".." in user_path.parts:
+            raise HTTPException(status_code=400, detail="Invalid log_path")
+
         base_dir = LOGS_ROOT.resolve()
-        target_path = (base_dir / log_path).resolve()
+        target_path = (base_dir / user_path).resolve()
         if not target_path.is_relative_to(base_dir):
             raise HTTPException(status_code=400, detail="log_path is outside allowed logs directory")
         if not target_path.exists():
