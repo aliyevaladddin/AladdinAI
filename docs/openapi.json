@@ -14180,10 +14180,14 @@
           },
           "password": {
             "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
             "title": "Password"
           },
           "name": {
             "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
             "title": "Name"
           }
         },
