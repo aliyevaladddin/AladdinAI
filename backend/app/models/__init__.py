@@ -30,6 +30,7 @@ from app.models.workspace_file import WorkspaceFile
 from app.models.file_version import FileVersion
 from app.models.file_event import FileEvent
 from app.models.mcp_server import MCPServer
+from app.models.refresh_token import RefreshToken
 
 __all__ = [
     "User", "VMConnection", "LLMProvider", "MongoConnection", "BentoMLConnection",
@@ -39,4 +40,5 @@ __all__ = [
     "MessageFeedback", "TerminalApproval",
     "Space", "SpaceMember", "Folder", "WorkspaceFile", "FileVersion", "FileEvent",
     "MCPServer",
+    "RefreshToken",
 ]
