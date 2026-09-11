@@ -72,7 +72,7 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
 
     if attachments and channel_type == "telegram":
         from app.services.media import download_telegram_file
-        token = (channel.config or {}).get("bot_token", "")
+        token = (channel.decrypted_config or {}).get("bot_token", "")
         downloaded: list[dict] = []
         for att in attachments:
             file_id = att.get("file_id")
@@ -97,7 +97,7 @@ async def handle_incoming_message(channel: MessagingChannel, channel_type: str, 
     is_admin = False
     if channel_type == "telegram":
         from app.config import settings
-        admin_id = settings.telegram_chat_id or (channel.config or {}).get("admin_chat_id")
+        admin_id = settings.telegram_chat_id or (channel.decrypted_config or {}).get("admin_chat_id")
         if admin_id and str(sender_id) == str(admin_id):
             is_admin = True
 

@@ -62,9 +62,10 @@ async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends
 
 
 # [RCF:PROTECTED]
+@limiter.limit("10/minute")
 @router.post("/refresh", response_model=TokenResponse)
 # [RCF:PROTECTED]
-async def refresh(body: RefreshRequest, db: AsyncSession = Depends(get_db)):
+async def refresh(request: Request, body: RefreshRequest, db: AsyncSession = Depends(get_db)):
     user_id = decode_token(body.refresh_token, expected_type="refresh")
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()

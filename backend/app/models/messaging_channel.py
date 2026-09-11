@@ -22,3 +22,10 @@ class MessagingChannel(Base):
     agent_id: Mapped[int | None] = mapped_column(ForeignKey("agents.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="disconnected")
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
+
+    @property
+    def decrypted_config(self) -> dict:
+        """Return config with sensitive values decrypted."""
+        from app.services.messaging_service import decrypt_channel_config
+
+        return decrypt_channel_config(self.config)

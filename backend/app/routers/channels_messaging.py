@@ -16,6 +16,7 @@ from app.schemas.channels import (
     MessagingChannelUpdate,
 )
 from app.security import get_current_user
+from app.services.messaging_service import encrypt_channel_config
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ async def create_channel(body: MessagingChannelCreate, user: User = Depends(get_
         user_id=user.id,
         type=body.type,
         name=body.name,
-        config=body.config,
+        config=encrypt_channel_config(body.config),
         agent_id=body.agent_id,
         webhook_secret=secrets.token_urlsafe(32),
     )
@@ -104,7 +105,7 @@ async def test_channel(channel_id: int, user: User = Depends(get_current_user), 
 
         if channel.type == "telegram":
             from app.services import telegram_poller
-            token = (channel.config or {}).get("bot_token")
+            token = (channel.decrypted_config or {}).get("bot_token")
             if token:
                 await telegram_poller.add_channel(channel.id, token)
 
