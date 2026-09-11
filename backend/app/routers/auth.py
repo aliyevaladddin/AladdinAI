@@ -18,7 +18,6 @@ from app.schemas.auth import (
 from app.security import (
     create_access_token,
     create_refresh_token,
-    decode_token,
     decode_refresh_token,
     get_current_user,
     hash_password,
