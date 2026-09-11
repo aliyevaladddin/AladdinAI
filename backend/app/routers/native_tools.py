@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -41,6 +41,10 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
         raise HTTPException(status_code=500, detail="Native grep C binary not compiled")
 
     # Path traversal validation using Path.is_relative_to
+    user_path = Path(path)
+    if user_path.is_absolute() or ".." in user_path.parts:
+        raise HTTPException(status_code=400, detail="Invalid search path")
+
     base_dir = Path(__file__).resolve().parent.parent.parent.parent.resolve()
 
     user_path = Path(path)
