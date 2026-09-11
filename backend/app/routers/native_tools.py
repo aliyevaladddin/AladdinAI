@@ -46,7 +46,16 @@ async def fast_native_search(query: str = Query(..., min_length=1), path: str = 
         raise HTTPException(status_code=400, detail="Invalid search path")
 
     base_dir = Path(__file__).resolve().parent.parent.parent.parent.resolve()
-    target_path = (base_dir / user_path).resolve()
+
+    user_path = Path(path)
+    if user_path.is_absolute():
+        raise HTTPException(status_code=400, detail="Absolute paths are not allowed")
+
+    normalized_relative = (Path(".") / user_path)
+    if ".." in normalized_relative.parts:
+        raise HTTPException(status_code=400, detail="Path traversal is not allowed")
+
+    target_path = (base_dir / normalized_relative).resolve()
     if not target_path.is_relative_to(base_dir):
         raise HTTPException(status_code=400, detail="Search path is outside allowed workspace directory")
 
@@ -84,17 +93,14 @@ async def filter_log_stream(filter_str: str = Query(""), log_path: str = Query("
     if filter_str:
         args.extend(["--filter", filter_str])
     if log_path:
-        # Path traversal validation using canonicalized path containment under LOGS_ROOT
-        normalized_log_path = log_path.strip()
-        if not normalized_log_path:
+        # Path traversal validation using normalized relative-path checks + containment check
+        base_dir = LOGS_ROOT.resolve()
+        normalized_input = Path(log_path)
+        normalized_rel = normalized_input.as_posix()
+        if normalized_input.is_absolute() or ".." in Path(normalized_rel).parts:
             raise HTTPException(status_code=400, detail="Invalid log_path")
 
-        user_path = Path(normalized_log_path)
-        if user_path.is_absolute() or ".." in user_path.parts:
-            raise HTTPException(status_code=400, detail="Invalid log_path")
-
-        base_dir = LOGS_ROOT
-        target_path = (base_dir / normalized_log_path).resolve()
+        target_path = (base_dir / normalized_rel).resolve()
         if not target_path.is_relative_to(base_dir):
             raise HTTPException(status_code=400, detail="log_path is outside allowed logs directory")
         if not target_path.exists():
