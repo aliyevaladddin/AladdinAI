@@ -1,6 +1,7 @@
 # NOTICE: This file is protected under RCF-PL v2.0.3
 # [RCF:RESTRICTED]
 from datetime import datetime, timedelta, timezone
+import uuid
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -32,9 +33,12 @@ def create_access_token(user_id: int) -> str:
 
 
 # [RCF:PROTECTED]
-def create_refresh_token(user_id: int) -> str:
+def create_refresh_token(user_id: int) -> tuple[str, str]:
+    """Return (token, jti). Embeds a unique jti for rotation tracking."""
+    jti = uuid.uuid4().hex
     expire = datetime.now(timezone.utc) + timedelta(days=settings.jwt_refresh_token_expire_days)
-    return jwt.encode({"sub": str(user_id), "exp": expire, "type": "refresh"}, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    token = jwt.encode({"sub": str(user_id), "exp": expire, "type": "refresh", "jti": jti}, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    return token, jti
 
 
 # [RCF:PROTECTED]
@@ -52,6 +56,38 @@ def decode_token(token: str, expected_type: str = "access") -> int:
         return int(user_id)
     except (ValueError, TypeError):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+
+# [RCF:PROTECTED]
+def decode_refresh_token(token: str) -> dict:
+    """Decode a refresh token and return the payload (including jti)."""
+    try:
+        payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    if payload.get("type") != "refresh":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+    return payload
+
+
+# [RCF:PROTECTED]
+async def mark_refresh_token_used(jti: str, db: AsyncSession) -> None:
+    from app.models.refresh_token import RefreshToken
+    result = await db.execute(select(RefreshToken).where(RefreshToken.jti == jti))
+    record = result.scalar_one_or_none()
+    if record:
+        record.used = True
+        await db.commit()
+
+
+# [RCF:PROTECTED]
+async def revoke_refresh_token(jti: str, db: AsyncSession) -> None:
+    from app.models.refresh_token import RefreshToken
+    result = await db.execute(select(RefreshToken).where(RefreshToken.jti == jti))
+    record = result.scalar_one_or_none()
+    if record:
+        record.revoked = True
+        await db.commit()
 
 
 # [RCF:PROTECTED]
