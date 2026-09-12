@@ -783,7 +783,7 @@ char *wrt_get_recent_files_json(void) {
 char *wrt_list_files_json(const char *dir_path) {
     const char *target_dir = dir_path;
     if (!target_dir || !target_dir[0]) {
-        target_dir = "/workspaces/AladdinAI";
+        target_dir = ".";
     }
 
     char resolved[PATH_MAX];
@@ -1384,7 +1384,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (strcmp(cmd, "list-files") == 0) {
-        const char *dir = (argc >= 3) ? argv[2] : "/workspaces/AladdinAI";
+        const char *dir = (argc >= 3) ? argv[2] : ".";
         char *json = wrt_list_files_json(dir);
         fputs(json, stdout);
         free(json);

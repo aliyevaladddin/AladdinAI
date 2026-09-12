@@ -49,6 +49,6 @@ def test_path_traversal_validation_relative_to():
     traversal_path = (base_dir / "../../../etc/passwd").resolve()
     assert not traversal_path.is_relative_to(base_dir)
 
-    # Sibling directory attack (e.g. /workspaces/AladdinAI_fake vs /workspaces/AladdinAI)
+    # Sibling directory attack
     sibling_path = (base_dir.parent / "AladdinAI_fake" / "secret").resolve()
     assert not sibling_path.is_relative_to(base_dir)
