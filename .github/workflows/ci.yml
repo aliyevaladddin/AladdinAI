@@ -54,12 +54,22 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential libzip-dev zlib1g-dev
+
       - name: Install dependencies
         run: |
           cd backend
           pip install -r requirements.txt
           pip install "skillspector @ git+https://github.com/NVIDIA/skillspector.git@c2d09df019e358d3dc12d980b82c798b87cb9f56"
           pip install pytest pytest-asyncio pytest-cov httpx
+
+      - name: Build native WRT engine
+        run: |
+          cd backend
+          make -C native wrt-engine wrt-edit wrt-validate
 
       - name: Run tests
         env:

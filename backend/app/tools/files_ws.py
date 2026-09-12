@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL v2.0.3
+# NOTICE: This file is protected under RCF-PL
 """File-workspace agent tools — the safe set.
 
 list / read / upload_version / move / rename. There is deliberately no
@@ -150,12 +150,35 @@ async def files_read(ctx: ToolContext, file_id: int, version_no: int | None = No
         # ── document format conversion for agent ──
         if ext == ".docx":
             try:
-                from app.services.docx_converter import docx_to_wrt
+                from app.services.wrt_engine_service import docx_to_wrt
                 content = docx_to_wrt(data)
             except Exception as e:
                 log.warning("docx→wrt failed for file %s: %s", ws_file.name, e)
                 return {"status": "error",
                         "message": f"Cannot convert .docx to .wrt: {e}"}
+        elif ext == ".md":
+            try:
+                from app.services.wrt_engine_service import md_to_wrt
+                content = md_to_wrt(data.decode("utf-8", errors="replace"))
+            except Exception as e:
+                log.warning("md→wrt failed for file %s: %s", ws_file.name, e)
+                content = data.decode("utf-8", errors="replace")
+        elif ext == ".odt":
+            try:
+                from app.services.wrt_engine_service import odt_to_wrt
+                content = odt_to_wrt(data)
+            except Exception as e:
+                log.warning("odt→wrt failed for file %s: %s", ws_file.name, e)
+                return {"status": "error",
+                        "message": f"Cannot convert .odt to .wrt: {e}"}
+        elif ext == ".pptx":
+            try:
+                from app.services.wrt_engine_service import pptx_to_wrt
+                content = pptx_to_wrt(data)
+            except Exception as e:
+                log.warning("pptx→wrt failed for file %s: %s", ws_file.name, e)
+                return {"status": "error",
+                        "message": f"Cannot convert .pptx to .wrt: {e}"}
         elif ext == ".pdf":
             try:
                 from pypdf import PdfReader

@@ -10,8 +10,10 @@ Local terminals prefer the native C daemon (first-class) and fall back to
 a Python PTY; VM terminals use asyncssh with TOFU known-hosts pinning.
 """
 import asyncio
-import logging
 import json
+import logging
+import os
+from pathlib import Path
 
 import asyncssh
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -27,6 +29,7 @@ from app.services.terminal_backends import (
     decode_message,
     encode_output,
     open_local_backend,
+    try_open_ide,
 )
 
 log = logging.getLogger(__name__)
@@ -58,10 +61,13 @@ async def _relay(websocket: WebSocket, backend) -> None:
     try:
         while True:
             raw = await websocket.receive_text()
+            log.debug("Terminal relay: received %r", raw)
             decoded = decode_message(raw)
             if decoded is None:
+                log.debug("Terminal relay: cannot decode message")
                 continue
             mtype, payload = decoded
+            log.debug("Terminal relay: type=%s payload=%r", mtype, payload[:100] if isinstance(payload, str) else payload)
             if mtype == "data":
                 await backend.write(payload)
             else:
@@ -124,6 +130,45 @@ async def local_terminal_websocket(websocket: WebSocket):
     backend, name = await open_local_backend()
     log.info("Local terminal WS for user %s using %s backend", user.id, name)
     await _relay(websocket, backend)
+
+
+
+
+
+# ── IDE terminal (launches aladdin-ide via PTY) ─────────────────────────────────
+
+
+@router.websocket("/ws/terminal/ide")
+async def ide_terminal_websocket(websocket: WebSocket):
+    log.debug("IDE terminal WS connection attempt")
+    await websocket.accept()
+
+    user = await _authenticate(websocket)
+    if user is None:
+        return
+
+    # Get file path from query parameter and validate it stays within workspace root
+    file_path = websocket.query_params.get("file", "")
+    workspace_root = str(Path(__file__).resolve().parent.parent.parent.parent)
+
+    if file_path:
+        try:
+            resolved = os.path.realpath(os.path.join(workspace_root, file_path))
+            if not os.path.commonpath([workspace_root, resolved]) == workspace_root:
+                await _send_error_and_close(websocket, "File path is outside workspace root", code=1008)
+                return
+            file_path = resolved
+        except Exception as e:
+            await _send_error_and_close(websocket, f"Invalid file path: {str(e)}", code=1008)
+            return
+
+    try:
+        backend, name = await try_open_ide(file_path)
+        log.info("IDE terminal WS for user %s using %s backend with file: %s", user.id, name, file_path or "(cwd)")
+        await _relay(websocket, backend)
+    except Exception as e:
+        log.exception("Failed to start IDE terminal: %s", e)
+        await _send_error_and_close(websocket, f"Failed to start IDE: {str(e)}", code=1011)
 
 
 # ── VM terminal over SSH ──────────────────────────────────────────────────────

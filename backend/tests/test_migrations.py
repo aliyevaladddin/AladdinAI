@@ -24,6 +24,9 @@ _BACKEND = Path(__file__).resolve().parent.parent
 
 def _script() -> ScriptDirectory:
     cfg = Config(str(_BACKEND / "alembic.ini"))
+    cfg.set_main_option("script_location", str(_BACKEND / "alembic"))
+    cfg.set_main_option("prepend_sys_path", str(_BACKEND))
+    cfg.set_main_option("path_separator", "os")
     return ScriptDirectory.from_config(cfg)
 
 

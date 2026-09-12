@@ -85,7 +85,7 @@ In GitHub App settings → Permissions & events → Subscribe to events, enable:
 ### Test webhook locally with Wrangler
 
 ```bash
-cd /workspaces/AladdinAI
+cd .
 wrangler pages dev . --port 8788
 
 # In another terminal, send test webhook

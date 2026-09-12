@@ -38,7 +38,8 @@ def test_decrypt_tampered_token_raises():
 
 
 def test_path_traversal_validation_relative_to():
-    base_dir = Path("/workspaces/AladdinAI").resolve()
+    # Detect workspace root from this file's location: tests/ → repo root
+    base_dir = Path(__file__).resolve().parent.parent.parent
 
     # Valid inside workspace
     valid_path = (base_dir / "backend/app").resolve()
@@ -48,6 +49,6 @@ def test_path_traversal_validation_relative_to():
     traversal_path = (base_dir / "../../../etc/passwd").resolve()
     assert not traversal_path.is_relative_to(base_dir)
 
-    # Sibling directory attack (e.g. /workspaces/AladdinAI_fake vs /workspaces/AladdinAI)
-    sibling_path = Path("/workspaces/AladdinAI_fake/secret").resolve()
+    # Sibling directory attack
+    sibling_path = (base_dir.parent / "AladdinAI_fake" / "secret").resolve()
     assert not sibling_path.is_relative_to(base_dir)

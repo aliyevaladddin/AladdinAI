@@ -8,6 +8,8 @@
  * semantic tags while retaining a predictable route back to WRT on save.
  */
 
+import { API_URL } from "./api";
+
 const INLINE_TAGS: Record<string, string> = {
   b: "strong",
   i: "em",
@@ -319,3 +321,167 @@ export function editableElementToWrt(root: HTMLElement): string {
 export function wrtToEditableHtml(wrt: string): string {
   return wrtToHtml(wrt) || "<p><br></p>";
 }
+
+/* ── Native C Engine API helpers ─────────────────────────────────── */
+
+export interface WrtIssue {
+  line: number;
+  col: number;
+  tag: string;
+  message: string;
+  severity: number;
+}
+
+export interface WrtValidationReport {
+  valid: boolean;
+  word_count: number;
+  char_count: number;
+  line_count: number;
+  tag_count: number;
+  issues: WrtIssue[];
+}
+
+export async function validateWrtNative(content: string): Promise<WrtValidationReport> {
+  try {
+    const res = await fetch(`${API_URL}/wrt/validate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.debug("Native C validation fallback:", err);
+  }
+  return { valid: true, word_count: 0, char_count: content.length, line_count: 1, tag_count: 0, issues: [] };
+}
+
+export async function fixWrtNative(content: string): Promise<string> {
+  try {
+    const res = await fetch(`${API_URL}/wrt/fix`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.content ?? content;
+    }
+  } catch (err) {
+    console.debug("Native C fix fallback:", err);
+  }
+  return content;
+}
+
+export interface WrtFileEntry {
+  name: string;
+  path: string;
+  is_dir: boolean;
+  size: number;
+  mtime: number;
+  ext: string;
+}
+
+export interface WrtRecentFile {
+  name: string;
+  path: string;
+  exists: boolean;
+  size: number;
+  mtime: number;
+}
+
+export async function listWrtFilesNative(dirPath?: string): Promise<{ path: string; files: WrtFileEntry[] }> {
+  try {
+    const url = dirPath ? `${API_URL}/wrt/files?path=${encodeURIComponent(dirPath)}` : `${API_URL}/wrt/files`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      return { path: data.path || "", files: data.files || [] };
+    }
+  } catch (err) {
+    console.debug("Failed to list files via Native C engine:", err);
+  }
+  return { path: "", files: [] };
+}
+
+export async function readWrtFileNative(filePath: string): Promise<{ content: string; lines: number; size: number }> {
+  const res = await fetch(`${API_URL}/wrt/files/read`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path: filePath }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to read file: ${res.statusText}`);
+  }
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || "Cannot read file");
+  }
+  return { content: data.content || "", lines: data.lines || 1, size: data.size || 0 };
+}
+
+export async function saveWrtFileNative(filePath: string, content: string): Promise<{ success: boolean; bytes_written: number }> {
+  const res = await fetch(`${API_URL}/wrt/files/save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path: filePath, content }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to save file: ${res.statusText}`);
+  }
+  const data = await res.json();
+  if (!data.success) {
+    throw new Error(data.error || "Cannot save file");
+  }
+  return { success: true, bytes_written: data.bytes_written || 0 };
+}
+
+export async function getRecentWrtFilesNative(): Promise<WrtRecentFile[]> {
+  try {
+    const res = await fetch(`${API_URL}/wrt/files/recent`);
+    if (res.ok) {
+      const data = await res.json();
+      return data.files || [];
+    }
+  } catch (err) {
+    console.debug("Failed to get recent files via Native C engine:", err);
+  }
+  return [];
+}
+
+export async function downloadWrtAsDocument(
+  content: string,
+  filename?: string,
+  format: "docx" | "odt" | "pptx" | "md" | "wrt" = "docx",
+): Promise<void> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+  const res = await fetch(`${API_URL}/wrt/export`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ content, filename, format }),
+  });
+  if (!res.ok) {
+    throw new Error(`Export failed (${res.status})`);
+  }
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") ?? "";
+  const match = /filename="([^"]+)"/.exec(disposition);
+  const baseName = filename ? filename.replace(/\.[^/.]+$/, "") : "document";
+  const defaultName = `${baseName}.${format}`;
+  const downloadName = match?.[1] ?? defaultName;
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = downloadName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+

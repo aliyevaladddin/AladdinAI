@@ -162,15 +162,13 @@ void wrt_editor_render(wrt_editor_t *ed) {
 
 #define APPEND_FMT(...) do { \
     if (!truncated) { \
-        size_t rem = (len >= 0 && len < (int)sizeof(buf)) ? (sizeof(buf) - (size_t)len) : 0; \
+        size_t rem = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0; \
         if (rem == 0) { \
             truncated = 1; \
         } else { \
             int n = snprintf(buf + len, rem, __VA_ARGS__); \
-            if (n < 0) { \
-                truncated = 1; \
-            } else if ((size_t)n >= rem) { \
-                len = (int)sizeof(buf) - 1; \
+            if (n < 0 || (size_t)n >= rem) { \
+                len = sizeof(buf) - 1; \
                 truncated = 1; \
             } else { \
                 len += n; \
@@ -179,150 +177,58 @@ void wrt_editor_render(wrt_editor_t *ed) {
     } \
 } while (0)
 
-#define APPEND_FMT(...) do { \
-    APPEND_FMT(CLEAR_SCREEN);
-    APPEND_FMT(CURSOR_HOME);
-    APPEND_FMT(CURSOR_HIDE);
-        n = snprintf(buf + len, remaining, CLEAR_SCREEN);
-        if (n < 0) return;
-        if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-        else len += (size_t)n;
-    }
-    remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-            APPEND_FMT(COLOR_DIM "~" COLOR_RESET);
-        n = snprintf(buf + len, remaining, CURSOR_HOME);
-        if (n < 0) return;
-        if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-        else len += (size_t)n;
-    }
-    remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-    if (remaining > 0) {
-        n = snprintf(buf + len, remaining, CURSOR_HIDE);
-        if (n < 0) return;
-        if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-                        APPEND_FMT(COLOR_CYAN);
-    }
-                            if (len < (int)sizeof(buf) - 1) {
-                                buf[len++] = line[k];
-                            } else {
-                                truncated = 1;
-                                break;
-                            }
-        } else if ((size_t)_n >= sizeof(buf) - len) { \
-                        APPEND_FMT(COLOR_RESET);
+#define APPEND_CH(c) do { \
+    if (!truncated) { \
+        if (len < sizeof(buf) - 1) { \
+            buf[len++] = (c); \
         } else { \
-            len += (size_t)_n; \
+            truncated = 1; \
         } \
-            remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-                if (len < (int)sizeof(buf) - 1) {
-                    buf[len++] = line[i];
-                } else {
-                    truncated = 1;
-                    break;
-                }
-                n = snprintf(buf + len, remaining, COLOR_DIM "~" COLOR_RESET);
-                if (n < 0) return;
-                if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-        APPEND_FMT("\r\n");
-            }
-} while (0)
-
-    APPEND_FMT(COLOR_BOLD COLOR_BLUE);
-    if (len < sizeof(buf)) { \
-        buf[len++] = (_c); \
     } \
 } while (0)
 
-    // Clear screen and move cursor to home
-    APPEND_FMT("%s", status);
-                        remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-        if (len < (int)sizeof(buf) - 1) {
-            buf[len++] = ' ';
-        } else {
-            truncated = 1;
-            break;
-        }
-                            n = snprintf(buf + len, remaining, COLOR_CYAN);
-    APPEND_FMT(COLOR_RESET "\r\n");
-                            if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-                            else len += (size_t)n;
-    APPEND_FMT(COLOR_GREEN "WRT Editor - Lightweight document editing" COLOR_RESET);
+    APPEND_FMT(CLEAR_SCREEN);
+    APPEND_FMT(CURSOR_HOME);
     APPEND_FMT(CURSOR_HIDE);
-                            if (len < sizeof(buf) - 1) {
-                                buf[len++] = line[k];
-    APPEND_FMT("\033[%d;%dH", screen_y + 1, ed->cursor_x + 1);
-    APPEND_FMT(CURSOR_SHOW);
-                        remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-#undef APPEND_FMT
 
-    if (len < 0) len = 0;
-    if (len > (int)sizeof(buf)) len = (int)sizeof(buf);
-    write(STDOUT_FILENO, buf, (size_t)len);
-                            n = snprintf(buf + len, remaining, COLOR_RESET);
-                            if (n < 0) return;
-                            if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-                            else len += (size_t)n;
-                        }
+    // Draw document rows
+    for (int y = 0; y < ed->screen_rows; y++) {
         int file_row = y + ed->offset_y;
 
         if (file_row >= ed->num_lines) {
             APPEND_FMT(COLOR_DIM "~" COLOR_RESET);
-                if (len < sizeof(buf) - 1) {
-                    buf[len++] = line[i];
-                }
-            // Highlight .wrt tags for visibility
+        } else {
             char *line = ed->lines[file_row];
             for (int i = 0; line[i]; i++) {
-        remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-        if (remaining > 0) {
-            n = snprintf(buf + len, remaining, "\r\n");
-            if (n < 0) return;
-            if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-            else len += (size_t)n;
-        }
-                    // Start of tag
+                if (line[i] == '[') {
                     int j = i + 1;
                     while (line[j] && line[j] != ']') j++;
-    remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-    if (remaining > 0) {
-        n = snprintf(buf + len, remaining, COLOR_BOLD COLOR_BLUE);
-        if (n < 0) return;
-        if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-        else len += (size_t)n;
-    }
-                        // Complete tag found
+                    if (line[j] == ']') {
                         APPEND_FMT(COLOR_CYAN);
                         for (int k = i; k <= j; k++) {
                             APPEND_CH(line[k]);
                         }
                         APPEND_FMT(COLOR_RESET);
-    remaining = (len < sizeof(buf)) ? (sizeof(buf) - len) : 0;
-    if (remaining > 0) {
-        n = snprintf(buf + len, remaining, "%s", status);
-        if (n < 0) return;
-        if ((size_t)n >= remaining) len = sizeof(buf) - 1;
-        else len += (size_t)n;
-    }
+                        i = j;
                         continue;
-        if (len < sizeof(buf) - 1) {
-            buf[len++] = ' ';
-        }
+                    }
                 }
                 APPEND_CH(line[i]);
             }
         }
-
         APPEND_FMT("\r\n");
     }
 
     // Status bar
     APPEND_FMT(COLOR_BOLD COLOR_BLUE);
     char status[256];
-    snprintf(status, sizeof(status), " %s %s | Line %d/%d Col %d | ^S:Save ^Q:Quit ^B:Bold ^I:Italic ^U:Underline ^K:Code ^H:Heading ",
-             ed->filename, ed->modified ? "[+]" : "",
+    snprintf(status, sizeof(status), " %s %s | Line %d/%d Col %d | ^S:Save ^Q:Quit ^B:Bold ^I:Italic ^U:Underline ^K:Code ",
+             ed->filename ? ed->filename : "(empty)", ed->modified ? "[+]" : "",
              ed->cursor_y + 1, ed->num_lines, ed->cursor_x + 1);
 
-    int padding = ed->screen_cols - strlen(status);
+    int status_len = (int)strlen(status);
+    int padding = ed->screen_cols - status_len;
+    if (padding < 0) padding = 0;
     APPEND_FMT("%s", status);
     for (int i = 0; i < padding; i++) {
         APPEND_CH(' ');

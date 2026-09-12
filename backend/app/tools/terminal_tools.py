@@ -6,6 +6,7 @@ import resource
 import subprocess
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +21,10 @@ from app.models.terminal_approval import (
 from app.tools.base import ToolContext, tool
 
 log = logging.getLogger(__name__)
+
+# Workspace root — derived from this file's location (backend/app/tools/ → repo root)
+# so the host-fallback cwd is correct regardless of where the repo is checked out.
+WORKSPACE_ROOT = str(Path(__file__).resolve().parent.parent.parent.parent)
 
 # How long the agent waits for a human, and how often it re-reads the verdict.
 # The wait is a poll rather than an awaited Future because the decision arrives
@@ -299,7 +304,7 @@ async def run_approved_command(
             text=True,
             timeout=15,
             preexec_fn=set_rlimits,
-            cwd="/workspaces/AladdinAI",
+            cwd=WORKSPACE_ROOT,
             env=agent_sandbox.sanitized_host_env(),
             check=False,
         )

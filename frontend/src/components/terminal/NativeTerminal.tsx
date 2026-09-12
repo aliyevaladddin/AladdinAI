@@ -181,10 +181,13 @@ interface NativeTerminalProps {
   themePreset?: TerminalThemePreset;
   onConnected?: () => void;
   onError?: (msg: string) => void;
+  terminalEndpoint?: string;
+  /** Optional file path to pass to the IDE backend via ?file= query param */
+  filePath?: string;
 }
 
 export const NativeTerminal = forwardRef<NativeTerminalRef, NativeTerminalProps>(
-  ({ vmId, themePreset = "aladdin", onConnected, onError }, ref) => {
+  ({ vmId, themePreset = "aladdin", onConnected, onError, terminalEndpoint, filePath }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const terminalRef = useRef<Terminal | null>(null);
     const fitAddonRef = useRef<FitAddon | null>(null);
@@ -365,8 +368,11 @@ export const NativeTerminal = forwardRef<NativeTerminalRef, NativeTerminalProps>
         wsHost = url.host;
       } catch { /* use location host */ }
 
-      const endpoint = vmId ? `/api/ws/terminal/${vmId}` : "/api/ws/terminal/local";
-      const wsUrl = `${wsProtocol}//${wsHost}${endpoint}?token=${encodeURIComponent(token || "")}`;
+        const endpoint = vmId
+        ? `/api/ws/terminal/${vmId}`
+        : terminalEndpoint || "/api/ws/terminal/local";
+      const fileQuery = filePath ? `&file=${encodeURIComponent(filePath)}` : "";
+      const wsUrl = `${wsProtocol}//${wsHost}${endpoint}?token=${encodeURIComponent(token || "")}${fileQuery}`;
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;

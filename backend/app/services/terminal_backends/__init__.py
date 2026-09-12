@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL v2.0.3
+# NOTICE: This file is protected under RCF-PL
 """Terminal backends package — one interface over every terminal transport.
 
 Backends:
@@ -15,18 +15,21 @@ from app.services.terminal_backends.base import (
     encode_output,
 )
 from app.services.terminal_backends.c_native import CNativeBackend, try_open as _try_open_c
+from app.services.terminal_backends.ide_backend import IdeBackend, try_open_ide
 from app.services.terminal_backends.pty_backend import PtyBackend
 from app.services.terminal_backends.ssh import SshBackend, connect_vm
 
 __all__ = [
     "TerminalBackend",
     "CNativeBackend",
+    "IdeBackend",
     "PtyBackend",
     "SshBackend",
     "connect_vm",
     "encode_output",
     "decode_message",
     "open_local_backend",
+    "try_open_ide",
 ]
 
 
