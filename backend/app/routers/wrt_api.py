@@ -8,6 +8,7 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 from app.security import get_current_user
+from app.services.wrt_engine_service import WORKSPACE_ROOT
 from app.services import wrt_engine_service
 from app.models.user import User
 
@@ -15,7 +16,6 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/wrt", tags=["WRT Document Engine"])
 
-from app.services.wrt_engine_service import WORKSPACE_ROOT
 
 
 def _validate_workspace_path(path: str) -> str:
