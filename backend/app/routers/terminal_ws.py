@@ -12,7 +12,6 @@ a Python PTY; VM terminals use asyncssh with TOFU known-hosts pinning.
 import asyncio
 import logging
 import json
-import os
 
 import asyncssh
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -23,7 +22,6 @@ from app.database import async_session
 from app.models.vm import VMConnection
 from app.security import get_current_user_ws
 from app.services.terminal_backends import (
-    IdeBackend,
     SshBackend,
     connect_vm,
     decode_message,
