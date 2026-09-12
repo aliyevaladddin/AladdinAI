@@ -24,9 +24,9 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (err) {
       if (err instanceof Error && err.message.includes("401")) {
-        setError("Неверный email или пароль.");
+        setError("Invalid email or password.");
       } else {
-        setError("Произошла ошибка при входе. Попробуйте еще раз.");
+        setError("Something went wrong during sign-in. Please try again.");
       }
       console.error("Login error:", err);
     } finally {

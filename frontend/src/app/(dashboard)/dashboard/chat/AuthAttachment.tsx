@@ -78,15 +78,15 @@ function ImageLightbox({
       >
         <button
           onClick={handleDownload}
-          title="Скачать изображение"
+          title="Download image"
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-medium border border-white/20 transition-all backdrop-blur-sm shadow-lg active:scale-95"
         >
           <Download size={15} />
-          <span>Скачать</span>
+          <span>Download</span>
         </button>
         <button
           onClick={onClose}
-          title="Закрыть (ESC)"
+          title="Close (ESC)"
           className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all backdrop-blur-sm shadow-lg active:scale-95"
         >
           <X size={17} />
@@ -214,19 +214,19 @@ function ImageCard({
         >
           <button
             onClick={openLightbox}
-            title="Открыть полностью"
+            title="Open in lightbox"
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white text-[11px] font-medium backdrop-blur-sm border border-white/10 transition-all active:scale-95 shadow-md"
           >
             <Maximize2 size={12} />
-            <span>Просмотр</span>
+            <span>Open</span>
           </button>
           <button
             onClick={handleDownload}
-            title="Скачать"
+            title="Download"
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white text-[11px] font-medium backdrop-blur-sm border border-white/10 transition-all active:scale-95 shadow-md"
           >
             <Download size={12} />
-            <span>Скачать</span>
+            <span>Download</span>
           </button>
         </div>
       </div>
