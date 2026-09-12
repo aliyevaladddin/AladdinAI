@@ -8068,6 +8068,22 @@
               ],
               "title": "Version"
             }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Format"
+            }
           }
         ],
         "responses": {
@@ -10404,6 +10420,399 @@
         ]
       }
     },
+    "/api/wrt/validate": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Validate Document",
+        "description": "Validate WRT markup using native C engine.",
+        "operationId": "validate_document_api_wrt_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WrtContentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/wrt/fix": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Fix Document",
+        "description": "Auto-repair and close unclosed tags using native C engine.",
+        "operationId": "fix_document_api_wrt_fix_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WrtContentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/wrt/to-html": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Convert To Html",
+        "description": "Render WRT markup into styled HTML using native C engine.",
+        "operationId": "convert_to_html_api_wrt_to_html_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WrtContentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/wrt/stats": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Document Stats",
+        "description": "Calculate character, word, line, and tag statistics using native C engine.",
+        "operationId": "document_stats_api_wrt_stats_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WrtContentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/wrt/files": {
+      "get": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "List Workspace Files",
+        "description": "List directory files using native C engine.",
+        "operationId": "list_workspace_files_api_wrt_files_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wrt/files/read": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Read Workspace File",
+        "description": "Read file content using native C engine.",
+        "operationId": "read_workspace_file_api_wrt_files_read_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadFileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/wrt/files/save": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Save Workspace File",
+        "description": "Save file content to disk using native C engine.",
+        "operationId": "save_workspace_file_api_wrt_files_save_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveFileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/wrt/files/recent": {
+      "get": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Recent Workspace Files",
+        "description": "Get list of recently edited files using native C engine.",
+        "operationId": "recent_workspace_files_api_wrt_files_recent_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/wrt/export": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Export Document",
+        "description": "Export WRT document content to Word .docx, OpenDocument .odt, PowerPoint .pptx, or .md.",
+        "operationId": "export_document_api_wrt_export_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportDocumentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -12050,6 +12459,43 @@
           "created_at"
         ],
         "title": "EventOut"
+      },
+      "ExportDocumentRequest": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename",
+            "default": "document"
+          },
+          "format": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format",
+            "default": "docx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "ExportDocumentRequest"
       },
       "ExtractionUpdate": {
         "properties": {
@@ -14202,6 +14648,19 @@
         ],
         "title": "ProviderResponse"
       },
+      "ReadFileRequest": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "ReadFileRequest"
+      },
       "RefreshRequest": {
         "properties": {
           "refresh_token": {
@@ -14524,6 +14983,24 @@
         },
         "type": "object",
         "title": "SafetyUpdate"
+      },
+      "SaveFileRequest": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "content"
+        ],
+        "title": "SaveFileRequest"
       },
       "SchemaResponse": {
         "properties": {
@@ -15541,6 +16018,19 @@
           "source"
         ],
         "title": "WebSearchResult"
+      },
+      "WrtContentRequest": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "WrtContentRequest"
       }
     },
     "securitySchemes": {
