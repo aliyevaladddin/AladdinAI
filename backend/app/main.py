@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL v2.0.3
+# NOTICE: This file is protected under RCF-PL 
 # [RCF:PROTECTED]
 import json
 import logging
@@ -20,13 +20,14 @@ from app.routers import (
     notifications, native_tools, providers, reports as reports_router, router_config, search,
     settings, sql, ssh_exec,
     terminal_approval, terminal_providers, terminal_ws, traces, triggers as triggers_router, vms, webhooks,
-    websearch, workspace,
+    websearch, workspace, wrt_api,
 )
 from app.services import triggers as triggers_service
 from app.services import telegram_poller
 from app.services import terminal_health
 from app.services import autonomous_bot_scheduler
 from app.services import native_terminal_daemon
+from app.services import wrt_engine_service
 from app.tools import excel as _excel_tools  # noqa: F401 — registers excel tools
 
 log = logging.getLogger(__name__)
@@ -55,8 +56,10 @@ async def lifespan(app: FastAPI):
     terminal_health.start()
     autonomous_bot_scheduler.start_scheduler()
     native_terminal_daemon.start_daemon()
+    await wrt_engine_service.start_daemon()
     yield
     log.info("AladdinAI shutting down")
+    wrt_engine_service.stop_daemon()
     native_terminal_daemon.stop_daemon()
     await triggers_service.shutdown()
     await telegram_poller.stop()
@@ -164,6 +167,7 @@ app.include_router(reports_router.router, prefix="/api")
 app.include_router(digest.router, prefix="/api")
 app.include_router(forging.router, prefix="/api")
 app.include_router(websearch.router, prefix="/api")
+app.include_router(wrt_api.router, prefix="/api")
 
 # [RCF:PROTECTED]
 @app.get("/")

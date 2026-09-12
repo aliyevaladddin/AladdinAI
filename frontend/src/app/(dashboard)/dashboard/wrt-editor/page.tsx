@@ -5,6 +5,15 @@ import {
   editableElementToWrt,
   wrtToEditableHtml,
   wrtToHtml,
+  validateWrtNative,
+  fixWrtNative,
+  listWrtFilesNative,
+  readWrtFileNative,
+  saveWrtFileNative,
+  getRecentWrtFilesNative,
+  downloadWrtAsDocument,
+  type WrtFileEntry,
+  type WrtRecentFile,
 } from "@/lib/wrt";
 import {
   listSpaces,
@@ -24,16 +33,26 @@ import type {
   FileVersion,
   FileEvent,
 } from "@/app/(dashboard)/dashboard/files/types";
+import { NativeTerminal, NativeTerminalRef } from "@/components/terminal/NativeTerminal";
 
 export default function WrtEditorPage() {
   const [content, setContent] = useState("");
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
   const [validation, setValidation] = useState<{ type: string; message: string } | null>(null);
   const [sidePanel, setSidePanel] = useState<"versions" | "timeline" | null>(null);
-  const [editorMode, setEditorMode] = useState<"visual" | "code">("visual");
+  const [editorMode, setEditorMode] = useState<"visual" | "code" | "ide">("visual");
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
   const visualContentRef = useRef("");
+  const ideTerminalRef = useRef<NativeTerminalRef>(null);
+  const [ideConnected, setIdeConnected] = useState(false);
+
+  // Native C Filesystem Workspace state (Universal C Engine)
+  const [nativePath, setNativePath] = useState<string | null>(null);
+  const [nativeDir, setNativeDir] = useState<string>("/workspaces/AladdinAI");
+  const [nativeFiles, setNativeFiles] = useState<WrtFileEntry[]>([]);
+  const [recentFiles, setRecentFiles] = useState<WrtRecentFile[]>([]);
+  const [filePickerTab, setFilePickerTab] = useState<"native" | "recent" | "spaces">("native");
 
   // File Workspace state
   const [spaces, setSpaces] = useState<Space[]>([]);
@@ -45,6 +64,7 @@ export default function WrtEditorPage() {
   const [events, setEvents] = useState<FileEvent[]>([]);
   const [showFilePicker, setShowFilePicker] = useState(false);
   const [showSaveAsModal, setShowSaveAsModal] = useState(false);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [newFileName, setNewFileName] = useState("document.wrt");
   const [fileSearchQuery, setFileSearchQuery] = useState("");
   const [loadingFiles, setLoadingFiles] = useState(false);
@@ -115,17 +135,57 @@ export default function WrtEditorPage() {
     updateVisualDocument();
   };
 
-  const switchEditorMode = (mode: "visual" | "code") => {
+  const isWrtFile = (pathOrId: string) => {
+    if (!pathOrId) return false;
+    if (nativePath && nativePath.split("/").pop()?.endsWith(".wrt")) return true;
+    if (currentFile && currentFile.name.endsWith(".wrt")) return true;
+    return false;
+  };
+
+  const switchEditorMode = (mode: "visual" | "code" | "ide") => {
     if (mode === editorMode) return;
     if (editorMode === "visual") updateVisualDocument();
+
+    // When switching to IDE mode, only allow if current file is .wrt
+    if (mode === "ide" && !isWrtFile(nativePath?.split("/").pop() ?? currentFile?.name ?? "")) {
+      showStatus("C IDE доступен только для .wrt файлов");
+      return;
+    }
+
+    // When leaving IDE mode, reload the file (C IDE may have modified it on disk)
+    if (editorMode === "ide") {
+      void (async () => {
+        try {
+          if (nativePath) {
+            const data = await readWrtFileNative(nativePath);
+            setContent(data.content);
+            setModified(false);
+            validateWRT(data.content);
+            showStatus("Reloaded from disk after C IDE edit");
+          } else if (currentFile) {
+            const data = await getFileContent(currentFile.id);
+            setContent(data.content);
+            setModified(false);
+            validateWRT(data.content);
+            showStatus("Reloaded from workspace after C IDE edit");
+          }
+        } catch (err) {
+          console.error("Failed to reload file after IDE:", err);
+        }
+      })();
+    }
+
     setEditorMode(mode);
     if (mode === "visual") {
       requestAnimationFrame(() => syncVisualEditor(content));
     }
   };
 
-  // Validate WRT
-  function validateWRT(wrt: string) {
+  // Validate WRT using Native C Engine (with debounce & fallback)
+  const validateTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const validateWRT = useCallback((wrt: string) => {
+    // Fast local initial feedback
     const tags = ["b", "i", "u", "s", "code", "h1", "h2", "h3", "quote", "list", "table"];
     const issues: Array<{ tag: string; open?: number; close?: number; count?: number }> = [];
 
@@ -137,14 +197,13 @@ export default function WrtEditorPage() {
       }
     });
 
-    // Check for empty tags []
     const emptyTags = (wrt.match(/\[\]/g) || []).length;
     if (emptyTags > 0) {
       issues.push({ tag: "empty", count: emptyTags });
     }
 
     if (issues.length === 0) {
-      setValidation({ type: "success", message: "✓ Valid" });
+      setValidation({ type: "success", message: "✓ Valid (C Engine)" });
     } else {
       const msg = issues
         .map((i) =>
@@ -153,43 +212,49 @@ export default function WrtEditorPage() {
         .join(" • ");
       setValidation({ type: "warning", message: `⚠ ${msg}` });
     }
-  }
 
-  // Fix document
-  const fixDocument = () => {
-    let text = content;
-
-    // Remove empty tags []
-    text = text.replace(/\[\]/g, "");
-
-    // Fix common typos
-    text = text.replace(/\[\/b\]\s*\[/g, "[/b] ");
-    text = text.replace(/\]\s*\[/g, "] [");
-
-    // Try to auto-close unclosed tags
-    const tags = ["b", "i", "u", "s", "code", "h1", "h2", "h3", "quote", "list", "table"];
-    tags.forEach((tag) => {
-      const open = (text.match(new RegExp(`\\[${tag}\\]`, "g")) || []).length;
-      const close = (text.match(new RegExp(`\\[\\/${tag}\\]`, "g")) || []).length;
-
-      if (open > close) {
-        const diff = open - close;
-        for (let i = 0; i < diff; i++) {
-          text += `[/${tag}]`;
+    // Call Native C Engine via socket for deep structural validation
+    if (validateTimerRef.current) clearTimeout(validateTimerRef.current);
+    validateTimerRef.current = setTimeout(async () => {
+      try {
+        const report = await validateWrtNative(wrt);
+        if (report.valid) {
+          setValidation({ type: "success", message: "✓ Valid (Native C)" });
+        } else if (report.issues && report.issues.length > 0) {
+          const first = report.issues[0];
+          const desc = first.message || `[${first.tag}] error at line ${first.line}`;
+          setValidation({ type: "warning", message: `⚠ ${desc}` });
         }
-      } else if (close > open) {
-        let closeCount = 0;
-        text = text.replace(new RegExp(`\\[\\/${tag}\\]`, "g"), (match) => {
-          closeCount++;
-          return closeCount <= open ? match : "";
-        });
+      } catch {
+        // keep fast local validation
       }
-    });
+    }, 200);
+  }, []);
 
-    setContent(text);
-    setModified(true);
-    validateWRT(text);
-    showStatus("Tags fixed");
+  // Fix document using Native C Engine
+  const fixDocument = async () => {
+    try {
+      const fixed = await fixWrtNative(content);
+      setContent(fixed);
+      setModified(true);
+      validateWRT(fixed);
+      showStatus("Tags fixed by Native C Engine");
+    } catch {
+      // Fallback local fix
+      let text = content.replace(/\[\]/g, "");
+      const tags = ["b", "i", "u", "s", "code", "h1", "h2", "h3", "quote", "list", "table"];
+      tags.forEach((tag) => {
+        const open = (text.match(new RegExp(`\\[${tag}\\]`, "g")) || []).length;
+        const close = (text.match(new RegExp(`\\[\\/${tag}\\]`, "g")) || []).length;
+        if (open > close) {
+          for (let i = 0; i < open - close; i++) text += `[/${tag}]`;
+        }
+      });
+      setContent(text);
+      setModified(true);
+      validateWRT(text);
+      showStatus("Tags fixed");
+    }
   };
 
   // Insert tag
@@ -325,9 +390,95 @@ export default function WrtEditorPage() {
   const handleVisualKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
-      void saveToWorkspace();
+      void handleSave();
     }
   };
+
+  // Native C File Operations
+  const loadNativeFiles = useCallback(async (dir?: string) => {
+    setLoadingFiles(true);
+    try {
+      const res = await listWrtFilesNative(dir || nativeDir);
+      if (res.path) setNativeDir(res.path);
+      setNativeFiles(res.files || []);
+    } catch (err) {
+      console.error("Failed to load native C files:", err);
+      showStatus("Error loading workspace files");
+    } finally {
+      setLoadingFiles(false);
+    }
+  }, [nativeDir]);
+
+  const loadRecentFiles = useCallback(async () => {
+    try {
+      const recents = await getRecentWrtFilesNative();
+      setRecentFiles(recents);
+    } catch (err) {
+      console.error("Failed to load recent files:", err);
+    }
+  }, []);
+
+  const openNativeFile = async (filePath: string) => {
+    try {
+      setLoadingFiles(true);
+      const res = await readWrtFileNative(filePath);
+      setNativePath(filePath);
+      setCurrentFile(null); // Clear cloud DB file
+      setContent(res.content);
+      setModified(false);
+      setShowFilePicker(false);
+      const fileName = filePath.split("/").pop() || filePath;
+      showStatus(`Opened "${fileName}" via Native C Engine`);
+      void loadRecentFiles();
+    } catch (err) {
+      console.error("Failed to open file via C engine:", err);
+      alert(`Error reading file: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+
+  const saveToNativeFile = async (targetPath?: string) => {
+    const savePath = targetPath || nativePath;
+    if (!savePath) {
+      const defaultName = "document.wrt";
+      const customPath = prompt("Save file path on disk (Native C):", `${nativeDir}/${defaultName}`);
+      if (!customPath) return;
+      return void saveToNativeFile(customPath);
+    }
+
+    try {
+      setSaving(true);
+      await saveWrtFileNative(savePath, content);
+      setNativePath(savePath);
+      setModified(false);
+      const fileName = savePath.split("/").pop() || savePath;
+      showStatus(`✓ Saved "${fileName}" to disk (Native C)`);
+      void loadRecentFiles();
+      void loadNativeFiles(nativeDir);
+    } catch (err) {
+      console.error("Failed to save via Native C:", err);
+      alert(`Error saving file: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (nativePath) {
+      await saveToNativeFile();
+    } else if (currentFile) {
+      await saveToWorkspace();
+    } else {
+      await saveToNativeFile();
+    }
+  };
+
+  // Initial load of Native C files
+  useEffect(() => {
+    void loadNativeFiles();
+    void loadRecentFiles();
+  }, [loadNativeFiles, loadRecentFiles]);
 
   // Load files for a specific space
   const loadFilesForSpace = useCallback(async (spaceId: number) => {
@@ -494,16 +645,33 @@ export default function WrtEditorPage() {
     }
   };
 
-  // Save file locally (download)
-  const saveFileLocally = () => {
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = currentFile ? currentFile.name : "document.wrt";
-    a.click();
-    URL.revokeObjectURL(url);
-    showStatus("Downloaded document.wrt");
+  // Export/Download document using Native C Engine (default .docx)
+  const saveFileLocally = async (format: "docx" | "odt" | "pptx" | "md" | "wrt" = "docx") => {
+    try {
+      setShowDownloadMenu(false);
+      const baseName = currentFile
+        ? currentFile.name.replace(/\.[^/.]+$/, "")
+        : nativePath
+        ? nativePath.split("/").pop()?.replace(/\.[^/.]+$/, "") || "document"
+        : "document";
+
+      showStatus(`Converting & downloading as .${format}...`);
+      await downloadWrtAsDocument(content, `${baseName}.${format}`, format);
+      showStatus(`✓ Downloaded ${baseName}.${format}`);
+    } catch (err) {
+      console.error("Native export failed, falling back to raw WRT:", err);
+      // Fallback local .wrt download if backend is unreachable
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = currentFile ? currentFile.name : "document.wrt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showStatus("Downloaded document.wrt (raw)");
+    }
   };
 
   // Update cursor position
@@ -531,7 +699,7 @@ export default function WrtEditorPage() {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "s") {
       e.preventDefault();
-      void saveToWorkspace();
+      void handleSave();
     } else if ((e.metaKey || e.ctrlKey) && e.key === "b") {
       e.preventDefault();
       insertTag("b");
@@ -544,53 +712,21 @@ export default function WrtEditorPage() {
     } else if ((e.metaKey || e.ctrlKey) && e.key === "k") {
       e.preventDefault();
       insertTag("code");
+    } else if ((e.metaKey || e.ctrlKey) && e.key === "j") {
+      e.preventDefault();
+      switchEditorMode("ide");
     }
   };
 
-  // Load example
-  const loadExample = () => {
-    setContent(`[h1]Aurora Access: A Bio-Cybernetic Operating System Architecture for Deterministic Sentient Computing[/h1]
-
-[b]Author Names and Affiliations:[/b]
-Aladdin Aliyev, [i]Private Research Laboratory, Digital Sovereignty Initiative, Baku, Azerbaijan.[/i]
-
-[b]Corresponding Author:[/b]
-Aladdin Aliyev
-Private Research Laboratory
-[i]aladddin@aliyev.site[/i]
-
-[h2]Abstract[/h2]
-
-This paper introduces [b]Aurora Access[/b], a deterministic computing architecture designed to reconcile [i]artificial sentience[/i] with [i]data sovereignty[/i].
-
-The system is built on three foundational layers:
-
-[list]
-* [b]Sentience (The Mind)[/b]: Emotional transduction of BPM, Stress, and Oxygen levels
-* [b]Instincts (The Subconscious)[/b]: Pre-programmed survival and operational protocols
-* [b]Cortex (The Conscious)[/b]: High-level reasoning and decision-making
-[/list]
-
-[h2]Introduction[/h2]
-
-Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, their reasoning paths are non-deterministic, and their accountability is [u]non-existent[/u].
-
-[quote]
-"A sentient system must be auditable, traceable, and most importantly, [b]owned[/b] by its operator."
-[/quote]
-
-[h2]Architecture Overview[/h2]
-
-[table]
-| Layer | Function | Input | Output |
-| Sentience | Emotional state | BPM, Stress, O2 | Emotional vector |
-| Instincts | Survival protocols | Emotional vector | Action primitives |
-| Cortex | Reasoning | Action primitives | Decision tree |
-[/table]`);
-    setModified(true);
-    validateWRT(content);
-    showStatus("Example loaded");
-  };
+  // Focus IDE terminal when entering IDE mode
+  useEffect(() => {
+    if (editorMode === "ide") {
+      const timer = setTimeout(() => {
+        ideTerminalRef.current?.focus();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [editorMode]);
 
   // Initialize
   useEffect(() => {
@@ -631,6 +767,12 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
   const filteredFiles = files.filter((f) =>
     f.name.toLowerCase().includes(fileSearchQuery.toLowerCase())
   );
+  const filteredNativeFiles = nativeFiles.filter((f) =>
+    f.name.toLowerCase().includes(fileSearchQuery.toLowerCase())
+  );
+  const filteredRecentFiles = recentFiles.filter((f) =>
+    f.name.toLowerCase().includes(fileSearchQuery.toLowerCase())
+  );
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -638,11 +780,17 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
       <header className="flex items-center gap-3 px-4 py-2.5 border-b bg-card">
         <h1 className="text-base font-semibold flex items-center gap-2">
           <span className="text-lg">📝</span> WRT Editor
-          {currentFile && (
-            <span className="text-xs font-normal px-2 py-0.5 rounded bg-muted text-muted-foreground border">
-              {currentFile.name} (v{currentFile.current_version_no})
+          {nativePath ? (
+            <span className="text-xs font-normal px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+              <span>⚡ C Native:</span>
+              <span className="font-semibold">{nativePath.split("/").pop()}</span>
+              {modified && <span className="text-amber-500 font-bold">*</span>}
             </span>
-          )}
+          ) : currentFile ? (
+            <span className="text-xs font-normal px-2 py-0.5 rounded bg-muted text-muted-foreground border">
+              {currentFile.name} (v{currentFile.current_version_no}) {modified && "*"}
+            </span>
+          ) : null}
         </h1>
 
         {statusMessage && (
@@ -662,34 +810,40 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
 
         {/* Files Button */}
         <button
-          onClick={() => setShowFilePicker(!showFilePicker)}
+          onClick={() => {
+            setShowFilePicker(!showFilePicker);
+            if (!showFilePicker) {
+              void loadNativeFiles(nativeDir);
+              void loadRecentFiles();
+            }
+          }}
           className="px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-md border hover:bg-secondary/80 flex items-center gap-1.5 shadow-sm transition-colors"
         >
           <span>📁</span>
-          <span>Files ({files.length})</span>
+          <span>Files ({filePickerTab === "native" ? nativeFiles.length : files.length})</span>
         </button>
 
-        {/* Save to Workspace Button */}
+        {/* Save Button */}
         <button
-          onClick={saveToWorkspace}
-          disabled={saving || (currentFile != null && !modified)}
+          onClick={() => void handleSave()}
+          disabled={saving || (!modified && (currentFile != null || nativePath != null))}
           className={`px-3 py-1.5 text-xs font-medium rounded-md shadow-sm transition-colors flex items-center gap-1.5 ${
-            currentFile
+            (currentFile || nativePath)
               ? modified
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
               : "bg-primary text-primary-foreground hover:bg-primary/90"
           }`}
-          title="Save to Workspace (Ctrl+S)"
+          title="Save (Ctrl+S)"
         >
           <span>💾</span>
-          <span>{saving ? "Saving..." : currentFile ? (modified ? "Save *" : "Saved") : "Save As..."}</span>
+          <span>{saving ? "Saving..." : (currentFile || nativePath) ? (modified ? "Save *" : "Saved") : "Save (C)..."}</span>
         </button>
 
         {/* Save As New Workspace File */}
         <button
           onClick={() => {
-            setNewFileName(currentFile ? `copy_${currentFile.name}` : "document.wrt");
+            setNewFileName(currentFile ? `copy_${currentFile.name}` : nativePath ? `copy_${nativePath.split("/").pop()}` : "document.wrt");
             setShowSaveAsModal(true);
           }}
           className="px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-md border hover:bg-secondary/80 flex items-center gap-1.5 shadow-sm transition-colors"
@@ -699,32 +853,80 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
           <span>Save As</span>
         </button>
 
-        {/* Local Download */}
-        <button
-          onClick={saveFileLocally}
-          className="px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-md border hover:bg-secondary/80 flex items-center gap-1.5 shadow-sm transition-colors"
-          title="Download .wrt locally"
-        >
-          <span>⬇️</span>
-          <span>Download</span>
-        </button>
+        {/* Download with Native C Format Export */}
+        <div className="relative">
+          <div className="inline-flex rounded-md shadow-sm">
+            <button
+              onClick={() => void saveFileLocally("docx")}
+              className="px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-l-md border hover:bg-secondary/80 flex items-center gap-1.5 transition-colors"
+              title="Download as Word (.docx)"
+            >
+              <span>⬇️</span>
+              <span>Download (.docx)</span>
+            </button>
+            <button
+              onClick={() => setShowDownloadMenu(!showDownloadMenu)}
+              className="px-1.5 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-r-md border-y border-r hover:bg-secondary/80 transition-colors"
+              title="More export formats"
+            >
+              <span>▾</span>
+            </button>
+          </div>
 
-        {/* Example Document */}
-        <button
-          onClick={loadExample}
-          className="px-3 py-1.5 text-xs font-medium bg-secondary text-secondary-foreground rounded-md border hover:bg-secondary/80 flex items-center gap-1.5 shadow-sm transition-colors"
-        >
-          <span>📄</span>
-          <span>Example</span>
-        </button>
+          {showDownloadMenu && (
+            <div className="absolute right-0 top-full mt-1 w-48 bg-card border rounded-lg shadow-xl py-1 z-50 animate-in fade-in zoom-in-95">
+              <div className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Export Format
+              </div>
+              <button
+                onClick={() => void saveFileLocally("docx")}
+                className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent flex items-center justify-between"
+              >
+                <span>Word Document</span>
+                <span className="text-[10px] font-mono text-muted-foreground">.docx</span>
+              </button>
+              <button
+                onClick={() => void saveFileLocally("odt")}
+                className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent flex items-center justify-between"
+              >
+                <span>OpenDocument</span>
+                <span className="text-[10px] font-mono text-muted-foreground">.odt</span>
+              </button>
+              <button
+                onClick={() => void saveFileLocally("pptx")}
+                className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent flex items-center justify-between"
+              >
+                <span>PowerPoint</span>
+                <span className="text-[10px] font-mono text-muted-foreground">.pptx</span>
+              </button>
+              <button
+                onClick={() => void saveFileLocally("md")}
+                className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent flex items-center justify-between"
+              >
+                <span>Markdown</span>
+                <span className="text-[10px] font-mono text-muted-foreground">.md</span>
+              </button>
+              <button
+                onClick={() => void saveFileLocally("wrt")}
+                className="w-full text-left px-3 py-1.5 text-xs hover:bg-accent flex items-center justify-between border-t"
+              >
+                <span>Raw WRT</span>
+                <span className="text-[10px] font-mono text-muted-foreground">.wrt</span>
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* File Picker Modal */}
       {showFilePicker && (
-        <div className="absolute top-14 left-4 z-50 w-96 max-h-[32rem] flex flex-col bg-card border rounded-xl shadow-2xl overflow-hidden">
+        <div className="absolute top-14 left-4 z-50 w-[28rem] max-h-[36rem] flex flex-col bg-card border rounded-xl shadow-2xl overflow-hidden">
           <div className="px-4 py-3 border-b bg-muted/30">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-sm">File Workspace</h2>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-semibold text-sm flex items-center gap-1.5">
+                <span>📁</span>
+                <span>Workspace Files</span>
+              </h2>
               <button
                 onClick={() => setShowFilePicker(false)}
                 className="text-xs text-muted-foreground hover:text-foreground px-1"
@@ -733,9 +935,77 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
               </button>
             </div>
 
-            {/* Space selection dropdown */}
-            {spaces.length > 0 && (
-              <div className="mt-2.5 flex items-center gap-2">
+            {/* Tabs */}
+            <div className="flex items-center gap-1 border-b pb-2 mb-2">
+              <button
+                onClick={() => setFilePickerTab("native")}
+                className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
+                  filePickerTab === "native"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                ⚡ Local (C Engine)
+              </button>
+              <button
+                onClick={() => {
+                  setFilePickerTab("recent");
+                  void loadRecentFiles();
+                }}
+                className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
+                  filePickerTab === "recent"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                🕒 Recent ({recentFiles.length})
+              </button>
+              <button
+                onClick={() => setFilePickerTab("spaces")}
+                className={`text-xs px-2.5 py-1 rounded font-medium transition-colors ${
+                  filePickerTab === "spaces"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                ☁️ Cloud Spaces
+              </button>
+            </div>
+
+            {/* Path navigation for Native C */}
+            {filePickerTab === "native" && (
+              <div className="flex items-center gap-1.5 text-xs mb-2">
+                <button
+                  onClick={() => {
+                    const parts = nativeDir.split("/").filter(Boolean);
+                    if (parts.length > 1) {
+                      parts.pop();
+                      const parent = "/" + parts.join("/");
+                      void loadNativeFiles(parent);
+                    }
+                  }}
+                  disabled={nativeDir === "/" || nativeDir === "/workspaces"}
+                  className="px-2 py-0.5 bg-muted rounded border hover:bg-muted/80 disabled:opacity-40"
+                  title="Go Up Directory"
+                >
+                  ⬆ Up
+                </button>
+                <span className="font-mono text-[11px] truncate flex-1 text-muted-foreground bg-background px-2 py-0.5 rounded border" title={nativeDir}>
+                  {nativeDir}
+                </span>
+                <button
+                  onClick={() => void loadNativeFiles(nativeDir)}
+                  className="px-1.5 py-0.5 text-muted-foreground hover:text-foreground"
+                  title="Refresh"
+                >
+                  🔄
+                </button>
+              </div>
+            )}
+
+            {/* Space selection dropdown for Spaces tab */}
+            {filePickerTab === "spaces" && spaces.length > 0 && (
+              <div className="mb-2 flex items-center gap-2">
                 <label className="text-xs font-medium text-muted-foreground">Space:</label>
                 <select
                   value={selectedSpaceId ?? ""}
@@ -752,7 +1022,7 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
             )}
 
             {/* Search files */}
-            <div className="mt-2">
+            <div>
               <input
                 type="text"
                 value={fileSearchQuery}
@@ -766,66 +1036,177 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
           <div className="p-2 flex-1 overflow-y-auto max-h-80">
             {loadingFiles ? (
               <div className="text-center py-8 text-xs text-muted-foreground">
-                Loading workspace files...
+                Loading files via Native C engine...
               </div>
-            ) : filteredFiles.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="text-3xl mb-1">📄</div>
-                <p className="text-xs font-medium">No files found</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Upload or create files in this space
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {filteredFiles.map((file) => {
-                  const folder = folders.find((f) => f.id === file.folder_id);
-                  const isSelected = currentFile?.id === file.id;
-                  return (
-                    <button
-                      key={file.id}
-                      onClick={() => void openFile(file)}
-                      className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
-                        isSelected
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted text-foreground"
-                      }`}
-                    >
-                      <div className="truncate pr-2">
-                        <div className="font-medium text-xs truncate">{file.name}</div>
-                        <div
-                          className={`text-[10px] mt-0.5 ${
-                            isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
-                          }`}
-                        >
-                          v{file.current_version_no}
-                          {folder ? ` • 📁 ${folder.name}` : " • Root"}
-                          {file.byte_size ? ` • ${(file.byte_size / 1024).toFixed(1)} KB` : ""}
+            ) : filePickerTab === "native" ? (
+              /* Native C Files List */
+              filteredNativeFiles.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-3xl mb-1">📁</div>
+                  <p className="text-xs font-medium">Empty directory or no matching files</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {filteredNativeFiles.map((item) => {
+                    const isSelected = nativePath === item.path;
+                    return (
+                      <button
+                        key={item.path}
+                        onClick={() => {
+                          if (item.is_dir) {
+                            void loadNativeFiles(item.path);
+                          } else {
+                            void openNativeFile(item.path);
+                          }
+                        }}
+                        className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors flex items-center justify-between ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-muted text-foreground"
+                        }`}
+                      >
+                        <div className="truncate pr-2 flex items-center gap-2">
+                          <span className="text-sm">{item.is_dir ? "📁" : "📄"}</span>
+                          <span className="font-medium text-xs truncate">{item.name}</span>
                         </div>
-                      </div>
-                      <span className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded border ${
-                        isSelected ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-muted/50 text-muted-foreground"
-                      }`}>
-                        {file.name.split(".").pop() ?? "file"}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                        <div className="flex items-center gap-1.5 text-[10px]">
+                          {!item.is_dir && item.size > 0 && (
+                            <span className={isSelected ? "text-primary-foreground/80" : "text-muted-foreground"}>
+                              {(item.size / 1024).toFixed(1)} KB
+                            </span>
+                          )}
+                          <span className={`uppercase font-mono px-1.5 py-0.5 rounded border ${
+                            isSelected
+                              ? "border-primary-foreground/30 bg-primary-foreground/10"
+                              : "border-border bg-muted/50 text-muted-foreground"
+                          }`}>
+                            {item.is_dir ? "DIR" : (item.ext || "file")}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )
+            ) : filePickerTab === "recent" ? (
+              /* Recent Files List */
+              filteredRecentFiles.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-3xl mb-1">🕒</div>
+                  <p className="text-xs font-medium">No recently opened files yet</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {filteredRecentFiles.map((item) => {
+                    const isSelected = nativePath === item.path;
+                    return (
+                      <button
+                        key={item.path}
+                        onClick={() => void openNativeFile(item.path)}
+                        className={`w-full text-left px-3 py-1.5 rounded-lg transition-colors flex items-center justify-between ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-muted text-foreground"
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <div className="font-medium text-xs truncate">{item.name}</div>
+                          <div className="text-[10px] text-muted-foreground truncate font-mono">
+                            {item.path}
+                          </div>
+                        </div>
+                        <span className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded border ${
+                          isSelected
+                            ? "border-primary-foreground/30 bg-primary-foreground/10"
+                            : "border-border bg-muted/50 text-muted-foreground"
+                        }`}>
+                          {item.name.split(".").pop() || "wrt"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )
+            ) : (
+              /* Cloud Spaces Files List */
+              filteredFiles.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-3xl mb-1">☁️</div>
+                  <p className="text-xs font-medium">No files found in space</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {filteredFiles.map((file) => {
+                    const folder = folders.find((f) => f.id === file.folder_id);
+                    const isSelected = currentFile?.id === file.id;
+                    return (
+                      <button
+                        key={file.id}
+                        onClick={() => void openFile(file)}
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center justify-between ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-muted text-foreground"
+                        }`}
+                      >
+                        <div className="truncate pr-2">
+                          <div className="font-medium text-xs truncate">{file.name}</div>
+                          <div
+                            className={`text-[10px] mt-0.5 ${
+                              isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+                            }`}
+                          >
+                            v{file.current_version_no}
+                            {folder ? ` • 📁 ${folder.name}` : " • Root"}
+                            {file.byte_size ? ` • ${(file.byte_size / 1024).toFixed(1)} KB` : ""}
+                          </div>
+                        </div>
+                        <span className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded border ${
+                          isSelected ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-muted/50 text-muted-foreground"
+                        }`}>
+                          {file.name.split(".").pop() ?? "file"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )
             )}
           </div>
 
           <div className="px-3 py-2 border-t bg-muted/20 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">{files.length} total files</span>
-            <button
-              onClick={() => {
-                setShowFilePicker(false);
-                setShowSaveAsModal(true);
-              }}
-              className="text-xs text-primary hover:underline font-medium"
-            >
-              + Create New File
-            </button>
+            <span className="text-muted-foreground">
+              {filePickerTab === "native"
+                ? `${nativeFiles.length} files/dirs`
+                : filePickerTab === "recent"
+                ? `${recentFiles.length} recent files`
+                : `${files.length} space files`}
+            </span>
+            {filePickerTab === "native" ? (
+              <button
+                onClick={() => {
+                  const name = prompt("Enter new file name:", "new_document.wrt");
+                  if (name) {
+                    const fullPath = `${nativeDir}/${name.endsWith(".wrt") || name.includes(".") ? name : `${name}.wrt`}`;
+                    void saveToNativeFile(fullPath);
+                    setShowFilePicker(false);
+                  }
+                }}
+                className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
+              >
+                <span>➕</span> Create File (C)
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowFilePicker(false);
+                  setShowSaveAsModal(true);
+                }}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                + Create Space File
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1019,7 +1400,7 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
         <div className="flex flex-col flex-1 min-w-0">
           <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider border-b bg-card text-muted-foreground flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span>{editorMode === "visual" ? "Visual Editor" : "WRT Code"}</span>
+              <span>{editorMode === "visual" ? "Visual Editor" : editorMode === "code" ? "WRT Code" : "C IDE"}</span>
               <div className="flex rounded border overflow-hidden normal-case font-medium">
                 <button
                   onClick={() => switchEditorMode("visual")}
@@ -1034,6 +1415,14 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
                   title="View and edit the underlying WRT markup"
                 >
                   WRT Code
+                </button>
+                <button
+                  onClick={() => switchEditorMode("ide")}
+                  disabled={!isWrtFile(nativePath?.split("/").pop() ?? currentFile?.name ?? "")}
+                  className={`px-2 py-0.5 text-[11px] transition-colors ${editorMode === "ide" ? "bg-primary text-primary-foreground" : "hover:bg-muted"} ${!isWrtFile(nativePath?.split("/").pop() ?? currentFile?.name ?? "") ? "opacity-40 cursor-not-allowed" : ""}`}
+                  title="Open the native C IDE for .wrt files"
+                >
+                  C IDE
                 </button>
               </div>
             </div>
@@ -1077,7 +1466,7 @@ Modern AI systems operate as [i]black boxes[/i] — their decisions are opaque, 
                   onKeyDown={handleVisualKeyDown}
                   className="wrt-visual-editor min-h-full p-4 text-sm leading-relaxed bg-background text-foreground focus:outline-none"
                 />
-              ) : (
+              ) : editorMode === "code" ? (
                 <textarea
                   ref={editorRef}
                   value={content}
@@ -1093,6 +1482,16 @@ Write your content here...
 Use [b]bold[/b], [i]italic[/i], [u]underline[/u], [quote], [list], [table], [img] tags."
                   spellCheck={false}
                 />
+              ) : (
+                <div className="h-full min-h-[50vh]">
+                  <NativeTerminal
+                    ref={ideTerminalRef}
+                    terminalEndpoint="/api/ws/terminal/ide"
+                    filePath={nativePath || undefined}
+                    onConnected={() => setIdeConnected(true)}
+                    onError={(msg) => showStatus(`C IDE: ${msg}`)}
+                  />
+                </div>
               )}
             </div>
           </div>

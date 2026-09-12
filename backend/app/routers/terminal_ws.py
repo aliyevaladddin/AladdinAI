@@ -12,6 +12,7 @@ a Python PTY; VM terminals use asyncssh with TOFU known-hosts pinning.
 import asyncio
 import logging
 import json
+import os
 
 import asyncssh
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -22,11 +23,13 @@ from app.database import async_session
 from app.models.vm import VMConnection
 from app.security import get_current_user_ws
 from app.services.terminal_backends import (
+    IdeBackend,
     SshBackend,
     connect_vm,
     decode_message,
     encode_output,
     open_local_backend,
+    try_open_ide,
 )
 
 log = logging.getLogger(__name__)
@@ -58,10 +61,13 @@ async def _relay(websocket: WebSocket, backend) -> None:
     try:
         while True:
             raw = await websocket.receive_text()
+            log.debug("Terminal relay: received %r", raw)
             decoded = decode_message(raw)
             if decoded is None:
+                log.debug("Terminal relay: cannot decode message")
                 continue
             mtype, payload = decoded
+            log.debug("Terminal relay: type=%s payload=%r", mtype, payload[:100] if isinstance(payload, str) else payload)
             if mtype == "data":
                 await backend.write(payload)
             else:
@@ -124,6 +130,33 @@ async def local_terminal_websocket(websocket: WebSocket):
     backend, name = await open_local_backend()
     log.info("Local terminal WS for user %s using %s backend", user.id, name)
     await _relay(websocket, backend)
+
+
+
+
+
+# ── IDE terminal (launches aladdin-ide via PTY) ─────────────────────────────────
+
+
+@router.websocket("/ws/terminal/ide")
+async def ide_terminal_websocket(websocket: WebSocket):
+    log.debug("IDE terminal WS connection attempt")
+    await websocket.accept()
+
+    user = await _authenticate(websocket)
+    if user is None:
+        return
+
+    # Get file path from query parameter
+    file_path = websocket.query_params.get("file", "")
+
+    try:
+        backend, name = await try_open_ide(file_path)
+        log.info("IDE terminal WS for user %s using %s backend with file: %s", user.id, name, file_path or "(cwd)")
+        await _relay(websocket, backend)
+    except Exception as e:
+        log.exception("Failed to start IDE terminal: %s", e)
+        await _send_error_and_close(websocket, f"Failed to start IDE: {str(e)}", code=1011)
 
 
 # ── VM terminal over SSH ──────────────────────────────────────────────────────

@@ -4,18 +4,12 @@ CC = gcc
 CFLAGS = -O2 -Wall -Wextra -std=c11 -D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE -D_GNU_SOURCE
 LDFLAGS = -lutil
 
-TARGETS = aladdin-term aladdin-grep aladdin-log-stream wrt-edit wrt-validate
+TARGETS = aladdin-term aladdin-grep aladdin-log-stream wrt-engine wrt-edit wrt-validate
 
 all: $(TARGETS)
 
 aladdin-term: aladdin_term.c aladdin_term.h
 	$(CC) $(CFLAGS) aladdin_term.c -o aladdin-term $(LDFLAGS)
-
-wrt-edit: wrt-edit.c wrt_editor.c wrt_editor.h
-	$(CC) $(CFLAGS) wrt-edit.c wrt_editor.c -o wrt-edit
-
-wrt-validate: wrt-validate.c
-	$(CC) $(CFLAGS) wrt-validate.c -o wrt-validate
 
 aladdin-grep: aladdin_grep.c
 	$(CC) $(CFLAGS) aladdin_grep.c -o aladdin-grep
@@ -23,7 +17,20 @@ aladdin-grep: aladdin_grep.c
 aladdin-log-stream: aladdin_log_stream.c
 	$(CC) $(CFLAGS) aladdin_log_stream.c -o aladdin-log-stream
 
+wrt-engine: wrt/wrt_engine.c wrt/wrt_engine.h
+	$(MAKE) -C wrt wrt-engine
+	cp -f wrt/wrt-engine .
+
+wrt-edit: wrt/wrt-edit.c
+	$(MAKE) -C wrt wrt-edit
+	cp -f wrt/wrt-edit .
+
+wrt-validate: wrt/wrt-validate.c
+	$(MAKE) -C wrt wrt-validate
+	cp -f wrt/wrt-validate .
+
 clean:
 	rm -f $(TARGETS) *.o
+	$(MAKE) -C wrt clean
 
-.PHONY: all clean
+.PHONY: all clean wrt-engine wrt-edit wrt-validate

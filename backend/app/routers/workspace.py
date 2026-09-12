@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL v2.0.3
+# NOTICE: This file is protected under RCF-PL 
 # [RCF:PROTECTED]
 """
 File workspace router: spaces → folders → files → versions → events.
@@ -450,13 +450,13 @@ async def upload_file(
     if len(data) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="File too large")
 
-    # ── .docx → .wrt conversion on upload ──
-    # Convert uploaded .docx files to .wrt format immediately for internal storage
+    # ── .docx / .md → .wrt conversion on upload ──
+    # Convert uploaded .docx and .md files to .wrt format immediately for internal storage
     filename = file.filename or "untitled"
     content_type = file.content_type
     if filename.lower().endswith(".docx"):
         try:
-            from app.services.docx_converter import docx_to_wrt
+            from app.services.wrt_engine_service import docx_to_wrt
             wrt_text = docx_to_wrt(data)
             data = wrt_text.encode("utf-8")
             # Change extension to .wrt and update MIME type
@@ -465,6 +465,34 @@ async def upload_file(
         except Exception as e:
             log.error(f"Failed to convert .docx to .wrt on upload: {e}")
             # Fall back to storing as-is if conversion fails
+    elif filename.lower().endswith(".md"):
+        try:
+            from app.services.wrt_engine_service import md_to_wrt
+            md_text = data.decode("utf-8", errors="replace")
+            wrt_text = md_to_wrt(md_text)
+            data = wrt_text.encode("utf-8")
+            filename = filename.rsplit(".", 1)[0] + ".wrt"
+            content_type = "text/plain"
+        except Exception as e:
+            log.error(f"Failed to convert .md to .wrt on upload: {e}")
+    elif filename.lower().endswith(".odt"):
+        try:
+            from app.services.wrt_engine_service import odt_to_wrt
+            wrt_text = odt_to_wrt(data)
+            data = wrt_text.encode("utf-8")
+            filename = filename.rsplit(".", 1)[0] + ".wrt"
+            content_type = "text/plain"
+        except Exception as e:
+            log.error(f"Failed to convert .odt to .wrt on upload: {e}")
+    elif filename.lower().endswith(".pptx"):
+        try:
+            from app.services.wrt_engine_service import pptx_to_wrt
+            wrt_text = pptx_to_wrt(data)
+            data = wrt_text.encode("utf-8")
+            filename = filename.rsplit(".", 1)[0] + ".wrt"
+            content_type = "text/plain"
+        except Exception as e:
+            log.error(f"Failed to convert .pptx to .wrt on upload: {e}")
 
     ref = await media_storage.save_bytes(
         db, user.id, data, content_type, original_filename=filename,
@@ -540,7 +568,7 @@ async def get_file_content(
 
     if ext == ".docx":
         try:
-            from app.services.docx_converter import docx_to_wrt
+            from app.services.wrt_engine_service import docx_to_wrt
             content = docx_to_wrt(data)
         except Exception:
             content = data.decode("utf-8", errors="replace")
@@ -580,6 +608,7 @@ async def get_file_content(
 async def download_file(
     file_id: int,
     version: Optional[int] = None,
+    format: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -605,33 +634,72 @@ async def download_file(
                {"version_no": wanted})
     await db.commit()
 
-    # ── .wrt → .docx conversion on download ──
-    # All .docx files are converted to .wrt on upload and stored internally
-    # as .wrt.  On download we convert back to .docx so the client gets a
-    # real Office document they can open in Word/LibreOffice.
+    # ── .wrt → Office/document conversion on download ──
     name_lower = ws_file.name.lower()
     content_type = ws_file.mime_type or "application/octet-stream"
     download_name = ws_file.name
+    req_fmt = (format or "").lower().strip(".")
 
     if name_lower.endswith(".wrt"):
-        # Convert .wrt → .docx for the client
+        wrt_text = data.decode("utf-8", errors="replace")
+        if req_fmt == "odt":
+            try:
+                from app.services.wrt_engine_service import wrt_to_odt
+                data = wrt_to_odt(wrt_text)
+                content_type = "application/vnd.oasis.opendocument.text"
+                download_name = ws_file.name.rsplit(".", 1)[0] + ".odt"
+            except Exception as e:
+                log.warning(f"Failed to convert .wrt to .odt on download: {e}")
+        elif req_fmt == "pptx" or (not req_fmt and "[slide " in wrt_text):
+            try:
+                from app.services.wrt_engine_service import wrt_to_pptx
+                data = wrt_to_pptx(wrt_text)
+                content_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                download_name = ws_file.name.rsplit(".", 1)[0] + ".pptx"
+            except Exception as e:
+                log.warning(f"Failed to convert .wrt to .pptx on download: {e}")
+        elif req_fmt == "md":
+            try:
+                from app.services.wrt_engine_service import wrt_to_md
+                data = wrt_to_md(wrt_text).encode("utf-8")
+                content_type = "text/markdown"
+                download_name = ws_file.name.rsplit(".", 1)[0] + ".md"
+            except Exception as e:
+                log.warning(f"Failed to convert .wrt to .md on download: {e}")
+        elif req_fmt == "wrt":
+            content_type = "text/plain"
+            download_name = ws_file.name
+        else:
+            # Default to .docx
+            try:
+                from app.services.wrt_engine_service import wrt_to_docx
+                data = wrt_to_docx(wrt_text)
+                content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                download_name = ws_file.name.rsplit(".", 1)[0] + ".docx"
+            except Exception:
+                log.warning("Failed to convert .wrt to .docx on download, sending raw .wrt")
+    elif name_lower.endswith(".odt") and not data[:4] == b"PK\x03\x04":
         try:
-            from app.services.docx_converter import wrt_to_docx
-            wrt_text = data.decode("utf-8", errors="replace")
-            data = wrt_to_docx(wrt_text)
-            content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            download_name = ws_file.name.rsplit(".", 1)[0] + ".docx"
+            from app.services.wrt_engine_service import wrt_to_odt
+            data = wrt_to_odt(data.decode("utf-8", errors="replace"))
+            content_type = "application/vnd.oasis.opendocument.text"
         except Exception:
-            log.warning("Failed to convert .wrt to .docx on download, sending raw .wrt")
+            pass
+    elif name_lower.endswith(".pptx") and not data[:4] == b"PK\x03\x04":
+        try:
+            from app.services.wrt_engine_service import wrt_to_pptx
+            data = wrt_to_pptx(data.decode("utf-8", errors="replace"))
+            content_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        except Exception:
+            pass
     elif name_lower.endswith(".docx") and not data[:4] == b"PK\x03\x04":
-        # Legacy: file still named .docx but stored as .wrt text (agent edit)
         try:
-            from app.services.docx_converter import wrt_to_docx
+            from app.services.wrt_engine_service import wrt_to_docx
             wrt_text = data.decode("utf-8", errors="replace")
             data = wrt_to_docx(wrt_text)
             content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         except Exception:
-            pass  # Fall through to raw download
+            pass
 
     from urllib.parse import quote
 
@@ -674,7 +742,7 @@ async def upload_new_version(
     upload_name = (file.filename or "").lower()
     if ws_file.name.lower().endswith(".docx") or upload_name.endswith(".docx"):
         try:
-            from app.services.docx_converter import docx_to_wrt
+            from app.services.wrt_engine_service import docx_to_wrt
             wrt_text = docx_to_wrt(data)
             data = wrt_text.encode("utf-8")
             # Ensure file name and MIME type reflect .wrt
@@ -685,6 +753,40 @@ async def upload_new_version(
         except Exception as e:
             log.error(f"Failed to convert .docx to .wrt on upload_new_version: {e}")
             # Fall back to storing as-is if conversion fails
+    elif ws_file.name.lower().endswith(".md") or upload_name.endswith(".md"):
+        try:
+            from app.services.wrt_engine_service import md_to_wrt
+            md_text = data.decode("utf-8", errors="replace")
+            wrt_text = md_to_wrt(md_text)
+            data = wrt_text.encode("utf-8")
+            if ws_file.name.lower().endswith(".md"):
+                ws_file.name = ws_file.name.rsplit(".", 1)[0] + ".wrt"
+            ws_file.mime_type = "text/plain"
+            content_type = "text/plain"
+        except Exception as e:
+            log.error(f"Failed to convert .md to .wrt on upload_new_version: {e}")
+    elif ws_file.name.lower().endswith(".odt") or upload_name.endswith(".odt"):
+        try:
+            from app.services.wrt_engine_service import odt_to_wrt
+            wrt_text = odt_to_wrt(data)
+            data = wrt_text.encode("utf-8")
+            if ws_file.name.lower().endswith(".odt"):
+                ws_file.name = ws_file.name.rsplit(".", 1)[0] + ".wrt"
+            ws_file.mime_type = "text/plain"
+            content_type = "text/plain"
+        except Exception as e:
+            log.error(f"Failed to convert .odt to .wrt on upload_new_version: {e}")
+    elif ws_file.name.lower().endswith(".pptx") or upload_name.endswith(".pptx"):
+        try:
+            from app.services.wrt_engine_service import pptx_to_wrt
+            wrt_text = pptx_to_wrt(data)
+            data = wrt_text.encode("utf-8")
+            if ws_file.name.lower().endswith(".pptx"):
+                ws_file.name = ws_file.name.rsplit(".", 1)[0] + ".wrt"
+            ws_file.mime_type = "text/plain"
+            content_type = "text/plain"
+        except Exception as e:
+            log.error(f"Failed to convert .pptx to .wrt on upload_new_version: {e}")
 
     ref = await media_storage.save_bytes(
         db, user.id, data, content_type, original_filename=ws_file.name,

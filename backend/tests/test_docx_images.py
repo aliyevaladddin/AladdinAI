@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL v2.0.3
+# NOTICE: This file is protected under RCF-PL 
 """Tests for .docx ↔ .wrt image round-trip support."""
 import base64
 import io
@@ -7,7 +7,7 @@ import pytest
 from docx import Document
 from PIL import Image
 
-from app.services.docx_converter import docx_to_wrt, wrt_to_docx
+from app.services.wrt_engine_service import docx_to_wrt, wrt_to_docx
 
 
 def create_test_image(width: int = 100, height: int = 100, color: str = "red") -> bytes:
