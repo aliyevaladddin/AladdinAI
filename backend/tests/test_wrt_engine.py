@@ -47,6 +47,12 @@ async def test_native_c_stats():
 
 @pytest.mark.asyncio
 async def test_wrt_api_endpoints(auth_headers):
+    import os
+    # Detect workspace root dynamically
+    workspace_root = os.environ.get("ALADDIN_WORKSPACE_ROOT", "/workspaces/AladdinAI")
+    native_dir = os.path.join(workspace_root, "backend", "native")
+    test_file = os.path.join(workspace_root, "backend", "tests", "test_api_doc.wrt")
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         # Validate endpoint
@@ -70,14 +76,14 @@ async def test_wrt_api_endpoints(auth_headers):
         assert res.json()["words"] == 3
 
         # List files endpoint
-        res = await ac.get("/api/wrt/files?path=/workspaces/AladdinAI/backend/native", headers=auth_headers)
+        path_param = native_dir.lstrip(workspace_root) if workspace_root else native_dir
+        res = await ac.get(f"/api/wrt/files?path={path_param}", headers=auth_headers)
         assert res.status_code == 200
         data = res.json()
         assert data["success"] is True
         assert len(data["files"]) > 0
 
         # Save file endpoint
-        test_file = "/workspaces/AladdinAI/backend/tests/test_api_doc.wrt"
         res = await ac.post("/api/wrt/files/save", json={"path": test_file, "content": "[h1]Saved via API[/h1]"}, headers=auth_headers)
         assert res.status_code == 200
         assert res.json()["success"] is True
