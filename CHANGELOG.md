@@ -95,6 +95,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#865) ([803885a](https://github.com/aliyevaladddin/AladdinAI/commit/803885ac980964125d4cf9503d1dd3bff2199bbc))
 
+- Update API documentation [skip ci] (#868) ([21ac253](https://github.com/aliyevaladddin/AladdinAI/commit/21ac25394f4028f68f705651e148ab5d9e33f248))
+
 
 ### Features
 
@@ -239,10 +241,17 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#864) ([2392f7d](https://github.com/aliyevaladddin/AladdinAI/commit/2392f7da95fb57b017fd31ee509a1aa9e2c5047c))
 
+- Update changelog [skip ci] (#867) ([960c751](https://github.com/aliyevaladddin/AladdinAI/commit/960c751ddf91738f2a39ac924308a85ad68dc254))
+
 
 ### Refactor
 
 - Unified TerminalBackend abstraction (stage A) ([a238145](https://github.com/aliyevaladddin/AladdinAI/commit/a238145a77eb351e0dec245f1b40229382f53537))
+
+
+### I18n
+
+- Translate UI text and error messages to English ([3c826dc](https://github.com/aliyevaladddin/AladdinAI/commit/3c826dc014e36877677f5f13fd1bd00a610125f1))
 
 ## [v2.2.5] - 2026-08-21
 
