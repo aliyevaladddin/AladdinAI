@@ -9,6 +9,7 @@
 #include <sys/un.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
 #include <dirent.h>
@@ -879,21 +880,28 @@ char *wrt_read_file_json(const char *file_path) {
         return b.data;
     }
 
+    int fd = open(file_path, O_RDONLY);
+    if (fd < 0) {
+        buf_append(&b, "{\"type\":\"read_file_result\",\"success\":false,\"error\":\"Cannot open file\"}\n");
+        return b.data;
+    }
+
     struct stat st;
-    if (stat(file_path, &st) != 0) {
-        buf_append(&b, "{\"type\":\"read_file_result\",\"success\":false,\"error\":\"File not found: ");
-        buf_append_json_escaped(&b, file_path);
-        buf_append(&b, "\"}\n");
+    if (fstat(fd, &st) != 0) {
+        close(fd);
+        buf_append(&b, "{\"type\":\"read_file_result\",\"success\":false,\"error\":\"Cannot stat file\"}\n");
         return b.data;
     }
 
     if (S_ISDIR(st.st_mode)) {
+        close(fd);
         buf_append(&b, "{\"type\":\"read_file_result\",\"success\":false,\"error\":\"Path is a directory\"}\n");
         return b.data;
     }
 
-    FILE *fp = fopen(file_path, "rb");
+    FILE *fp = fdopen(fd, "rb");
     if (!fp) {
+        close(fd);
         buf_append(&b, "{\"type\":\"read_file_result\",\"success\":false,\"error\":\"Cannot open file\"}\n");
         return b.data;
     }
