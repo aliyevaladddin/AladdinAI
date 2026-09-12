@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Bot, Send, Square, X } from "lucide-react";
-import { API_URL } from "@/lib/api";
+import { API_URL, authedFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 export interface AssistantContext {
@@ -52,11 +52,7 @@ export default function AssistantPanel({ context }: { context: AssistantContext 
   /* Load agents the first time the panel opens. */
   useEffect(() => {
     if (!open || agents.length > 0) return;
-    fetch(`${API_URL}/agents`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}`,
-      },
-    })
+    authedFetch(`${API_URL}/agents`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((list: AgentLite[]) => {
         setAgents(list);
@@ -98,11 +94,10 @@ export default function AssistantPanel({ context }: { context: AssistantContext 
     let reply = "";
 
     try {
-      const res = await fetch(`${API_URL}/chat`, {
+      const res = await authedFetch(`${API_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access_token") ?? ""}`,
         },
         signal: controller.signal,
         body: JSON.stringify({

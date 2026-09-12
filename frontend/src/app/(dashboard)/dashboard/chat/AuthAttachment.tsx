@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { API_URL } from "@/lib/api";
+import { API_URL, authedFetch } from "@/lib/api";
 import { VoicePlayer } from "./VoicePlayer";
 import { Download, Maximize2, X, ZoomIn } from "lucide-react";
 
@@ -266,10 +266,7 @@ export function AuthAttachment({
 
     let revoke: string | null = null;
     let cancelled = false;
-    const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-    fetch(`${API_URL}/chat/media/${filename}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    authedFetch(`${API_URL}/chat/media/${filename}`)
       .then((r) => (r.ok ? r.blob() : null))
       .then((blob) => {
         if (!blob || cancelled) return;

@@ -3,7 +3,7 @@
 
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { API_URL } from "@/lib/api";
+import { API_URL, authedFetch } from "@/lib/api";
 
 interface ImportResult {
   created: number;
@@ -58,15 +58,13 @@ export function ImportExcelModal({ onClose, onSuccess }: Props) {
     setError(null);
 
     try {
-      const token = localStorage.getItem("access_token");
       const fd = new FormData();
       fd.append("file", file);
 
       // Build query string from mapping
       const params = new URLSearchParams(mapping as Record<string, string>);
-      const res = await fetch(`${API_URL}/crm/contacts/import?${params}`, {
+      const res = await authedFetch(`${API_URL}/crm/contacts/import?${params}`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
 

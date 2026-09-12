@@ -82,6 +82,13 @@ async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> 
   return res;
 }
 
+/* ── Public authed fetch ─────────────────────────────────────────── */
+// Use this INSTEAD of raw fetch()+localStorage.getItem("access_token") for
+// any request that needs the bearer token: it attaches the header and, on
+// 401, transparently refreshes the token and retries once. Returns the raw
+// Response, so it works for blobs, SSE streams, FormData, and AbortSignal.
+export const authedFetch: (url: string, init?: RequestInit) => Promise<Response> = apiFetch;
+
 /* ── Legacy standalone helpers ───────────────────────────────────── */
 
 export async function fetchStats() {

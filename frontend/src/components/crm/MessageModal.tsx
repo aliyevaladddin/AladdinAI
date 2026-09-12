@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X, Mail, Reply, Send, Loader2, Paperclip, FileText, FileImage, FileArchive, Download, Sparkles, RotateCw } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, authedFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -300,10 +300,7 @@ export default function MessageModal({ activity, contactEmail, onClose, inline =
                 e.preventDefault();
                 try {
                   const url = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"}/crm/activities/${activity.id}/attachments/${encodeURIComponent(att.filename)}`;
-                  const token = localStorage.getItem("access_token");
-                  const res = await fetch(url, {
-                    headers: token ? { Authorization: `Bearer ${token}` } : {}
-                  });
+                  const res = await authedFetch(url);
                   if (!res.ok) throw new Error("Not authenticated");
                   const blob = await res.blob();
                   const blobUrl = URL.createObjectURL(blob);

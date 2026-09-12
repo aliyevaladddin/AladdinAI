@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { API_URL } from "@/lib/api";
+import { API_URL, authedFetch } from "@/lib/api";
 
 type ReportType = "all" | "deals" | "contacts" | "activities";
 
@@ -52,10 +52,7 @@ export default function ReportsPage() {
   const handleDownload = async (type: ReportType) => {
     setDownloading(type);
     try {
-      const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_URL}/reports/excel?type=${type}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authedFetch(`${API_URL}/reports/excel?type=${type}`);
       if (!res.ok) throw new Error("Download failed");
 
       const blob = await res.blob();

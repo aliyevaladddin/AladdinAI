@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api, API_URL } from "@/lib/api";
+import { api, API_URL, authedFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ImportExcelModal } from "@/components/excel/ImportExcelModal";
 
@@ -43,10 +43,7 @@ export default function ContactsPage() {
   const handleExport = async () => {
     setExporting(true);
     try {
-      const token = localStorage.getItem("access_token");
-      const res = await fetch(`${API_URL}/crm/contacts/export`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authedFetch(`${API_URL}/crm/contacts/export`);
       if (!res.ok) throw new Error("Export failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

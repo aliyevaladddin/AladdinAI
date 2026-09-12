@@ -4,7 +4,7 @@
    SWR-style cache). List reads bypass the cache so the UI shows fresh state
    right after a mutation. Downloads stream the blob directly. */
 
-import { API_URL, api } from "@/lib/api";
+import { API_URL, api, authedFetch } from "@/lib/api";
 import type {
   FileEntry,
   FileEvent,
@@ -155,10 +155,7 @@ export async function getFileContent(
 
 export async function downloadFileVersion(fileId: number, versionNo?: number): Promise<void> {
   const query = versionNo != null ? `?version=${versionNo}` : "";
-  const token = localStorage.getItem("access_token");
-  const res = await fetch(`${API_URL}/files/${fileId}/download${query}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const res = await authedFetch(`${API_URL}/files/${fileId}/download${query}`);
   if (!res.ok) throw new Error(`Download failed (${res.status})`);
   const blob = await res.blob();
   const disposition = res.headers.get("Content-Disposition") ?? "";
