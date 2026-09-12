@@ -623,6 +623,9 @@ async def count_memories(db: AsyncSession, user_id: int) -> int:
         )
         return private_count + shared_count
     except Exception:
+        # MongoDB unconfigured/unreachable — dashboard degrades to 0, but the
+        # cause must be visible in logs or operators chase phantom data loss.
+        log.exception("count_memories failed for user_id=%s", user_id)
         return 0
 
 

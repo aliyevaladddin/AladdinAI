@@ -205,6 +205,7 @@ async def ping_model(
                 return {"status": "ok"}
             return {"status": "error", "code": resp.status_code}
     except Exception:
+        log.exception("LLM provider health check unreachable (provider_id=%s, model=%s)", provider_id, model_id)
         return {"status": "error", "message": "unreachable"}
 
 

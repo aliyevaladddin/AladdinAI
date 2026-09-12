@@ -222,6 +222,7 @@ async def wrt_stats(content: str) -> Dict[str, Any]:
             "valid": data.get("valid", True),
         }
     except Exception:
+        log.exception("wrt stats failed — falling back to zeroed stats")
         return {"lines": 0, "words": 0, "chars": 0, "tags": 0, "valid": True}
 
 

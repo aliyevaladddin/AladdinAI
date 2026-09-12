@@ -181,6 +181,7 @@ def _verify_twilio(channel: MessagingChannel, request: Request, raw_body: bytes)
         from urllib.parse import parse_qsl
         params = sorted(parse_qsl(raw_body.decode("utf-8"), keep_blank_values=True))
     except Exception:
+        log.warning("webhook: failed to parse form body for signature; treating as no params", exc_info=True)
         params = []
 
     payload = url + "".join(k + v for k, v in params)

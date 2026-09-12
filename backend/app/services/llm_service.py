@@ -338,7 +338,10 @@ async def _openai_compatible(
                                         if fn_delta.get("arguments"):
                                             tool_calls_map[idx]["function"]["arguments"] += fn_delta["arguments"]
                             except Exception:
-                                pass
+                                # Malformed provider chunk — skip it but keep the
+                                # failure visible; silent drops corrupt tool-call
+                                # assembly and are nearly impossible to debug.
+                                log.warning("llm_service: failed to parse streaming chunk", exc_info=True)
                 
                 final_content = "".join(content_parts) if content_parts else None
                 if not final_content and reasoning_parts:
