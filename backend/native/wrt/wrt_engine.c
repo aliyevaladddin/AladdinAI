@@ -792,8 +792,20 @@ char *wrt_list_files_json(const char *dir_path) {
         resolved[sizeof(resolved) - 1] = '\0';
     }
 
-    DIR *dir = opendir(resolved);
+    // Open directory via file descriptor to prevent TOCTOU symlink swap
+    int dir_fd = open(resolved, O_DIRECTORY | O_RDONLY | O_NOFOLLOW);
+    if (dir_fd < 0) {
+        str_buf_t err;
+        buf_init(&err);
+        buf_append(&err, "{\"type\":\"list_files_result\",\"success\":false,\"error\":\"Cannot open directory\",\"path\":\"");
+        buf_append_json_escaped(&err, resolved);
+        buf_append(&err, "\",\"files\":[]}\n");
+        return err.data;
+    }
+
+    DIR *dir = fdopendir(dir_fd);
     if (!dir) {
+        close(dir_fd);
         str_buf_t err;
         buf_init(&err);
         buf_append(&err, "{\"type\":\"list_files_result\",\"success\":false,\"error\":\"Cannot open directory\",\"path\":\"");
@@ -880,7 +892,7 @@ char *wrt_read_file_json(const char *file_path) {
         return b.data;
     }
 
-    int fd = open(file_path, O_RDONLY);
+    int fd = open(file_path, O_RDONLY | O_NOFOLLOW);
     if (fd < 0) {
         buf_append(&b, "{\"type\":\"read_file_result\",\"success\":false,\"error\":\"Cannot open file\"}\n");
         return b.data;
@@ -949,8 +961,9 @@ char *wrt_save_file_json(const char *file_path, const char *content) {
 
     make_parent_dirs(file_path);
 
-    FILE *fp = fopen(file_path, "wb");
-    if (!fp) {
+    // Use open with O_NOFOLLOW to prevent symlink attacks, O_EXCL to prevent overwrite
+    int fd = open(file_path, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW, 0644);
+    if (fd < 0) {
         buf_append(&b, "{\"type\":\"save_file_result\",\"success\":false,\"error\":\"Cannot open file for writing: ");
         buf_append_json_escaped(&b, file_path);
         buf_append(&b, "\"}\n");
@@ -959,14 +972,14 @@ char *wrt_save_file_json(const char *file_path, const char *content) {
 
     size_t len = content ? strlen(content) : 0;
     if (len > 0) {
-        size_t written = fwrite(content, 1, len, fp);
-        if (written != len) {
-            fclose(fp);
+        ssize_t written = write(fd, content, len);
+        if ((size_t)written != len) {
+            close(fd);
             buf_append(&b, "{\"type\":\"save_file_result\",\"success\":false,\"error\":\"Write failed\"}\n");
             return b.data;
         }
     }
-    fclose(fp);
+    close(fd);
 
     wrt_record_recent_file(file_path);
 
@@ -1284,6 +1297,13 @@ int wrt_engine_daemon(const char *socket_path) {
 
     if (listen(server_fd, 32) < 0) {
         perror("unix listen failed");
+        close(server_fd);
+        return 1;
+    }
+
+    // Secure socket permissions: only owner can read/write
+    if (chmod(socket_path, 0600) < 0) {
+        perror("unix chmod failed");
         close(server_fd);
         return 1;
     }

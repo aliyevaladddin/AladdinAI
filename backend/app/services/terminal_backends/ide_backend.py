@@ -25,12 +25,24 @@ log = logging.getLogger(__name__)
 
 _READ_CHUNK = 4096
 
+_WORKSPACE_ROOT = "/workspaces/AladdinAI"
+
 # Resolved at import time; overridable via env for tests.
 _NATIVE_DIR = os.environ.get(
     "ALADDIN_NATIVE_DIR",
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "native"),
 )
 _IDE_BINARY = os.path.join(_NATIVE_DIR, "wrt", "wrt-edit")
+
+
+def _validate_file_path(file_path: str) -> str:
+    """Resolve a path and ensure it stays within WORKSPACE_ROOT."""
+    if not file_path or not file_path.strip():
+        return file_path
+    resolved = os.path.realpath(os.path.join(_WORKSPACE_ROOT, file_path))
+    if not os.path.commonpath([_WORKSPACE_ROOT, resolved]) == _WORKSPACE_ROOT:
+        raise ValueError(f"Path is outside workspace root: {file_path}")
+    return resolved
 
 
 async def _resolve_ide_binary() -> str:
@@ -78,7 +90,8 @@ class IdeBackend(TerminalBackend):
 
         argv = [binary]
         if self._file_path:
-            argv.append(self._file_path)
+            validated_path = _validate_file_path(self._file_path)
+            argv.append(validated_path)
 
         self._proc = await asyncio.create_subprocess_exec(
             *argv,

@@ -46,49 +46,49 @@ async def test_native_c_stats():
 
 
 @pytest.mark.asyncio
-async def test_wrt_api_endpoints():
+async def test_wrt_api_endpoints(auth_headers):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         # Validate endpoint
-        res = await ac.post("/api/wrt/validate", json={"content": "[b]hello[/b]"})
+        res = await ac.post("/api/wrt/validate", json={"content": "[b]hello[/b]"}, headers=auth_headers)
         assert res.status_code == 200
         assert res.json()["valid"] is True
 
         # Fix endpoint
-        res = await ac.post("/api/wrt/fix", json={"content": "[b]auto fix"})
+        res = await ac.post("/api/wrt/fix", json={"content": "[b]auto fix"}, headers=auth_headers)
         assert res.status_code == 200
         assert res.json()["content"].strip().endswith("[/b]")
 
         # To HTML endpoint
-        res = await ac.post("/api/wrt/to-html", json={"content": "[h1]Header[/h1]"})
+        res = await ac.post("/api/wrt/to-html", json={"content": "[h1]Header[/h1]"}, headers=auth_headers)
         assert res.status_code == 200
         assert '<h1 class="wrt-heading">Header</h1>' in res.json()["html"]
 
         # Stats endpoint
-        res = await ac.post("/api/wrt/stats", json={"content": "Alpha Beta Gamma"})
+        res = await ac.post("/api/wrt/stats", json={"content": "Alpha Beta Gamma"}, headers=auth_headers)
         assert res.status_code == 200
         assert res.json()["words"] == 3
 
         # List files endpoint
-        res = await ac.get("/api/wrt/files?path=/workspaces/AladdinAI/backend/native")
+        res = await ac.get("/api/wrt/files?path=/workspaces/AladdinAI/backend/native", headers=auth_headers)
         assert res.status_code == 200
         data = res.json()
         assert data["success"] is True
         assert len(data["files"]) > 0
 
         # Save file endpoint
-        test_file = "/tmp/test_api_doc.wrt"
-        res = await ac.post("/api/wrt/files/save", json={"path": test_file, "content": "[h1]Saved via API[/h1]"})
+        test_file = "/workspaces/AladdinAI/backend/tests/test_api_doc.wrt"
+        res = await ac.post("/api/wrt/files/save", json={"path": test_file, "content": "[h1]Saved via API[/h1]"}, headers=auth_headers)
         assert res.status_code == 200
         assert res.json()["success"] is True
 
         # Read file endpoint
-        res = await ac.post("/api/wrt/files/read", json={"path": test_file})
+        res = await ac.post("/api/wrt/files/read", json={"path": test_file}, headers=auth_headers)
         assert res.status_code == 200
         assert res.json()["content"] == "[h1]Saved via API[/h1]"
 
         # Recent files endpoint
-        res = await ac.get("/api/wrt/files/recent")
+        res = await ac.get("/api/wrt/files/recent", headers=auth_headers)
         assert res.status_code == 200
         recent = res.json()
         assert recent["success"] is True

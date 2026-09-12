@@ -2,15 +2,30 @@
 """WRT Document Engine Router — exposes native C engine endpoints to the frontend."""
 
 import logging
+import os
 from typing import Optional
 from urllib.parse import quote
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
+from app.security import get_current_user
 from app.services import wrt_engine_service
+from app.models.user import User
 
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/wrt", tags=["WRT Document Engine"])
+
+WORKSPACE_ROOT = "/workspaces/AladdinAI"
+
+
+def _validate_workspace_path(path: str) -> str:
+    """Resolve a path and ensure it stays within WORKSPACE_ROOT."""
+    if not path or not path.strip():
+        return WORKSPACE_ROOT
+    resolved = os.path.realpath(os.path.join(WORKSPACE_ROOT, path))
+    if not os.path.commonpath([WORKSPACE_ROOT, resolved]) == WORKSPACE_ROOT:
+        raise HTTPException(status_code=400, detail=f"Path is outside workspace root: {path}")
+    return resolved
 
 
 class WrtContentRequest(BaseModel):
@@ -27,53 +42,62 @@ class SaveFileRequest(BaseModel):
 
 
 @router.post("/validate")
-async def validate_document(req: WrtContentRequest):
+async def validate_document(req: WrtContentRequest, user: User = Depends(get_current_user)):
     """Validate WRT markup using native C engine."""
     report = await wrt_engine_service.validate_wrt(req.content)
     return report
 
 
 @router.post("/fix")
-async def fix_document(req: WrtContentRequest):
+async def fix_document(req: WrtContentRequest, user: User = Depends(get_current_user)):
     """Auto-repair and close unclosed tags using native C engine."""
     fixed = await wrt_engine_service.fix_wrt(req.content)
     return {"content": fixed}
 
 
 @router.post("/to-html")
-async def convert_to_html(req: WrtContentRequest):
+async def convert_to_html(req: WrtContentRequest, user: User = Depends(get_current_user)):
     """Render WRT markup into styled HTML using native C engine."""
     html = await wrt_engine_service.wrt_to_html(req.content)
     return {"html": html}
 
 
 @router.post("/stats")
-async def document_stats(req: WrtContentRequest):
+async def document_stats(req: WrtContentRequest, user: User = Depends(get_current_user)):
     """Calculate character, word, line, and tag statistics using native C engine."""
     stats = await wrt_engine_service.wrt_stats(req.content)
     return stats
 
 
 @router.get("/files")
-async def list_workspace_files(path: Optional[str] = None):
+async def list_workspace_files(
+    path: Optional[str] = None, user: User = Depends(get_current_user)
+):
     """List directory files using native C engine."""
-    return await wrt_engine_service.list_files(path)
+    validated = _validate_workspace_path(path or WORKSPACE_ROOT)
+    return await wrt_engine_service.list_files(validated)
 
 
 @router.post("/files/read")
-async def read_workspace_file(req: ReadFileRequest):
+async def read_workspace_file(
+    req: ReadFileRequest, user: User = Depends(get_current_user)
+):
     """Read file content using native C engine."""
-    return await wrt_engine_service.read_file(req.path)
+    validated = _validate_workspace_path(req.path)
+    return await wrt_engine_service.read_file(validated)
 
 
 @router.post("/files/save")
-async def save_workspace_file(req: SaveFileRequest):
+async def save_workspace_file(
+    req: SaveFileRequest, user: User = Depends(get_current_user)
+):
     """Save file content to disk using native C engine."""
-    return await wrt_engine_service.save_file(req.path, req.content)
+    validated = _validate_workspace_path(req.path)
+    return await wrt_engine_service.save_file(validated, req.content)
 
 
 @router.get("/files/recent")
-async def recent_workspace_files():
+async def recent_workspace_files(user: User = Depends(get_current_user)):
     """Get list of recently edited files using native C engine."""
     return await wrt_engine_service.get_recent_files()
 
@@ -85,7 +109,7 @@ class ExportDocumentRequest(BaseModel):
 
 
 @router.post("/export")
-async def export_document(req: ExportDocumentRequest):
+async def export_document(req: ExportDocumentRequest, user: User = Depends(get_current_user)):
     """Export WRT document content to Word .docx, OpenDocument .odt, PowerPoint .pptx, or .md."""
     fmt = (req.format or "docx").lower().strip(".")
     filename = req.filename or "document"

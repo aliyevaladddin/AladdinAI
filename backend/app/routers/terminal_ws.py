@@ -10,8 +10,9 @@ Local terminals prefer the native C daemon (first-class) and fall back to
 a Python PTY; VM terminals use asyncssh with TOFU known-hosts pinning.
 """
 import asyncio
-import logging
 import json
+import logging
+import os
 
 import asyncssh
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -145,8 +146,20 @@ async def ide_terminal_websocket(websocket: WebSocket):
     if user is None:
         return
 
-    # Get file path from query parameter
+    # Get file path from query parameter and validate it stays within workspace root
     file_path = websocket.query_params.get("file", "")
+    workspace_root = "/workspaces/AladdinAI"
+
+    if file_path:
+        try:
+            resolved = os.path.realpath(os.path.join(workspace_root, file_path))
+            if not os.path.commonpath([workspace_root, resolved]) == workspace_root:
+                await _send_error_and_close(websocket, "File path is outside workspace root", code=1008)
+                return
+            file_path = resolved
+        except Exception as e:
+            await _send_error_and_close(websocket, f"Invalid file path: {str(e)}", code=1008)
+            return
 
     try:
         backend, name = await try_open_ide(file_path)

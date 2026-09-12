@@ -2,7 +2,7 @@
 """WRT Engine Service — bridges AladdinAI to the native C WRT Document Engine.
 
 Communicates with the ultra-fast native C daemon over Unix Domain Socket
-(/tmp/aladdin_wrt.sock) with automatic fallback to CLI execution.
+with automatic fallback to CLI execution.
 """
 
 import asyncio
@@ -10,17 +10,30 @@ import json
 import logging
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 log = logging.getLogger(__name__)
 
-SOCKET_PATH = "/tmp/aladdin_wrt.sock"
+WORKSPACE_ROOT = "/workspaces/AladdinAI"
+SOCKET_DIR = Path(tempfile.gettempdir()) / f"aladdin_wrt_{os.getuid()}"
+SOCKET_PATH = str(SOCKET_DIR / "aladdin_wrt.sock")
 NATIVE_DIR = Path(__file__).resolve().parent.parent.parent / "native"
 WRT_DIR = NATIVE_DIR / "wrt"
 BINARY_PATH = (WRT_DIR / "wrt-engine") if (WRT_DIR / "wrt-engine").exists() else (NATIVE_DIR / "wrt-engine")
 
 _process: Optional[subprocess.Popen] = None
+
+
+def _validate_workspace_path(path: str) -> str:
+    """Resolve a path and ensure it stays within WORKSPACE_ROOT."""
+    if not path or not path.strip():
+        return WORKSPACE_ROOT
+    resolved = os.path.realpath(os.path.join(WORKSPACE_ROOT, path))
+    if not os.path.commonpath([WORKSPACE_ROOT, resolved]) == WORKSPACE_ROOT:
+        raise ValueError(f"Path is outside workspace root: {path}")
+    return resolved
 
 
 async def ensure_binary_built() -> bool:
@@ -53,11 +66,15 @@ async def ensure_binary_built() -> bool:
 
 
 async def start_daemon() -> None:
-    """Start the native C WRT Engine daemon on /tmp/aladdin_wrt.sock."""
+    """Start the native C WRT Engine daemon on a private socket."""
     global _process
     if not await ensure_binary_built():
         log.warning("Skipping native C WRT daemon start: binary not available.")
         return
+
+    # Create private socket directory
+    SOCKET_DIR.mkdir(parents=True, exist_ok=True)
+    os.chmod(SOCKET_DIR, 0o700)  # Only owner can access
 
     if os.path.exists(SOCKET_PATH):
         try:
@@ -210,7 +227,11 @@ async def wrt_stats(content: str) -> Dict[str, Any]:
 
 async def list_files(dir_path: Optional[str] = None) -> Dict[str, Any]:
     """List workspace/directory files using ultra-fast native C engine."""
-    target = dir_path or "/workspaces/AladdinAI"
+    try:
+        target = _validate_workspace_path(dir_path or WORKSPACE_ROOT)
+    except ValueError as e:
+        return {"type": "list_files_result", "success": False, "error": str(e), "files": []}
+
     res = await _send_socket_request("list_files", path=target)
     if res and res.get("type") == "list_files_result":
         return res
@@ -226,13 +247,18 @@ async def list_files(dir_path: Optional[str] = None) -> Dict[str, Any]:
 
 async def read_file(file_path: str) -> Dict[str, Any]:
     """Read file content using ultra-fast native C engine."""
-    res = await _send_socket_request("read_file", path=file_path)
+    try:
+        resolved = _validate_workspace_path(file_path)
+    except ValueError as e:
+        return {"type": "read_file_result", "success": False, "error": str(e), "content": ""}
+
+    res = await _send_socket_request("read_file", path=resolved)
     if res and res.get("type") == "read_file_result":
         return res
 
     # CLI fallback
     try:
-        out = await _run_cli_command(["read-file", file_path])
+        out = await _run_cli_command(["read-file", resolved])
         return json.loads(out)
     except Exception as e:
         log.error("WRT read-file error: %s", e)
@@ -241,13 +267,18 @@ async def read_file(file_path: str) -> Dict[str, Any]:
 
 async def save_file(file_path: str, content: str) -> Dict[str, Any]:
     """Save file content safely to filesystem using ultra-fast native C engine."""
-    res = await _send_socket_request("save_file", content=content, path=file_path)
+    try:
+        resolved = _validate_workspace_path(file_path)
+    except ValueError as e:
+        return {"type": "save_file_result", "success": False, "error": str(e)}
+
+    res = await _send_socket_request("save_file", content=content, path=resolved)
     if res and res.get("type") == "save_file_result":
         return res
 
     # CLI fallback
     try:
-        out = await _run_cli_command(["save-file", file_path, "-"], stdin_data=content)
+        out = await _run_cli_command(["save-file", resolved, "-"], stdin_data=content)
         return json.loads(out)
     except Exception as e:
         log.error("WRT save-file error: %s", e)

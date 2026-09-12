@@ -9,11 +9,11 @@ all: $(TARGETS)
 wrt-engine: wrt_engine.c wrt_engine.h wrt_docx.c wrt_docx.h wrt_markdown.c wrt_markdown.h wrt_odt.c wrt_odt.h wrt_pptx.c wrt_pptx.h
 	$(CC) $(CFLAGS) wrt_engine.c wrt_docx.c wrt_markdown.c wrt_odt.c wrt_pptx.c -o wrt-engine -lzip -lz
 
-wrt-edit: wrt-edit.c wrt_editor.c wrt_editor.h
-	$(CC) $(CFLAGS) wrt-edit.c wrt_editor.c -o wrt-edit
+wrt-edit: wrt_edit.c wrt_editor.c wrt_editor.h
+	$(CC) $(CFLAGS) wrt_edit.c wrt_editor.c -o wrt-edit
 
-wrt-validate: wrt-validate.c
-	$(CC) $(CFLAGS) wrt-validate.c -o wrt-validate
+wrt-validate: wrt_validate.c
+	$(CC) $(CFLAGS) wrt_validate.c -o wrt-validate
 
 clean:
 	rm -f $(TARGETS) *.o
