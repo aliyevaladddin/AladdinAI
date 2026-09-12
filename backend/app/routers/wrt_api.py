@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/wrt", tags=["WRT Document Engine"])
 
-WORKSPACE_ROOT = "/workspaces/AladdinAI"
+from app.services.wrt_engine_service import WORKSPACE_ROOT
 
 
 def _validate_workspace_path(path: str) -> str:

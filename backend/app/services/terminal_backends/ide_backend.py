@@ -18,6 +18,7 @@ import os
 import pty
 import struct
 import termios
+from pathlib import Path
 
 from app.services.terminal_backends.base import TerminalBackend
 
@@ -25,7 +26,7 @@ log = logging.getLogger(__name__)
 
 _READ_CHUNK = 4096
 
-_WORKSPACE_ROOT = "/workspaces/AladdinAI"
+_WORKSPACE_ROOT = str(Path(__file__).resolve().parent.parent.parent.parent.parent)
 
 # Resolved at import time; overridable via env for tests.
 _NATIVE_DIR = os.environ.get(

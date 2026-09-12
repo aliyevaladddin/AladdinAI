@@ -148,7 +148,7 @@ async def ide_terminal_websocket(websocket: WebSocket):
 
     # Get file path from query parameter and validate it stays within workspace root
     file_path = websocket.query_params.get("file", "")
-    workspace_root = "/workspaces/AladdinAI"
+    workspace_root = str(Path(__file__).resolve().parent.parent.parent.parent)
 
     if file_path:
         try:

@@ -16,10 +16,10 @@ from typing import Any, Dict, Optional
 
 log = logging.getLogger(__name__)
 
-WORKSPACE_ROOT = "/workspaces/AladdinAI"
+NATIVE_DIR = Path(__file__).resolve().parent.parent.parent / "native"
+WORKSPACE_ROOT = str(NATIVE_DIR.parent.parent)
 SOCKET_DIR = Path(tempfile.gettempdir()) / f"aladdin_wrt_{os.getuid()}"
 SOCKET_PATH = str(SOCKET_DIR / "aladdin_wrt.sock")
-NATIVE_DIR = Path(__file__).resolve().parent.parent.parent / "native"
 WRT_DIR = NATIVE_DIR / "wrt"
 BINARY_PATH = (WRT_DIR / "wrt-engine") if (WRT_DIR / "wrt-engine").exists() else (NATIVE_DIR / "wrt-engine")
 

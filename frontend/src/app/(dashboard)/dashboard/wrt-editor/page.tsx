@@ -49,7 +49,8 @@ export default function WrtEditorPage() {
 
   // Native C Filesystem Workspace state (Universal C Engine)
   const [nativePath, setNativePath] = useState<string | null>(null);
-  const [nativeDir, setNativeDir] = useState<string>("/workspaces/AladdinAI");
+  const [nativeDir, setNativeDir] = useState<string>(process.env.NEXT_PUBLIC_WORKSPACE_ROOT || "/workspaces/AladdinAI");
+  const workspaceRoot = process.env.NEXT_PUBLIC_WORKSPACE_ROOT || "/workspaces/AladdinAI";
   const [nativeFiles, setNativeFiles] = useState<WrtFileEntry[]>([]);
   const [recentFiles, setRecentFiles] = useState<WrtRecentFile[]>([]);
   const [filePickerTab, setFilePickerTab] = useState<"native" | "recent" | "spaces">("native");
@@ -984,7 +985,7 @@ export default function WrtEditorPage() {
                       void loadNativeFiles(parent);
                     }
                   }}
-                  disabled={nativeDir === "/" || nativeDir === "/workspaces"}
+                  disabled={nativeDir === "/" || nativeDir === workspaceRoot}
                   className="px-2 py-0.5 bg-muted rounded border hover:bg-muted/80 disabled:opacity-40"
                   title="Go Up Directory"
                 >

@@ -48,8 +48,9 @@ async def test_native_c_stats():
 @pytest.mark.asyncio
 async def test_wrt_api_endpoints(auth_headers):
     import os
-    # Detect workspace root dynamically
-    workspace_root = os.environ.get("ALADDIN_WORKSPACE_ROOT", "/workspaces/AladdinAI")
+    from pathlib import Path
+    # Detect workspace root from test file location: tests/test_wrt_engine.py → repo root
+    workspace_root = str(Path(__file__).resolve().parent.parent.parent)
     native_dir = os.path.join(workspace_root, "backend", "native")
     test_file = os.path.join(workspace_root, "backend", "tests", "test_api_doc.wrt")
 
@@ -75,8 +76,8 @@ async def test_wrt_api_endpoints(auth_headers):
         assert res.status_code == 200
         assert res.json()["words"] == 3
 
-        # List files endpoint
-        path_param = native_dir.lstrip(workspace_root) if workspace_root else native_dir
+        # List files endpoint (relative path within workspace root)
+        path_param = os.path.relpath(native_dir, workspace_root)
         res = await ac.get(f"/api/wrt/files?path={path_param}", headers=auth_headers)
         assert res.status_code == 200
         data = res.json()
