@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api, API_URL, authedFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -94,11 +94,9 @@ export default function ForgingPage() {
 
   const handleExport = async () => {
     try {
-      const res = await fetch(`${window.location.origin}/api/forging/golden-set/export?format=sft`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-      });
+      // Routed through the Next.js API proxy (see src/app/api/[...path]/route.ts)
+      // instead of window.location.origin so auth + refresh logic applies.
+      const res = await authedFetch(`${API_URL}/forging/golden-set/export?format=sft`);
       if (!res.ok) throw new Error("Export failed");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

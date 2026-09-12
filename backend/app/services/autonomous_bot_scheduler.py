@@ -215,7 +215,13 @@ async def call_llm(system: str, user: str, temperature: float = 0.9, user_id: in
                     try:
                         models = _json.loads(provider.models_available)
                     except Exception:
-                        pass
+                        # Corrupted models_available column → fall through to the
+                        # default model below; make the data problem visible.
+                        import logging
+                        logging.getLogger(__name__).exception(
+                            "autonomous_bot_scheduler: unparseable models_available for provider %s",
+                            provider.id,
+                        )
                 # Filter out models that look like embedding / safety models
                 models = [
                     m for m in models 

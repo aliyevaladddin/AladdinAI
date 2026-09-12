@@ -383,7 +383,8 @@ async def run_agent(
             try:
                 await on_step({"type": "thought", "message": f"Thinking (step {iteration + 1} of {max_iter})..."})
             except Exception:
-                pass
+                # SSE stream glitches must not abort the agent turn; surface them.
+                log.exception("agent_runner: on_step(thought) callback failed")
         try:
             async def handle_token(token: str):
                 if on_step:
@@ -449,7 +450,7 @@ async def run_agent(
                 try:
                     await on_step({"type": "tool_start", "name": name, "arguments": parsed_args})
                 except Exception:
-                    pass
+                    log.exception("agent_runner: on_step(tool_start) callback failed for %s", name)
             tool_msg = await _execute_tool_call(call, ctx)
             res_content = tool_msg.get("content") or "{}"
             try:
@@ -460,7 +461,7 @@ async def run_agent(
                 try:
                     await on_step({"type": "tool_end", "name": name, "result": parsed_res})
                 except Exception:
-                    pass
+                    log.exception("agent_runner: on_step(tool_end) callback failed for %s", name)
             tool_events.append({
                 "name": fn.get("name", ""),
                 "arguments": parsed_args,

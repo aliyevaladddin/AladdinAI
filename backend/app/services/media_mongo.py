@@ -20,6 +20,7 @@ Usage:
 from __future__ import annotations
 
 import base64
+import logging
 import mimetypes
 import uuid
 from datetime import datetime, timezone
@@ -31,6 +32,8 @@ from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.services.memory import get_mongo_db
+
+log = logging.getLogger(__name__)
 
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 
@@ -107,6 +110,7 @@ async def get_bytes(
             return None
         return await grid_out.read()
     except Exception:
+        log.exception("media_mongo: get_bytes failed for file_id=%s user_id=%s", file_id, user_id)
         return None
 
 
@@ -152,7 +156,8 @@ async def to_data_url(
             if grid_out.metadata:
                 mime = grid_out.metadata.get("mime")
         except Exception:
-            pass
+            # Mime stays unset → falls back to application/octet-stream.
+            log.exception("media_mongo: to_data_url mime lookup failed for file_id=%s", file_id)
 
     mime = mime or "application/octet-stream"
     return f"data:{mime};base64,{base64.b64encode(data).decode()}"
@@ -219,4 +224,5 @@ async def delete_file(
         await fs.delete(oid)
         return True
     except Exception:
+        log.exception("media_mongo: delete_file failed for file_id=%s user_id=%s", file_id, user_id)
         return False

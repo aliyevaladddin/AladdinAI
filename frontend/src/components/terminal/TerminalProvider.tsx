@@ -30,7 +30,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, API_URL } from "@/lib/api";
+import { api, API_URL, authedFetch } from "@/lib/api";
 import { quickSetupDefault } from "@/app/(dashboard)/dashboard/settings/terminal/api";
 
 /** Kept for VmsSettings compatibility — fields no longer used at the iframe layer. */
@@ -167,14 +167,9 @@ function readInitialTheme(): TerminalThemePreset {
 async function bootstrapSession(vm: VM | null): Promise<TerminalSessionResponse> {
   const body = vm ? { vm_id: vm.id } : {};
   try {
-    const res = await fetch(`${API_URL}/terminal/session`, {
+    const res = await authedFetch(`${API_URL}/terminal/session`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(typeof window !== "undefined" && localStorage.getItem("access_token")
-          ? { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
-          : {}),
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     if (res.status === 404 || res.status === 503) {

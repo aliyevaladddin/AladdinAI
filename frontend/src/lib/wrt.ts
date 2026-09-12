@@ -8,7 +8,7 @@
  * semantic tags while retaining a predictable route back to WRT on save.
  */
 
-import { API_URL } from "./api";
+import { API_URL, authedFetch } from "./api";
 
 const INLINE_TAGS: Record<string, string> = {
   b: "strong",
@@ -455,13 +455,9 @@ export async function downloadWrtAsDocument(
   filename?: string,
   format: "docx" | "odt" | "pptx" | "md" | "wrt" = "docx",
 ): Promise<void> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
-  const res = await fetch(`${API_URL}/wrt/export`, {
+  const res = await authedFetch(`${API_URL}/wrt/export`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content, filename, format }),
   });
   if (!res.ok) {

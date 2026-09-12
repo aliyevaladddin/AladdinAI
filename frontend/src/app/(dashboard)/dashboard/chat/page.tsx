@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback, FormEvent, MouseEvent, KeyboardEvent } from "react";
-import { api, API_URL } from "@/lib/api";
+import { api, API_URL, authedFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Send,
@@ -404,16 +404,14 @@ export default function ChatPage() {
 
     try {
       const agentId = selectedAgentId === "unified" ? 1 : parseInt(selectedAgentId);
-      const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const response = await fetch(`${API_URL}/chat`, {
+      const response = await authedFetch(`${API_URL}/chat`, {
         method: "POST",
         headers,
         signal: controller.signal,

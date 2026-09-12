@@ -684,14 +684,14 @@ async def download_file(
             data = wrt_to_odt(data.decode("utf-8", errors="replace"))
             content_type = "application/vnd.oasis.opendocument.text"
         except Exception:
-            pass
+            log.warning("workspace: wrt→odt conversion failed on download; sending raw .wrt", exc_info=True)
     elif name_lower.endswith(".pptx") and not data[:4] == b"PK\x03\x04":
         try:
             from app.services.wrt_engine_service import wrt_to_pptx
             data = wrt_to_pptx(data.decode("utf-8", errors="replace"))
             content_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         except Exception:
-            pass
+            log.warning("workspace: wrt→pptx conversion failed on download; sending raw .wrt", exc_info=True)
     elif name_lower.endswith(".docx") and not data[:4] == b"PK\x03\x04":
         try:
             from app.services.wrt_engine_service import wrt_to_docx
@@ -699,7 +699,7 @@ async def download_file(
             data = wrt_to_docx(wrt_text)
             content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         except Exception:
-            pass
+            log.warning("workspace: wrt→docx conversion failed on download; sending raw .wrt", exc_info=True)
 
     from urllib.parse import quote
 

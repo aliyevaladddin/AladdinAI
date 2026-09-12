@@ -79,7 +79,6 @@ jobs:
           # still refuse to boot with them.
           ALADDIN_ENV: test
           DATABASE_URL: postgresql://postgres:test@localhost:5432/test_db
-          SECRET_KEY: test-secret-key-for-ci
           MONGODB_URL: mongodb://localhost:27017/test
         run: |
           cd backend
