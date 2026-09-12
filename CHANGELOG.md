@@ -93,6 +93,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#847) ([bec0239](https://github.com/aliyevaladddin/AladdinAI/commit/bec0239409b3dd6effba3007e09e286e853e2ec2))
 
+- Update API documentation [skip ci] (#865) ([803885a](https://github.com/aliyevaladddin/AladdinAI/commit/803885ac980964125d4cf9503d1dd3bff2199bbc))
+
 
 ### Features
 
@@ -111,6 +113,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add image round-trip support to .wrt format (#794) ([5f36fb2](https://github.com/aliyevaladddin/AladdinAI/commit/5f36fb24cd6f783ca2812e59a2f5775e9ba0829f))
 
 - Add beautiful English Thinking Process UI and fix React key warnings (#848) ([68a7e76](https://github.com/aliyevaladddin/AladdinAI/commit/68a7e769f588d9c517b0d0ac35d4ea6910fd20db))
+
+- Implement JWT refresh token rotation + revocation (#866) ([67108de](https://github.com/aliyevaladddin/AladdinAI/commit/67108de6193734bd86e8de5a8c1a1f8ed6146491))
 
 
 ### Maintenance
@@ -232,6 +236,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update frontend dependencies in package-lock.json ([c2e2a5a](https://github.com/aliyevaladddin/AladdinAI/commit/c2e2a5a4a0b1d87d4884b169d578406fcb12b9db))
 
 - Update frontend dependencies in package-lock.json ([cb5e6dc](https://github.com/aliyevaladddin/AladdinAI/commit/cb5e6dc2a5dc89bd92b612b0bb7d9f1d12120680))
+
+- Update changelog [skip ci] (#864) ([2392f7d](https://github.com/aliyevaladddin/AladdinAI/commit/2392f7da95fb57b017fd31ee509a1aa9e2c5047c))
 
 
 ### Refactor
