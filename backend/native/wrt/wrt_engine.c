@@ -454,7 +454,7 @@ char *wrt_to_html(const char *text) {
                     in_paragraph = 0;
                 }
                 buf_append(&b, "<table class=\"wrt-table border-collapse border border-slate-700 my-4 w-full text-sm\">\n");
-                
+
                 // Parse rows separated by newlines
                 const char *row_ptr = text + i + 7;
                 int is_first_row = 1;

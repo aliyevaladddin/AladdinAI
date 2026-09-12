@@ -1,4 +1,4 @@
-// NOTICE: This file is protected under RCF-PL 
+// NOTICE: This file is protected under RCF-PL
 /*
  * AladdinAI — Native C ODT <-> WRT Converter
  * High-performance bidirectional converter between OpenDocument .odt and .wrt

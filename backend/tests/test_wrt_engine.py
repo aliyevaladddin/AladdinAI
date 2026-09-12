@@ -133,4 +133,3 @@ This has **bold text**, *italic text*, ~~strike~~, and `inline code`.
     assert "**bold text**" in md_back
     assert "*italic text*" in md_back
 
-

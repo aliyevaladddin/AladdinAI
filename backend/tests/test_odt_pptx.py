@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL 
+# NOTICE: This file is protected under RCF-PL
 """Comprehensive unit and integration tests for Native C ODT and PPTX engines."""
 
 import os

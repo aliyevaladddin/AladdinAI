@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL 
+# NOTICE: This file is protected under RCF-PL
 """File-workspace agent tools — the safe set.
 
 list / read / upload_version / move / rename. There is deliberately no

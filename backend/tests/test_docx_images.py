@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL 
+# NOTICE: This file is protected under RCF-PL
 """Tests for .docx ↔ .wrt image round-trip support."""
 import base64
 import io

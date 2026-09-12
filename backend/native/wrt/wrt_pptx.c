@@ -1,4 +1,4 @@
-// NOTICE: This file is protected under RCF-PL 
+// NOTICE: This file is protected under RCF-PL
 /*
  * AladdinAI — Native C PPTX <-> WRT Converter
  * Ultra-fast bidirectional PowerPoint .pptx <-> .wrt converter using libzip

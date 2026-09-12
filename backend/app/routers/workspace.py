@@ -1,4 +1,4 @@
-# NOTICE: This file is protected under RCF-PL 
+# NOTICE: This file is protected under RCF-PL
 # [RCF:PROTECTED]
 """
 File workspace router: spaces → folders → files → versions → events.

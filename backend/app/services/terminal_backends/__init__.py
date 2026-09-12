@@ -47,4 +47,3 @@ async def open_local_backend() -> tuple[TerminalBackend, str]:
     pty_backend = PtyBackend()
     await pty_backend.open()
     return pty_backend, PtyBackend.name
-

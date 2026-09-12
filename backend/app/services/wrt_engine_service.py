@@ -470,4 +470,3 @@ wrt_to_odt = wrt_to_odt_sync
 pptx_to_wrt = pptx_to_wrt_sync
 wrt_to_pptx = wrt_to_pptx_sync
 
-
