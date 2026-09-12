@@ -68,6 +68,8 @@ fix-stale-containers.sql
 .aider.input.history
 .aider.messages.jsonl
 .aider.prompts/
+test.wrt
+debug_ide*.py
 # .claude/ is local-only — fully ignored at any depth.
 **/.claude/
 claude-proxy-config.yaml
@@ -112,6 +114,8 @@ backend/terminal-manifests/terminal*
 # Compiled native daemons — built by backend/native/Makefile at startup.
 # Pattern, not a list: the sources are `aladdin_*.c`, the binaries `aladdin-*`.
 backend/native/aladdin-*
+backend/native/wrt-*
+backend/native/wrt/wrt-*
 
 # Guacamole config (may contain credentials)
 backend/guacamole-config/user-mapping.xml
