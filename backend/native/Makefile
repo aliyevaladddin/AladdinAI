@@ -21,11 +21,11 @@ wrt-engine: wrt/wrt_engine.c wrt/wrt_engine.h
 	$(MAKE) -C wrt wrt-engine
 	cp -f wrt/wrt-engine .
 
-wrt-edit: wrt/wrt-edit.c
+wrt-edit: wrt/wrt_edit.c
 	$(MAKE) -C wrt wrt-edit
 	cp -f wrt/wrt-edit .
 
-wrt-validate: wrt/wrt-validate.c
+wrt-validate: wrt/wrt_validate.c
 	$(MAKE) -C wrt wrt-validate
 	cp -f wrt/wrt-validate .
 
