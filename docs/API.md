@@ -4122,6 +4122,7 @@ Download File
 | ---- | ---------- | ----------- | -------- | ---- |
 | file_id | path |  | Yes | integer |
 | version | query |  | No |  |
+| format | query |  | No |  |
 
 ##### Responses
 
@@ -5441,6 +5442,227 @@ with inline citations [1], [2].
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/wrt/validate
+
+#### POST
+##### Summary:
+
+Validate Document
+
+##### Description:
+
+Validate WRT markup using native C engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/wrt/fix
+
+#### POST
+##### Summary:
+
+Fix Document
+
+##### Description:
+
+Auto-repair and close unclosed tags using native C engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/wrt/to-html
+
+#### POST
+##### Summary:
+
+Convert To Html
+
+##### Description:
+
+Render WRT markup into styled HTML using native C engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/wrt/stats
+
+#### POST
+##### Summary:
+
+Document Stats
+
+##### Description:
+
+Calculate character, word, line, and tag statistics using native C engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/wrt/files
+
+#### GET
+##### Summary:
+
+List Workspace Files
+
+##### Description:
+
+List directory files using native C engine.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| path | query |  | No |  |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/wrt/files/read
+
+#### POST
+##### Summary:
+
+Read Workspace File
+
+##### Description:
+
+Read file content using native C engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/wrt/files/save
+
+#### POST
+##### Summary:
+
+Save Workspace File
+
+##### Description:
+
+Save file content to disk using native C engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/wrt/files/recent
+
+#### GET
+##### Summary:
+
+Recent Workspace Files
+
+##### Description:
+
+Get list of recently edited files using native C engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/wrt/export
+
+#### POST
+##### Summary:
+
+Export Document
+
+##### Description:
+
+Export WRT document content to Word .docx, OpenDocument .odt, PowerPoint .pptx, or .md.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /
 
 #### GET
@@ -5808,6 +6030,14 @@ Lightweight PATCH — only updates the agent binding on an email account.
 | actor_name |  |  | No |
 | payload |  |  | No |
 | created_at | dateTime |  | Yes |
+
+#### ExportDocumentRequest
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| content | string |  | Yes |
+| filename |  |  | No |
+| format |  |  | No |
 
 #### ExtractionUpdate
 
@@ -6310,6 +6540,12 @@ Install request — picks an entry from the marketplace by `type`.
 | last_error |  |  | No |
 | created_at | dateTime |  | Yes |
 
+#### ReadFileRequest
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| path | string |  | Yes |
+
 #### RefreshRequest
 
 | Name | Type | Description | Required |
@@ -6393,6 +6629,13 @@ Install request — picks an entry from the marketplace by `type`.
 | default_safety_model |  |  | No |
 | safety_block_response |  |  | No |
 | safety |  |  | No |
+
+#### SaveFileRequest
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| path | string |  | Yes |
+| content | string |  | Yes |
 
 #### SchemaResponse
 
@@ -6644,3 +6887,9 @@ ttyd adapter ignores it.
 | link | string |  | Yes |
 | snippet | string |  | Yes |
 | source | string |  | Yes |
+
+#### WrtContentRequest
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| content | string |  | Yes |
