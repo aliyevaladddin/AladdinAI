@@ -140,6 +140,26 @@ Refresh
 | 200 | Successful Response |
 | 422 | Validation Error |
 
+### /api/auth/logout
+
+#### POST
+##### Summary:
+
+Logout
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/auth/me
 
 #### GET
