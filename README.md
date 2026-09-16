@@ -329,26 +329,6 @@ Install through the UI under *Settings → Terminal Providers*. No additional se
 ---
 
 
-## ◈ Contributors
-
-AladdinAI is built by a mixed human + AI team.
-
-<table>
-  <tr>
-    <td align="center"><a href="https://github.com/aliyevaladddin"><img src="https://github.com/aliyevaladddin.png" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Aladdin Aliyev</b></sub></a><br /> founder,architecture product</td>
-    <td align="center"><a href="https://github.com/apps/aladdinai-bot"><img src="https://d112y698adiu2z.cloudfront.net/photos/production/software_thumbnail_photos/004/784/949/datas/medium.png" width="80" height="80" style="border-radius:50%" /><br /><sub><b>AladdinAI[bot]</b></sub></a><br /> autonomous engineering agent</td>
-    <td align="center"><a href="https://claude.ai"><img src="https://avatars.githubusercontent.com/u/81847?v=4" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Claude</b></sub></a><br /> pair programming, infrastructure</td>
-    <td align="center"><a href="docs/profiles/antigravity.md"><img src="https://avatars.githubusercontent.com/u/242056456?s=200&v=4" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Antigravity</b></sub></a><br /> security hardening, refactoring, bug fixes</td>
-    <td align="center"><a href="docs/profiles/cursor.md"><img src="https://avatars.githubusercontent.com/u/126759922?s=200&v=4" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Cursor</b></sub></a><br /> rapid prototyping, code suggestions</td>
-    <td align="center"><a href="https://qwen.aliyun.com"><img src="https://avatars.githubusercontent.com/u/141221163?s=200&v=4" width="80" height="80" style="border-radius:50%" /><br /><sub><b>Qwen</b></sub></a><br /> image generation backbone</td>
-  </tr>
-</table>
-
-GitHub's contributors graph only counts accounts linked by commit email, so
-AI teammates without their own GitHub accounts are credited here instead.
-
----
-
 
 ## ◈ Feedback
 
