@@ -66,6 +66,42 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump js-yaml from 4.3.1 to 4.3.2 in /frontend (#857) ([6130909](https://github.com/aliyevaladddin/AladdinAI/commit/613090930dfe72b88efe8e485d7eea1c44e859ae))
 
+- Bump playwright from 1.62.0 to 1.63.0 ([d82e009](https://github.com/aliyevaladddin/AladdinAI/commit/d82e0090864ebe792b8be34c6bc61e9f7fc22dc9))
+
+- Update dependency ([0b17c08](https://github.com/aliyevaladddin/AladdinAI/commit/0b17c0877667c46a30443a926de516226ed7e54a))
+
+- Bump pyjwt from 2.13.0 to 2.14.0 ([b171788](https://github.com/aliyevaladddin/AladdinAI/commit/b171788e1c4d46cef15151122f2036fa5cca7247))
+
+- Update dependency ([1a5bffb](https://github.com/aliyevaladddin/AladdinAI/commit/1a5bffb2b7fd73c1a8df66563e9a41f90505dc94))
+
+- Bump uvicorn from 0.52.1 to 0.53.0 ([ded93f3](https://github.com/aliyevaladddin/AladdinAI/commit/ded93f3b51ffab8dc2f55f915d65cae00bd551f8))
+
+- Update dependency ([e659465](https://github.com/aliyevaladddin/AladdinAI/commit/e659465e53dccda349747be890a2987d85dfdcfb))
+
+- Bump alembic from 1.19.2 to 1.20.0 ([96efced](https://github.com/aliyevaladddin/AladdinAI/commit/96efcedc34f1e4c4ef54c25245b6d4ced4c26ffa))
+
+- Update dependency ([7ceee15](https://github.com/aliyevaladddin/AladdinAI/commit/7ceee15285a394d86cfe3b3535c9e83dc6377758))
+
+- Update dependency ([89a5049](https://github.com/aliyevaladddin/AladdinAI/commit/89a50492563b0f756303e319ce50a5b041344d81))
+
+- Bump react-dom from 19.2.8 to 19.3.0 in /frontend ([74c91dd](https://github.com/aliyevaladddin/AladdinAI/commit/74c91dd3d372c047382d02bc20bed20b02851d3a))
+
+- Update dependency ([c58b82e](https://github.com/aliyevaladddin/AladdinAI/commit/c58b82ea5ed5c10fd231591ea444067b150b0dbf))
+
+- Update dependency ([20ed244](https://github.com/aliyevaladddin/AladdinAI/commit/20ed244a80e3b327f2bc027161b751af234242af))
+
+- Bump lucide-react from 1.45.0 to 1.46.0 in /frontend ([af1cd91](https://github.com/aliyevaladddin/AladdinAI/commit/af1cd9132907137c26a253a94b002c688530784d))
+
+- Update dependency ([750551f](https://github.com/aliyevaladddin/AladdinAI/commit/750551fd5c61cc40159a80e7443e5da5032c3c40))
+
+- Bump tailwind-merge from 3.6.0 to 3.7.0 in /frontend ([cafe4e5](https://github.com/aliyevaladddin/AladdinAI/commit/cafe4e54fc567809d538c2af327128ffc190454a))
+
+- Update dependency ([42a2096](https://github.com/aliyevaladddin/AladdinAI/commit/42a2096ed52babf33ea4050b0ada7e256ea0b78f))
+
+- Bump framer-motion from 13.2.0 to 13.4.0 in /frontend ([679a94c](https://github.com/aliyevaladddin/AladdinAI/commit/679a94caec37c73616c5dc67d81eaf6552fe2770))
+
+- Update dependency ([90ba5a0](https://github.com/aliyevaladddin/AladdinAI/commit/90ba5a00680041bf438c9e38d4e1acda86cfbff5))
+
 
 ### Documentation
 
@@ -251,6 +287,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update frontend dependencies in package-lock.json ([439c190](https://github.com/aliyevaladddin/AladdinAI/commit/439c19073c217e7cc63a78890ea7192878755b70))
 
+- Update changelog [skip ci] (#896) ([25eae47](https://github.com/aliyevaladddin/AladdinAI/commit/25eae47920787b0706dbbc857fa7ce8911dbefb9))
+
+- Bump electron from 44.3.0 to 44.4.1 in /frontend ([b5b7e0b](https://github.com/aliyevaladddin/AladdinAI/commit/b5b7e0b40b1cbd455475615bee7c3c77b8497747))
+
+- Bump @types/node from 26.5.1 to 26.6.1 in /frontend ([84cb572](https://github.com/aliyevaladddin/AladdinAI/commit/84cb5727b804d9654b9baf951008603bc34c4cbb))
+
 
 ### Refactor
 
@@ -260,6 +302,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 ### I18n
 
 - Translate UI text and error messages to English ([3c826dc](https://github.com/aliyevaladddin/AladdinAI/commit/3c826dc014e36877677f5f13fd1bd00a610125f1))
+
+
+### Security
+
+- Harden SQL and terminal execution paths (#909) ([ab42b9e](https://github.com/aliyevaladddin/AladdinAI/commit/ab42b9e174625a10853952f8917c04902e294df9))
 
 ## [v2.2.5] - 2026-08-21
 
