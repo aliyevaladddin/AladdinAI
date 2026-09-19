@@ -38,8 +38,10 @@ def test_decrypt_tampered_token_raises():
 
 
 def test_path_traversal_validation_relative_to():
-    # Detect workspace root from this file's location: tests/ → repo root
-    base_dir = Path(__file__).resolve().parent.parent.parent
+    # Detect workspace root from this file's location robustly:
+    # tests/test_crypto_security.py -> parents[2] == repo root
+    base_dir = Path(__file__).resolve().parents[2]
+    assert (base_dir / "backend/app").is_dir()
 
     # Valid inside workspace
     valid_path = (base_dir / "backend/app").resolve()

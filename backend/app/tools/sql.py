@@ -308,12 +308,15 @@ async def execute_sql_query(
     # Execute
     try:
         if read_only:
-            try:
-                bind = ctx.db.get_bind()
-                if bind and getattr(bind.dialect, "name", "") == "postgresql":
-                    await ctx.db.execute(text("SET LOCAL default_transaction_read_only = 'on'"))
-            except Exception:
-                pass
+            bind = ctx.db.get_bind()
+            if bind and getattr(bind.dialect, "name", "") == "postgresql":
+                # Enforce read-only at transaction level, not just via regex
+                # SET TRANSACTION READ ONLY must be the first statement in the transaction
+                await ctx.db.execute(text("SET TRANSACTION READ ONLY"))
+                # Optionally set a read-only role if configured (requires DB setup)
+                # from app.config import settings
+                # if settings.sql_readonly_role:
+                #     await ctx.db.execute(text(f"SET ROLE {settings.sql_readonly_role}"))
 
         result = await ctx.db.execute(text(executable_sql))
 

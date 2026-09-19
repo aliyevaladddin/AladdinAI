@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { api } from "@/lib/api";
+import { api, API_URL, authedFetch } from "@/lib/api";
 
 
 interface User {
@@ -31,9 +31,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem("access_token");
     if (token) {
       api.setToken(token);
-      api
-        .get<User>("/auth/me")
-        .then(setUser)
+      authedFetch(`${API_URL}/auth/me`)
+        .then(async (res) => {
+          if (!res.ok) {
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            return;
+          }
+          setUser(await res.json());
+        })
         .catch(() => {
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
