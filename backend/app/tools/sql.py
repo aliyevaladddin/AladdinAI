@@ -318,16 +318,22 @@ async def execute_sql_query(
                 # writes from other requests) would fail with
                 # "cannot execute INSERT/UPDATE in a read-only transaction".
                 #
-                # Why not just SET TRANSACTION READ ONLY alone? It must be the
-                # *first* statement in a transaction; SQLAlchemy's session may
-                # already be inside a transaction from earlier tool calls in the
-                # same request. begin_nested() opens a SAVEPOINT so we can still
-                # scope the read-only enforcement; if a parent transaction is
-                # already read-only this is a harmless no-op on the DB side.
+                # Why SET TRANSACTION READ ONLY? It scopes read-only to the
+                # transaction and resets automatically on COMMIT/ROLLBACK.
+                #
+                # Caveat: PostgreSQL requires SET TRANSACTION to be the *first*
+                # statement of the top-level transaction — it cannot run inside
+                # a SAVEPOINT (begin_nested). When the session is already inside
+                # an active transaction (e.g. earlier tool calls in the same
+                # request), we skip the DB-level enforcement and rely on the
+                # regex validation above; the read-only parent transaction
+                # itself is the caller's responsibility in that case.
                 if ctx.db.in_transaction():
-                    async with ctx.db.begin_nested():
-                        await ctx.db.execute(text("SET TRANSACTION READ ONLY"))
-                        result = await ctx.db.execute(text(executable_sql))
+                    # Already in a transaction: SET TRANSACTION cannot run
+                    # inside a SAVEPOINT (Postgres 25001). Execute without
+                    # DB-level read-only enforcement; regex validation still
+                    # blocks all dangerous statements.
+                    result = await ctx.db.execute(text(executable_sql))
                 else:
                     async with ctx.db.begin():
                         await ctx.db.execute(text("SET TRANSACTION READ ONLY"))
