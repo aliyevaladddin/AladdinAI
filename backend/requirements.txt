@@ -18,7 +18,7 @@ apscheduler==3.11.3
 croniter==6.2.3
 docker==7.2.0
 PyYAML==6.0.3
-PyJWT==2.13.0
+PyJWT==2.14.0
 sqlparse==0.6.0
 slowapi==0.1.10
 openpyxl==3.1.5
