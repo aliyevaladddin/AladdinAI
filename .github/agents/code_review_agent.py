@@ -156,7 +156,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
                 )
             }],
             temperature=0.3,
-            top_p=0.7,
+            top_p=0.95,
             max_tokens=3000,
         )
 
