@@ -7,7 +7,7 @@ Environment variables required:
     PATH_TOKEN or GITHUB_TOKEN - GitHub API token
     NIM_API_KEY - NVIDIA NIM API key
     NIM_BASE_URL - NVIDIA NIM base URL (default: https://integrate.api.nvidia.com/v1)
-    NIM_MODEL - Model to use (default: meta/llama-3.1-70b-instruct)
+    NIM_MODEL - Model to use (default: nvidia/nemotron-3-super-120b-a12b)
     PR_NUMBER - Pull request number
     REPO_OWNER - Repository owner
     REPO_NAME - Repository name
@@ -138,7 +138,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
         sys.exit(1)
 
     base_url = os.getenv("NIM_BASE_URL", "https://integrate.api.nvidia.com/v1")
-    model = os.getenv("NIM_MODEL", "meta/llama-3.1-70b-instruct")
+    model = os.getenv("NIM_MODEL", "nvidia/nemotron-3-super-120b-a12b")
 
     client = OpenAI(
         base_url=base_url,
