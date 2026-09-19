@@ -310,9 +310,13 @@ async def execute_sql_query(
         if read_only:
             bind = ctx.db.get_bind()
             if bind and getattr(bind.dialect, "name", "") == "postgresql":
-                # Enforce read-only at transaction level, not just via regex
-                # SET TRANSACTION READ ONLY must be the first statement in the transaction
-                await ctx.db.execute(text("SET TRANSACTION READ ONLY"))
+                # Enforce read-only at the session level, not just via regex.
+                # SET TRANSACTION READ ONLY only affects the *current* transaction
+                # and is a no-op outside an explicit BEGIN (SQLAlchemy async session
+                # autocommits per statement). SET SESSION CHARACTERISTICS makes every
+                # transaction on this connection read-only — robust against autocommit.
+                # Requires the connecting role to have permission to set session defaults.
+                await ctx.db.execute(text("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY"))
                 # Optionally set a read-only role if configured (requires DB setup)
                 # from app.config import settings
                 # if settings.sql_readonly_role:
