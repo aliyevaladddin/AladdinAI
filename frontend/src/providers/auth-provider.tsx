@@ -33,11 +33,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       api.setToken(token);
       authedFetch(`${API_URL}/auth/me`)
         .then(async (res) => {
-          if (!res.ok) {
+          // Only clear tokens on definitive auth failure — transient 5xx
+          // (backend blip, proxy hiccup) should not log the user out.
+          if (res.status === 401 || res.status === 403) {
             localStorage.removeItem("access_token");
             localStorage.removeItem("refresh_token");
             return;
           }
+          if (!res.ok) return;
           setUser(await res.json());
         })
         .catch(() => {

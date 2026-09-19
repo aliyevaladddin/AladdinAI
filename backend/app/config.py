@@ -175,11 +175,6 @@ class Settings(BaseSettings):
     terminal_token_secret: str = "change-me-terminal-token-secret"
     terminal_token_ttl_seconds: int = 3600  # 1 hour — multi-use token, lives as long as the session
 
-    # ── SQL read-only enforcement ──────────────────────────────────────
-    # If set, the read-only SQL tool will SET ROLE to this before executing.
-    # Requires a Postgres role with read-only access (e.g. via GRANT SELECT on views).
-    sql_readonly_role: str = ""
-    # Longer-lived cookie issued by forward-auth after the entry token is
     # consumed; covers all sub-resource fetches the iframe makes (CSS, JS,
     # WS upgrade). Keep this comfortably above a typical idle session length
     # but short enough that a leaked cookie has a bounded blast radius.

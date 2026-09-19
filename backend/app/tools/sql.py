@@ -306,39 +306,50 @@ async def execute_sql_query(
         executable_sql = f"{query_trimmed} LIMIT {limit};"
 
     # Execute
-    in_readonly_txn = False
     try:
         if read_only:
             bind = ctx.db.get_bind()
             if bind and getattr(bind.dialect, "name", "") == "postgresql":
-                # Use an explicit read-only transaction instead of
-                # SET SESSION CHARACTERISTICS: the latter persists for the
-                # connection's whole lifetime and would silently poison the
-                # pool (every later checkout of this connection — including
-                # writes from other requests — would fail with
-                # "cannot execute INSERT/UPDATE in a read-only transaction").
-                # SET TRANSACTION READ ONLY is scoped to this transaction and
-                # resets automatically on COMMIT/ROLLBACK.
-                async with ctx.db.begin():
-                    await ctx.db.execute(text("SET TRANSACTION READ ONLY"))
-                    result = await ctx.db.execute(text(executable_sql))
-                    in_readonly_txn = True
-                    if result.returns_rows:
-                        rows = result.fetchall()
-                        columns = list(result.keys())
-                        rows_dict = [
-                            {
-                                k: ("[REDACTED]" if k.lower() in REDACTED_COLUMNS else v)
-                                for k, v in dict(zip(columns, row)).items()
-                            }
-                            for row in rows
-                        ]
-                        return {
-                            "success": True,
-                            "rows": rows_dict,
-                            "columns": columns,
-                            "row_count": len(rows_dict),
+                # Enforce read-only via explicit transaction.
+                #
+                # Why not SET SESSION CHARACTERISTICS? That setting persists
+                # for the connection's whole lifetime and silently poisons the
+                # pool — every later checkout of the same connection (including
+                # writes from other requests) would fail with
+                # "cannot execute INSERT/UPDATE in a read-only transaction".
+                #
+                # Why not just SET TRANSACTION READ ONLY alone? It must be the
+                # *first* statement in a transaction; SQLAlchemy's session may
+                # already be inside a transaction from earlier tool calls in the
+                # same request. begin_nested() opens a SAVEPOINT so we can still
+                # scope the read-only enforcement; if a parent transaction is
+                # already read-only this is a harmless no-op on the DB side.
+                if ctx.db.in_transaction():
+                    async with ctx.db.begin_nested():
+                        await ctx.db.execute(text("SET TRANSACTION READ ONLY"))
+                        result = await ctx.db.execute(text(executable_sql))
+                else:
+                    async with ctx.db.begin():
+                        await ctx.db.execute(text("SET TRANSACTION READ ONLY"))
+                        result = await ctx.db.execute(text(executable_sql))
+
+                if result.returns_rows:
+                    rows = result.fetchall()
+                    columns = list(result.keys())
+                    rows_dict = [
+                        {
+                            k: ("[REDACTED]" if k.lower() in REDACTED_COLUMNS else v)
+                            for k, v in dict(zip(columns, row)).items()
                         }
+                        for row in rows
+                    ]
+                    return {
+                        "success": True,
+                        "rows": rows_dict,
+                        "columns": columns,
+                        "row_count": len(rows_dict),
+                    }
+                else:
                     return {
                         "success": True,
                         "rows": [],
@@ -376,8 +387,7 @@ async def execute_sql_query(
             }
 
     except Exception as e:
-        if not in_readonly_txn:
-            await ctx.db.rollback()
+        await ctx.db.rollback()
         return {
             "success": False,
             "error": str(e),
