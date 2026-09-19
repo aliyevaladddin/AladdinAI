@@ -251,6 +251,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update frontend dependencies in package-lock.json ([439c190](https://github.com/aliyevaladddin/AladdinAI/commit/439c19073c217e7cc63a78890ea7192878755b70))
 
+- Update changelog [skip ci] (#896) ([25eae47](https://github.com/aliyevaladddin/AladdinAI/commit/25eae47920787b0706dbbc857fa7ce8911dbefb9))
+
 
 ### Refactor
 
@@ -260,6 +262,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 ### I18n
 
 - Translate UI text and error messages to English ([3c826dc](https://github.com/aliyevaladddin/AladdinAI/commit/3c826dc014e36877677f5f13fd1bd00a610125f1))
+
+
+### Security
+
+- Harden SQL and terminal execution paths (#909) ([ab42b9e](https://github.com/aliyevaladddin/AladdinAI/commit/ab42b9e174625a10853952f8917c04902e294df9))
 
 ## [v2.2.5] - 2026-08-21
 
