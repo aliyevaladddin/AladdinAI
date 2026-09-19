@@ -195,7 +195,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
 
 ---
 
-<sub>Powered by NVIDIA NIM · [deepseek-v4-pro-0813](https://build.nvidia.com/deepseek-ai/deepseek-v4-pro-0813)</sub>"""
+<sub>Powered by NVIDIA NIM · [moonshotai/kimi-k3](https://build.nvidia.com/moonshotai/kimi-k3)</sub>"""
 
     try:
         result = await post_pr_review(
