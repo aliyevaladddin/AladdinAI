@@ -7,7 +7,7 @@ Environment variables required:
     PATH_TOKEN or GITHUB_TOKEN - GitHub API token
     NIM_API_KEY - NVIDIA NIM API key
     NIM_BASE_URL - NVIDIA NIM base URL (default: https://integrate.api.nvidia.com/v1)
-    NIM_MODEL - Model to use (default: deepseek-ai/deepseek-v4-pro-0813)
+    NIM_MODEL - Model to use (default: moonshotai/kimi-k3)
     PR_NUMBER - Pull request number
     REPO_OWNER - Repository owner
     REPO_NAME - Repository name
@@ -138,7 +138,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
         sys.exit(1)
 
     base_url = os.getenv("NIM_BASE_URL", "https://integrate.api.nvidia.com/v1")
-    model = os.getenv("NIM_MODEL", "deepseek-ai/deepseek-v4-pro-0813")
+    model = os.getenv("NIM_MODEL", "moonshotai/kimi-k3")
 
     client = OpenAI(
         base_url=base_url,
@@ -156,7 +156,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
                 )
             }],
             temperature=0.3,
-            top_p=0.7,
+            top_p=0.95,
             max_tokens=3000,
         )
 
@@ -195,7 +195,7 @@ async def review_pr(owner: str, repo: str, pr_number: int) -> None:
 
 ---
 
-<sub>Powered by NVIDIA NIM · [deepseek-v4-pro-0813](https://build.nvidia.com/deepseek-ai/deepseek-v4-pro-0813)</sub>"""
+<sub>Powered by NVIDIA NIM · [moonshotai/kimi-k3](https://build.nvidia.com/moonshotai/kimi-k3)</sub>"""
 
     try:
         result = await post_pr_review(

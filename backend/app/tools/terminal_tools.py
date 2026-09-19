@@ -3,6 +3,7 @@ import asyncio
 import logging
 import re
 import resource
+import shlex
 import subprocess
 import uuid
 from datetime import datetime, timezone
@@ -298,8 +299,24 @@ async def run_approved_command(
 
     #    preexec_fn requires a real thread; run_in_executor avoids blocking the event loop.
     def _host_run():
+        # Execute the command as an argv list (no shell) to eliminate the
+        # shell-injection risk that ["bash", "-c", command] introduced. Shell
+        # features – pipes, &&, redirects – are intentionally unsupported here:
+        # this is a *fallback* path only; the Docker sandbox remains the only
+        # route for agent code, so complex pipelines must go through it.
+        try:
+            args = shlex.split(command)
+        except ValueError as e:
+            return subprocess.CompletedProcess(
+                args=[command], returncode=2,
+                stdout="", stderr=f"Invalid command syntax: {e}",
+            )
+        if not args:
+            return subprocess.CompletedProcess(
+                args=[command], returncode=2, stdout="", stderr="Empty command",
+            )
         return subprocess.run(
-            ["bash", "-c", command],
+            args,
             capture_output=True,
             text=True,
             timeout=15,

@@ -48,10 +48,12 @@ export default function WrtEditorPage() {
   const [ideConnected, setIdeConnected] = useState(false);
 
   // Native C Filesystem Workspace state (Universal C Engine)
-// Workspace root must be set via NEXT_PUBLIC_WORKSPACE_ROOT environment variable
+  // Workspace root is configured exclusively via NEXT_PUBLIC_WORKSPACE_ROOT.
+  // No runtime fallback: if the variable is unset the native engine is
+  // unavailable and all file operations route through the AladdinAI UI/API.
   const [nativePath, setNativePath] = useState<string | null>(null);
-  const workspaceRoot = process.env.NEXT_PUBLIC_WORKSPACE_ROOT || "";
-  const [nativeDir, setNativeDir] = useState<string>(workspaceRoot);
+  const workspaceRoot = process.env.NEXT_PUBLIC_WORKSPACE_ROOT;
+  const [nativeDir, setNativeDir] = useState<string>(workspaceRoot ?? "");
   const [nativeFiles, setNativeFiles] = useState<WrtFileEntry[]>([]);
   const [recentFiles, setRecentFiles] = useState<WrtRecentFile[]>([]);
   const [filePickerTab, setFilePickerTab] = useState<"native" | "recent" | "spaces">("native");

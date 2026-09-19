@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { api } from "@/lib/api";
+import { api, API_URL, authedFetch } from "@/lib/api";
 
 
 interface User {
@@ -31,9 +31,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem("access_token");
     if (token) {
       api.setToken(token);
-      api
-        .get<User>("/auth/me")
-        .then(setUser)
+      authedFetch(`${API_URL}/auth/me`)
+        .then(async (res) => {
+          // Only clear tokens on definitive auth failure — transient 5xx
+          // (backend blip, proxy hiccup) should not log the user out.
+          if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("refresh_token");
+            return;
+          }
+          if (!res.ok) return;
+          setUser(await res.json());
+        })
         .catch(() => {
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");

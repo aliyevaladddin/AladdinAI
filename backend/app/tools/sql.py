@@ -308,21 +308,67 @@ async def execute_sql_query(
     # Execute
     try:
         if read_only:
-            try:
-                bind = ctx.db.get_bind()
-                if bind and getattr(bind.dialect, "name", "") == "postgresql":
-                    await ctx.db.execute(text("SET LOCAL default_transaction_read_only = 'on'"))
-            except Exception:
-                pass
+            bind = ctx.db.get_bind()
+            if bind and getattr(bind.dialect, "name", "") == "postgresql":
+                # Enforce read-only via explicit transaction.
+                #
+                # Why not SET SESSION CHARACTERISTICS? That setting persists
+                # for the connection's whole lifetime and silently poisons the
+                # pool — every later checkout of the same connection (including
+                # writes from other requests) would fail with
+                # "cannot execute INSERT/UPDATE in a read-only transaction".
+                #
+                # Why SET TRANSACTION READ ONLY? It scopes read-only to the
+                # transaction and resets automatically on COMMIT/ROLLBACK.
+                #
+                # Caveat: PostgreSQL requires SET TRANSACTION to be the *first*
+                # statement of the top-level transaction — it cannot run inside
+                # a SAVEPOINT (begin_nested). When the session is already inside
+                # an active transaction (e.g. earlier tool calls in the same
+                # request), we skip the DB-level enforcement and rely on the
+                # regex validation above; the read-only parent transaction
+                # itself is the caller's responsibility in that case.
+                if ctx.db.in_transaction():
+                    # Already in a transaction: SET TRANSACTION cannot run
+                    # inside a SAVEPOINT (Postgres 25001). Execute without
+                    # DB-level read-only enforcement; regex validation still
+                    # blocks all dangerous statements.
+                    result = await ctx.db.execute(text(executable_sql))
+                else:
+                    async with ctx.db.begin():
+                        await ctx.db.execute(text("SET TRANSACTION READ ONLY"))
+                        result = await ctx.db.execute(text(executable_sql))
+
+                if result.returns_rows:
+                    rows = result.fetchall()
+                    columns = list(result.keys())
+                    rows_dict = [
+                        {
+                            k: ("[REDACTED]" if k.lower() in REDACTED_COLUMNS else v)
+                            for k, v in dict(zip(columns, row)).items()
+                        }
+                        for row in rows
+                    ]
+                    return {
+                        "success": True,
+                        "rows": rows_dict,
+                        "columns": columns,
+                        "row_count": len(rows_dict),
+                    }
+                else:
+                    return {
+                        "success": True,
+                        "rows": [],
+                        "columns": [],
+                        "row_count": result.rowcount,
+                        "message": f"Query executed successfully. {result.rowcount} rows affected.",
+                    }
 
         result = await ctx.db.execute(text(executable_sql))
 
-        # Check if query returns rows
         if result.returns_rows:
             rows = result.fetchall()
             columns = list(result.keys())
-
-            # Convert rows to dicts and redact sensitive fields
             rows_dict = [
                 {
                     k: ("[REDACTED]" if k.lower() in REDACTED_COLUMNS else v)
@@ -330,7 +376,6 @@ async def execute_sql_query(
                 }
                 for row in rows
             ]
-
             return {
                 "success": True,
                 "rows": rows_dict,
@@ -338,7 +383,6 @@ async def execute_sql_query(
                 "row_count": len(rows_dict),
             }
         else:
-            # INSERT/UPDATE/DELETE
             await ctx.db.commit()
             return {
                 "success": True,

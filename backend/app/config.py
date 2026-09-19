@@ -174,7 +174,7 @@ class Settings(BaseSettings):
     # but won't crash a dev session.
     terminal_token_secret: str = "change-me-terminal-token-secret"
     terminal_token_ttl_seconds: int = 3600  # 1 hour — multi-use token, lives as long as the session
-    # Longer-lived cookie issued by forward-auth after the entry token is
+
     # consumed; covers all sub-resource fetches the iframe makes (CSS, JS,
     # WS upgrade). Keep this comfortably above a typical idle session length
     # but short enough that a leaked cookie has a bounded blast radius.

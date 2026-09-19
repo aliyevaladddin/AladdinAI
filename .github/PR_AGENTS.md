@@ -56,7 +56,7 @@ Add these secrets to GitHub repository settings:
 - `PATH_TOKEN` — GitHub personal access token (already configured)
 - `NIM_API_KEY` — NVIDIA NIM API key
 - `NIM_BASE_URL` — (optional) Custom NIM endpoint
-- `NIM_MODEL` — (optional) Model override (default: `meta/llama-3.1-70b-instruct`)
+- `NIM_MODEL` — (optional) Model override (default: `moonshotai/kimi-k3`)
 
 ### Demo value
 - Shows external API integration (GitHub)
