@@ -304,7 +304,17 @@ async def run_approved_command(
         # features – pipes, &&, redirects – are intentionally unsupported here:
         # this is a *fallback* path only; the Docker sandbox remains the only
         # route for agent code, so complex pipelines must go through it.
-        args = shlex.split(command)
+        try:
+            args = shlex.split(command)
+        except ValueError as e:
+            return subprocess.CompletedProcess(
+                args=[command], returncode=2,
+                stdout="", stderr=f"Invalid command syntax: {e}",
+            )
+        if not args:
+            return subprocess.CompletedProcess(
+                args=[command], returncode=2, stdout="", stderr="Empty command",
+            )
         return subprocess.run(
             args,
             capture_output=True,

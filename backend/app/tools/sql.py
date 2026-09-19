@@ -306,30 +306,52 @@ async def execute_sql_query(
         executable_sql = f"{query_trimmed} LIMIT {limit};"
 
     # Execute
+    in_readonly_txn = False
     try:
         if read_only:
             bind = ctx.db.get_bind()
             if bind and getattr(bind.dialect, "name", "") == "postgresql":
-                # Enforce read-only at the session level, not just via regex.
-                # SET TRANSACTION READ ONLY only affects the *current* transaction
-                # and is a no-op outside an explicit BEGIN (SQLAlchemy async session
-                # autocommits per statement). SET SESSION CHARACTERISTICS makes every
-                # transaction on this connection read-only — robust against autocommit.
-                # Requires the connecting role to have permission to set session defaults.
-                await ctx.db.execute(text("SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY"))
-                # Optionally set a read-only role if configured (requires DB setup)
-                # from app.config import settings
-                # if settings.sql_readonly_role:
-                #     await ctx.db.execute(text(f"SET ROLE {settings.sql_readonly_role}"))
+                # Use an explicit read-only transaction instead of
+                # SET SESSION CHARACTERISTICS: the latter persists for the
+                # connection's whole lifetime and would silently poison the
+                # pool (every later checkout of this connection — including
+                # writes from other requests — would fail with
+                # "cannot execute INSERT/UPDATE in a read-only transaction").
+                # SET TRANSACTION READ ONLY is scoped to this transaction and
+                # resets automatically on COMMIT/ROLLBACK.
+                async with ctx.db.begin():
+                    await ctx.db.execute(text("SET TRANSACTION READ ONLY"))
+                    result = await ctx.db.execute(text(executable_sql))
+                    in_readonly_txn = True
+                    if result.returns_rows:
+                        rows = result.fetchall()
+                        columns = list(result.keys())
+                        rows_dict = [
+                            {
+                                k: ("[REDACTED]" if k.lower() in REDACTED_COLUMNS else v)
+                                for k, v in dict(zip(columns, row)).items()
+                            }
+                            for row in rows
+                        ]
+                        return {
+                            "success": True,
+                            "rows": rows_dict,
+                            "columns": columns,
+                            "row_count": len(rows_dict),
+                        }
+                    return {
+                        "success": True,
+                        "rows": [],
+                        "columns": [],
+                        "row_count": result.rowcount,
+                        "message": f"Query executed successfully. {result.rowcount} rows affected.",
+                    }
 
         result = await ctx.db.execute(text(executable_sql))
 
-        # Check if query returns rows
         if result.returns_rows:
             rows = result.fetchall()
             columns = list(result.keys())
-
-            # Convert rows to dicts and redact sensitive fields
             rows_dict = [
                 {
                     k: ("[REDACTED]" if k.lower() in REDACTED_COLUMNS else v)
@@ -337,7 +359,6 @@ async def execute_sql_query(
                 }
                 for row in rows
             ]
-
             return {
                 "success": True,
                 "rows": rows_dict,
@@ -345,7 +366,6 @@ async def execute_sql_query(
                 "row_count": len(rows_dict),
             }
         else:
-            # INSERT/UPDATE/DELETE
             await ctx.db.commit()
             return {
                 "success": True,
@@ -356,7 +376,8 @@ async def execute_sql_query(
             }
 
     except Exception as e:
-        await ctx.db.rollback()
+        if not in_readonly_txn:
+            await ctx.db.rollback()
         return {
             "success": False,
             "error": str(e),
