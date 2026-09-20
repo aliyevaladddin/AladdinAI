@@ -303,6 +303,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Ignore root directory and update frontend package-lock.json ([ebd20e2](https://github.com/aliyevaladddin/AladdinAI/commit/ebd20e2c6b9d7228bb029f8e297f916e914fa0c6))
 
+- Update changelog [skip ci] ([690d5dd](https://github.com/aliyevaladddin/AladdinAI/commit/690d5dd5add65a206db0886273a7e125ea2c38c3))
+
 
 ### Refactor
 
