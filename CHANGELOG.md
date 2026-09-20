@@ -4,6 +4,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Maintenance
+
+- Add libzip-dev to production Dockerfile ([33b70ce](https://github.com/aliyevaladddin/AladdinAI/commit/33b70cef4b36e02ed35ea0456f224d06212656d2))
+
+## [v2.2.6] - 2026-09-20
+
 ### Bug Fixes
 
 - Remove 16 of 19 type: ignore suppressions in backend ([d704540](https://github.com/aliyevaladddin/AladdinAI/commit/d70454019c891aa4506060d55e1c30b21dbcc50a))
@@ -302,6 +308,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump @types/node from 26.5.1 to 26.6.1 in /frontend ([84cb572](https://github.com/aliyevaladddin/AladdinAI/commit/84cb5727b804d9654b9baf951008603bc34c4cbb))
 
 - Ignore root directory and update frontend package-lock.json ([ebd20e2](https://github.com/aliyevaladddin/AladdinAI/commit/ebd20e2c6b9d7228bb029f8e297f916e914fa0c6))
+
+- Update changelog [skip ci] ([690d5dd](https://github.com/aliyevaladddin/AladdinAI/commit/690d5dd5add65a206db0886273a7e125ea2c38c3))
 
 
 ### Refactor
