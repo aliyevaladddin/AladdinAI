@@ -130,3 +130,4 @@ backend/native/wrt-edit
 *whatsapp_auth*
 .DS_Store
 backend/whatsapp_bridge/node_modules/
+root/*
