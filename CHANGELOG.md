@@ -8,6 +8,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Add libzip-dev to production Dockerfile ([33b70ce](https://github.com/aliyevaladddin/AladdinAI/commit/33b70cef4b36e02ed35ea0456f224d06212656d2))
 
+- Update changelog [skip ci] ([4faa96b](https://github.com/aliyevaladddin/AladdinAI/commit/4faa96b86c17d90f2a12f5dba32819c452876ffa))
+
 ## [v2.2.6] - 2026-09-20
 
 ### Bug Fixes
