@@ -2,7 +2,7 @@
 
 All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
-## [Unreleased]
+## [v2.2.6] - 2026-09-20
 
 ### Bug Fixes
 
@@ -302,6 +302,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump @types/node from 26.5.1 to 26.6.1 in /frontend ([84cb572](https://github.com/aliyevaladddin/AladdinAI/commit/84cb5727b804d9654b9baf951008603bc34c4cbb))
 
 - Ignore root directory and update frontend package-lock.json ([ebd20e2](https://github.com/aliyevaladddin/AladdinAI/commit/ebd20e2c6b9d7228bb029f8e297f916e914fa0c6))
+
+- Update changelog [skip ci] ([690d5dd](https://github.com/aliyevaladddin/AladdinAI/commit/690d5dd5add65a206db0886273a7e125ea2c38c3))
 
 
 ### Refactor
