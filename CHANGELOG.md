@@ -8,6 +8,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Retry session re-init on 401, strip trailing colons from header names ([6c820c1](https://github.com/aliyevaladddin/AladdinAI/commit/6c820c1a75d1ce54c059c98557b3191a1c8a3691))
 
+- Hardcode bot user name and email in workflow git config (#925) ([7eea66d](https://github.com/aliyevaladddin/AladdinAI/commit/7eea66decf60bc8371c04a2c14ab8a863f69a59b))
+
 
 ### Features
 
@@ -21,6 +23,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] ([4faa96b](https://github.com/aliyevaladddin/AladdinAI/commit/4faa96b86c17d90f2a12f5dba32819c452876ffa))
 
 - Update changelog [skip ci] ([f38148f](https://github.com/aliyevaladddin/AladdinAI/commit/f38148f87aa5a63316425065e33fdd18bdd4c250))
+
+- Update changelog [skip ci] ([3a74ea9](https://github.com/aliyevaladddin/AladdinAI/commit/3a74ea979c87826a1762d5e60dc1570329dc3972))
 
 ## [v2.2.6] - 2026-09-20
 
