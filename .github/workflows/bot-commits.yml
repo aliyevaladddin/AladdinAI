@@ -138,9 +138,9 @@ jobs:
             echo "::error::Could not resolve qwen-agent-bot[bot] user ID"
             exit 1
           fi
-          git config user.name "$BOT_LOGIN"
-          git config user.email "${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com"
-          echo "Committing as $BOT_LOGIN <${BOT_ID}+${BOT_LOGIN}@users.noreply.github.com>"
+          git config user.name "qwen-agent-bot[bot]"
+          git config user.email "318044681+qwen-agent-bot[bot]@users.noreply.github.com"
+          echo "Committing as qwen-agent-bot[bot] <318044681+qwen-agent-bot[bot]@users.noreply.github.com>"
 
       - name: Create Bot Commit (direct push to main)
         env:
