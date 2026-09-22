@@ -4,9 +4,21 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Retry session re-init on 401, strip trailing colons from header names ([6c820c1](https://github.com/aliyevaladddin/AladdinAI/commit/6c820c1a75d1ce54c059c98557b3191a1c8a3691))
+
+
+### Features
+
+- Add MCP server editing and Sanity integration along with backend service reliability improvements ([09c01bf](https://github.com/aliyevaladddin/AladdinAI/commit/09c01bf3a8de39072bbf2ad9d7aee535a84979df))
+
+
 ### Maintenance
 
 - Add libzip-dev to production Dockerfile ([33b70ce](https://github.com/aliyevaladddin/AladdinAI/commit/33b70cef4b36e02ed35ea0456f224d06212656d2))
+
+- Update changelog [skip ci] ([4faa96b](https://github.com/aliyevaladddin/AladdinAI/commit/4faa96b86c17d90f2a12f5dba32819c452876ffa))
 
 ## [v2.2.6] - 2026-09-20
 
