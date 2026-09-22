@@ -302,7 +302,10 @@ async def _openai_compatible(
                                 break
                             try:
                                 chunk = json.loads(data_str)
-                                choice = chunk["choices"][0]
+                                choices = chunk.get("choices")
+                                if not choices:
+                                    continue
+                                choice = choices[0]
                                 delta = choice.get("delta", {})
                                 
                                 content = delta.get("content")

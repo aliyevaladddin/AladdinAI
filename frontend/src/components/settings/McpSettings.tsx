@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs";
 import {
   Plug, Plus, X, Loader2, Trash2, RefreshCw, CheckCircle2,
-  XCircle, Store, ChevronDown, ChevronUp, Power,
+  XCircle, Store, ChevronDown, ChevronUp, Power, Pencil,
 } from "lucide-react";
 
 interface McpToolInfo {
@@ -75,6 +75,7 @@ export function McpSettings() {
   const [tests, setTests] = useState<Record<number, TestResult>>({});
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const load = useCallback(() => {
     setLoadError(null);
@@ -131,7 +132,23 @@ export function McpSettings() {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleEdit = (s: McpServer) => {
+    setEditingId(s.id);
+    const initialHeaders = s.header_names.length > 0
+      ? s.header_names.map((name) => newHeaderRow(name, ""))
+      : [];
+    setForm({
+      name: s.name,
+      url: s.url,
+      timeout_seconds: String(s.timeout_seconds),
+      headers: initialHeaders,
+    });
+    setFormError(null);
+    setShowForm(true);
+    setView("servers");
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setFormError(null);
@@ -141,19 +158,29 @@ export function McpSettings() {
         if (h.key.trim() && h.value.trim()) headers[h.key.trim()] = h.value.trim();
       }
 
-      await api.post("/mcp/servers", {
-        name: form.name,
-        url: form.url,
-        timeout_seconds: parseInt(form.timeout_seconds) || 30,
-        headers: Object.keys(headers).length ? headers : null,
-      });
+      if (editingId) {
+        await api.patch(`/mcp/servers/${editingId}`, {
+          name: form.name,
+          url: form.url,
+          timeout_seconds: parseInt(form.timeout_seconds) || 30,
+          headers: Object.keys(headers).length ? headers : undefined,
+        });
+      } else {
+        await api.post("/mcp/servers", {
+          name: form.name,
+          url: form.url,
+          timeout_seconds: parseInt(form.timeout_seconds) || 30,
+          headers: Object.keys(headers).length ? headers : null,
+        });
+      }
       clearApiCache("/mcp");
       setForm(EMPTY_FORM);
+      setEditingId(null);
       setShowForm(false);
       setView("servers");
       load();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to add server");
+      setFormError(err instanceof Error ? err.message : "Failed to save server");
     } finally {
       setSaving(false);
     }
@@ -199,14 +226,30 @@ export function McpSettings() {
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => { setShowForm(!showForm); setFormError(null); }} className="shrink-0">
+        <Button variant="outline" size="sm" onClick={() => {
+          if (showForm) {
+            setShowForm(false);
+            setEditingId(null);
+            setForm(EMPTY_FORM);
+          } else {
+            setEditingId(null);
+            setForm(EMPTY_FORM);
+            setShowForm(true);
+          }
+          setFormError(null);
+        }} className="shrink-0">
           {showForm ? <><X size={13} /> Cancel</> : <><Plus size={13} /> Add Server</>}
         </Button>
       </div>
 
-      {/* Create Form */}
+      {/* Create / Edit Form */}
       {showForm && (
-        <form onSubmit={handleCreate} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 space-y-3">
+        <form onSubmit={handleSave} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 space-y-3">
+          <div className="flex items-center justify-between pb-1 border-b border-[var(--color-border)]">
+            <h4 className="text-xs font-semibold text-[var(--color-fg)]">
+              {editingId ? "Edit MCP Server" : "Add MCP Server"}
+            </h4>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-[var(--color-fg-muted)]">Name</label>
@@ -262,9 +305,9 @@ export function McpSettings() {
             <p className="text-xs px-2 py-1 rounded-md bg-[var(--color-danger-soft)] text-[var(--color-danger)] w-fit">{formError}</p>
           )}
           <div className="flex items-center justify-end gap-2 pt-1">
-            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setFormError(null); }}>Cancel</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); setFormError(null); }}>Cancel</Button>
             <Button type="submit" size="sm" disabled={saving}>
-              {saving ? <Loader2 size={13} className="animate-spin" /> : <Plug size={13} />} Add Server
+              {saving ? <Loader2 size={13} className="animate-spin" /> : editingId ? <Pencil size={13} /> : <Plug size={13} />} {editingId ? "Save Changes" : "Add Server"}
             </Button>
           </div>
         </form>
@@ -340,6 +383,13 @@ export function McpSettings() {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <Button variant="outline" size="sm" onClick={() => handleTest(s.id)} disabled={isBusy}>
                           <RefreshCw size={13} className={isBusy ? "animate-spin" : ""} /> Test
+                        </Button>
+                        <Button
+                          variant="ghost" size="icon-sm"
+                          onClick={() => handleEdit(s)} disabled={isBusy} title="Edit Server"
+                          className="text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]"
+                        >
+                          <Pencil size={13} />
                         </Button>
                         <Button
                           variant="ghost" size="icon-sm"

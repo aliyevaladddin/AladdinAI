@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
     await telegram_poller.start()
     terminal_health.start()
     autonomous_bot_scheduler.start_scheduler()
-    native_terminal_daemon.start_daemon()
+    await native_terminal_daemon.start_daemon()
     await wrt_engine_service.start_daemon()
     yield
     log.info("AladdinAI shutting down")

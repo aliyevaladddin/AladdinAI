@@ -154,7 +154,7 @@ async def _rpc(
         raise McpError(f"MCP server unreachable: {e}") from e
 
     new_session = resp.headers.get("MCP-Session-Id") or session_id
-    if resp.status_code == 404 and session_id:
+    if (resp.status_code == 404 or resp.status_code == 401) and session_id:
         raise SessionExpired("MCP session expired")
     if resp.status_code >= 400:
         raise McpError(f"MCP server returned HTTP {resp.status_code}")
@@ -343,16 +343,30 @@ async def call_tool(
 
 
 def encrypt_headers(headers: dict[str, str]) -> str | None:
-    """Whole-dict encryption for at-rest storage; None when empty."""
-    clean = {k: v for k, v in (headers or {}).items() if k and v}
+    """Whole-dict encryption for at-rest storage; None when empty.
+
+    Strips trailing colons from header names (common user typo:
+    'Authorization:' instead of 'Authorization').
+    """
+    clean = {k.rstrip(":").strip(): v for k, v in (headers or {}).items() if k and v}
+    # Drop any keys that became empty after stripping
+    clean = {k: v for k, v in clean.items() if k}
     return encrypt(json.dumps(clean)) if clean else None
 
 
 def decrypt_headers_blob(blob: str) -> dict[str, str]:
-    """Inverse of :func:`encrypt_headers`; tolerant of corrupt rows."""
+    """Inverse of :func:`encrypt_headers`; tolerant of corrupt rows.
+
+    Also strips trailing colons from header names to heal rows that were
+    saved before the encrypt_headers fix.
+    """
     try:
         data = json.loads(decrypt(blob))
-        return {str(k): str(v) for k, v in data.items() if v is not None}
+        return {
+            str(k).rstrip(":").strip(): str(v)
+            for k, v in data.items()
+            if v is not None and str(k).rstrip(":").strip()
+        }
     except Exception:  # noqa: BLE001
         log.exception("Failed to decrypt an MCP headers blob")
         return {}
