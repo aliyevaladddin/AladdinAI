@@ -13,7 +13,9 @@ from datetime import datetime, timezone
 import pytest
 
 from app.services.forging import (
+    _assign_split,
     _golden_query,
+    _split_group_key,
     _to_golden,
     export_golden_set,
     freeze_golden_set,
@@ -348,3 +350,37 @@ async def test_export_preserves_non_ascii():
 
     assert "хорошо" in out["jsonl"]
     assert json.loads(out["jsonl"])["completion"] == "хорошо"
+
+
+# ── session-isolated grouping & deterministic splits ─────────────────────────
+def test_split_group_key_session_precedence():
+    trace_a = {"session_id": "sess-1", "input": "hello"}
+    trace_b = {"session_id": "sess-1", "input": "different question"}
+    assert _split_group_key(trace_a) == "session:sess-1"
+    assert _split_group_key(trace_a) == _split_group_key(trace_b)
+
+
+def test_split_group_key_fallback_prompt_hash():
+    trace_no_sess = {"session_id": None, "input": "hello"}
+    trace_no_sess_same = {"input": "hello"}
+    assert _split_group_key(trace_no_sess).startswith("prompt:")
+    assert _split_group_key(trace_no_sess) == _split_group_key(trace_no_sess_same)
+
+
+def test_split_group_key_distinct_sessions_different_keys():
+    t1 = {"session_id": "sess-1", "input": "identical prompt"}
+    t2 = {"session_id": "sess-2", "input": "identical prompt"}
+    assert _split_group_key(t1) != _split_group_key(t2)
+
+
+def test_assign_split_deterministic():
+    key = "session:test-session"
+    res1 = _assign_split(key)
+    res2 = _assign_split(key)
+    assert res1 == res2
+    assert res1 in ("train", "validation", "heldout")
+
+
+def test_assign_split_invalid_ratios():
+    with pytest.raises(ValueError, match="Invalid split ratios"):
+        _assign_split("session:1", {"train": 0.5, "validation": 0.1, "heldout": 0.1})

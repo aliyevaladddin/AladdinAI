@@ -28,6 +28,7 @@ not "was the answer right".
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -38,6 +39,10 @@ log = logging.getLogger(__name__)
 
 GOLDEN_COLLECTION = "golden_traces"
 TRACE_COLLECTION = "agent_traces"
+DATASET_VERSION_COLLECTION = "dataset_versions"
+
+DEFAULT_SPLIT_RATIOS = {"train": 0.70, "validation": 0.15, "heldout": 0.15}
+MIN_EXAMPLES_PER_SPLIT = 5
 
 # Tokeniser for the overlap scorer: lowercase word characters.
 _WORD = re.compile(r"[a-z0-9]+")
@@ -47,6 +52,45 @@ _STOPWORDS = frozenset(
     "a an the and or but is are was were be been being to of in on at for with "
     "this that these those it its as by from you i we they he she".split()
 )
+
+
+# ── splitting & grouping (pure, unit-testable) ──────────────────────────────
+# [RCF:PROTECTED]
+def _split_group_key(trace: dict[str, Any]) -> str:
+    """Return the deterministic group key for a trace.
+
+    Session ID always takes absolute precedence over input prompt.
+    """
+    session_id = trace.get("session_id")
+    if session_id is not None:
+        return f"session:{session_id}"
+    input_text = trace.get("input_user_text") or trace.get("input") or ""
+    digest = hashlib.sha256(input_text.encode("utf-8")).hexdigest()
+    return f"prompt:{digest}"
+
+
+# [RCF:PROTECTED]
+def _assign_split(group_key: str, ratios: dict[str, float] | None = None) -> str:
+    """Deterministically assign a group key to a split using SHA-256."""
+    if ratios is None:
+        ratios = DEFAULT_SPLIT_RATIOS
+
+    train_r = ratios.get("train", 0.0)
+    val_r = ratios.get("validation", 0.0)
+    heldout_r = ratios.get("heldout", 0.0)
+    total = train_r + val_r + heldout_r
+
+    if abs(total - 1.0) > 1e-6 or any(r < 0 for r in (train_r, val_r, heldout_r)):
+        raise ValueError(f"Invalid split ratios: {ratios}")
+
+    digest = hashlib.sha256(group_key.encode("utf-8")).hexdigest()
+    val = int(digest, 16) / (2**256)
+
+    if val < train_r:
+        return "train"
+    elif val < train_r + val_r:
+        return "validation"
+    return "heldout"
 
 
 # ── scoring (pure, unit-testable) ────────────────────────────────────────────
