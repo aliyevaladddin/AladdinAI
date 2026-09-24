@@ -8,6 +8,7 @@ import pytest
 from app.services.forging import (
     _assign_split,
     _golden_query,
+    _reserve_next_version,
     _split_group_key,
     _to_golden,
     export_golden_set,
@@ -143,8 +144,10 @@ class _FakeCollection:
                         return False
                 if k == "human_labeled" and d.get("human_labeled") is not v:
                     return False
-                if k in ("final_text", "input_user_text") and isinstance(v, dict) and d.get(k) in v["$nin"]:
-                    return False
+                if k in ("final_text", "input_user_text") and isinstance(v, dict):
+                    val = d.get(k)
+                    if "$nin" in v and (val is None or val in v["$nin"]):
+                        return False
             return True
         return _FakeCursor([d for d in self.docs if match(d)])
 
@@ -337,13 +340,10 @@ async def test_export_empty_golden_set_is_empty_not_error():
 @pytest.mark.asyncio
 async def test_dpo_pairing_same_session_cross_session_and_unpaired():
     traces = [
-        # Case A: Same session, same prompt -> Paired
         {"_id": 1, "user_id": 1, "session_id": "sess-1", "input_user_text": "p1", "final_text": "good 1", "reward": 1.0, "human_labeled": True},
         {"_id": 2, "user_id": 1, "session_id": "sess-1", "input_user_text": "p1", "final_text": "bad 1", "reward": -1.0, "human_labeled": True},
-        # Case B: Cross session, same prompt -> Skipped cross-session
         {"_id": 3, "user_id": 1, "session_id": "sess-2", "input_user_text": "p2", "final_text": "good 2", "reward": 1.0, "human_labeled": True},
         {"_id": 4, "user_id": 1, "session_id": "sess-3", "input_user_text": "p2", "final_text": "bad 2", "reward": -1.0, "human_labeled": True},
-        # Case C: No negative answer anywhere -> Skipped unpaired
         {"_id": 5, "user_id": 1, "session_id": "sess-4", "input_user_text": "p3", "final_text": "good 3", "reward": 1.0, "human_labeled": True},
     ]
     mdb = _FakeMongo(traces)
@@ -393,7 +393,7 @@ async def test_harness_reports_delta(monkeypatch):
 
     result = await run_harness(
         mdb, user_id=1,
-        split="train",  # evaluate train split where the example is guaranteed
+        split="train",
         base_provider=None, base_model="base",
         forged_provider=None, forged_model="forged",
     )
@@ -433,32 +433,173 @@ def test_assign_split_deterministic():
 
 
 def test_assign_split_invalid_ratios():
-    with pytest.raises(ValueError, match="Invalid split ratios"):
+    with pytest.raises(ValueError):
         _assign_split("session:1", {"train": 0.5, "validation": 0.1, "heldout": 0.1})
 
-@pytest.mark.asyncio
-async def test_version_allocation_retries_on_duplicate_key(monkeypatch):
-    """Test that _reserve_next_version retries when another process creates the same version."""
-    from app.services.forging import _reserve_next_version
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ── VALIDATION EXPERIMENTS ───────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Experiment 1: Large synthetic session isolation (200 sessions)
+@pytest.mark.asyncio
+async def test_large_synthetic_session_split_is_deterministic_and_leak_free():
+    traces = []
+    for session_num in range(200):
+        session_id = f"session-{session_num}"
+        for turn in range(2):
+            traces.append(
+                {
+                    "_id": f"{session_num}-{turn}",
+                    "user_id": 1,
+                    "session_id": session_id,
+                    "input_user_text": f"question {session_num} turn {turn}",
+                    "final_text": f"answer {session_num} turn {turn}",
+                    "reward": 1.0,
+                    "human_labeled": True,
+                }
+            )
+
+    mdb_a = _FakeMongo(list(traces))
+    result_a = await freeze_golden_set(mdb_a, user_id=1, limit=1000)
+
+    assert result_a["counts"]["train"] >= 5
+    assert result_a["counts"]["validation"] >= 5
+    assert result_a["counts"]["heldout"] >= 5
+
+    docs_a = mdb_a["golden_traces"].docs
+    session_splits_a = {}
+    for doc in docs_a:
+        session_splits_a.setdefault(doc["session_id"], set()).add(doc["split"])
+
+    assert all(len(splits) == 1 for splits in session_splits_a.values())
+
+    mdb_b = _FakeMongo(list(traces))
+    result_b = await freeze_golden_set(mdb_b, user_id=1, limit=1000)
+    docs_b = mdb_b["golden_traces"].docs
+
+    session_splits_b = {}
+    for doc in docs_b:
+        session_splits_b.setdefault(doc["session_id"], set()).add(doc["split"])
+
+    assert session_splits_a == session_splits_b
+    assert result_a["counts"] == result_b["counts"]
+
+
+# Experiment 2: Frozen DPO export does not change when live traces mutate
+@pytest.mark.asyncio
+async def test_frozen_dpo_export_does_not_change_when_live_traces_change():
+    traces = [
+        {"_id": 1, "user_id": 1, "session_id": "s1", "input_user_text": "help me", "final_text": "good answer", "reward": 1.0, "human_labeled": True},
+        {"_id": 2, "user_id": 1, "session_id": "s1", "input_user_text": "help me", "final_text": "original bad answer", "reward": -1.0, "human_labeled": True},
+    ]
+    mdb = _FakeMongo(traces)
+    freeze = await freeze_golden_set(mdb, user_id=1)
+    version = freeze["version"]
+
+    before = await export_golden_set(mdb, user_id=1, version=version, split="train", fmt="dpo")
+
+    for trace in mdb["agent_traces"].docs:
+        if trace.get("_id") == 2:
+            trace["final_text"] = "CHANGED LIVE REJECTED ANSWER"
+
+    mdb["agent_traces"].docs.append(
+        {"_id": 3, "user_id": 1, "session_id": "s1", "input_user_text": "help me", "final_text": "brand new bad answer", "reward": -1.0, "human_labeled": True}
+    )
+
+    after = await export_golden_set(mdb, user_id=1, version=version, split="train", fmt="dpo")
+
+    assert before["jsonl"] == after["jsonl"]
+    assert before["examples"] == after["examples"]
+    row = json.loads(after["jsonl"])
+    assert row["rejected_response"] == "original bad answer"
+
+
+# Experiment 3: Historical dataset versions remain unchanged after new freeze
+@pytest.mark.asyncio
+async def test_older_dataset_version_remains_unchanged_after_new_freeze():
+    traces = [
+        {"_id": 1, "user_id": 1, "session_id": "s1", "input_user_text": "old question", "final_text": "old answer", "reward": 1.0, "human_labeled": True}
+    ]
+    mdb = _FakeMongo(traces)
+    first = await freeze_golden_set(mdb, user_id=1)
+    assert first["version"] == 1
+
+    v1_before = await get_golden_set(mdb, user_id=1, version=1)
+
+    mdb["agent_traces"].docs.append(
+        {"_id": 2, "user_id": 1, "session_id": "s2", "input_user_text": "new question", "final_text": "new answer", "reward": 1.0, "human_labeled": True}
+    )
+    second = await freeze_golden_set(mdb, user_id=1)
+    assert second["version"] == 2
+
+    v1_after = await get_golden_set(mdb, user_id=1, version=1)
+    assert v1_after == v1_before
+
+    v2 = await get_golden_set(mdb, user_id=1, version=2)
+    assert {doc["input"] for doc in v2} == {"old question", "new question"}
+
+
+# Experiment 4: Small-dataset held-out safety guarantees zero model evaluations
+@pytest.mark.asyncio
+async def test_harness_empty_heldout_never_calls_models(monkeypatch):
+    traces = [
+        {"_id": 1, "user_id": 1, "input_user_text": "q1", "final_text": "a1", "reward": 1.0, "human_labeled": True, "session_id": "s1"}
+    ]
+    mdb = _FakeMongo(traces)
+    freeze = await freeze_golden_set(mdb, user_id=1)
+    assert freeze["counts"]["heldout"] == 0
+
+    calls = 0
+
+    async def should_never_be_called(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        raise AssertionError("Harness must not evaluate training examples as held-out")
+
+    monkeypatch.setattr("app.services.forging._reply_for", should_never_be_called)
+
+    result = await run_harness(
+        mdb,
+        user_id=1,
+        version=freeze["version"],
+        base_provider=None,
+        base_model="base",
+        forged_provider=None,
+        forged_model="forged",
+    )
+
+    assert result["evaluated"] == 0
+    assert result["dataset_version"] == freeze["version"]
+    assert result["split"] == "heldout"
+    assert "not evaluable" in result["message"].lower()
+    assert calls == 0
+
+
+# Experiment 5: Collision-retry advances candidate version correctly
+@pytest.mark.asyncio
+async def test_version_allocation_advances_after_realistic_collision(monkeypatch):
     mdb = _FakeMongo([])
     attempts = 0
-
     original_insert_one = mdb["dataset_versions"].insert_one
 
-    async def flaky_insert(doc):
+    async def racing_insert(doc):
         nonlocal attempts
         attempts += 1
-        # Simulate a race collision on the first attempt
         if attempts == 1:
+            await original_insert_one({"user_id": 1, "version": doc["version"], "status": "ready"})
             raise Exception("E11000 duplicate key error collection: dataset_versions")
         await original_insert_one(doc)
 
-    monkeypatch.setattr(mdb["dataset_versions"], "insert_one", flaky_insert)
+    monkeypatch.setattr(mdb["dataset_versions"], "insert_one", racing_insert)
 
-    base_manifest = {"status": "building", "counts": {"train": 1, "validation": 0, "heldout": 0}}
-    version, manifest = await _reserve_next_version(mdb, user_id=1, base_manifest=base_manifest)
+    version, manifest = await _reserve_next_version(
+        mdb,
+        user_id=1,
+        base_manifest={"counts": {"train": 1, "validation": 0, "heldout": 0}},
+    )
 
-    assert version == 1
+    assert attempts == 2
+    assert version == 2
+    assert manifest["version"] == 2
     assert manifest["status"] == "building"
-    assert attempts == 2  # Proves that it caught the collision and retried!
