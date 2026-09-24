@@ -71,6 +71,8 @@ its shape rather than from a flag:
 | `chat` | `{"messages": [{role, content}, …]}` | models trained on a chat template |
 | `dpo` | `{"prompt", "chosen_response", "rejected_response"}` | preference alignment |
 
+DPO pairs are formed only when the chosen and rejected responses have the same input and session ID. Rejected candidates from other sessions are skipped and reported separately in skipped_cross_session. This prevents responses from different session contexts from being paired.
+
 Add `&system_prompt=...` to put a system turn in front of every `chat` example,
 and `&download=false` to get a JSON summary instead of the file.
 
