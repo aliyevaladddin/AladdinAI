@@ -10,10 +10,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Hardcode bot user name and email in workflow git config (#925) ([7eea66d](https://github.com/aliyevaladddin/AladdinAI/commit/7eea66decf60bc8371c04a2c14ab8a863f69a59b))
 
+- Filter unexpected tool arguments and increase HTTP client timeouts to 15s ([fb6ac5b](https://github.com/aliyevaladddin/AladdinAI/commit/fb6ac5b6858a485e0aa02d9b1734d0cf8cfb2332))
+
 
 ### Documentation
 
 - Update API documentation [skip ci] (#931) ([a04519b](https://github.com/aliyevaladddin/AladdinAI/commit/a04519b4930a9636354f0592946450ac79c2786e))
+
+- Update API documentation [skip ci] (#933) ([73da390](https://github.com/aliyevaladddin/AladdinAI/commit/73da390fc0494204c898e1d9010422786bb0e1e8))
 
 
 ### Features
@@ -34,6 +38,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] ([3a74ea9](https://github.com/aliyevaladddin/AladdinAI/commit/3a74ea979c87826a1762d5e60dc1570329dc3972))
 
 - Update changelog [skip ci] (#926) ([c361367](https://github.com/aliyevaladddin/AladdinAI/commit/c36136713e2000c9225e4643b4c14b173c96bd51))
+
+- Update changelog [skip ci] (#932) ([ab8c143](https://github.com/aliyevaladddin/AladdinAI/commit/ab8c143f17bc991886fa319a822f435fbec6fbfd))
 
 
 ### Refactor
