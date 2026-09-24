@@ -185,8 +185,9 @@ void wrt_validate(const char *text, wrt_report_t *out) {
                                 snprintf(issue->tag, sizeof(issue->tag), "%s", tag_name);
                                 snprintf(issue->message, sizeof(issue->message),
                                          "Unknown tag [%s]", tag_name);
-                                issue->severity = 1;
+                                issue->severity = 0;
                             }
+                            out->valid = 0;
                         } else if (strcmp(tag_name, "img") == 0) {
                             // Self-closing tag
                         } else if (!is_close) {
@@ -261,6 +262,9 @@ void wrt_validate(const char *text, wrt_report_t *out) {
     }
 }
 
+/* Forward declaration — defined later in JSON SERIALIZATION section */
+static void buf_append_json_escaped(str_buf_t *b, const char *s);
+
 char *wrt_report_to_json(const wrt_report_t *rep) {
     str_buf_t b;
     buf_init(&b);
@@ -291,9 +295,9 @@ char *wrt_report_to_json(const wrt_report_t *rep) {
         snprintf(num_buf, sizeof(num_buf), "%d", rep->issues[i].col);
         buf_append(&b, num_buf);
         buf_append(&b, ",\"tag\":\"");
-        buf_append(&b, rep->issues[i].tag);
+        buf_append_json_escaped(&b, rep->issues[i].tag);
         buf_append(&b, "\",\"message\":\"");
-        buf_append(&b, rep->issues[i].message);
+        buf_append_json_escaped(&b, rep->issues[i].message);
         buf_append(&b, "\",\"severity\":");
         snprintf(num_buf, sizeof(num_buf), "%d", rep->issues[i].severity);
         buf_append(&b, num_buf);
@@ -613,7 +617,7 @@ char *wrt_to_editable_html(const char *text) {
     buf_append(&b, html);
     /* Ensure ends with a paragraph for cursor placement */
     size_t len = strlen(b.data);
-    if (len < 4 || strcmp(b.data + len - 4, "</p>\n") != 0) {
+    if (len < 5 || strcmp(b.data + len - 5, "</p>\n") != 0) {
         buf_append(&b, "<p><br></p>\n");
     }
     buf_append(&b, "</div>\n");
@@ -661,14 +665,11 @@ char *wrt_from_editable_html(const char *html) {
             continue;
         }
 
-        /* <p> tags — open paragraph (handle as text separator) */
-        if (strncmp(p, "<p", 2) == 0) {
+        /* <p> tags — open paragraph (handle as text separator) — skip entire opening tag including attributes */
+        if (strncmp(p, "<p", 2) == 0 && (p[2] == '>' || p[2] == ' ')) {
             p += 2;
-            if (*p == ' ' || *p == '>') {
-                if (*p == '>') p++;
-                /* Check for self-closing <p/> */
-                if (strncmp(p, "/>", 2) == 0) { p += 2; continue; }
-            }
+            while (*p && *p != '>') p++;
+            if (*p == '>') p++;
             /* If there was content before this p, add newline */
             if (!first_text && b.len > 0) {
                 /* Check if last char isn't already a newline */
@@ -700,9 +701,15 @@ char *wrt_from_editable_html(const char *html) {
             continue;
         }
 
-        /* <strong> or <b> */
-        if (strncmp(p, "<strong>", 8) == 0 || strncmp(p, "<b>", 3) == 0) {
-            p += (strncmp(p, "<strong>", 8) == 0) ? 8 : 3;
+        /* <strong> or <b> — handle attributes */
+        if (strncmp(p, "<strong", 7) == 0 || strncmp(p, "<b", 2) == 0) {
+            if (strncmp(p, "<strong", 7) == 0) {
+                p += 7;
+            } else {
+                p += 2;
+            }
+            while (*p && *p != '>') p++;
+            if (*p == '>') p++;
             buf_append(&b, "[b]");
             continue;
         }
@@ -714,9 +721,15 @@ char *wrt_from_editable_html(const char *html) {
             continue;
         }
 
-        /* <em> or <i> */
-        if (strncmp(p, "<em>", 4) == 0 || strncmp(p, "<i>", 3) == 0) {
-            p += (strncmp(p, "<em>", 4) == 0) ? 4 : 3;
+        /* <em> or <i> — handle attributes */
+        if (strncmp(p, "<em", 3) == 0 || strncmp(p, "<i", 2) == 0) {
+            if (strncmp(p, "<em", 3) == 0) {
+                p += 3;
+            } else {
+                p += 2;
+            }
+            while (*p && *p != '>') p++;
+            if (*p == '>') p++;
             buf_append(&b, "[i]");
             continue;
         }
@@ -728,9 +741,11 @@ char *wrt_from_editable_html(const char *html) {
             continue;
         }
 
-        /* <u> */
-        if (strncmp(p, "<u>", 3) == 0) {
-            p += 3;
+        /* <u> — handle attributes */
+        if (strncmp(p, "<u", 2) == 0) {
+            p += 2;
+            while (*p && *p != '>') p++;
+            if (*p == '>') p++;
             buf_append(&b, "[u]");
             continue;
         }
@@ -801,7 +816,7 @@ char *wrt_from_editable_html(const char *html) {
             p += 3;
             while (*p && *p != '>') p++;
             if (*p == '>') p++;
-            char htag_close[5];
+            char htag_close[6];
             snprintf(htag_close, sizeof(htag_close), "</h%c>", htag);
             /* Collect content until HTML closing tag */
             str_buf_t hcontent;
@@ -966,9 +981,17 @@ char *wrt_from_editable_html(const char *html) {
                 buf_append_c(&b, '\'');
                 p += 5;
             } else {
-                /* Unknown entity, skip */
-                while (*p && *p != ';') p++;
-                if (*p == ';') p++;
+                /* Unknown entity — emit literally, bounded scan */
+                const char *semi = p;
+                int i = 0;
+                while (semi[i] && semi[i] != ';' && semi[i] != '<' && semi[i] != ' ' && i < 10) i++;
+                if (semi[i] == ';') {
+                    buf_append_len(&b, p, i + 1);
+                    p += i + 1;
+                } else {
+                    buf_append_c(&b, '&');
+                    p++;
+                }
             }
             continue;
         }
@@ -1771,6 +1794,8 @@ int wrt_engine_daemon(const char *socket_path) {
  * CLI ENTRY POINT
  * ============================================================ */
 
+#ifndef WRT_ENGINE_NO_MAIN
+
 static char *read_file_or_stdin(const char *path) {
     FILE *f = (!path || strcmp(path, "-") == 0) ? stdin : fopen(path, "r");
     if (!f) return NULL;
@@ -2129,25 +2154,10 @@ int main(int argc, char *argv[]) {
         free(text);
         return 0;
     } else if (strcmp(cmd, "from-editable-html") == 0) {
-        /* Read HTML from stdin/file, convert to WRT */
-        str_buf_t b;
-        buf_init(&b);
-        char chunk[4096];
-        size_t n;
-        FILE *f = (argc >= 4) ? fopen(argv[3], "r") : stdin;
-        if (!f) {
-            fprintf(stderr, "Error: Cannot read HTML input\n");
-            free(text);
-            return 1;
-        }
-        while ((n = fread(chunk, 1, sizeof(chunk), f)) > 0) {
-            buf_append_len(&b, chunk, n);
-        }
-        if (f != stdin) fclose(f);
-        char *wrt = wrt_from_editable_html(b.data);
+        /* text already contains the HTML read from stdin/file */
+        char *wrt = wrt_from_editable_html(text);
         fputs(wrt, stdout);
         free(wrt);
-        free(b.data);
         free(text);
         return 0;
     } else if (strcmp(cmd, "stats") == 0) {
@@ -2166,3 +2176,5 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 }
+
+#endif /* WRT_ENGINE_NO_MAIN */

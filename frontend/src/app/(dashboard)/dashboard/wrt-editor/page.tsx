@@ -37,6 +37,7 @@ export default function WrtEditorPage() {
   const visualEditorRef = useRef<HTMLDivElement>(null);
   const visualContentRef = useRef("");
   const ideTerminalRef = useRef<NativeTerminalRef>(null);
+  const updateSeq = useRef(0);
   const [ideConnected, setIdeConnected] = useState(false);
 
   // Native C Filesystem Workspace state (Universal C Engine)
@@ -83,8 +84,10 @@ export default function WrtEditorPage() {
 
   const updateVisualDocument = useCallback(async () => {
     if (!visualEditorRef.current) return;
+    const seq = ++updateSeq.current;
     const html = visualEditorRef.current.innerHTML;
     const nextContent = await wrtClient.fromEditableHtml(html);
+    if (seq !== updateSeq.current) return; // stale response, discard
     visualContentRef.current = nextContent;
     setContent(nextContent);
     setModified(true);
