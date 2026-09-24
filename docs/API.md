@@ -5514,6 +5514,54 @@ Render WRT markup into styled HTML using native C engine.
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/wrt/to-editable-html
+
+#### POST
+##### Summary:
+
+Convert To Editable Html
+
+##### Description:
+
+Render WRT markup into editable HTML for contentEditable using native C engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
+### /api/wrt/from-editable-html
+
+#### POST
+##### Summary:
+
+Convert From Editable Html
+
+##### Description:
+
+Convert editable HTML from contentEditable back to WRT markup using native C engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/wrt/stats
 
 #### POST
