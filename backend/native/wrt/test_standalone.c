@@ -117,8 +117,14 @@ char *wrt_from_editable_html(const char *html) {
         }
         if (strncmp(p, "</u>", 4) == 0) { p += 4; buf_append(&b, "[/u]"); continue; }
 
-        /* <s> */
-        if (strncmp(p, "<s>", 3) == 0) { p += 3; buf_append(&b, "[s]"); continue; }
+        /* <s> — strikethrough with boundary check */
+        if (strncmp(p, "<s", 2) == 0 && (p[2] == '>' || p[2] == ' ')) {
+            p += 2;
+            while (*p && *p != '>') p++;
+            if (*p == '>') p++;
+            buf_append(&b, "[s]");
+            continue;
+        }
         if (strncmp(p, "</s>", 4) == 0) { p += 4; buf_append(&b, "[/s]"); continue; }
 
         /* <code> */

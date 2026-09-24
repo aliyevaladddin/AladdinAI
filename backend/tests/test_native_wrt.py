@@ -217,6 +217,25 @@ class TestWRTEngineC:
         assert "PASS: Should convert h1" in result.stdout
         assert "PASS: Should convert strong to [b]" in result.stdout
 
+    def test_c_from_editable_html_blockquote(self):
+        """Test C blockquote conversion from editable HTML (regression for <b> boundary check)."""
+        result = run_c_test(TEST_WRT_BINARY, "test_wrt from_editable_html blockquote")
+        assert result.returncode == 0
+        assert "PASS: Should convert blockquote to [quote]" in result.stdout
+        assert "PASS: Must NOT convert blockquote to [b]lockquote" in result.stdout
+
+    def test_c_roundtrip_editable_html(self):
+        """Test C full round-trip: WRT -> editable HTML -> WRT."""
+        result = run_c_test(TEST_WRT_BINARY, "test_wrt roundtrip editable html")
+        assert result.returncode == 0
+        assert "PASS: Roundtrip should have h1" in result.stdout
+        assert "PASS: Roundtrip should preserve quote" in result.stdout
+        assert "PASS: Roundtrip should preserve bold" in result.stdout
+        assert "PASS: Roundtrip should preserve italic" in result.stdout
+        assert "PASS: Roundtrip should preserve underline" in result.stdout
+        assert "PASS: Roundtrip should preserve code" in result.stdout
+        assert "PASS: Roundtrip must NOT contain corrupted blockquote tag" in result.stdout
+
     def test_c_from_editable_html_entities(self):
         """Test C HTML entity decoding."""
         result = run_c_test(TEST_WRT_BINARY, "test_wrt from_editable_html entities")
@@ -453,6 +472,34 @@ class TestWRTEngineCLI:
         )
         assert result.returncode == 0
         assert "[b]World[/b]" in result.stdout
+
+    def test_cli_roundtrip_blockquote_regression(self):
+        """Test round-trip CLI: WRT with quote -> to-editable-html -> from-editable-html -> WRT."""
+        wrt_in = "[h1]Header[/h1]\n[quote]Quote text[/quote]\n[b]Bold[/b] [i]Italic[/i]"
+        # Step 1: to-editable-html
+        res1 = subprocess.run(
+            [str(WRT_ENGINE_BINARY), "to-editable-html", "-"],
+            input=wrt_in,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        assert res1.returncode == 0
+        assert "<blockquote" in res1.stdout
+
+        # Step 2: from-editable-html
+        res2 = subprocess.run(
+            [str(WRT_ENGINE_BINARY), "from-editable-html", "-"],
+            input=res1.stdout,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        assert res2.returncode == 0
+        assert "[quote]Quote text[/quote]" in res2.stdout
+        assert "[b]lockquote" not in res2.stdout
+        assert "[b]Bold[/b]" in res2.stdout
+        assert "[i]Italic[/i]" in res2.stdout
 
     def test_cli_stats(self):
         """Test CLI stats command."""

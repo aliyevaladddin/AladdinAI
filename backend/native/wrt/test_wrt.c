@@ -163,6 +163,37 @@ void test_from_editable_html() {
     free(wrt);
 }
 
+void test_from_editable_html_blockquote() {
+    printf("\n=== test_from_editable_html_blockquote ===\n");
+    /* Critical regression test: <b> boundary check must not match <blockquote> */
+    const char *html = "<div class=\"wrt-editable\"><blockquote>This is a quote</blockquote></div>";
+    char *wrt = wrt_from_editable_html(html);
+    TEST_ASSERT(wrt != NULL, "From editable HTML should return non-NULL");
+    TEST_ASSERT(strstr(wrt, "[quote]This is a quote[/quote]") != NULL, "Should convert blockquote to [quote]");
+    TEST_ASSERT(strstr(wrt, "[b]lockquote") == NULL, "Must NOT convert blockquote to [b]lockquote");
+    free(wrt);
+}
+
+void test_roundtrip_editable_html() {
+    printf("\n=== test_roundtrip_editable_html ===\n");
+    const char *original = "[h1]Header[/h1]\n[quote]Quoted text[/quote]\n[b]Bold[/b] and [i]Italic[/i] and [u]Underline[/u] and [code]Code[/code]";
+    char *html = wrt_to_editable_html(original);
+    TEST_ASSERT(html != NULL, "Editable HTML should be generated");
+    TEST_ASSERT(strstr(html, "<blockquote") != NULL, "Editable HTML should have blockquote");
+
+    char *roundtrip = wrt_from_editable_html(html);
+    TEST_ASSERT(roundtrip != NULL, "Roundtrip WRT should be generated");
+    TEST_ASSERT(strstr(roundtrip, "[h1]Header[/h1]") != NULL, "Roundtrip should have h1");
+    TEST_ASSERT(strstr(roundtrip, "[quote]Quoted text[/quote]") != NULL, "Roundtrip should preserve quote");
+    TEST_ASSERT(strstr(roundtrip, "[b]Bold[/b]") != NULL, "Roundtrip should preserve bold");
+    TEST_ASSERT(strstr(roundtrip, "[i]Italic[/i]") != NULL, "Roundtrip should preserve italic");
+    TEST_ASSERT(strstr(roundtrip, "[u]Underline[/u]") != NULL, "Roundtrip should preserve underline");
+    TEST_ASSERT(strstr(roundtrip, "[code]Code[/code]") != NULL, "Roundtrip should preserve code");
+    TEST_ASSERT(strstr(roundtrip, "[b]lockquote") == NULL, "Roundtrip must NOT contain corrupted blockquote tag");
+    free(html);
+    free(roundtrip);
+}
+
 void test_from_editable_html_entities() {
     printf("\n=== test_from_editable_html_entities ===\n");
     const char *html = "<div class=\"wrt-editable\"><p>A &amp; B &lt; C</p></div>";
@@ -259,6 +290,8 @@ int main() {
     test_to_html_list();
     test_to_editable_html();
     test_from_editable_html();
+    test_from_editable_html_blockquote();
+    test_roundtrip_editable_html();
     test_from_editable_html_entities();
     test_stats();
     test_report_to_json();

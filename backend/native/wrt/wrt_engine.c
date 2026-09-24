@@ -138,7 +138,7 @@ void wrt_validate(const char *text, wrt_report_t *out) {
                 issue->col = col;
                 issue->tag[0] = '\0';
                 snprintf(issue->message, sizeof(issue->message), "Empty tag [] found");
-                issue->severity = 1;
+                issue->severity = 0;
             }
             out->valid = 0;
             i += 2;
@@ -544,6 +544,16 @@ char *wrt_to_html(const char *text) {
         }
 
         /* Check for inline tags */
+        int is_inline_open = (strncmp(text + i, "[b]", 3) == 0 ||
+                              strncmp(text + i, "[i]", 3) == 0 ||
+                              strncmp(text + i, "[u]", 3) == 0 ||
+                              strncmp(text + i, "[s]", 3) == 0 ||
+                              strncmp(text + i, "[code]", 6) == 0);
+        if (is_inline_open && !in_paragraph) {
+            buf_append(&b, "<p class=\"my-2 leading-relaxed\">");
+            in_paragraph = 1;
+        }
+
         if (strncmp(text + i, "[b]", 3) == 0) { buf_append(&b, "<strong>"); i += 3; continue; }
         if (strncmp(text + i, "[/b]", 4) == 0) { buf_append(&b, "</strong>"); i += 4; continue; }
         if (strncmp(text + i, "[i]", 3) == 0) { buf_append(&b, "<em>"); i += 3; continue; }
@@ -596,18 +606,14 @@ char *wrt_to_html(const char *text) {
 char *wrt_to_editable_html(const char *text) {
     if (!text || !text[0]) {
         /* Return non-empty HTML so contentEditable has a valid cursor position */
-        char *empty = malloc(32);
-        snprintf(empty, 32, "<p><br></p>\n");
-        return empty;
+        return strdup("<p><br></p>\n");
     }
 
     /* First convert WRT to HTML, then ensure it starts with a block element */
     char *html = wrt_to_html(text);
     if (!html || !html[0]) {
         free(html);
-        char *empty = malloc(32);
-        snprintf(empty, 32, "<p><br></p>\n");
-        return empty;
+        return strdup("<p><br></p>\n");
     }
 
     /* Ensure the HTML has a wrapping div with contentEditable-compatible structure */
@@ -701,8 +707,8 @@ char *wrt_from_editable_html(const char *html) {
             continue;
         }
 
-        /* <strong> or <b> — handle attributes */
-        if (strncmp(p, "<strong", 7) == 0 || strncmp(p, "<b", 2) == 0) {
+        /* <strong> or <b> — handle attributes; boundary check to avoid matching <blockquote> etc. */
+        if (strncmp(p, "<strong", 7) == 0 || (strncmp(p, "<b", 2) == 0 && (p[2] == '>' || p[2] == ' '))) {
             if (strncmp(p, "<strong", 7) == 0) {
                 p += 7;
             } else {
@@ -721,8 +727,8 @@ char *wrt_from_editable_html(const char *html) {
             continue;
         }
 
-        /* <em> or <i> — handle attributes */
-        if (strncmp(p, "<em", 3) == 0 || strncmp(p, "<i", 2) == 0) {
+        /* <em> or <i> — handle attributes; boundary check to avoid matching <input> etc. */
+        if (strncmp(p, "<em", 3) == 0 || (strncmp(p, "<i", 2) == 0 && (p[2] == '>' || p[2] == ' '))) {
             if (strncmp(p, "<em", 3) == 0) {
                 p += 3;
             } else {
@@ -741,8 +747,8 @@ char *wrt_from_editable_html(const char *html) {
             continue;
         }
 
-        /* <u> — handle attributes */
-        if (strncmp(p, "<u", 2) == 0) {
+        /* <u> — handle attributes; boundary check to avoid matching <ul> etc. */
+        if (strncmp(p, "<u", 2) == 0 && (p[2] == '>' || p[2] == ' ')) {
             p += 2;
             while (*p && *p != '>') p++;
             if (*p == '>') p++;
@@ -757,9 +763,11 @@ char *wrt_from_editable_html(const char *html) {
             continue;
         }
 
-        /* <s> */
-        if (strncmp(p, "<s>", 3) == 0) {
-            p += 3;
+        /* <s> — boundary check to avoid matching <span>, <style> etc. */
+        if (strncmp(p, "<s", 2) == 0 && (p[2] == '>' || p[2] == ' ')) {
+            p += 2;
+            while (*p && *p != '>') p++;
+            if (*p == '>') p++;
             buf_append(&b, "[s]");
             continue;
         }
@@ -794,7 +802,7 @@ char *wrt_from_editable_html(const char *html) {
             p += 11;
             while (*p && *p != '>') p++;
             if (*p == '>') p++;
-            in_blockquote = 1;
+            (void)in_blockquote;
             buf_append(&b, "[quote]");
             continue;
         }
@@ -802,7 +810,6 @@ char *wrt_from_editable_html(const char *html) {
         /* </blockquote> */
         if (strncmp(p, "</blockquote>", 13) == 0) {
             p += 13;
-            in_blockquote = 0;
             buf_append(&b, "[/quote]");
             if (b.len > 0 && b.data[b.len - 1] != '\n') {
                 buf_append_c(&b, '\n');
@@ -886,7 +893,7 @@ char *wrt_from_editable_html(const char *html) {
             p += 6;
             while (*p && *p != '>') p++;
             if (*p == '>') p++;
-            in_table = 1;
+            (void)in_table;
             buf_append(&b, "[table]\n");
             continue;
         }
@@ -894,7 +901,6 @@ char *wrt_from_editable_html(const char *html) {
         /* </table> */
         if (strncmp(p, "</table>", 8) == 0) {
             p += 8;
-            in_table = 0;
             buf_append(&b, "[/table]\n");
             continue;
         }
@@ -904,7 +910,7 @@ char *wrt_from_editable_html(const char *html) {
             p += 3;
             while (*p && *p != '>') p++;
             if (*p == '>') p++;
-            in_tr = 1;
+            (void)in_tr;
             buf_append_c(&b, '|');
             continue;
         }
@@ -912,7 +918,6 @@ char *wrt_from_editable_html(const char *html) {
         /* </tr> */
         if (strncmp(p, "</tr>", 5) == 0) {
             p += 5;
-            in_tr = 0;
             buf_append_c(&b, '|');
             buf_append_c(&b, '\n');
             continue;
@@ -923,7 +928,7 @@ char *wrt_from_editable_html(const char *html) {
             p += 3;
             while (*p && *p != '>') p++;
             if (*p == '>') p++;
-            in_td = 1;
+            (void)in_td;
             buf_append_c(&b, '|');
             continue;
         }
@@ -931,7 +936,6 @@ char *wrt_from_editable_html(const char *html) {
         /* </th> */
         if (strncmp(p, "</th>", 5) == 0) {
             p += 5;
-            in_td = 0;
             buf_append_c(&b, '|');
             continue;
         }
@@ -941,7 +945,7 @@ char *wrt_from_editable_html(const char *html) {
             p += 3;
             while (*p && *p != '>') p++;
             if (*p == '>') p++;
-            in_td = 1;
+            (void)in_td;
             buf_append_c(&b, '|');
             continue;
         }
@@ -949,7 +953,6 @@ char *wrt_from_editable_html(const char *html) {
         /* </td> */
         if (strncmp(p, "</td>", 5) == 0) {
             p += 5;
-            in_td = 0;
             buf_append_c(&b, '|');
             continue;
         }

@@ -153,7 +153,7 @@ export default function WrtEditorPage() {
 
     // When switching to IDE mode, only allow if current file is .wrt
     if (mode === "ide" && !isWrtFile(nativePath?.split("/").pop() ?? currentFile?.name ?? "")) {
-      showStatus("C IDE доступен только для .wrt файлов");
+      showStatus("C IDE is only available for .wrt files");
       return;
     }
 
