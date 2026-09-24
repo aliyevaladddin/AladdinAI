@@ -1,14 +1,14 @@
 # WRT Editor — Lightweight Document Editing Mode
 
-**Location:** `backend/native/wrt_editor.c` + `backend/native/wrt-edit.c`  
-**Status:** ✅ Implemented (Sept 2026)  
-**Purpose:** Native C-based terminal editor for `.wrt` files (AladdinAI's tagged-text format)
+**Location:** `backend/native/wrt/` (C engine) + `frontend/src/app/(dashboard)/dashboard/wrt-editor/` (TSX frontend)  
+**Status:** ✅ Implemented (Sept 2026) — **Refactored to pure C backend + thin TSX frontend**  
+**Purpose:** Native C-based WRT parsing/validation/serialization with web-based Visual (contentEditable) editor
 
 ---
 
 ## Overview
 
-WRT Editor is a lightweight terminal-based editor for `.wrt` documents, written in pure C. It allows editing documents directly in the terminal without the need to convert them to `.docx` and back.
+WRT Editor is a lightweight document editor for `.wrt` documents with a **pure C backend** (`wrt-engine`) and a **thin TypeScript/React frontend** using `contentEditable` for WYSIWYG editing.
 
 ### What is `.wrt`?
 
@@ -48,235 +48,194 @@ More content with [u]underlined[/u] and [code]monospace[/code] text.
 
 ---
 
+## Architecture: C Engine + TSX Frontend (NEW)
+
+### C Engine (`backend/native/wrt/`)
+
+The C engine is the **single source of truth** for all WRT parsing, validation, serialization, and conversion.
+
+**Files:**
+```
+backend/native/wrt/
+├── wrt_engine.h       — public API (structs, function prototypes)
+├── wrt_engine.c       — core implementation (~1800 lines)
+├── test_wrt.c         — pytest-integrated unit tests (19 test functions)
+├── test_standalone.c  — standalone HTML→WRT conversion tests
+└── Makefile           — build script
+```
+
+**Key API Functions:**
+```c
+// Validation & fixing
+void wrt_validate(const char *text, wrt_report_t *out);
+char *wrt_fix(const char *text);
+
+// Conversion: WRT → HTML
+char *wrt_to_html(const char *text);
+char *wrt_to_editable_html(const char *text);
+
+// Conversion: contentEditable HTML → WRT
+char *wrt_from_editable_html(const char *html);
+
+// CLI / Daemon
+int wrt_engine_cli(int argc, char **argv);
+int wrt_engine_daemon(const char *socket_path);
+```
+
+**Build:**
+```bash
+cd backend/native/wrt
+make          # builds wrt-engine binary
+make test     # runs C test suite
+```
+
+### Python REST API (`backend/app/services/wrt_engine_service.py`)
+
+Thin wrapper around C engine via `subprocess`:
+- `POST /wrt/validate` — validate WRT document
+- `POST /wrt/fix` — auto-fix common issues
+- `POST /wrt/to-html` — convert WRT → HTML
+- `POST /wrt/to-editable-html` — convert WRT → contentEditable HTML
+- `POST /wrt/from-editable-html` — convert contentEditable HTML → WRT
+- `POST /wrt/stats` — document statistics
+- `POST /wrt/list-files` / `read-file` / `save-file` / `recent-files` — file operations
+
+### Frontend TypeScript (`frontend/src/app/(dashboard)/dashboard/wrt-editor/`)
+
+**Components:**
+- `page.tsx` — main editor page, mode switching (Visual / WRT Code / C IDE)
+- `WrtEngineClient` (`@/lib/wrt-engine-client.ts`) — async client for C API
+- `contentEditable` div — WYSIWYG editing surface
+
+**Key Features:**
+- **Visual Mode** (default): contentEditable with semantic HTML, toolbar for formatting
+- **WRT Code Mode**: raw WRT source with syntax highlighting (Monaco)
+- **C IDE Mode**: terminal-based C editor for `.wrt` files (only for `.wrt` files)
+- **Seamless Sync**: Bi-directional conversion preserves semantic structure
+- **Auto-save**: File-specific localStorage drafts (`wrt-draft-{source}-{hash}`)
+
+---
+
 ## Visual Editor Mode (Frontend)
 
-**Status:** ✅ Implemented (Sept 2026)  
-**Location:** `/frontend/src/app/(dashboard)/dashboard/wrt-editor/`  
+**Status:** ✅ Implemented (Sept 2026) — rewritten with C backend  
+**Location:** `/frontend/src/app/(dashboard)/dashboard/wrt-editor/`
 
 For normal document authors who do not want to manage raw WRT tags (`[b]`, `[i]`), a **Visual mode** is available in the web dashboard.
 
 ### Key Features
 - **WYSIWYG Editing:** Edit formatted text directly without seeing WRT markup.
-- **Seamless Sync:** Bi-directional conversion (`ContentEditable` HTML ↔ `.wrt`) preserves semantic structure.
+- **Seamless Sync:** Bi-directional conversion (`ContentEditable` HTML ↔ `.wrt`) via C engine.
 - **Integrated Layout:** Centered document canvas with collapsible side drawer (Versions, Timeline).
-- **Mode Switching:** Easily toggle between **Visual** and **WRT Code** modes.
+- **Mode Switching:** Easily toggle between **Visual**, **WRT Code**, and **C IDE** modes.
 
 ### Usage
 1. Open any `.wrt` or `.docx` file in the Dashboard.
 2. The document appears in **Visual** mode by default.
-3. Use the toolbar buttons to format text (Bold, Italic, etc.).
+3. Use the toolbar buttons to format text (Bold, Italic, Underline, Strikethrough, Code, Quote, Headings, Lists, Tables).
 4. Use the toggle to switch to **WRT Code** mode if you need direct tag control for agents.
+5. Use **C IDE** mode (for `.wrt` files only) for terminal-based editing with ANSI highlighting.
 
 ---
 
-### ✨ Core Functionality
+## C Engine: Core Functionality
 
-- **Line-based editing** — simple and fast interface
-- **Tag highlighting** — `.wrt` tags displayed in color for better visibility
-- **Navigation** — arrow keys, Home/End, Page Up/Down
-- **Insert/delete** — full text editing support
-- **Auto-save status** — modified indicator `[+]` for unsaved changes
+### Validation (`wrt_validate`)
+- Checks tag matching (open/close pairs)
+- Detects unknown tags
+- Detects empty tags `[]`
+- Reports word count, char count, line count, tag count
+- Issues have severity: `0 = error`, `1 = warning`
 
-### ⌨️ Keyboard Shortcuts
+### Fixing (`wrt_fix`)
+- Auto-closes unclosed tags
+- Removes empty tags
+- Preserves valid content
 
-| Key | Action |
-|-----|--------|
-| **Ctrl+B** | Insert `[b]bold[/b]` |
-| **Ctrl+I** | Insert `[i]italic[/i]` |
-| **Ctrl+U** | Insert `[u]underline[/u]` |
-| **Ctrl+K** | Insert `[code]code[/code]` |
-| **Ctrl+S** | Save file |
-| **Ctrl+Q** | Quit (with confirmation if modified) |
-| **Arrow keys** | Navigate text |
-| **Home** | Go to line start |
-| **End** | Go to line end |
-| **Backspace** | Delete character to the left |
-| **Enter** | New line |
+### WRT → HTML (`wrt_to_html`)
+- Converts all WRT tags to semantic HTML
+- Tables, lists, quotes, headings
+- Inline tags: `[b]`→`<strong>`, `[i]`→`<em>`, `[u]`→`<u>`, `[s]`→``, `[code]`→`<code>`
 
-### 🎨 Interface
+### WRT → contentEditable HTML (`wrt_to_editable_html`)
+- Wraps output in `<div class="wrt-editable">`
+- Ensures block-level structure for contentEditable
+- Adds CSS classes for styling
 
+### contentEditable HTML → WRT (`wrt_from_editable_html`)
+- **Critical fix:** Boundary checks to prevent false matches (e.g., `<blockquote>` → `[b]lockquote`)
+- Handles HTML entities (`&` → `&`, `<` → `<`)
+- Strips unknown tags, preserves known semantic tags
+- Converts back to canonical WRT format
+
+---
+
+## C Test Suite + pytest Integration
+
+Three C test programs integrated into `pytest` via `backend/tests/test_native_wrt.py`. Pytest compiles and runs binaries via `subprocess`.
+
+### Test Programs
+
+| Program | Description | Tests |
+|---------|-------------|-------|
+| `test_wrt.c` | Full engine test suite (linked with `-DWRT_ENGINE_NO_MAIN`) | 19 functions, 54 assertions |
+| `test_standalone.c` | Standalone HTML→WRT conversion tests | 16 functions, 31 assertions |
+| `wrt-engine` CLI | Integration tests via subprocess | 11 test functions |
+
+**Total: 49 pytest tests, all passing (0.16s)**
+
+### Run Tests
+```bash
+cd backend
+python -m pytest tests/test_native_wrt.py -v
 ```
-[h1]My Document[/h1]                    ← tags highlighted in color
-This is regular text with [b]bold[/b].
-~                                       ← empty lines marked with ~
-~
-─────────────────────────────────────────────────────────────────────
- document.wrt [+] | Line 2/15 Col 24 | ^S:Save ^Q:Quit ^B:Bold...
- WRT Editor - Lightweight document editing
-```
+
+### Key Regression Tests Added (Sept 24, 2026)
+- `test_from_editable_html_blockquote` — verifies `<blockquote>` not corrupted to `[b]lockquote`
+- `test_roundtrip_editable_html` — full WRT → editable HTML → WRT round-trip
+- `test_cli_roundtrip_blockquote_regression` — CLI regression test
 
 ---
 
 ## Build and Installation
 
 ### Requirements
-
 - GCC (C11)
-- Linux/Unix system with termios
+- Linux/Unix system
 - Make
+- Python 3.11+ (for pytest integration)
+- libzip, zlib (for C engine)
 
 ### Compilation
-
 ```bash
-cd backend/native
-make wrt-edit
+cd backend/native/wrt
+make
 ```
+Creates `wrt-engine` binary in `backend/native/wrt/`.
 
-This creates the `wrt-edit` executable in `backend/native/`.
-
-### Installation (optional)
-
+### Run CLI
 ```bash
-# Copy to system path
-sudo cp wrt-edit /usr/local/bin/
+# Validate
+./wrt-engine validate document.wrt
+
+# Fix
+./wrt-engine fix document.wrt
+
+# Convert to HTML
+./wrt-engine to-html document.wrt
+
+# Convert to contentEditable HTML
+./wrt-engine to-editable-html document.wrt
+
+# Convert from contentEditable HTML
+./wrt-engine from-editable-html input.html
 ```
-
----
-
-## Usage
-
-### Basic Usage
-
-```bash
-# Open existing file
-./wrt-edit document.wrt
-
-# Create new file
-./wrt-edit new_document.wrt
-```
-
-### Typical Workflow
-
-1. **Open file:**
-   ```bash
-   ./wrt-edit my_document.wrt
-   ```
-
-2. **Edit text:**
-   - Use arrow keys for navigation
-   - Type text as usual
-   - Insert tags with Ctrl+B, Ctrl+I, etc.
-
-3. **Save:**
-   - Press `Ctrl+S` to save
-   - `[+]` status disappears after successful save
-
-4. **Exit:**
-   - Press `Ctrl+Q`
-   - If there are unsaved changes, the editor will ask for confirmation
-
----
-
-## Architecture
-
-### File Structure
-
-```
-backend/native/
-├── wrt_editor.h       — header file, structures and prototypes
-├── wrt_editor.c       — core editor logic
-├── wrt-edit.c         — CLI wrapper (main entry point)
-├── Makefile           — build script
-└── wrt-edit           — compiled binary
-```
-
-### Key Components
-
-#### `wrt_editor_t` — Editor State
-
-```c
-typedef struct {
-    char **lines;         // Array of document lines
-    int num_lines;        // Number of lines
-    int capacity;         // Array capacity
-    int cursor_x;         // Cursor position X (column)
-    int cursor_y;         // Cursor position Y (row)
-    int offset_y;         // Viewport offset (scrolling)
-    int screen_rows;      // Screen height
-    int screen_cols;      // Screen width
-    char *filename;       // File name
-    int modified;         // Unsaved changes flag
-} wrt_editor_t;
-```
-
-#### Main Functions
-
-- `wrt_editor_run()` — main editor loop
-- `wrt_editor_load()` — load file into memory
-- `wrt_editor_save()` — save to file
-- `wrt_editor_render()` — render screen
-- `wrt_editor_insert_char()` — insert character
-- `wrt_editor_delete_char()` — delete character
-- `wrt_editor_insert_tag()` — quick tag insertion
-- `wrt_editor_move_cursor()` — cursor navigation
-- `wrt_editor_process_key()` — key processing
-
-### Implementation Details
-
-#### Raw Terminal Mode
-
-The editor uses raw mode for character-by-character input:
-
-```c
-static void enable_raw_mode(void) {
-    struct termios raw = orig_termios;
-    raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-    // ... other flags
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
-}
-```
-
-#### ANSI Escape Sequences
-
-ANSI codes are used for terminal control:
-
-```c
-#define CLEAR_SCREEN "\033[2J"
-#define CURSOR_HOME "\033[H"
-#define COLOR_CYAN "\033[36m"
-```
-
-#### Tag Highlighting
-
-`.wrt` tags are automatically highlighted during rendering:
-
-```c
-if (line[i] == '[' && (i == 0 || line[i-1] != '\\')) {
-    // Find closing ]
-    // Highlight tag in cyan
-    len += snprintf(buf + len, sizeof(buf) - len, COLOR_CYAN);
-    // ... insert tag
-    len += snprintf(buf + len, sizeof(buf) - len, COLOR_RESET);
-}
-```
-
----
-
-## Limitations
-
-### Current Limitations
-
-- **Maximum 10,000 lines** (`WRT_MAX_LINES`)
-- **Maximum 4,096 characters per line** (`WRT_MAX_LINE_LENGTH`)
-- **No Undo/Redo** — manual editing only
-- **No search/replace** — planned for future
-- **UTF-8 only** — no support for other encodings
-- **Linux/Unix only** — Windows requires separate implementation
-
-### Not Supported
-
-- ❌ Tag syntax validation (can create `[b]` without `[/b]`)
-- ❌ Rendering preview (raw tags only)
-- ❌ Tag autocompletion
-- ❌ Mouse support (keyboard only)
-- ❌ Copy/paste via system clipboard
 
 ---
 
 ## Integration with AladdinAI
 
 ### Document Editing Workflow
-
 ```
 1. User uploads document.docx
    ↓
@@ -284,7 +243,7 @@ if (line[i] == '[' && (i == 0 || line[i-1] != '\\')) {
    ↓
 3. Agent reads via files_read → auto-convert .docx → .wrt
    ↓
-4. Agent edits .wrt text
+4. Agent edits .wrt text (or user edits via Visual Mode)
    ↓
 5. New version saved as .wrt to storage
    ↓
@@ -292,102 +251,82 @@ if (line[i] == '[' && (i == 0 || line[i-1] != '\\')) {
 ```
 
 ### Where WRT Editor Is Used
-
 1. **Backend development** — quick `.wrt` file editing when debugging converters
 2. **Testing** — manually creating test documents
 3. **Agent debugging** — viewing what the agent sees after conversion
-4. **Direct editing** — alternative to editing through UI
+4. **Direct editing** — alternative to editing through UI (C IDE mode)
+5. **Web dashboard** — Visual mode for document authors
 
-### Example: Debugging Converter
+---
 
-```bash
-# 1. Convert docx to wrt
-python -c "
-from app.services.docx_converter import docx_to_wrt
-with open('test.docx', 'rb') as f:
-    wrt = docx_to_wrt(f.read())
-with open('test.wrt', 'w') as f:
-    f.write(wrt)
-"
+## Fixed Bugs (Code Review Bot — Sept 24, 2026)
 
-# 2. Edit manually
-./wrt-edit test.wrt
+### 1. CRITICAL: `<blockquote>` → `[b]lockquote` corruption
+**File:** `wrt_from_editable_html()` (lines ~707, 727, 747, 763)
+**Fix:** Boundary checks — verify next char is `>` or whitespace/attribute
 
-# 3. Convert back
-python -c "
-from app.services.docx_converter import wrt_to_docx
-with open('test.wrt') as f:
-    wrt = f.read()
-with open('test_out.docx', 'wb') as f:
-    f.write(wrt_to_docx(wrt))
-"
+### 2. WARNING: Empty tag severity 1→0
+**File:** `wrt_validate()` (line 141)
+**Fix:** `severity = 0` (error) for empty tags, consistent with header
 
-# 4. Check result
-libreoffice test_out.docx
-```
+### 3. SUGGESTION: `malloc+snprintf` → `strdup`
+**File:** `wrt_to_editable_html()` (lines 606, 616)
+**Fix:** `strdup("[code]")` and `strdup("[/code]")` for constants
+
+### 4. REGRESSION: Inline tags after block elements broken
+**File:** `wrt_to_html()` (lines 544-554)
+**Fix:** Auto-open paragraph when inline tag encountered outside paragraph
+
+### 5. BUILD WARNINGS: Unused variables
+**File:** `wrt_from_editable_html()` (lines 794, 810, 893, 910, 918, 928, 936, 945, 953)
+**Fix:** Removed declarations, replaced usages with `(void)var` casts
 
 ---
 
 ## Roadmap
 
 ### Near-Term Plans
-
-- [ ] **Ctrl+F** — text search
+- [ ] **Ctrl+F** — text search in Visual Mode
 - [ ] **Ctrl+H** — find and replace
-- [ ] **Ctrl+Z/Ctrl+Y** — Undo/Redo
-- [ ] **Syntax validation** — highlight unclosed tags
-- [ ] **Tag autocomplete** — autocomplete `[b` → `[b][/b]`
-- [ ] **Mouse support** — mouse navigation
-- [ ] **Line numbers** — optional line numbering
+- [ ] **Undo/Redo** — history stack for contentEditable
+- [ ] **Syntax validation** — real-time validation indicator in Visual Mode
+- [ ] **Tag autocomplete** — autocomplete `[b` → `[b][/b]` in Code Mode
+- [ ] **Mobile support** — responsive editor layout
 
 ### Long-Term Plans
-
-- [ ] **Syntax highlighting** — full syntax highlighting
-- [ ] **Live preview** — rendering preview in adjacent panel
-- [ ] **Vim bindings** — Vim mode for power users
-- [ ] **Windows support** — port to Windows via PDCurses
-- [ ] **Integration with aladdin_term** — launch from PTY daemon
+- [ ] **Collaborative editing** — real-time multi-user via WebSockets
+- [ ] **Vim/Emacs keybindings** — optional keybinding modes in Code Mode
+- [ ] **Integration with aladdin_term** — launch C IDE from PTY daemon
+- [ ] **JSON-RPC protocol** — AI agent control of editor
 
 ---
 
-## Comparison with Alternatives
+## Comparison with Previous Implementations
 
-| Editor | Size | Dependencies | `.wrt` tags | Speed |
-|--------|------|--------------|-------------|-------|
-| **wrt-edit** | ~70KB | 0 | ✅ Highlighting | ⚡ Instant |
-| nano | ~600KB | ncurses | ❌ No | 🐢 Fast |
-| vim | ~3MB | ncurses | ❌ No | 🐢 Fast |
-| VSCode | ~500MB | Electron | ✅ Can configure | 🐌 Slow |
+| Editor | Backend | Frontend | `.wrt` Support | Size |
+|--------|---------|----------|----------------|------|
+| **Current (C + contentEditable)** | Pure C (`wrt-engine`) | React + contentEditable | ✅ Full (single source) | ~1800 LOC C |
+| Monaco Editor (PR #790) | Python | Monaco | ✅ Highlighting only | ~2MB JS |
+| Terminal `wrt-edit` | C (separate) | ANSI terminal | ✅ Highlighting | ~70KB |
 
-### Advantages of wrt-edit
-
-✅ **Minimal size** — 70KB vs 600KB+ for other editors  
-✅ **Zero dependencies** — only libc, no ncurses  
-✅ **Built-in `.wrt` support** — tags highlighted out of the box  
-✅ **Fast startup** — instant even on large files  
-✅ **Simplicity** — only essential features, no plugins  
-
-### When to Use nano/vim Instead of wrt-edit
-
-- Files > 10,000 lines
-- Need complex operations (macros, regex replacements)
-- Need code syntax highlighting (not `.wrt` tags)
-- Require mouse support
+### Advantages of Current Architecture
+✅ **Single source of truth** — C engine handles all parsing/serialization  
+✅ **Zero JS parsing logic** — TSX only renders and proxies to C API  
+✅ **Fast, correct round-trips** — contentEditable HTML ↔ WRT via C  
+✅ **Testable** — 49 pytest tests covering C engine + CLI + integration  
+✅ **Minimal frontend** — thin client, easy to maintain  
 
 ---
 
 ## FAQ
 
 ### How to open file with spaces in name?
-
 ```bash
-./wrt-edit "my document.wrt"
+./wrt-engine validate "my document.wrt"
 ```
 
 ### Can I edit `.docx` directly?
-
-No. First convert `.docx` → `.wrt` via `docx_converter.py`:
-
+No. Convert `.docx` → `.wrt` first via Python:
 ```bash
 python -c "
 from app.services.docx_converter import docx_to_wrt
@@ -396,114 +335,82 @@ with open('document.docx', 'rb') as f:
 with open('document.wrt', 'w') as f:
     f.write(wrt)
 "
-./wrt-edit document.wrt
+./wrt-engine validate document.wrt
 ```
 
 ### What if file is too large?
+C engine has no hard line limit (dynamic allocation). For very large files, CLI or REST API recommended.
 
-Editor supports up to 10,000 lines. For larger files use vim/emacs or split into parts.
-
-### How to insert h1/h2/h3 headings?
-
-Type manually:
-```
-[h1]Title[/h1]
-```
-
-Or use keyboard shortcuts (if added in future version).
+### How to insert headings in Visual Mode?
+Use toolbar dropdown: H1, H2, H3.
 
 ### Are images supported?
-
-Editor displays `[img ...]` tags as-is (text). Editing base64 data inside tags is supported but not recommended (lines too long).
-
-### How to exit without saving?
-
-`Ctrl+Q` → `n` (no) when asked for confirmation.
+Yes: `[img src="data:image/png;base64,..." alt="..."]` — rendered in Visual Mode.
 
 ---
 
 ## Troubleshooting
 
-### Problem: Editor doesn't compile
-
-**Error:**
-```
-wrt_editor.c:387:28: error: 'errno' undeclared
-```
-
-**Solution:**
-Ensure `#include <errno.h>` is present in `wrt_editor.c`.
-
----
-
-### Problem: Tags not highlighted
-
-**Cause:** Terminal doesn't support ANSI colors.
-
+### Problem: C engine doesn't compile
+**Error:** Missing libzip/zlib
 **Solution:**
 ```bash
-export TERM=xterm-256color
-./wrt-edit document.wrt
+sudo apt-get install libzip-dev zlib1g-dev
+cd backend/native/wrt && make
 ```
 
----
+### Problem: Tests fail with "binary not found"
+**Cause:** Engine not built
+**Solution:**
+```bash
+cd backend/native/wrt && make
+python -m pytest tests/test_native_wrt.py -v
+```
 
-### Problem: Cursor "jumps" during editing
+### Problem: Visual Mode not editable after C IDE
+**Cause:** Fixed — now requests fresh HTML from C engine on mode switch.
 
-**Cause:** Unicode characters counted as multiple bytes.
-
-**Solution:** WRT Editor is designed for ASCII + basic Unicode. For complex Unicode use GUI editor.
-
----
-
-### Problem: Can't insert Tab
-
-**Cause:** `Ctrl+I` is captured for `[i]` tag insertion.
-
-**Solution:** Type spaces instead of Tab (`.wrt` format recommends spaces).
+### Problem: localStorage conflicts between files
+**Cause:** Fixed — keys now file-specific: `wrt-draft-{source}-{hash}`
 
 ---
 
 ## Contributing
 
-### How to Add New Keyboard Shortcut
-
-1. Find free Ctrl code (see `wrt_editor_process_key()`)
-2. Add case in switch:
-```c
-case 7: // Ctrl+G — new function
-    wrt_editor_insert_tag(ed, "[quote]");
-    break;
-```
-3. Update documentation in `wrt-edit.c` and `WRT_EDITOR.md`
-
 ### How to Add New Tag
+1. Add token type in `wrt_engine.c` (`wrt_token_type_t`)
+2. Add parsing in `wrt_validate()` / `wrt_to_html()`
+3. Add conversion in `wrt_to_editable_html()` / `wrt_from_editable_html()`
+4. Add test in `test_wrt.c`
+5. Update frontend toolbar in `page.tsx`
+6. Update this documentation
 
-1. Update supported tags list in `docx_converter.py`
-2. Add highlighting in `wrt_editor_render()` (if needed)
-3. Update documentation
+### How to Modify HTML↔WRT Conversion
+- Edit `wrt_to_editable_html()` for WRT→HTML
+- Edit `wrt_from_editable_html()` for HTML→WRT
+- **Always add regression test** for blockquote/nested/table edge cases
 
 ---
 
 ## License
-
 **RCF-PL v2.0.3** — like all AladdinAI code.
 
 ---
 
 ## Authors
-
-- **Initial implementation** — Claude (Sonnet 4), September 2026
+- **C Engine implementation** — Claude (Sonnet 4), September 2026
+- **Frontend integration** — Claude (Sonnet 4), September 2026
 - **Project** — AladdinAI Team
 
 ---
 
 ## See Also
-
-- [`PULL_REQUEST_DOCX_WRT.md`](PULL_REQUEST_DOCX_WRT.md) — documentation on `.wrt` format and converters
-- [`backend/app/services/docx_converter.py`](../backend/app/services/docx_converter.py) — Python converters `.docx` ↔ `.wrt`
-- [`backend/native/aladdin_term.c`](../backend/native/aladdin_term.c) — PTY daemon (future integration)
+- [`PULL_REQUEST_DOCX_WRT.md`](PULL_REQUEST_DOCX_WRT.md) — `.wrt` format and converters
+- [`backend/app/services/wrt_engine_service.py`](../backend/app/services/wrt_engine_service.py) — Python REST wrapper
+- [`backend/native/wrt/wrt_engine.c`](../backend/native/wrt/wrt_engine.c) — C engine source
+- [`backend/tests/test_native_wrt.py`](../backend/tests/test_native_wrt.py) — pytest integration
+- [`docs/adr/0014-wrt-visual-editor.md`](adr/0014-wrt-visual-editor.md) — ADR for Visual Mode
 
 ---
 
-**Last updated:** September 5, 2026
+**Last updated:** September 24, 2026
