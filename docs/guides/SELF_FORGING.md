@@ -41,13 +41,14 @@ doesn't move under you as new traces arrive.
 curl -X POST http://localhost:8000/api/forging/golden-set \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"min_reward": 0.5, "human_only": true, "limit": 500}'
-# → { "frozen": 42, "frozen_at": "...", "human_only": true, "replaced": true }
+# → { "frozen": 42, "frozen_at": "...", "human_only": true, "version": 1, "status": "ready" }
 ```
 
 - `human_only` (default `true`) — only traces with a human 👍/👎 are eligible.
   Set `false` to also admit the weak write-time score (larger set, noisier).
-- Freezing is **idempotent**: it replaces the previous golden set for the user.
+- Freezing is **versioned and immutable**: it creates an immutable snapshot (default 70% train, 15% val, 15% heldout).
 
+  Sessions are grouped to isolate partitions; small datasets fall back to all train.
 Inspect it: `GET /api/forging/golden-set`.
 
 ## Layer 2b — export the golden set for training
