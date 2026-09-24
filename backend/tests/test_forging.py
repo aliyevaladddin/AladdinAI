@@ -1,22 +1,20 @@
 # NOTICE: This file is protected under RCF-PL
-"""Tests for self-forging layers 2 & 3 (golden set + harness).
-
-The scoring and query-building are pure and covered directly. The Mongo-backed
-freeze/harness paths need a per-user cluster the test harness doesn't configure,
-so we test them against a tiny in-memory fake Mongo collection instead of the
-real driver — enough to prove selection, freezing (idempotent replace), and the
-base-vs-forged delta wiring.
-"""
+"""Tests for self-forging layers 2 & 3 (golden set + harness)."""
 import json
 from datetime import datetime, timezone
 
 import pytest
 
 from app.services.forging import (
+    _assign_split,
     _golden_query,
+    _reserve_next_version,
+    _split_group_key,
     _to_golden,
     export_golden_set,
     freeze_golden_set,
+    get_golden_set,
+    get_latest_ready_version,
     run_harness,
     score_response,
 )
@@ -46,7 +44,6 @@ def test_score_partial_overlap_between_zero_and_one():
 
 
 def test_score_ignores_stopwords():
-    # Differing only in stopwords → full content overlap → 1.0
     assert score_response("the invoice is ready", "invoice ready") == 1.0
 
 
@@ -70,23 +67,40 @@ def test_to_golden_projects_fields():
         "_id": "abc", "input_user_text": "how many orders?",
         "final_text": "you have 3 orders", "reward": 1.0,
         "quality_label": "good", "agent_id": 7, "model": "m",
-        "human_labeled": True,
+        "human_labeled": True, "session_id": "sess-42",
     }
-    g = _to_golden(trace, user_id=42, frozen_at=frozen_at)
+    g = _to_golden(
+        trace,
+        user_id=42,
+        frozen_at=frozen_at,
+        dataset_version=1,
+        split="train",
+        split_group_key="session:sess-42",
+    )
     assert g["user_id"] == 42
     assert g["source_trace_id"] == "abc"
+    assert g["session_id"] == "sess-42"
     assert g["input"] == "how many orders?"
     assert g["expected"] == "you have 3 orders"
     assert g["reward"] == 1.0
     assert g["human_labeled"] is True
+    assert g["dataset_version"] == 1
+    assert g["split"] == "train"
+    assert g["split_group_key"] == "session:sess-42"
 
 
-# ── fake Mongo for the async collection surface we use ───────────────────────
+# ── fake Mongo test double ───────────────────────────────────────────────────
 class _FakeCursor:
     def __init__(self, docs):
         self._docs = docs
 
-    def sort(self, *a, **k):
+    def sort(self, sort_spec, direction=None):
+        if isinstance(sort_spec, list):
+            for field, order in reversed(sort_spec):
+                self._docs.sort(key=lambda d: d.get(field) or 0, reverse=(order == -1))
+        elif isinstance(sort_spec, str):
+            order = direction if direction is not None else 1
+            self._docs.sort(key=lambda d: d.get(sort_spec) or 0, reverse=(order == -1))
         return self
 
     def limit(self, n):
@@ -103,58 +117,78 @@ class _FakeCursor:
 class _FakeCollection:
     def __init__(self, docs=None):
         self.docs = docs or []
+        self._unique_indexes = set()
+
+    async def create_index(self, keys, unique=False):
+        if unique:
+            self._unique_indexes.add(tuple(k[0] for k in keys))
+        return "idx"
 
     def find(self, query, projection=None):
-        # Support the filters freeze/select actually issue.
         def match(d):
             for k, v in query.items():
                 if k == "user_id" and d.get("user_id") != v:
+                    return False
+                if k == "dataset_version" and d.get("dataset_version") != v:
+                    return False
+                if k == "split" and d.get("split") != v:
+                    return False
+                if k == "status" and d.get("status") != v:
                     return False
                 if k == "reward" and isinstance(v, dict):
                     if d.get("reward") is None:
                         return False
                     if "$gte" in v and d["reward"] < v["$gte"]:
                         return False
-                    # The DPO export selects rejected answers by an upper bound.
                     if "$lte" in v and d["reward"] > v["$lte"]:
                         return False
                 if k == "human_labeled" and d.get("human_labeled") is not v:
                     return False
-                if k in ("final_text", "input_user_text") and isinstance(v, dict) and d.get(k) in v["$nin"]:
-                    return False
+                if k in ("final_text", "input_user_text") and isinstance(v, dict):
+                    val = d.get(k)
+                    if "$nin" in v and (val is None or val in v["$nin"]):
+                        return False
             return True
         return _FakeCursor([d for d in self.docs if match(d)])
 
-    async def delete_many(self, query):
-        uid = query.get("user_id")
-        before = len(self.docs)
-        self.docs = [d for d in self.docs if d.get("user_id") != uid]
-        return type("R", (), {"deleted_count": before - len(self.docs)})()
+    async def insert_one(self, doc):
+        for idx in self._unique_indexes:
+            for existing in self.docs:
+                if all(existing.get(f) == doc.get(f) for f in idx):
+                    raise Exception(f"E11000 duplicate key error on {idx}")
+        self.docs.append(dict(doc))
+
+    async def update_one(self, query, update):
+        for d in self.docs:
+            if all(d.get(k) == v for k, v in query.items()):
+                if "$set" in update:
+                    d.update(update["$set"])
+                break
 
     async def insert_many(self, docs):
-        self.docs.extend(docs)
+        self.docs.extend([dict(d) for d in docs])
 
 
 class _FakeMongo:
     def __init__(self, traces=None):
-        self._c = {"agent_traces": _FakeCollection(traces or []), "golden_traces": _FakeCollection()}
+        self._c = {
+            "agent_traces": _FakeCollection(traces or []),
+            "golden_traces": _FakeCollection(),
+            "dataset_versions": _FakeCollection(),
+        }
 
     def __getitem__(self, name):
         return self._c[name]
 
 
-# ── freeze_golden_set (fake Mongo) ───────────────────────────────────────────
+# ── selection and versioning tests ───────────────────────────────────────────
 @pytest.mark.asyncio
 async def test_freeze_selects_only_eligible():
     traces = [
-        {"_id": 1, "user_id": 1, "input_user_text": "q1", "final_text": "a1",
-         "reward": 1.0, "human_labeled": True},
-        {"_id": 2, "user_id": 1, "input_user_text": "q2", "final_text": "a2",
-         "reward": 0.5, "human_labeled": False},  # not human-labeled → excluded
-        {"_id": 3, "user_id": 1, "input_user_text": "q3", "final_text": "a3",
-         "reward": -1.0, "human_labeled": True},   # reward too low → excluded
-        {"_id": 4, "user_id": 2, "input_user_text": "q4", "final_text": "a4",
-         "reward": 1.0, "human_labeled": True},     # other user → excluded
+        {"_id": 1, "user_id": 1, "input_user_text": "q1", "final_text": "a1", "reward": 1.0, "human_labeled": True},
+        {"_id": 2, "user_id": 1, "input_user_text": "q2", "final_text": "a2", "reward": 0.5, "human_labeled": False},
+        {"_id": 3, "user_id": 1, "input_user_text": "q3", "final_text": "a3", "reward": -1.0, "human_labeled": True},
+        {"_id": 4, "user_id": 2, "input_user_text": "q4", "final_text": "a4", "reward": 1.0, "human_labeled": True},
     ]
     mdb = _FakeMongo(traces)
     summary = await freeze_golden_set(mdb, user_id=1, min_reward=0.5, human_only=True)
@@ -164,37 +198,194 @@ async def test_freeze_selects_only_eligible():
 
 
 @pytest.mark.asyncio
-async def test_freeze_is_idempotent_replace():
-    traces = [{"_id": 1, "user_id": 1, "input_user_text": "q", "final_text": "a",
-               "reward": 1.0, "human_labeled": True}]
+async def test_freeze_creates_incrementing_versions():
+    traces = [
+        {"_id": 1, "user_id": 1, "input_user_text": "q1", "final_text": "a1", "reward": 1.0, "human_labeled": True, "session_id": "s1"}
+    ]
+    mdb = _FakeMongo(traces)
+    res1 = await freeze_golden_set(mdb, user_id=1)
+    assert res1["version"] == 1
+
+    res2 = await freeze_golden_set(mdb, user_id=1)
+    assert res2["version"] == 2
+
+    res_u2 = await freeze_golden_set(mdb, user_id=2)
+    assert res_u2["version"] == 1
+
+
+@pytest.mark.asyncio
+async def test_freeze_small_dataset_falls_back_to_all_train():
+    traces = [
+        {"_id": i, "user_id": 1, "input_user_text": f"q{i}", "final_text": f"a{i}", "reward": 1.0, "human_labeled": True, "session_id": f"s{i}"}
+        for i in range(4)
+    ]
+    mdb = _FakeMongo(traces)
+    res = await freeze_golden_set(mdb, user_id=1)
+    assert res["counts"]["train"] == 4
+    assert res["counts"]["validation"] == 0
+    assert res["counts"]["heldout"] == 0
+    assert len(res["warnings"]) > 0
+    assert all(d["split"] == "train" for d in mdb["golden_traces"].docs)
+
+
+@pytest.mark.asyncio
+async def test_get_golden_set_defaults_to_latest_ready():
+    traces_v1 = [{"_id": 1, "user_id": 1, "input_user_text": "old", "final_text": "old_ans", "reward": 1.0, "human_labeled": True}]
+    mdb = _FakeMongo(traces_v1)
+    await freeze_golden_set(mdb, user_id=1)
+
+    mdb["agent_traces"].docs.append({"_id": 2, "user_id": 1, "input_user_text": "new", "final_text": "new_ans", "reward": 1.0, "human_labeled": True})
+    await freeze_golden_set(mdb, user_id=1)
+
+    latest = await get_latest_ready_version(mdb, user_id=1)
+    assert latest["version"] == 2
+
+    items = await get_golden_set(mdb, user_id=1)
+    assert all(it["dataset_version"] == 2 for it in items)
+
+
+# ── export regression tests ──────────────────────────────────────────────────
+@pytest.mark.asyncio
+async def test_export_sft_emits_prompt_completion():
+    traces = [{"_id": 1, "user_id": 1, "input_user_text": "what to do?", "final_text": "ship the order", "reward": 1.0, "human_labeled": True}]
     mdb = _FakeMongo(traces)
     await freeze_golden_set(mdb, user_id=1)
-    await freeze_golden_set(mdb, user_id=1)  # second run must replace, not stack
-    assert len(mdb["golden_traces"].docs) == 1
+
+    out = await export_golden_set(mdb, 1, fmt="sft")
+    assert out["examples"] == 1
+    row = json.loads(out["jsonl"])
+    assert row == {"prompt": "what to do?", "completion": "ship the order"}
 
 
-# ── run_harness (fake Mongo + stubbed model replies) ─────────────────────────
 @pytest.mark.asyncio
-async def test_harness_empty_golden_set():
+async def test_export_is_jsonl_not_json_array():
+    traces = [
+        {"_id": 1, "user_id": 1, "input_user_text": "q1", "final_text": "a1", "reward": 1.0, "human_labeled": True},
+        {"_id": 2, "user_id": 1, "input_user_text": "q2", "final_text": "a2", "reward": 1.0, "human_labeled": True},
+    ]
+    mdb = _FakeMongo(traces)
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="sft")
+    lines = out["jsonl"].splitlines()
+    assert len(lines) == 2
+    assert all(json.loads(line)["prompt"] for line in lines)
+
+
+@pytest.mark.asyncio
+async def test_export_chat_includes_system_prompt():
+    traces = [{"_id": 1, "user_id": 1, "input_user_text": "hi", "final_text": "hello", "reward": 1.0, "human_labeled": True}]
+    mdb = _FakeMongo(traces)
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="chat", system_prompt="You are terse.")
+    messages = json.loads(out["jsonl"])["messages"]
+    assert [m["role"] for m in messages] == ["system", "user", "assistant"]
+    assert messages[0]["content"] == "You are terse."
+    assert messages[2]["content"] == "hello"
+
+
+@pytest.mark.asyncio
+async def test_export_chat_omits_empty_system_prompt():
+    traces = [{"_id": 1, "user_id": 1, "input_user_text": "hi", "final_text": "hello", "reward": 1.0, "human_labeled": True}]
+    mdb = _FakeMongo(traces)
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="chat")
+    assert [m["role"] for m in json.loads(out["jsonl"])["messages"]] == ["user", "assistant"]
+
+
+@pytest.mark.asyncio
+async def test_export_rejects_unknown_format():
     mdb = _FakeMongo([])
+    with pytest.raises(ValueError, match="Unknown export format"):
+        await export_golden_set(mdb, 1, fmt="alpaca")
+
+
+@pytest.mark.asyncio
+async def test_export_scopes_to_the_calling_user():
+    traces = [
+        {"_id": 1, "user_id": 1, "input_user_text": "mine", "final_text": "a", "reward": 1.0, "human_labeled": True},
+        {"_id": 2, "user_id": 2, "input_user_text": "theirs", "final_text": "b", "reward": 1.0, "human_labeled": True},
+    ]
+    mdb = _FakeMongo(traces)
+    await freeze_golden_set(mdb, user_id=1)
+    await freeze_golden_set(mdb, user_id=2)
+
+    out = await export_golden_set(mdb, 1, fmt="sft")
+    assert out["examples"] == 1
+    assert json.loads(out["jsonl"])["prompt"] == "mine"
+
+
+@pytest.mark.asyncio
+async def test_export_preserves_non_ascii():
+    traces = [{"_id": 1, "user_id": 1, "input_user_text": "как дела?", "final_text": "хорошо", "reward": 1.0, "human_labeled": True}]
+    mdb = _FakeMongo(traces)
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, 1, fmt="sft")
+    assert "хорошо" in out["jsonl"]
+    assert json.loads(out["jsonl"])["completion"] == "хорошо"
+
+
+@pytest.mark.asyncio
+async def test_export_empty_golden_set_is_empty_not_error():
+    mdb = _FakeMongo([])
+    out = await export_golden_set(mdb, 1, fmt="sft")
+    assert out["examples"] == 0
+    assert out["jsonl"] == ""
+
+
+# ── DPO strictly-isolated pairing tests ──────────────────────────────────────
+@pytest.mark.asyncio
+async def test_dpo_pairing_same_session_cross_session_and_unpaired():
+    traces = [
+        {"_id": 1, "user_id": 1, "session_id": "sess-1", "input_user_text": "p1", "final_text": "good 1", "reward": 1.0, "human_labeled": True},
+        {"_id": 2, "user_id": 1, "session_id": "sess-1", "input_user_text": "p1", "final_text": "bad 1", "reward": -1.0, "human_labeled": True},
+        {"_id": 3, "user_id": 1, "session_id": "sess-2", "input_user_text": "p2", "final_text": "good 2", "reward": 1.0, "human_labeled": True},
+        {"_id": 4, "user_id": 1, "session_id": "sess-3", "input_user_text": "p2", "final_text": "bad 2", "reward": -1.0, "human_labeled": True},
+        {"_id": 5, "user_id": 1, "session_id": "sess-4", "input_user_text": "p3", "final_text": "good 3", "reward": 1.0, "human_labeled": True},
+    ]
+    mdb = _FakeMongo(traces)
+    await freeze_golden_set(mdb, user_id=1)
+
+    out = await export_golden_set(mdb, user_id=1, fmt="dpo")
+    assert out["examples"] == 1
+    assert out["skipped_cross_session"] == 1
+    assert out["skipped_unpaired"] == 1
+    assert any("cross-session" in w for w in out["warnings"])
+
+    row = json.loads(out["jsonl"])
+    assert row["chosen_response"] == "good 1"
+    assert row["rejected_response"] == "bad 1"
+
+
+# ── harness tests ────────────────────────────────────────────────────────────
+@pytest.mark.asyncio
+async def test_harness_empty_heldout_not_evaluable():
+    traces = [
+        {"_id": 1, "user_id": 1, "input_user_text": "q1", "final_text": "a1", "reward": 1.0, "human_labeled": True},
+    ]
+    mdb = _FakeMongo(traces)
+    await freeze_golden_set(mdb, user_id=1)
+
     result = await run_harness(
         mdb, user_id=1,
         base_provider=None, base_model="base",
         forged_provider=None, forged_model="forged",
     )
     assert result["evaluated"] == 0
-    assert "empty" in result["message"].lower()
+    assert "not evaluable" in result["message"].lower()
 
 
 @pytest.mark.asyncio
 async def test_harness_reports_delta(monkeypatch):
-    # Freeze one golden example whose expected answer is "ship the order".
-    traces = [{"_id": 1, "user_id": 1, "input_user_text": "what to do?",
-               "final_text": "ship the order", "reward": 1.0, "human_labeled": True}]
+    traces = [
+        {"_id": 1, "user_id": 1, "input_user_text": "what to do?", "final_text": "ship the order", "reward": 1.0, "human_labeled": True, "session_id": "s1"}
+    ]
     mdb = _FakeMongo(traces)
     await freeze_golden_set(mdb, user_id=1)
 
-    # Stub the two models: forged nails the expected answer, base misses.
     async def fake_reply(provider, model, system_prompt, user_input):
         return "ship the order" if model == "forged" else "no idea"
 
@@ -202,6 +393,7 @@ async def test_harness_reports_delta(monkeypatch):
 
     result = await run_harness(
         mdb, user_id=1,
+        split="train",
         base_provider=None, base_model="base",
         forged_provider=None, forged_model="forged",
     )
@@ -211,140 +403,262 @@ async def test_harness_reports_delta(monkeypatch):
     assert result["delta"] == 1.0
 
 
-# ── export_golden_set (fake Mongo) ───────────────────────────────────────────
-# [RCF:PROTECTED]
-def _labeled(_id, user_id, q, a, reward=1.0):
-    return {"_id": _id, "user_id": user_id, "input_user_text": q,
-            "final_text": a, "reward": reward, "human_labeled": True}
+# ── grouping & deterministic splits ──────────────────────────────────────────
+def test_split_group_key_session_precedence():
+    trace_a = {"session_id": "sess-1", "input": "hello"}
+    trace_b = {"session_id": "sess-1", "input": "different question"}
+    assert _split_group_key(trace_a) == "session:sess-1"
+    assert _split_group_key(trace_a) == _split_group_key(trace_b)
 
 
+def test_split_group_key_fallback_prompt_hash():
+    trace_no_sess = {"session_id": None, "input": "hello"}
+    trace_no_sess_same = {"input": "hello"}
+    assert _split_group_key(trace_no_sess).startswith("prompt:")
+    assert _split_group_key(trace_no_sess) == _split_group_key(trace_no_sess_same)
+
+
+def test_split_group_key_distinct_sessions_different_keys():
+    t1 = {"session_id": "sess-1", "input": "identical prompt"}
+    t2 = {"session_id": "sess-2", "input": "identical prompt"}
+    assert _split_group_key(t1) != _split_group_key(t2)
+
+
+def test_assign_split_deterministic():
+    key = "session:test-session"
+    res1 = _assign_split(key)
+    res2 = _assign_split(key)
+    assert res1 == res2
+    assert res1 in ("train", "validation", "heldout")
+
+
+def test_assign_split_invalid_ratios():
+    with pytest.raises(ValueError):
+        _assign_split("session:1", {"train": 0.5, "validation": 0.1, "heldout": 0.1})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── VALIDATION EXPERIMENTS ───────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Experiment 1: Large synthetic session isolation (200 sessions)
 @pytest.mark.asyncio
-async def test_export_sft_emits_prompt_completion():
-    """SFT rows carry exactly the two keys Customizer reads for that type."""
-    mdb = _FakeMongo([_labeled(1, 1, "what to do?", "ship the order")])
-    await freeze_golden_set(mdb, user_id=1)
+async def test_large_synthetic_session_split_is_deterministic_and_leak_free():
+    traces = []
+    for session_num in range(200):
+        session_id = f"session-{session_num}"
+        for turn in range(2):
+            traces.append(
+                {
+                    "_id": f"{session_num}-{turn}",
+                    "user_id": 1,
+                    "session_id": session_id,
+                    "input_user_text": f"question {session_num} turn {turn}",
+                    "final_text": f"answer {session_num} turn {turn}",
+                    "reward": 1.0,
+                    "human_labeled": True,
+                }
+            )
 
-    out = await export_golden_set(mdb, 1, fmt="sft")
+    mdb_a = _FakeMongo(list(traces))
+    result_a = await freeze_golden_set(mdb_a, user_id=1, limit=1000)
 
-    assert out["examples"] == 1
-    row = json.loads(out["jsonl"])
-    assert row == {"prompt": "what to do?", "completion": "ship the order"}
+    assert result_a["counts"]["train"] >= 5
+    assert result_a["counts"]["validation"] >= 5
+    assert result_a["counts"]["heldout"] >= 5
+
+    docs_a = mdb_a["golden_traces"].docs
+    session_splits_a = {}
+    for doc in docs_a:
+        session_splits_a.setdefault(doc["session_id"], set()).add(doc["split"])
+
+    assert all(len(splits) == 1 for splits in session_splits_a.values())
+
+    mdb_b = _FakeMongo(list(traces))
+    result_b = await freeze_golden_set(mdb_b, user_id=1, limit=1000)
+    docs_b = mdb_b["golden_traces"].docs
+
+    session_splits_b = {}
+    for doc in docs_b:
+        session_splits_b.setdefault(doc["session_id"], set()).add(doc["split"])
+
+    assert session_splits_a == session_splits_b
+    assert result_a["counts"] == result_b["counts"]
 
 
+# Experiment 2: Frozen DPO export does not change when live traces mutate
 @pytest.mark.asyncio
-async def test_export_is_jsonl_not_json_array():
-    """One JSON document per line — a JSON array would be rejected by the trainer."""
-    mdb = _FakeMongo([_labeled(1, 1, "q1", "a1"), _labeled(2, 1, "q2", "a2")])
-    await freeze_golden_set(mdb, user_id=1)
-
-    out = await export_golden_set(mdb, 1, fmt="sft")
-    lines = out["jsonl"].splitlines()
-
-    assert len(lines) == 2
-    assert all(json.loads(line)["prompt"] for line in lines)
-
-
-@pytest.mark.asyncio
-async def test_export_chat_includes_system_prompt():
-    """Chat rows keep role order and carry the system prompt when given."""
-    mdb = _FakeMongo([_labeled(1, 1, "hi", "hello")])
-    await freeze_golden_set(mdb, user_id=1)
-
-    out = await export_golden_set(mdb, 1, fmt="chat", system_prompt="You are terse.")
-    messages = json.loads(out["jsonl"])["messages"]
-
-    assert [m["role"] for m in messages] == ["system", "user", "assistant"]
-    assert messages[0]["content"] == "You are terse."
-    assert messages[2]["content"] == "hello"
-
-
-@pytest.mark.asyncio
-async def test_export_chat_omits_empty_system_prompt():
-    """No system prompt means no empty system turn in the training data."""
-    mdb = _FakeMongo([_labeled(1, 1, "hi", "hello")])
-    await freeze_golden_set(mdb, user_id=1)
-
-    out = await export_golden_set(mdb, 1, fmt="chat")
-
-    assert [m["role"] for m in json.loads(out["jsonl"])["messages"]] == ["user", "assistant"]
-
-
-@pytest.mark.asyncio
-async def test_export_dpo_pairs_chosen_with_rejected_for_same_input():
-    """A preference pair must contrast two answers to the *same* prompt."""
+async def test_frozen_dpo_export_does_not_change_when_live_traces_change():
     traces = [
-        _labeled(1, 1, "how to greet?", "Hello, how may I help?", reward=1.0),
-        _labeled(2, 1, "how to greet?", "yo", reward=-1.0),  # thumbs-down
+        {"_id": 1, "user_id": 1, "session_id": "s1", "input_user_text": "help me", "final_text": "good answer", "reward": 1.0, "human_labeled": True},
+        {"_id": 2, "user_id": 1, "session_id": "s1", "input_user_text": "help me", "final_text": "original bad answer", "reward": -1.0, "human_labeled": True},
     ]
     mdb = _FakeMongo(traces)
-    await freeze_golden_set(mdb, user_id=1)
+    freeze = await freeze_golden_set(mdb, user_id=1)
+    version = freeze["version"]
 
-    out = await export_golden_set(mdb, 1, fmt="dpo")
-    row = json.loads(out["jsonl"])
+    before = await export_golden_set(mdb, user_id=1, version=version, split="train", fmt="dpo")
 
-    assert out["examples"] == 1
-    assert row["prompt"] == [{"role": "user", "content": "how to greet?"}]
-    assert row["chosen_response"] == "Hello, how may I help?"
-    assert row["rejected_response"] == "yo"
+    for trace in mdb["agent_traces"].docs:
+        if trace.get("_id") == 2:
+            trace["final_text"] = "CHANGED LIVE REJECTED ANSWER"
+
+    mdb["agent_traces"].docs.append(
+        {"_id": 3, "user_id": 1, "session_id": "s1", "input_user_text": "help me", "final_text": "brand new bad answer", "reward": -1.0, "human_labeled": True}
+    )
+
+    after = await export_golden_set(mdb, user_id=1, version=version, split="train", fmt="dpo")
+
+    assert before["jsonl"] == after["jsonl"]
+    assert before["examples"] == after["examples"]
+    row = json.loads(after["jsonl"])
+    assert row["rejected_response"] == "original bad answer"
 
 
+# Experiment 3: Historical dataset versions remain unchanged after new freeze
 @pytest.mark.asyncio
-async def test_export_dpo_skips_prompts_never_rated_badly():
-    """Without a rejected counterpart there is no preference to learn.
+async def test_older_dataset_version_remains_unchanged_after_new_freeze():
+    traces = [
+        {"_id": 1, "user_id": 1, "session_id": "s1", "input_user_text": "old question", "final_text": "old answer", "reward": 1.0, "human_labeled": True}
+    ]
+    mdb = _FakeMongo(traces)
+    first = await freeze_golden_set(mdb, user_id=1)
+    assert first["version"] == 1
 
-    The count is reported rather than silently dropped: an export much smaller
-    than the golden set is a fact about the labels, not a bug.
-    """
-    mdb = _FakeMongo([_labeled(1, 1, "only good", "great answer", reward=1.0)])
-    await freeze_golden_set(mdb, user_id=1)
+    v1_before = await get_golden_set(mdb, user_id=1, version=1)
 
-    out = await export_golden_set(mdb, 1, fmt="dpo")
+    mdb["agent_traces"].docs.append(
+        {"_id": 2, "user_id": 1, "session_id": "s2", "input_user_text": "new question", "final_text": "new answer", "reward": 1.0, "human_labeled": True}
+    )
+    second = await freeze_golden_set(mdb, user_id=1)
+    assert second["version"] == 2
 
-    assert out["examples"] == 0
-    assert out["skipped_unpaired"] == 1
-    assert out["golden_available"] == 1
+    v1_after = await get_golden_set(mdb, user_id=1, version=1)
+    assert v1_after == v1_before
+
+    v2 = await get_golden_set(mdb, user_id=1, version=2)
+    assert {doc["input"] for doc in v2} == {"old question", "new question"}
 
 
+# Experiment 4: Small-dataset held-out safety guarantees zero model evaluations
 @pytest.mark.asyncio
-async def test_export_empty_golden_set_is_empty_not_error():
-    """Nothing frozen yet is a normal state, not a failure."""
+async def test_harness_empty_heldout_never_calls_models(monkeypatch):
+    traces = [
+        {"_id": 1, "user_id": 1, "input_user_text": "q1", "final_text": "a1", "reward": 1.0, "human_labeled": True, "session_id": "s1"}
+    ]
+    mdb = _FakeMongo(traces)
+    freeze = await freeze_golden_set(mdb, user_id=1)
+    assert freeze["counts"]["heldout"] == 0
+
+    calls = 0
+
+    async def should_never_be_called(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        raise AssertionError("Harness must not evaluate training examples as held-out")
+
+    monkeypatch.setattr("app.services.forging._reply_for", should_never_be_called)
+
+    result = await run_harness(
+        mdb,
+        user_id=1,
+        version=freeze["version"],
+        base_provider=None,
+        base_model="base",
+        forged_provider=None,
+        forged_model="forged",
+    )
+
+    assert result["evaluated"] == 0
+    assert result["dataset_version"] == freeze["version"]
+    assert result["split"] == "heldout"
+    assert "not evaluable" in result["message"].lower()
+    assert calls == 0
+
+
+# Experiment 5: Collision-retry advances candidate version correctly
+@pytest.mark.asyncio
+async def test_version_allocation_advances_after_realistic_collision(monkeypatch):
     mdb = _FakeMongo([])
+    attempts = 0
+    original_insert_one = mdb["dataset_versions"].insert_one
 
-    out = await export_golden_set(mdb, 1, fmt="sft")
+    async def racing_insert(doc):
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            await original_insert_one({"user_id": 1, "version": doc["version"], "status": "ready"})
+            raise Exception("E11000 duplicate key error collection: dataset_versions")
+        await original_insert_one(doc)
 
-    assert out["examples"] == 0
-    assert out["jsonl"] == ""
+    monkeypatch.setattr(mdb["dataset_versions"], "insert_one", racing_insert)
 
+    version, manifest = await _reserve_next_version(
+        mdb,
+        user_id=1,
+        base_manifest={"counts": {"train": 1, "validation": 0, "heldout": 0}},
+    )
 
+    assert attempts == 2
+    assert version == 2
+    assert manifest["version"] == 2
+    assert manifest["status"] == "building"
+
+# Experiment 6: Training export must never include held-out or validation cases.
 @pytest.mark.asyncio
-async def test_export_rejects_unknown_format():
-    """An unknown format must fail loudly, not silently produce the wrong schema."""
-    mdb = _FakeMongo([])
+async def test_train_export_excludes_validation_and_heldout_inputs():
+    traces = [
+        {
+            "_id": f"{session_num}-{turn}",
+            "user_id": 1,
+            "session_id": f"session-{session_num}",
+            "input_user_text": f"question {session_num} turn {turn}",
+            "final_text": f"answer {session_num} turn {turn}",
+            "reward": 1.0,
+            "human_labeled": True,
+        }
+        for session_num in range(200)
+        for turn in range(2)
+    ]
+    mdb = _FakeMongo(traces)
 
-    with pytest.raises(ValueError, match="Unknown export format"):
-        await export_golden_set(mdb, 1, fmt="alpaca")
+    frozen = await freeze_golden_set(mdb, user_id=1, limit=1000)
+    version = frozen["version"]
+    counts = frozen["counts"]
 
+    assert counts["train"] >= 5
+    assert counts["validation"] >= 5
+    assert counts["heldout"] >= 5
+    assert sum(counts.values()) == 400
 
-@pytest.mark.asyncio
-async def test_export_scopes_to_the_calling_user():
-    """One user's traces never leak into another's training data."""
-    mdb = _FakeMongo([_labeled(1, 1, "mine", "a"), _labeled(2, 2, "theirs", "b")])
-    await freeze_golden_set(mdb, user_id=1)
-    await freeze_golden_set(mdb, user_id=2)
+    train_export = await export_golden_set(
+        mdb, user_id=1, version=version, split="train", fmt="sft",
+        limit=1000,
+    )
+    validation = await get_golden_set(
+        mdb, user_id=1, version=version, split="validation", limit=1000,
+    )
+    heldout = await get_golden_set(
+        mdb, user_id=1, version=version, split="heldout", limit=1000,
+    )
 
-    out = await export_golden_set(mdb, 1, fmt="sft")
+    train_rows = [
+        json.loads(line)
+        for line in train_export["jsonl"].splitlines()
+        if line.strip()
+    ]
+    train_inputs = {row["prompt"] for row in train_rows}
+    validation_inputs = {example["input"] for example in validation}
+    heldout_inputs = {example["input"] for example in heldout}
 
-    assert out["examples"] == 1
-    assert json.loads(out["jsonl"])["prompt"] == "mine"
+    assert train_export["dataset_version"] == version
+    assert train_export["split"] == "train"
+    assert train_export["examples"] == counts["train"]
+    assert len(train_rows) == counts["train"]
+    assert len(validation) == counts["validation"]
+    assert len(heldout) == counts["heldout"]
 
-
-@pytest.mark.asyncio
-async def test_export_preserves_non_ascii():
-    """Cyrillic must survive as text, not as \\uXXXX escapes."""
-    mdb = _FakeMongo([_labeled(1, 1, "как дела?", "хорошо")])
-    await freeze_golden_set(mdb, user_id=1)
-
-    out = await export_golden_set(mdb, 1, fmt="sft")
-
-    assert "хорошо" in out["jsonl"]
-    assert json.loads(out["jsonl"])["completion"] == "хорошо"
+    assert train_inputs.isdisjoint(validation_inputs)
+    assert train_inputs.isdisjoint(heldout_inputs)
+    assert validation_inputs.isdisjoint(heldout_inputs)
+    assert len(train_inputs | validation_inputs | heldout_inputs) == 400

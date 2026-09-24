@@ -41,18 +41,19 @@ doesn't move under you as new traces arrive.
 curl -X POST http://localhost:8000/api/forging/golden-set \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"min_reward": 0.5, "human_only": true, "limit": 500}'
-# → { "frozen": 42, "frozen_at": "...", "human_only": true, "replaced": true }
+# → { "frozen": 42, "frozen_at": "...", "human_only": true, "version": 1, "status": "ready" }
 ```
 
 - `human_only` (default `true`) — only traces with a human 👍/👎 are eligible.
   Set `false` to also admit the weak write-time score (larger set, noisier).
-- Freezing is **idempotent**: it replaces the previous golden set for the user.
+- Freezing is **versioned and immutable**: it creates an immutable snapshot (default 70% train, 15% val, 15% heldout).
 
+  Sessions are grouped to isolate partitions; small datasets fall back to all train.
 Inspect it: `GET /api/forging/golden-set`.
 
 ## Layer 2b — export the golden set for training
 
-The golden set lives in Mongo; a trainer wants JSONL. This export is the step
+The golden set lives in Mongo; a trainer wants JSONL. Training exports default to `split=train` (excluding validation and heldout inputs), while evaluation in the harness defaults to `split=heldout`. This export is the step
 between "we can measure a forged model" and actually having one.
 
 ```bash
@@ -69,6 +70,8 @@ its shape rather than from a flag:
 | `sft` (default) | `{"prompt", "completion"}` | supervised fine-tuning, LoRA |
 | `chat` | `{"messages": [{role, content}, …]}` | models trained on a chat template |
 | `dpo` | `{"prompt", "chosen_response", "rejected_response"}` | preference alignment |
+
+DPO pairs are formed only when the chosen and rejected responses have the same input and session ID. Rejected candidates from other sessions are skipped and reported separately in skipped_cross_session. This prevents responses from different session contexts from being paired.
 
 Add `&system_prompt=...` to put a system turn in front of every `chat` example,
 and `&download=false` to get a JSON summary instead of the file.
