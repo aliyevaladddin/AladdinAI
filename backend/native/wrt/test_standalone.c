@@ -13,14 +13,29 @@ typedef struct {
 static void buf_init(str_buf_t *b) {
     b->cap = 4096;
     b->data = malloc(b->cap);
+    if (!b->data) {
+        b->cap = 0;
+        b->len = 0;
+        return;
+    }
     b->data[0] = '\0';
     b->len = 0;
 }
 
 static void buf_append_len(str_buf_t *b, const char *s, size_t n) {
+    if (!b || !b->data || !s || n == 0) return;
+
     if (b->len + n + 1 >= b->cap) {
-        while (b->len + n + 1 >= b->cap) b->cap *= 2;
-        b->data = realloc(b->data, b->cap);
+        size_t new_cap = b->cap ? b->cap : 4096;
+        while (b->len + n + 1 >= new_cap) {
+            new_cap *= 2;
+        }
+        char *tmp = realloc(b->data, new_cap);
+        if (!tmp) {
+            return; /* Allocation failed — keep existing buffer, do not crash */
+        }
+        b->data = tmp;
+        b->cap = new_cap;
     }
     memcpy(b->data + b->len, s, n);
     b->len += n;

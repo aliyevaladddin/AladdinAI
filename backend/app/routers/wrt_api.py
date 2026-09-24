@@ -6,7 +6,7 @@ import os
 from typing import Optional
 from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.security import get_current_user
 from app.services.wrt_engine_service import WORKSPACE_ROOT
 from app.services import wrt_engine_service
@@ -29,7 +29,7 @@ def _validate_workspace_path(path: str) -> str:
 
 
 class WrtContentRequest(BaseModel):
-    content: str
+    content: str = Field(..., max_length=100_000_000)  # 100 MB limit for self-hosted large docs (pptx, xlsx, images)
 
 
 class ReadFileRequest(BaseModel):
