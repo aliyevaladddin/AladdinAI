@@ -10064,7 +10064,7 @@
           "forging"
         ],
         "summary": "Freeze Golden",
-        "description": "Freeze eligible labeled traces into the golden set (idempotent).",
+        "description": "Freeze eligible labeled traces into a new immutable dataset version.",
         "operationId": "freeze_golden_api_forging_golden_set_post",
         "security": [
           {
@@ -10076,7 +10076,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GoldenFreezeRequest"
+                "$ref": "#/components/schemas/FreezeRequest"
               }
             }
           }
@@ -10087,7 +10087,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GoldenFreezeResponse"
+                  "$ref": "#/components/schemas/FreezeResponse"
                 }
               }
             }
@@ -10118,11 +10118,51 @@
         ],
         "parameters": [
           {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          },
+          {
+            "name": "split",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "train",
+                    "validation",
+                    "heldout"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Split"
+            }
+          },
+          {
             "name": "limit",
             "in": "query",
             "required": false,
             "schema": {
               "type": "integer",
+              "maximum": 5000,
+              "minimum": 1,
               "default": 500,
               "title": "Limit"
             }
@@ -10171,6 +10211,37 @@
           }
         ],
         "parameters": [
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          },
+          {
+            "name": "split",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "train",
+                "validation",
+                "heldout"
+              ],
+              "type": "string",
+              "default": "train",
+              "title": "Split"
+            }
+          },
           {
             "name": "format",
             "in": "query",
@@ -12892,6 +12963,103 @@
         "type": "object",
         "title": "FolderUpdate"
       },
+      "FreezeRequest": {
+        "properties": {
+          "min_reward": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": -1.0,
+            "title": "Min Reward",
+            "default": 0.5
+          },
+          "human_only": {
+            "type": "boolean",
+            "title": "Human Only",
+            "default": true
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 5000.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Limit",
+            "default": 500
+          },
+          "ratios": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ratios"
+          }
+        },
+        "type": "object",
+        "title": "FreezeRequest"
+      },
+      "FreezeResponse": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "default": 1
+          },
+          "frozen": {
+            "type": "integer",
+            "title": "Frozen"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Counts"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ready"
+          },
+          "frozen_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Frozen At"
+          },
+          "min_reward": {
+            "type": "number",
+            "title": "Min Reward"
+          },
+          "human_only": {
+            "type": "boolean",
+            "title": "Human Only"
+          },
+          "replaced": {
+            "type": "boolean",
+            "title": "Replaced",
+            "default": false
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "frozen",
+          "frozen_at",
+          "min_reward",
+          "human_only"
+        ],
+        "title": "FreezeResponse"
+      },
       "GatesUpdate": {
         "properties": {
           "default_gate_model": {
@@ -12924,65 +13092,6 @@
         "type": "object",
         "title": "GatesUpdate"
       },
-      "GoldenFreezeRequest": {
-        "properties": {
-          "min_reward": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": -1.0,
-            "title": "Min Reward",
-            "default": 0.5
-          },
-          "human_only": {
-            "type": "boolean",
-            "title": "Human Only",
-            "default": true
-          },
-          "limit": {
-            "type": "integer",
-            "maximum": 5000.0,
-            "exclusiveMinimum": 0.0,
-            "title": "Limit",
-            "default": 500
-          }
-        },
-        "type": "object",
-        "title": "GoldenFreezeRequest"
-      },
-      "GoldenFreezeResponse": {
-        "properties": {
-          "frozen": {
-            "type": "integer",
-            "title": "Frozen"
-          },
-          "frozen_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Frozen At"
-          },
-          "min_reward": {
-            "type": "number",
-            "title": "Min Reward"
-          },
-          "human_only": {
-            "type": "boolean",
-            "title": "Human Only"
-          },
-          "replaced": {
-            "type": "boolean",
-            "title": "Replaced"
-          }
-        },
-        "type": "object",
-        "required": [
-          "frozen",
-          "frozen_at",
-          "min_reward",
-          "human_only",
-          "replaced"
-        ],
-        "title": "GoldenFreezeResponse"
-      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -12996,7 +13105,7 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "HarnessExample": {
+      "HarnessExampleResult": {
         "properties": {
           "input": {
             "type": "string",
@@ -13022,10 +13131,31 @@
           "forged_score",
           "delta"
         ],
-        "title": "HarnessExample"
+        "title": "HarnessExampleResult"
       },
       "HarnessRequest": {
         "properties": {
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "split": {
+            "type": "string",
+            "enum": [
+              "train",
+              "validation",
+              "heldout"
+            ],
+            "title": "Split",
+            "default": "heldout"
+          },
           "base_provider_id": {
             "type": "integer",
             "title": "Base Provider Id"
@@ -13076,6 +13206,22 @@
             "type": "integer",
             "title": "Evaluated"
           },
+          "split": {
+            "type": "string",
+            "title": "Split",
+            "default": "heldout"
+          },
+          "dataset_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version"
+          },
           "base_model": {
             "type": "string",
             "title": "Base Model"
@@ -13109,11 +13255,10 @@
           },
           "examples": {
             "items": {
-              "$ref": "#/components/schemas/HarnessExample"
+              "$ref": "#/components/schemas/HarnessExampleResult"
             },
             "type": "array",
-            "title": "Examples",
-            "default": []
+            "title": "Examples"
           }
         },
         "type": "object",

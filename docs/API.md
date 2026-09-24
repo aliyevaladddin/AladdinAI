@@ -5276,7 +5276,7 @@ Freeze Golden
 
 ##### Description:
 
-Freeze eligible labeled traces into the golden set (idempotent).
+Freeze eligible labeled traces into a new immutable dataset version.
 
 ##### Responses
 
@@ -5304,6 +5304,8 @@ Return the current frozen golden examples.
 
 | Name | Located in | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
+| version | query |  | No |  |
+| split | query |  | No |  |
 | limit | query |  | No | integer |
 
 ##### Responses
@@ -5339,6 +5341,8 @@ as-is; otherwise a JSON summary comes back with the same lines inline.
 
 | Name | Located in | Description | Required | Schema |
 | ---- | ---------- | ----------- | -------- | ---- |
+| version | query |  | No |  |
+| split | query |  | No | string |
 | format | query |  | No | string |
 | system_prompt | query |  | No | string |
 | limit | query |  | No | integer |
@@ -6166,6 +6170,29 @@ Lightweight PATCH — only updates the agent binding on an email account.
 | name |  |  | No |
 | parent_id |  |  | No |
 
+#### FreezeRequest
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| min_reward | number |  | No |
+| human_only | boolean |  | No |
+| limit | integer |  | No |
+| ratios |  |  | No |
+
+#### FreezeResponse
+
+| Name | Type | Description | Required |
+| ---- | ---- | ----------- | -------- |
+| version | integer |  | No |
+| frozen | integer |  | Yes |
+| counts | object |  | No |
+| status | string |  | No |
+| frozen_at | dateTime |  | Yes |
+| min_reward | number |  | Yes |
+| human_only | boolean |  | Yes |
+| replaced | boolean |  | No |
+| warnings | [ string ] |  | No |
+
 #### GatesUpdate
 
 | Name | Type | Description | Required |
@@ -6173,31 +6200,13 @@ Lightweight PATCH — only updates the agent binding on an email account.
 | default_gate_model |  |  | No |
 | gates |  |  | No |
 
-#### GoldenFreezeRequest
-
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| min_reward | number |  | No |
-| human_only | boolean |  | No |
-| limit | integer |  | No |
-
-#### GoldenFreezeResponse
-
-| Name | Type | Description | Required |
-| ---- | ---- | ----------- | -------- |
-| frozen | integer |  | Yes |
-| frozen_at | dateTime |  | Yes |
-| min_reward | number |  | Yes |
-| human_only | boolean |  | Yes |
-| replaced | boolean |  | Yes |
-
 #### HTTPValidationError
 
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | detail | [ [ValidationError](#validationerror) ] |  | No |
 
-#### HarnessExample
+#### HarnessExampleResult
 
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
@@ -6210,6 +6219,8 @@ Lightweight PATCH — only updates the agent binding on an email account.
 
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
+| version |  |  | No |
+| split | string |  | No |
 | base_provider_id | integer |  | Yes |
 | base_model | string |  | Yes |
 | forged_provider_id | integer |  | Yes |
@@ -6222,13 +6233,15 @@ Lightweight PATCH — only updates the agent binding on an email account.
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | evaluated | integer |  | Yes |
+| split | string |  | No |
+| dataset_version |  |  | No |
 | base_model | string |  | Yes |
 | forged_model | string |  | Yes |
 | mean_base | number |  | Yes |
 | mean_forged | number |  | Yes |
 | delta | number |  | Yes |
 | message |  |  | No |
-| examples | [ [HarnessExample](#harnessexample) ] |  | No |
+| examples | [ [HarnessExampleResult](#harnessexampleresult) ] |  | No |
 
 #### InboxRequest
 
