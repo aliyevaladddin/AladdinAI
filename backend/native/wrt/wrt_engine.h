@@ -42,6 +42,8 @@ typedef struct {
 void wrt_validate(const char *text, wrt_report_t *out);
 char *wrt_fix(const char *text);
 char *wrt_to_html(const char *text);
+char *wrt_to_editable_html(const char *text);
+char *wrt_from_editable_html(const char *html);
 char *wrt_report_to_json(const wrt_report_t *rep);
 
 /* Native File Operations API */

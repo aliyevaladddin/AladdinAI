@@ -204,6 +204,34 @@ async def wrt_to_html(content: str) -> str:
         return ""
 
 
+async def wrt_to_editable_html(content: str) -> str:
+    """Convert WRT document to editable HTML for contentEditable using native C engine."""
+    res = await _send_socket_request("to-editable-html", content)
+    if res and res.get("type") == "to_editable_html_result":
+        return res.get("html", "")
+
+    # CLI fallback
+    try:
+        return await _run_cli_fallback("to-editable-html", content)
+    except Exception as e:
+        log.error("WRT to-editable-html error: %s", e)
+        return ""
+
+
+async def wrt_from_editable_html(content: str) -> str:
+    """Convert editable HTML from contentEditable back to WRT markup using native C engine."""
+    res = await _send_socket_request("from-editable-html", content)
+    if res and res.get("type") == "from_editable_html_result":
+        return res.get("content", "")
+
+    # CLI fallback
+    try:
+        return await _run_cli_fallback("from-editable-html", content)
+    except Exception as e:
+        log.error("WRT from-editable-html error: %s", e)
+        return ""
+
+
 async def wrt_stats(content: str) -> Dict[str, Any]:
     """Calculate WRT document statistics using native C engine."""
     res = await _send_socket_request("stats", content)

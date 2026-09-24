@@ -125,14 +125,19 @@ RCF-AUDIT-REPORT.json
 # git filter-branch temp leftovers
 .git-rewrite/
 frontend/coverage
-backend/native/wrt-validate
-backend/native/wrt-edit
 *whatsapp_auth*
 .DS_Store
 backend/whatsapp_bridge/node_modules/
 root/*
+Screenshot*.png
 # Sanity local dev
 frontend/.sanity/*
 frontend/sanity/
 frontend/sanity.cli.ts
 frontend/sanity.config.ts
+#WRT local files
+test_standalone
+test_wrt
+wrt-edit
+wrt-validate
+wrt*.o
