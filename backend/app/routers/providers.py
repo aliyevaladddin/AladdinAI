@@ -197,7 +197,7 @@ async def ping_model(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=15) as client:
             # We use a POST request as a health check because many LLM providers
             # do not have a dedicated GET /health endpoint for specific models.
             resp = await client.post(url, json=payload, headers=headers)

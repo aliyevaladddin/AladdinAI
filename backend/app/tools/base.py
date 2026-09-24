@@ -8,6 +8,7 @@ without each tool re-deriving them.
 """
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass, field
 from typing import Any, Awaitable, Callable
 
@@ -78,6 +79,24 @@ def openai_schemas(allowed: list[str] | None = None) -> list[dict[str, Any]]:
 
 # [RCF:PROTECTED]
 async def execute(name: str, args: dict[str, Any], ctx: ToolContext) -> Any:
-    """Run a registered tool. Raises KeyError if name unknown."""
+    """Run a registered tool. Raises KeyError if name unknown.
+
+    LLMs (especially reasoning models) sometimes inject extra keys like
+    ``reason``, ``rationale``, or ``thought`` into tool-call arguments.
+    We introspect the target function's signature and silently drop any
+    keys that don't correspond to accepted parameters — unless the
+    function declares ``**kwargs``, in which case everything passes through.
+    """
     t = REGISTRY[name]
-    return await t.func(ctx, **(args or {}))
+    func_args: dict[str, Any] = args or {}
+    sig = inspect.signature(t.func)
+    has_var_keyword = any(
+        p.kind == inspect.Parameter.VAR_KEYWORD
+        for p in sig.parameters.values()
+    )
+    if not has_var_keyword and func_args:
+        # Keep only keys the function actually accepts (minus `ctx`
+        # which is positional and passed explicitly).
+        valid = {n for n in sig.parameters if n != "ctx"}
+        func_args = {k: v for k, v in func_args.items() if k in valid}
+    return await t.func(ctx, **func_args)

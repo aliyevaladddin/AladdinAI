@@ -170,7 +170,7 @@ async def test_bentoml(conn_id: int, db: AsyncSession = Depends(get_db), user = 
     # Simple health check simulation or real check if endpoint is public
     import httpx
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             res = await client.get(f"{conn.endpoint_url}/healthz")
             if res.status_code == 200:
                 conn.status = "connected"
