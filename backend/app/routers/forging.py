@@ -79,7 +79,7 @@ async def freeze_golden(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Freeze eligible labeled traces into the golden set (idempotent)."""
+    """Freeze eligible labeled traces into a new immutable dataset version."""
     _require_edition()
     mdb = await _mongo(db, user.id)
     try:

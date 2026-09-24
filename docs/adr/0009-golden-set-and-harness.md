@@ -30,7 +30,7 @@ Add two layers as `app.services.forging` + `app.routers.forging`:
    input, a non-empty expected answer, and `reward >= min_reward` (human-labeled
    only by default), and snapshots them as `{input, expected, reward}` documents
    in a separate `golden_traces` collection in the **user's own Mongo**. Freezing
-   creates an immutable version snapshot with train, validation, and heldout splits. Session grouping prevents leakage. Historical benchmarks do not drift as
+   creates an immutable version snapshot with train, validation, and heldout splits. Session grouping prevents leakage. Note: session grouping isolates conversation turns, but identical prompts originating from different sessions can still land in different partitions. Historical benchmarks do not drift as
    new traces arrive.
 
 2. **Layer 3 — harness.** `run_harness` replays each golden input through a base
