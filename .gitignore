@@ -131,6 +131,7 @@ backend/native/wrt-edit
 .DS_Store
 backend/whatsapp_bridge/node_modules/
 root/*
+Screenshot*.png
 # Sanity local dev
 frontend/.sanity/*
 frontend/sanity/
