@@ -11,9 +11,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Hardcode bot user name and email in workflow git config (#925) ([7eea66d](https://github.com/aliyevaladddin/AladdinAI/commit/7eea66decf60bc8371c04a2c14ab8a863f69a59b))
 
 
+### Documentation
+
+- Update API documentation [skip ci] (#931) ([a04519b](https://github.com/aliyevaladddin/AladdinAI/commit/a04519b4930a9636354f0592946450ac79c2786e))
+
+
 ### Features
 
 - Add MCP server editing and Sanity integration along with backend service reliability improvements ([09c01bf](https://github.com/aliyevaladddin/AladdinAI/commit/09c01bf3a8de39072bbf2ad9d7aee535a84979df))
+
+- Add versioned, session-isolated dataset splits (#929) ([8cb045f](https://github.com/aliyevaladddin/AladdinAI/commit/8cb045f88b12cb1f78069527bb064d6d5409e85d))
 
 
 ### Maintenance
@@ -25,6 +32,13 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] ([f38148f](https://github.com/aliyevaladddin/AladdinAI/commit/f38148f87aa5a63316425065e33fdd18bdd4c250))
 
 - Update changelog [skip ci] ([3a74ea9](https://github.com/aliyevaladddin/AladdinAI/commit/3a74ea979c87826a1762d5e60dc1570329dc3972))
+
+- Update changelog [skip ci] (#926) ([c361367](https://github.com/aliyevaladddin/AladdinAI/commit/c36136713e2000c9225e4643b4c14b173c96bd51))
+
+
+### Refactor
+
+- WRT Editor — pure C backend + thin TSX frontend (#928) ([612594e](https://github.com/aliyevaladddin/AladdinAI/commit/612594e5893e13bd0bab407a0d6fe34e2c9d2f7b))
 
 ## [v2.2.6] - 2026-09-20
 
