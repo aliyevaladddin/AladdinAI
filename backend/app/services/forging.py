@@ -101,15 +101,7 @@ def _tokens(text: str) -> set[str]:
 
 # [RCF:PROTECTED]
 def score_response(expected: str, actual: str) -> float:
-    """Similarity of a candidate reply to the expected answer, in [0.0, 1.0].
-
-    A deliberately simple, dependency-free token-overlap (Jaccard) score — a
-    proxy, not a judge. It rewards a reply that mentions the same content words
-    as the golden answer. Good enough to detect a forged model regressing or
-    improving in aggregate across many examples; not a per-example verdict.
-
-    Both empty → 1.0 (nothing expected, nothing produced). One empty → 0.0.
-    """
+    """Similarity of a candidate reply to the expected answer, in [0.0, 1.0]."""
     exp, act = _tokens(expected), _tokens(actual)
     if not exp and not act:
         return 1.0
@@ -123,12 +115,7 @@ def score_response(expected: str, actual: str) -> float:
 # ── layer 2: golden set ──────────────────────────────────────────────────────
 # [RCF:PROTECTED]
 def _golden_query(min_reward: float, human_only: bool) -> dict[str, Any]:
-    """Mongo filter selecting traces eligible for the golden set.
-
-    We require a usable input and a non-empty expected answer, a reward at or
-    above `min_reward`, and (by default) a human label — the strong signal.
-    `reward is None` traces are intentionally excluded upstream and never match.
-    """
+    """Mongo filter selecting traces eligible for the golden set."""
     q: dict[str, Any] = {
         "reward": {"$gte": min_reward},
         "final_text": {"$nin": [None, ""]},
@@ -154,27 +141,81 @@ async def select_labeled_traces(
         projection={
             "input_user_text": 1, "final_text": 1, "reward": 1,
             "quality_label": 1, "agent_id": 1, "model": 1,
-            "human_labeled": 1, "created_at": 1,
+            "human_labeled": 1, "created_at": 1, "session_id": 1,
         },
-    ).sort("created_at", -1).limit(limit)
+    ).sort([("created_at", -1), ("_id", -1)]).limit(limit)
     return [doc async for doc in cursor]
 
 
 # [RCF:PROTECTED]
-def _to_golden(trace: dict[str, Any], user_id: int, frozen_at: datetime) -> dict[str, Any]:
-    """Project a trace document into a frozen golden example."""
+def _to_golden(
+    trace: dict[str, Any],
+    user_id: int,
+    frozen_at: datetime,
+    dataset_version: int,
+    split: str,
+    split_group_key: str,
+    rejected_response: str | None = None,
+) -> dict[str, Any]:
+    """Project a trace document into an immutable frozen golden example."""
     return {
         "user_id": user_id,
         "source_trace_id": trace.get("_id"),
-        "input": trace.get("input_user_text") or "",
-        "expected": trace.get("final_text") or "",
+        "session_id": trace.get("session_id"),
+        "input": trace.get("input_user_text") or trace.get("input") or "",
+        "expected": trace.get("final_text") or trace.get("expected") or "",
+        "rejected_response": rejected_response,
         "reward": trace.get("reward"),
         "quality_label": trace.get("quality_label"),
         "agent_id": trace.get("agent_id"),
         "model": trace.get("model"),
         "human_labeled": bool(trace.get("human_labeled")),
+        "dataset_version": dataset_version,
+        "split": split,
+        "split_group_key": split_group_key,
         "frozen_at": frozen_at,
     }
+
+
+# [RCF:PROTECTED]
+async def _get_next_version(mdb, user_id: int) -> int:
+    """Return the next dataset version integer for user_id."""
+    cursor = mdb[DATASET_VERSION_COLLECTION].find(
+        {"user_id": user_id}
+    ).sort("version", -1).limit(1)
+    docs = [d async for d in cursor]
+    if not docs:
+        return 1
+    return int(docs[0].get("version", 0)) + 1
+
+
+# [RCF:PROTECTED]
+async def get_latest_ready_version(mdb, user_id: int) -> dict[str, Any] | None:
+    """Return the latest ready dataset version metadata for user_id."""
+    cursor = mdb[DATASET_VERSION_COLLECTION].find(
+        {"user_id": user_id, "status": "ready"}
+    ).sort("version", -1).limit(1)
+    docs = [d async for d in cursor]
+    return docs[0] if docs else None
+
+
+REJECTED_MAX_REWARD = -0.5
+
+
+# [RCF:PROTECTED]
+async def _fetch_rejected_traces(mdb, user_id: int, limit: int = 1000) -> list[dict[str, Any]]:
+    """Fetch candidates for rejected responses."""
+    cursor = mdb[TRACE_COLLECTION].find(
+        {
+            "user_id": user_id,
+            "human_labeled": True,
+            "reward": {"$lte": REJECTED_MAX_REWARD},
+            "final_text": {"$nin": [None, ""]},
+            "input_user_text": {"$nin": [None, ""]},
+        },
+        projection={"input_user_text": 1, "final_text": 1, "session_id": 1, "created_at": 1},
+    ).sort([("created_at", -1), ("_id", -1)]).limit(limit)
+    return [d async for d in cursor]
 
 
 # [RCF:PROTECTED]
@@ -185,59 +226,131 @@ async def freeze_golden_set(
     min_reward: float = 0.5,
     human_only: bool = True,
     limit: int = 500,
-    replace: bool = True,
+    ratios: dict[str, float] | None = None,
+    replace: bool = False,
 ) -> dict[str, Any]:
-    """Snapshot eligible traces into the `golden_traces` collection.
+    """Snapshot eligible traces into a new immutable dataset version."""
+    if ratios is None:
+        ratios = DEFAULT_SPLIT_RATIOS
 
-    `replace=True` clears this user's existing golden set first, so freezing is
-    idempotent — re-running produces the current frozen set, not a growing pile
-    of duplicates. Returns a summary the endpoint can echo back.
-    """
     traces = await select_labeled_traces(
         mdb, user_id, min_reward=min_reward, human_only=human_only, limit=limit
     )
+    rejected_traces = await _fetch_rejected_traces(mdb, user_id, limit=limit * 2)
+
     frozen_at = datetime.now(timezone.utc)
+    version = await _get_next_version(mdb, user_id)
 
-    if replace:
-        await mdb[GOLDEN_COLLECTION].delete_many({"user_id": user_id})
+    # Deterministic grouping & tentative split assignment
+    group_splits: dict[str, str] = {}
+    staged_items: list[tuple[dict[str, Any], str, str, str | None]] = []
 
-    examples = [_to_golden(t, user_id, frozen_at) for t in traces]
+    for t in traces:
+        gkey = _split_group_key(t)
+        if gkey not in group_splits:
+            group_splits[gkey] = _assign_split(gkey, ratios)
+        split = group_splits[gkey]
+
+        # Same-session DPO pairing lookup at freeze time
+        user_input = t.get("input_user_text") or t.get("input") or ""
+        sess_id = t.get("session_id")
+        matched_rej = None
+        if sess_id is not None:
+            for r in rejected_traces:
+                if r.get("session_id") == sess_id and r.get("input_user_text") == user_input:
+                    matched_rej = r.get("final_text")
+                    break
+
+        staged_items.append((t, split, gkey, matched_rej))
+
+    counts = {"train": 0, "validation": 0, "heldout": 0}
+    for _, split, _, _ in staged_items:
+        counts[split] = counts.get(split, 0) + 1
+
+    warnings: list[str] = []
+    if len(staged_items) > 0 and any(counts[s] < MIN_EXAMPLES_PER_SPLIT for s in ("train", "validation", "heldout")):
+        warnings.append(
+            f"One or more splits had fewer than {MIN_EXAMPLES_PER_SPLIT} examples; "
+            "falling back to assigning all examples to train."
+        )
+        staged_items = [(t, "train", gkey, rej) for (t, _, gkey, rej) in staged_items]
+        counts = {"train": len(staged_items), "validation": 0, "heldout": 0}
+
+    examples = [
+        _to_golden(t, user_id, frozen_at, version, split, gkey, rej)
+        for (t, split, gkey, rej) in staged_items
+    ]
+
+    manifest = {
+        "user_id": user_id,
+        "version": version,
+        "status": "building",
+        "counts": counts,
+        "ratios": ratios,
+        "split_strategy": "session",
+        "min_reward": min_reward,
+        "human_only": human_only,
+        "total_examples": len(examples),
+        "frozen_at": frozen_at,
+        "warnings": warnings,
+    }
+    await mdb[DATASET_VERSION_COLLECTION].insert_one(manifest)
+
     if examples:
         await mdb[GOLDEN_COLLECTION].insert_many(examples)
 
+    manifest["status"] = "ready"
+    if hasattr(mdb[DATASET_VERSION_COLLECTION], "update_one"):
+        await mdb[DATASET_VERSION_COLLECTION].update_one(
+            {"user_id": user_id, "version": version},
+            {"$set": {"status": "ready"}},
+        )
+
     return {
+        "version": version,
         "frozen": len(examples),
+        "counts": counts,
+        "status": "ready",
         "frozen_at": frozen_at,
         "min_reward": min_reward,
         "human_only": human_only,
-        "replaced": replace,
+        "warnings": warnings,
     }
 
 
 # [RCF:PROTECTED]
-async def get_golden_set(mdb, user_id: int, *, limit: int = 500) -> list[dict[str, Any]]:
-    """Return the user's frozen golden examples (newest freeze first)."""
+async def get_golden_set(
+    mdb,
+    user_id: int,
+    *,
+    version: int | None = None,
+    split: str | None = None,
+    limit: int = 500,
+) -> list[dict[str, Any]]:
+    """Return frozen golden examples for user_id (defaults to latest ready version)."""
+    if version is None:
+        latest = await get_latest_ready_version(mdb, user_id)
+        if not latest:
+            return []
+        version = latest["version"]
+
+    query: dict[str, Any] = {"user_id": user_id, "dataset_version": version}
+    if split is not None:
+        query["split"] = split
+
     cursor = mdb[GOLDEN_COLLECTION].find(
-        {"user_id": user_id},
-        projection={"input": 1, "expected": 1, "reward": 1, "model": 1,
-                    "human_labeled": 1, "frozen_at": 1},
-    ).sort("frozen_at", -1).limit(limit)
+        query,
+        projection={
+            "input": 1, "expected": 1, "rejected_response": 1, "reward": 1, "model": 1,
+            "human_labeled": 1, "frozen_at": 1, "dataset_version": 1,
+            "split": 1, "session_id": 1, "split_group_key": 1,
+        },
+    ).sort([("frozen_at", -1), ("_id", -1)]).limit(limit)
     return [doc async for doc in cursor]
 
 
 # ── layer 2b: export for training ────────────────────────────────────────────
-# NeMo Customizer decides a dataset's schema by looking at it, so each format
-# here is the exact shape one training type expects — not a house format a
-# converter would have to translate.
-#   sft  — {"prompt", "completion"}: plain supervised fine-tuning.
-#   chat — {"messages": [{role, content}, ...]}: same pairs carrying the system
-#          prompt, for models trained on a chat template.
-#   dpo  — {"prompt", "chosen_response", "rejected_response"}: preference pairs.
 EXPORT_FORMATS = ("sft", "chat", "dpo")
-
-# A 👎 is `reward = -1.0` (see `human_score`). DPO needs a rejected answer, and
-# only a human thumbs-down is trustworthy enough to be one.
-REJECTED_MAX_REWARD = -0.5
 
 
 # [RCF:PROTECTED]
@@ -256,67 +369,34 @@ def _chat_row(ex: dict[str, Any], system_prompt: str) -> dict[str, Any]:
 
 
 # [RCF:PROTECTED]
-async def _rejected_by_input(mdb, user_id: int, limit: int) -> dict[str, str]:
-    """Map input text -> a thumbs-down reply the user gave for that same input.
-
-    DPO learns from a contrast, so a rejected answer is only meaningful next to
-    a chosen one for the *same* prompt. Pairing by input text is what makes the
-    two halves comparable; inputs with no rejected counterpart are skipped
-    rather than paired against something arbitrary.
-    """
-    cursor = mdb[TRACE_COLLECTION].find(
-        {
-            "user_id": user_id,
-            "human_labeled": True,
-            "reward": {"$lte": REJECTED_MAX_REWARD},
-            "final_text": {"$nin": [None, ""]},
-            "input_user_text": {"$nin": [None, ""]},
-        },
-        projection={"input_user_text": 1, "final_text": 1},
-    ).sort("created_at", -1).limit(limit)
-    return {
-        doc["input_user_text"]: doc["final_text"]
-        async for doc in cursor
-    }
-
-
-# [RCF:PROTECTED]
 async def export_golden_set(
     mdb,
     user_id: int,
     *,
+    version: int | None = None,
+    split: str = "train",
     fmt: str = "sft",
     system_prompt: str = "",
     limit: int = 500,
 ) -> dict[str, Any]:
-    """Render the frozen golden set as JSONL lines ready for a training job.
-
-    This is the step between "we measured that a forged model would help" and
-    actually producing one: the harness compares two models, but nothing turned
-    the golden set into something a trainer accepts. Returns the rows plus the
-    serialised JSONL so a caller can stream it as a file download.
-
-    Exporting reads the *frozen* set on purpose. Training against a live query
-    would mean the dataset silently changes between the run and the evaluation
-    that is supposed to judge it.
-    """
+    """Render frozen golden set as JSONL lines ready for training."""
     if fmt not in EXPORT_FORMATS:
         raise ValueError(f"Unknown export format: {fmt!r} (expected one of {EXPORT_FORMATS})")
 
-    golden = await get_golden_set(mdb, user_id, limit=limit)
+    golden = await get_golden_set(mdb, user_id, version=version, split=split, limit=limit)
     rows: list[dict[str, Any]] = []
     skipped_unpaired = 0
+    skipped_cross_session = 0
+    warnings: list[str] = []
 
     if fmt == "dpo":
-        rejected = await _rejected_by_input(mdb, user_id, limit)
         for ex in golden:
             user_input = ex.get("input") or ""
-            counterpart = rejected.get(user_input)
+            counterpart = ex.get("rejected_response")
             if not counterpart:
                 skipped_unpaired += 1
                 continue
             rows.append({
-                # Customizer wants the DPO prompt in message form, unlike SFT.
                 "prompt": [{"role": "user", "content": user_input}],
                 "chosen_response": ex.get("expected") or "",
                 "rejected_response": counterpart,
@@ -332,23 +412,21 @@ async def export_golden_set(
     jsonl = "\n".join(json.dumps(r, ensure_ascii=False) for r in rows)
     result: dict[str, Any] = {
         "format": fmt,
+        "split": split,
         "examples": len(rows),
         "golden_available": len(golden),
         "jsonl": jsonl,
+        "warnings": warnings,
     }
     if fmt == "dpo":
-        # Surfaced rather than swallowed: an export far smaller than the golden
-        # set means most prompts were never rated both ways, which is a fact
-        # about the data, not a bug in the export.
         result["skipped_unpaired"] = skipped_unpaired
+        result["skipped_cross_session"] = skipped_cross_session
     return result
 
 
 # ── layer 3: harness ─────────────────────────────────────────────────────────
 # [RCF:PROTECTED]
 async def _reply_for(provider, model: str, system_prompt: str, user_input: str) -> str:
-    """One-shot completion used by the harness. Isolated so a single failed
-    example degrades to an empty reply (score 0) rather than aborting the run."""
     from app.services.llm_service import chat_completion
 
     messages = []
@@ -368,6 +446,8 @@ async def run_harness(
     mdb,
     user_id: int,
     *,
+    version: int | None = None,
+    split: str = "heldout",
     base_provider,
     base_model: str,
     forged_provider,
@@ -375,26 +455,18 @@ async def run_harness(
     system_prompt: str = "",
     limit: int = 100,
 ) -> dict[str, Any]:
-    """Replay the golden set through base and forged models; report the delta.
-
-    For each frozen example we generate a reply from both models and score each
-    against the frozen `expected` answer. The headline number is
-    `delta = mean(forged) - mean(base)`: positive means the forged model is, on
-    this frozen benchmark, closer to the labeled-good answers than the base.
-
-    Returns per-example rows plus aggregates. Does not persist — the caller
-    decides whether to store the run.
-    """
-    golden = await get_golden_set(mdb, user_id, limit=limit)
+    """Replay golden set through base and forged models; defaults to `heldout` split."""
+    golden = await get_golden_set(mdb, user_id, version=version, split=split, limit=limit)
     if not golden:
         return {
             "evaluated": 0,
+            "split": split,
             "base_model": base_model,
             "forged_model": forged_model,
             "mean_base": 0.0,
             "mean_forged": 0.0,
             "delta": 0.0,
-            "message": "Golden set is empty — freeze it first via POST /forging/golden-set.",
+            "message": f"Golden set ({split} split) has 0 examples — not evaluable.",
             "examples": [],
         }
 
@@ -418,6 +490,7 @@ async def run_harness(
     mean_forged = round(sum(r["forged_score"] for r in rows) / n, 4)
     return {
         "evaluated": n,
+        "split": split,
         "base_model": base_model,
         "forged_model": forged_model,
         "mean_base": mean_base,
