@@ -26,6 +26,13 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] ([3a74ea9](https://github.com/aliyevaladddin/AladdinAI/commit/3a74ea979c87826a1762d5e60dc1570329dc3972))
 
+- Update changelog [skip ci] (#926) ([c361367](https://github.com/aliyevaladddin/AladdinAI/commit/c36136713e2000c9225e4643b4c14b173c96bd51))
+
+
+### Refactor
+
+- WRT Editor — pure C backend + thin TSX frontend (#928) ([612594e](https://github.com/aliyevaladddin/AladdinAI/commit/612594e5893e13bd0bab407a0d6fe34e2c9d2f7b))
+
 ## [v2.2.6] - 2026-09-20
 
 ### Bug Fixes
