@@ -43,6 +43,7 @@ DATASET_VERSION_COLLECTION = "dataset_versions"
 
 DEFAULT_SPLIT_RATIOS = {"train": 0.70, "validation": 0.15, "heldout": 0.15}
 MIN_EXAMPLES_PER_SPLIT = 5
+MAX_VERSION_ALLOCATION_RETRIES = 5
 
 # Tokeniser for the overlap scorer: lowercase word characters.
 _WORD = re.compile(r"[a-z0-9]+")
@@ -74,6 +75,10 @@ def _assign_split(group_key: str, ratios: dict[str, float] | None = None) -> str
     """Deterministically assign a group key to a split using SHA-256."""
     if ratios is None:
         ratios = DEFAULT_SPLIT_RATIOS
+
+    allowed_keys = {"train", "validation", "heldout"}
+    if set(ratios.keys()) != allowed_keys:
+        raise ValueError(f"Split ratios must contain exactly {allowed_keys}, got {set(ratios.keys())}")
 
     train_r = ratios.get("train", 0.0)
     val_r = ratios.get("validation", 0.0)
@@ -156,6 +161,7 @@ def _to_golden(
     split: str,
     split_group_key: str,
     rejected_response: str | None = None,
+    dpo_pair_status: str = "unpaired",
 ) -> dict[str, Any]:
     """Project a trace document into an immutable frozen golden example."""
     return {
@@ -165,6 +171,7 @@ def _to_golden(
         "input": trace.get("input_user_text") or trace.get("input") or "",
         "expected": trace.get("final_text") or trace.get("expected") or "",
         "rejected_response": rejected_response,
+        "dpo_pair_status": dpo_pair_status,
         "reward": trace.get("reward"),
         "quality_label": trace.get("quality_label"),
         "agent_id": trace.get("agent_id"),
@@ -178,18 +185,6 @@ def _to_golden(
 
 
 # [RCF:PROTECTED]
-async def _get_next_version(mdb, user_id: int) -> int:
-    """Return the next dataset version integer for user_id."""
-    cursor = mdb[DATASET_VERSION_COLLECTION].find(
-        {"user_id": user_id}
-    ).sort("version", -1).limit(1)
-    docs = [d async for d in cursor]
-    if not docs:
-        return 1
-    return int(docs[0].get("version", 0)) + 1
-
-
-# [RCF:PROTECTED]
 async def get_latest_ready_version(mdb, user_id: int) -> dict[str, Any] | None:
     """Return the latest ready dataset version metadata for user_id."""
     cursor = mdb[DATASET_VERSION_COLLECTION].find(
@@ -197,6 +192,15 @@ async def get_latest_ready_version(mdb, user_id: int) -> dict[str, Any] | None:
     ).sort("version", -1).limit(1)
     docs = [d async for d in cursor]
     return docs[0] if docs else None
+
+
+# [RCF:PROTECTED]
+async def _resolve_dataset_version(mdb, user_id: int, version: int | None) -> int | None:
+    """Resolve an explicit version or retrieve the latest ready version number."""
+    if version is not None:
+        return version
+    latest = await get_latest_ready_version(mdb, user_id)
+    return latest["version"] if latest else None
 
 
 REJECTED_MAX_REWARD = -0.5
@@ -219,6 +223,41 @@ async def _fetch_rejected_traces(mdb, user_id: int, limit: int = 1000) -> list[d
 
 
 # [RCF:PROTECTED]
+async def _ensure_forging_indexes(mdb) -> None:
+    """Ensure unique and look-up indexes exist on dataset collections."""
+    if hasattr(mdb[DATASET_VERSION_COLLECTION], "create_index"):
+        await mdb[DATASET_VERSION_COLLECTION].create_index([("user_id", 1), ("version", 1)], unique=True)
+        await mdb[DATASET_VERSION_COLLECTION].create_index([("user_id", 1), ("frozen_at", -1)])
+    if hasattr(mdb[GOLDEN_COLLECTION], "create_index"):
+        await mdb[GOLDEN_COLLECTION].create_index([("user_id", 1), ("dataset_version", 1), ("split", 1)])
+        await mdb[GOLDEN_COLLECTION].create_index([("user_id", 1), ("split_group_key", 1)])
+
+
+# [RCF:PROTECTED]
+async def _reserve_next_version(mdb, user_id: int, base_manifest: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Reserve a unique version by inserting a building manifest with retry on collision."""
+    await _ensure_forging_indexes(mdb)
+    for _ in range(MAX_VERSION_ALLOCATION_RETRIES):
+        cursor = mdb[DATASET_VERSION_COLLECTION].find({"user_id": user_id}).sort("version", -1).limit(1)
+        existing = [d async for d in cursor]
+        candidate_version = (int(existing[0].get("version", 0)) + 1) if existing else 1
+
+        manifest = dict(base_manifest)
+        manifest["user_id"] = user_id
+        manifest["version"] = candidate_version
+        manifest["status"] = "building"
+
+        try:
+            await mdb[DATASET_VERSION_COLLECTION].insert_one(manifest)
+            return candidate_version, manifest
+        except Exception as e:
+            if "duplicate" in str(e).lower() or "11000" in str(e):
+                continue
+            raise
+    raise RuntimeError(f"Could not allocate dataset version for user {user_id} after {MAX_VERSION_ALLOCATION_RETRIES} attempts.")
+
+
+# [RCF:PROTECTED]
 async def freeze_golden_set(
     mdb,
     user_id: int,
@@ -237,13 +276,11 @@ async def freeze_golden_set(
         mdb, user_id, min_reward=min_reward, human_only=human_only, limit=limit
     )
     rejected_traces = await _fetch_rejected_traces(mdb, user_id, limit=limit * 2)
-
     frozen_at = datetime.now(timezone.utc)
-    version = await _get_next_version(mdb, user_id)
 
-    # Deterministic grouping & tentative split assignment
+    # 1. Deterministic grouping & tentative split assignment
     group_splits: dict[str, str] = {}
-    staged_items: list[tuple[dict[str, Any], str, str, str | None]] = []
+    staged_items: list[tuple[dict[str, Any], str, str, str | None, str]] = []
 
     for t in traces:
         gkey = _split_group_key(t)
@@ -251,20 +288,32 @@ async def freeze_golden_set(
             group_splits[gkey] = _assign_split(gkey, ratios)
         split = group_splits[gkey]
 
-        # Same-session DPO pairing lookup at freeze time
         user_input = t.get("input_user_text") or t.get("input") or ""
         sess_id = t.get("session_id")
-        matched_rej = None
-        if sess_id is not None:
-            for r in rejected_traces:
-                if r.get("session_id") == sess_id and r.get("input_user_text") == user_input:
-                    matched_rej = r.get("final_text")
-                    break
 
-        staged_items.append((t, split, gkey, matched_rej))
+        same_input_candidates = [
+            r for r in rejected_traces
+            if (r.get("input_user_text") or r.get("input")) == user_input
+        ]
+
+        matched_rej = None
+        dpo_status = "unpaired"
+
+        if same_input_candidates:
+            if sess_id is not None:
+                same_session_match = next((r for r in same_input_candidates if r.get("session_id") == sess_id), None)
+                if same_session_match is not None:
+                    dpo_status = "paired"
+                    matched_rej = same_session_match.get("final_text")
+                else:
+                    dpo_status = "cross_session"
+            else:
+                dpo_status = "cross_session"
+
+        staged_items.append((t, split, gkey, matched_rej, dpo_status))
 
     counts = {"train": 0, "validation": 0, "heldout": 0}
-    for _, split, _, _ in staged_items:
+    for _, split, _, _, _ in staged_items:
         counts[split] = counts.get(split, 0) + 1
 
     warnings: list[str] = []
@@ -273,47 +322,55 @@ async def freeze_golden_set(
             f"One or more splits had fewer than {MIN_EXAMPLES_PER_SPLIT} examples; "
             "falling back to assigning all examples to train."
         )
-        staged_items = [(t, "train", gkey, rej) for (t, _, gkey, rej) in staged_items]
+        staged_items = [(t, "train", gkey, rej, status) for (t, _, gkey, rej, status) in staged_items]
         counts = {"train": len(staged_items), "validation": 0, "heldout": 0}
 
-    examples = [
-        _to_golden(t, user_id, frozen_at, version, split, gkey, rej)
-        for (t, split, gkey, rej) in staged_items
-    ]
-
-    manifest = {
-        "user_id": user_id,
-        "version": version,
-        "status": "building",
+    # 2. Concurrency-safe version allocation
+    base_manifest = {
         "counts": counts,
         "ratios": ratios,
         "split_strategy": "session",
         "min_reward": min_reward,
         "human_only": human_only,
-        "total_examples": len(examples),
+        "total_examples": len(staged_items),
         "frozen_at": frozen_at,
         "warnings": warnings,
     }
-    await mdb[DATASET_VERSION_COLLECTION].insert_one(manifest)
 
-    if examples:
-        await mdb[GOLDEN_COLLECTION].insert_many(examples)
+    version, manifest = await _reserve_next_version(mdb, user_id, base_manifest)
 
-    manifest["status"] = "ready"
-    if hasattr(mdb[DATASET_VERSION_COLLECTION], "update_one"):
-        await mdb[DATASET_VERSION_COLLECTION].update_one(
-            {"user_id": user_id, "version": version},
-            {"$set": {"status": "ready"}},
-        )
+    try:
+        examples = [
+            _to_golden(t, user_id, frozen_at, version, split, gkey, rej, status)
+            for (t, split, gkey, rej, status) in staged_items
+        ]
+        if examples:
+            await mdb[GOLDEN_COLLECTION].insert_many(examples)
+
+        manifest["status"] = "ready"
+        if hasattr(mdb[DATASET_VERSION_COLLECTION], "update_one"):
+            await mdb[DATASET_VERSION_COLLECTION].update_one(
+                {"user_id": user_id, "version": version},
+                {"$set": {"status": "ready"}},
+            )
+    except Exception:
+        manifest["status"] = "failed"
+        if hasattr(mdb[DATASET_VERSION_COLLECTION], "update_one"):
+            await mdb[DATASET_VERSION_COLLECTION].update_one(
+                {"user_id": user_id, "version": version},
+                {"$set": {"status": "failed"}},
+            )
+        raise
 
     return {
         "version": version,
-        "frozen": len(examples),
+        "frozen": len(staged_items),
         "counts": counts,
         "status": "ready",
         "frozen_at": frozen_at,
         "min_reward": min_reward,
         "human_only": human_only,
+        "replaced": replace,
         "warnings": warnings,
     }
 
@@ -328,22 +385,20 @@ async def get_golden_set(
     limit: int = 500,
 ) -> list[dict[str, Any]]:
     """Return frozen golden examples for user_id (defaults to latest ready version)."""
-    if version is None:
-        latest = await get_latest_ready_version(mdb, user_id)
-        if not latest:
-            return []
-        version = latest["version"]
+    resolved_version = await _resolve_dataset_version(mdb, user_id, version)
+    if resolved_version is None:
+        return []
 
-    query: dict[str, Any] = {"user_id": user_id, "dataset_version": version}
+    query: dict[str, Any] = {"user_id": user_id, "dataset_version": resolved_version}
     if split is not None:
         query["split"] = split
 
     cursor = mdb[GOLDEN_COLLECTION].find(
         query,
         projection={
-            "input": 1, "expected": 1, "rejected_response": 1, "reward": 1, "model": 1,
-            "human_labeled": 1, "frozen_at": 1, "dataset_version": 1,
-            "split": 1, "session_id": 1, "split_group_key": 1,
+            "input": 1, "expected": 1, "rejected_response": 1, "dpo_pair_status": 1,
+            "reward": 1, "model": 1, "human_labeled": 1, "frozen_at": 1,
+            "dataset_version": 1, "split": 1, "session_id": 1, "split_group_key": 1,
         },
     ).sort([("frozen_at", -1), ("_id", -1)]).limit(limit)
     return [doc async for doc in cursor]
@@ -383,7 +438,9 @@ async def export_golden_set(
     if fmt not in EXPORT_FORMATS:
         raise ValueError(f"Unknown export format: {fmt!r} (expected one of {EXPORT_FORMATS})")
 
-    golden = await get_golden_set(mdb, user_id, version=version, split=split, limit=limit)
+    resolved_version = await _resolve_dataset_version(mdb, user_id, version)
+    golden = await get_golden_set(mdb, user_id, version=resolved_version, split=split, limit=limit)
+
     rows: list[dict[str, Any]] = []
     skipped_unpaired = 0
     skipped_cross_session = 0
@@ -392,15 +449,22 @@ async def export_golden_set(
     if fmt == "dpo":
         for ex in golden:
             user_input = ex.get("input") or ""
+            status = ex.get("dpo_pair_status")
             counterpart = ex.get("rejected_response")
-            if not counterpart:
+
+            if status == "paired" and counterpart:
+                rows.append({
+                    "prompt": [{"role": "user", "content": user_input}],
+                    "chosen_response": ex.get("expected") or "",
+                    "rejected_response": counterpart,
+                })
+            elif status == "cross_session":
+                skipped_cross_session += 1
+            else:
                 skipped_unpaired += 1
-                continue
-            rows.append({
-                "prompt": [{"role": "user", "content": user_input}],
-                "chosen_response": ex.get("expected") or "",
-                "rejected_response": counterpart,
-            })
+
+        if skipped_cross_session > 0:
+            warnings.append(f"{skipped_cross_session} DPO pairs skipped (cross-session)")
     else:
         for ex in golden:
             if not (ex.get("input") and ex.get("expected")):
@@ -413,6 +477,7 @@ async def export_golden_set(
     result: dict[str, Any] = {
         "format": fmt,
         "split": split,
+        "dataset_version": resolved_version,
         "examples": len(rows),
         "golden_available": len(golden),
         "jsonl": jsonl,
@@ -456,11 +521,14 @@ async def run_harness(
     limit: int = 100,
 ) -> dict[str, Any]:
     """Replay golden set through base and forged models; defaults to `heldout` split."""
-    golden = await get_golden_set(mdb, user_id, version=version, split=split, limit=limit)
+    resolved_version = await _resolve_dataset_version(mdb, user_id, version)
+    golden = await get_golden_set(mdb, user_id, version=resolved_version, split=split, limit=limit)
+
     if not golden:
         return {
             "evaluated": 0,
             "split": split,
+            "dataset_version": resolved_version,
             "base_model": base_model,
             "forged_model": forged_model,
             "mean_base": 0.0,
@@ -491,6 +559,7 @@ async def run_harness(
     return {
         "evaluated": n,
         "split": split,
+        "dataset_version": resolved_version,
         "base_model": base_model,
         "forged_model": forged_model,
         "mean_base": mean_base,
