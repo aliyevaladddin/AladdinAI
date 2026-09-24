@@ -10555,6 +10555,96 @@
         ]
       }
     },
+    "/api/wrt/to-editable-html": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Convert To Editable Html",
+        "description": "Render WRT markup into editable HTML for contentEditable using native C engine.",
+        "operationId": "convert_to_editable_html_api_wrt_to_editable_html_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WrtContentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/wrt/from-editable-html": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Convert From Editable Html",
+        "description": "Convert editable HTML from contentEditable back to WRT markup using native C engine.",
+        "operationId": "convert_from_editable_html_api_wrt_from_editable_html_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WrtContentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/api/wrt/stats": {
       "post": {
         "tags": [
@@ -16023,6 +16113,7 @@
         "properties": {
           "content": {
             "type": "string",
+            "maxLength": 100000000,
             "title": "Content"
           }
         },
