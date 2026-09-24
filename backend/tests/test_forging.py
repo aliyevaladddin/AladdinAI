@@ -603,3 +603,62 @@ async def test_version_allocation_advances_after_realistic_collision(monkeypatch
     assert version == 2
     assert manifest["version"] == 2
     assert manifest["status"] == "building"
+
+# Experiment 6: Training export must never include held-out or validation cases.
+@pytest.mark.asyncio
+async def test_train_export_excludes_validation_and_heldout_inputs():
+    traces = [
+        {
+            "_id": f"{session_num}-{turn}",
+            "user_id": 1,
+            "session_id": f"session-{session_num}",
+            "input_user_text": f"question {session_num} turn {turn}",
+            "final_text": f"answer {session_num} turn {turn}",
+            "reward": 1.0,
+            "human_labeled": True,
+        }
+        for session_num in range(200)
+        for turn in range(2)
+    ]
+    mdb = _FakeMongo(traces)
+
+    frozen = await freeze_golden_set(mdb, user_id=1, limit=1000)
+    version = frozen["version"]
+    counts = frozen["counts"]
+
+    assert counts["train"] >= 5
+    assert counts["validation"] >= 5
+    assert counts["heldout"] >= 5
+    assert sum(counts.values()) == 400
+
+    train_export = await export_golden_set(
+        mdb, user_id=1, version=version, split="train", fmt="sft",
+        limit=1000,
+    )
+    validation = await get_golden_set(
+        mdb, user_id=1, version=version, split="validation", limit=1000,
+    )
+    heldout = await get_golden_set(
+        mdb, user_id=1, version=version, split="heldout", limit=1000,
+    )
+
+    train_rows = [
+        json.loads(line)
+        for line in train_export["jsonl"].splitlines()
+        if line.strip()
+    ]
+    train_inputs = {row["prompt"] for row in train_rows}
+    validation_inputs = {example["input"] for example in validation}
+    heldout_inputs = {example["input"] for example in heldout}
+
+    assert train_export["dataset_version"] == version
+    assert train_export["split"] == "train"
+    assert train_export["examples"] == counts["train"]
+    assert len(train_rows) == counts["train"]
+    assert len(validation) == counts["validation"]
+    assert len(heldout) == counts["heldout"]
+
+    assert train_inputs.isdisjoint(validation_inputs)
+    assert train_inputs.isdisjoint(heldout_inputs)
+    assert validation_inputs.isdisjoint(heldout_inputs)
+    assert len(train_inputs | validation_inputs | heldout_inputs) == 400
