@@ -62,6 +62,20 @@ async def convert_to_html(req: WrtContentRequest, user: User = Depends(get_curre
     return {"html": html}
 
 
+@router.post("/to-editable-html")
+async def convert_to_editable_html(req: WrtContentRequest, user: User = Depends(get_current_user)):
+    """Render WRT markup into editable HTML for contentEditable using native C engine."""
+    html = await wrt_engine_service.wrt_to_editable_html(req.content)
+    return {"html": html}
+
+
+@router.post("/from-editable-html")
+async def convert_from_editable_html(req: WrtContentRequest, user: User = Depends(get_current_user)):
+    """Convert editable HTML from contentEditable back to WRT markup using native C engine."""
+    wrt = await wrt_engine_service.wrt_from_editable_html(req.content)
+    return {"content": wrt}
+
+
 @router.post("/stats")
 async def document_stats(req: WrtContentRequest, user: User = Depends(get_current_user)):
     """Calculate character, word, line, and tag statistics using native C engine."""

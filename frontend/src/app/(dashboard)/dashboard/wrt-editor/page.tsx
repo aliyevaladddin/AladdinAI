@@ -2,19 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  editableElementToWrt,
-  wrtToEditableHtml,
-  wrtToHtml,
-  validateWrtNative,
-  fixWrtNative,
-  listWrtFilesNative,
-  readWrtFileNative,
-  saveWrtFileNative,
-  getRecentWrtFilesNative,
-  downloadWrtAsDocument,
+  wrtClient,
+  type WrtValidationReport,
   type WrtFileEntry,
   type WrtRecentFile,
-} from "@/lib/wrt";
+} from "@/lib/wrt-engine-client";
 import {
   listSpaces,
   listFolders,
@@ -81,16 +73,18 @@ export default function WrtEditorPage() {
     setTimeout(() => setStatusMessage(null), 3500);
   };
 
-  const syncVisualEditor = useCallback((wrt: string) => {
+  const syncVisualEditor = useCallback(async (wrt: string) => {
     if (visualEditorRef.current) {
-      visualEditorRef.current.innerHTML = wrtToEditableHtml(wrt);
+      const html = await wrtClient.toEditableHtml(wrt);
+      visualEditorRef.current.innerHTML = html;
       visualContentRef.current = wrt;
     }
   }, []);
 
-  const updateVisualDocument = useCallback(() => {
+  const updateVisualDocument = useCallback(async () => {
     if (!visualEditorRef.current) return;
-    const nextContent = editableElementToWrt(visualEditorRef.current);
+    const html = visualEditorRef.current.innerHTML;
+    const nextContent = await wrtClient.fromEditableHtml(html);
     visualContentRef.current = nextContent;
     setContent(nextContent);
     setModified(true);
@@ -146,9 +140,13 @@ export default function WrtEditorPage() {
     return false;
   };
 
-  const switchEditorMode = (mode: "visual" | "code" | "ide") => {
+  const switchEditorMode = useCallback(async (mode: "visual" | "code" | "ide") => {
     if (mode === editorMode) return;
-    if (editorMode === "visual") updateVisualDocument();
+
+    // Save current visual content before switching away
+    if (editorMode === "visual") {
+      await updateVisualDocument();
+    }
 
     // When switching to IDE mode, only allow if current file is .wrt
     if (mode === "ide" && !isWrtFile(nativePath?.split("/").pop() ?? currentFile?.name ?? "")) {
@@ -157,71 +155,45 @@ export default function WrtEditorPage() {
     }
 
     // When leaving IDE mode, reload the file (C IDE may have modified it on disk)
-    if (editorMode === "ide") {
-      void (async () => {
-        try {
-          if (nativePath) {
-            const data = await readWrtFileNative(nativePath);
-            setContent(data.content);
-            setModified(false);
-            validateWRT(data.content);
-            showStatus("Reloaded from disk after C IDE edit");
-          } else if (currentFile) {
-            const data = await getFileContent(currentFile.id);
-            setContent(data.content);
-            setModified(false);
-            validateWRT(data.content);
-            showStatus("Reloaded from workspace after C IDE edit");
-          }
-        } catch (err) {
-          console.error("Failed to reload file after IDE:", err);
+    if (editorMode === "ide" && mode !== "ide") {
+      try {
+        if (nativePath) {
+          const data = await wrtClient.readFile(nativePath);
+          setContent(data.content);
+          setModified(false);
+          validateWRT(data.content);
+          showStatus("Reloaded from disk after C IDE edit");
+        } else if (currentFile) {
+          const data = await getFileContent(currentFile.id);
+          setContent(data.content);
+          setModified(false);
+          validateWRT(data.content);
+          showStatus("Reloaded from workspace after C IDE edit");
         }
-      })();
+      } catch (err) {
+        console.error("Failed to reload file after IDE:", err);
+      }
     }
 
     setEditorMode(mode);
     if (mode === "visual") {
-      requestAnimationFrame(() => syncVisualEditor(content));
+      // Wait for next render cycle, then sync with fresh content from C API
+      requestAnimationFrame(async () => {
+        await syncVisualEditor(content);
+        visualEditorRef.current?.focus();
+      });
     }
-  };
+  }, [editorMode, nativePath, currentFile, content, syncVisualEditor, updateVisualDocument]);
 
   // Validate WRT using Native C Engine (with debounce & fallback)
   const validateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const validateWRT = useCallback((wrt: string) => {
-    // Fast local initial feedback
-    const tags = ["b", "i", "u", "s", "code", "h1", "h2", "h3", "quote", "list", "table"];
-    const issues: Array<{ tag: string; open?: number; close?: number; count?: number }> = [];
-
-    tags.forEach((tag) => {
-      const open = (wrt.match(new RegExp(`\\[${tag}\\]`, "g")) || []).length;
-      const close = (wrt.match(new RegExp(`\\[\\/${tag}\\]`, "g")) || []).length;
-      if (open !== close) {
-        issues.push({ tag, open, close });
-      }
-    });
-
-    const emptyTags = (wrt.match(/\[\]/g) || []).length;
-    if (emptyTags > 0) {
-      issues.push({ tag: "empty", count: emptyTags });
-    }
-
-    if (issues.length === 0) {
-      setValidation({ type: "success", message: "✓ Valid (C Engine)" });
-    } else {
-      const msg = issues
-        .map((i) =>
-          i.tag === "empty" ? `${i.count} empty []` : `[${i.tag}]: ${i.open}→${i.close}`
-        )
-        .join(" • ");
-      setValidation({ type: "warning", message: `⚠ ${msg}` });
-    }
-
-    // Call Native C Engine via socket for deep structural validation
+    // Call Native C Engine via REST for deep structural validation
     if (validateTimerRef.current) clearTimeout(validateTimerRef.current);
     validateTimerRef.current = setTimeout(async () => {
       try {
-        const report = await validateWrtNative(wrt);
+        const report: WrtValidationReport = await wrtClient.validate(wrt);
         if (report.valid) {
           setValidation({ type: "success", message: "✓ Valid (Native C)" });
         } else if (report.issues && report.issues.length > 0) {
@@ -230,7 +202,33 @@ export default function WrtEditorPage() {
           setValidation({ type: "warning", message: `⚠ ${desc}` });
         }
       } catch {
-        // keep fast local validation
+        // Fallback: quick local validation for immediate feedback
+        const tags = ["b", "i", "u", "s", "code", "h1", "h2", "h3", "quote", "list", "table"];
+        const issues: Array<{ tag: string; open?: number; close?: number; count?: number }> = [];
+
+        tags.forEach((tag) => {
+          const open = (wrt.match(new RegExp(`\\[${tag}\\]`, "g")) || []).length;
+          const close = (wrt.match(new RegExp(`\\[\\/${tag}\\]`, "g")) || []).length;
+          if (open !== close) {
+            issues.push({ tag, open, close });
+          }
+        });
+
+        const emptyTags = (wrt.match(/\[\]/g) || []).length;
+        if (emptyTags > 0) {
+          issues.push({ tag: "empty", count: emptyTags });
+        }
+
+        if (issues.length === 0) {
+          setValidation({ type: "success", message: "✓ Valid (local)" });
+        } else {
+          const msg = issues
+            .map((i) =>
+              i.tag === "empty" ? `${i.count} empty []` : `[${i.tag}]: ${i.open}→${i.close}`
+            )
+            .join(" • ");
+          setValidation({ type: "warning", message: `⚠ ${msg}` });
+        }
       }
     }, 200);
   }, []);
@@ -238,26 +236,13 @@ export default function WrtEditorPage() {
   // Fix document using Native C Engine
   const fixDocument = async () => {
     try {
-      const fixed = await fixWrtNative(content);
+      const fixed = await wrtClient.fix(content);
       setContent(fixed);
       setModified(true);
       validateWRT(fixed);
       showStatus("Tags fixed by Native C Engine");
     } catch {
-      // Fallback local fix
-      let text = content.replace(/\[\]/g, "");
-      const tags = ["b", "i", "u", "s", "code", "h1", "h2", "h3", "quote", "list", "table"];
-      tags.forEach((tag) => {
-        const open = (text.match(new RegExp(`\\[${tag}\\]`, "g")) || []).length;
-        const close = (text.match(new RegExp(`\\[\\/${tag}\\]`, "g")) || []).length;
-        if (open > close) {
-          for (let i = 0; i < open - close; i++) text += `[/${tag}]`;
-        }
-      });
-      setContent(text);
-      setModified(true);
-      validateWRT(text);
-      showStatus("Tags fixed");
+      showStatus("Fix failed");
     }
   };
 
@@ -402,7 +387,7 @@ export default function WrtEditorPage() {
   const loadNativeFiles = useCallback(async (dir?: string) => {
     setLoadingFiles(true);
     try {
-      const res = await listWrtFilesNative(dir || nativeDir);
+      const res = await wrtClient.listFiles(dir || nativeDir);
       if (res.path) setNativeDir(res.path);
       setNativeFiles(res.files || []);
     } catch (err) {
@@ -415,7 +400,7 @@ export default function WrtEditorPage() {
 
   const loadRecentFiles = useCallback(async () => {
     try {
-      const recents = await getRecentWrtFilesNative();
+      const recents = await wrtClient.getRecentFiles();
       setRecentFiles(recents);
     } catch (err) {
       console.error("Failed to load recent files:", err);
@@ -425,10 +410,22 @@ export default function WrtEditorPage() {
   const openNativeFile = async (filePath: string) => {
     try {
       setLoadingFiles(true);
-      const res = await readWrtFileNative(filePath);
+      const res = await wrtClient.readFile(filePath);
       setNativePath(filePath);
       setCurrentFile(null); // Clear cloud DB file
-      setContent(res.content);
+
+      // Check for draft specific to this file
+      let fileContent = res.content;
+      try {
+        const draftKey = `wrt-draft-native-${(() => { let h = 0; for (let i = 0; i < filePath.length; i++) { h = ((h << 5) - h) + filePath.charCodeAt(i); h |= 0; } return h; })()}`;
+        const draft = localStorage.getItem(draftKey);
+        if (draft) {
+          fileContent = draft;
+          showStatus(`Loaded draft for "${filePath.split("/").pop()}"`);
+        }
+      } catch {}
+
+      setContent(fileContent);
       setModified(false);
       setShowFilePicker(false);
       const fileName = filePath.split("/").pop() || filePath;
@@ -453,9 +450,11 @@ export default function WrtEditorPage() {
 
     try {
       setSaving(true);
-      await saveWrtFileNative(savePath, content);
+      await wrtClient.saveFile(savePath, content);
       setNativePath(savePath);
       setModified(false);
+      // Clear draft since file is now saved
+      try { localStorage.removeItem(getDraftKey()); } catch {}
       const fileName = savePath.split("/").pop() || savePath;
       showStatus(`✓ Saved "${fileName}" to disk (Native C)`);
       void loadRecentFiles();
@@ -532,7 +531,19 @@ export default function WrtEditorPage() {
     try {
       const data = await getFileContent(file.id);
       setCurrentFile(file);
-      setContent(data.content);
+
+      // Check for draft specific to this file
+      let fileContent = data.content;
+      try {
+        const draftKey = `wrt-draft-cloud-${file.id}`;
+        const draft = localStorage.getItem(draftKey);
+        if (draft) {
+          fileContent = draft;
+          showStatus(`Loaded draft for "${file.name}"`);
+        }
+      } catch {}
+
+      setContent(fileContent);
       setModified(false);
       setShowFilePicker(false);
       showStatus(`Opened "${file.name}"`);
@@ -605,6 +616,8 @@ export default function WrtEditorPage() {
       if (selectedSpaceId) {
         await loadFilesForSpace(selectedSpaceId);
       }
+      // Clear draft since file is now saved
+      try { localStorage.removeItem(getDraftKey()); } catch {}
       showStatus(`Saved version v${newVersion.version_no}`);
     } catch (err) {
       console.error("Failed to save:", err);
@@ -660,7 +673,7 @@ export default function WrtEditorPage() {
         : "document";
 
       showStatus(`Converting & downloading as .${format}...`);
-      await downloadWrtAsDocument(content, `${baseName}.${format}`, format);
+      await wrtClient.export(content, `${baseName}.${format}`, format);
       showStatus(`✓ Downloaded ${baseName}.${format}`);
     } catch (err) {
       console.error("Native export failed, falling back to raw WRT:", err);
@@ -732,19 +745,38 @@ export default function WrtEditorPage() {
     }
   }, [editorMode]);
 
-  // Initialize
+  // Get draft key specific to current file/source
+  const getDraftKey = useCallback(() => {
+    if (nativePath) {
+      // Hash the path for a consistent key
+      let hash = 0;
+      for (let i = 0; i < nativePath.length; i++) {
+        hash = ((hash << 5) - hash) + nativePath.charCodeAt(i);
+        hash |= 0;
+      }
+      return `wrt-draft-native-${hash}`;
+    }
+    if (currentFile) {
+      return `wrt-draft-cloud-${currentFile.id}`;
+    }
+    // No file open - use default for unsaved draft
+    return "wrt-draft-unsaved";
+  }, [nativePath, currentFile]);
+
+  // Load draft on mount
   useEffect(() => {
     validateWRT(content);
 
     try {
-      const saved = localStorage.getItem("wrt-content");
+      const draftKey = getDraftKey();
+      const saved = localStorage.getItem(draftKey);
       if (saved && !content) {
         setContent(saved);
       }
     } catch {
       // localStorage not available
     }
-  }, []);
+  }, [getDraftKey, content]);
 
   // Refresh the visual surface only for external WRT changes. Visual typing
   // updates visualContentRef first, so it never resets the caret mid-edit.
@@ -754,18 +786,23 @@ export default function WrtEditorPage() {
     }
   }, [content, editorMode, syncVisualEditor]);
 
-  // Auto-save to localStorage
+  // Auto-save to localStorage (only for unsaved drafts)
   useEffect(() => {
+    // Only auto-save if we have an unsaved draft (no nativePath AND no currentFile)
+    const isDraft = !nativePath && !currentFile;
+    if (!isDraft) return;
+
     const timer = setInterval(() => {
       try {
-        localStorage.setItem("wrt-content", content);
+        const draftKey = getDraftKey();
+        localStorage.setItem(draftKey, content);
       } catch {
         // Storage full
       }
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [content]);
+  }, [content, nativePath, currentFile, getDraftKey]);
 
   // Filtered files for search
   const filteredFiles = files.filter((f) =>
