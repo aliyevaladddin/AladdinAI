@@ -7,7 +7,7 @@ forging pipeline, mirroring how trace *capture* is off for them by default.
 
 All data stays in the user's own Mongo cluster.
 """
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +16,7 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models.llm_provider import LLMProvider
 from app.models.user import User
-from app.schemas.forging import GoldenFreezeRequest, GoldenFreezeResponse, HarnessRequest, HarnessResponse
+from app.schemas.forging import GoldenFreezeRequest, GoldenFreezeResponse, HarnessRequest, HarnessResponse, SplitName
 from app.security import get_current_user
 from app.services.forging import (
     export_golden_set,
@@ -75,12 +75,16 @@ async def freeze_golden(
     """Freeze eligible labeled traces into the golden set (idempotent)."""
     _require_edition()
     mdb = await _mongo(db, user.id)
-    summary = await freeze_golden_set(
-        mdb, user.id,
-        min_reward=body.min_reward,
-        human_only=body.human_only,
-        limit=body.limit,
-    )
+    try:
+        summary = await freeze_golden_set(
+            mdb, user.id,
+            min_reward=body.min_reward,
+            human_only=body.human_only,
+            limit=body.limit,
+            ratios=body.ratios,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     return summary
 
 
@@ -88,14 +92,16 @@ async def freeze_golden(
 @router.get("/golden-set", response_model=list[dict])
 # [RCF:PROTECTED]
 async def list_golden(
-    limit: int = 500,
+    version: int | None = Query(default=None, ge=1),
+    split: SplitName | None = None,
+    limit: int = Query(default=500, ge=1, le=5000),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Return the current frozen golden examples."""
     _require_edition()
     mdb = await _mongo(db, user.id)
-    golden = await get_golden_set(mdb, user.id, limit=limit)
+    golden = await get_golden_set(mdb, user.id, version=version, split=split, limit=limit)
     # Drop Mongo's _id (ObjectId isn't JSON-serialisable) and normalise.
     for g in golden:
         g.pop("_id", None)
@@ -106,7 +112,7 @@ async def list_golden(
 # [RCF:PROTECTED]
 @router.get("/golden-set/export")
 # [RCF:PROTECTED]
-async def export_golden(
+async def export_golden(version: int | None = None, split: SplitName = "train", 
     format: str = "sft",
     system_prompt: str = "",
     limit: int = 500,
@@ -125,7 +131,7 @@ async def export_golden(
     mdb = await _mongo(db, user.id)
     try:
         result = await export_golden_set(
-            mdb, user.id, fmt=format, system_prompt=system_prompt, limit=limit
+            mdb, user.id, version=version, split=split, fmt=format, system_prompt=system_prompt, limit=limit
         )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
@@ -143,6 +149,8 @@ async def export_golden(
             # Lets a client see how much it got without parsing the body, and
             # notice a DPO export shrunk by unpaired prompts.
             "X-Export-Examples": str(result["examples"]),
+                "X-Dataset-Split": str(result["split"]),
+                "X-Dataset-Version": str(result.get("dataset_version") or ""),
         },
     )
 
@@ -165,6 +173,8 @@ async def harness(
     forged_provider = await _provider(db, user.id, body.forged_provider_id)
     result = await run_harness(
         mdb, user.id,
+        version=body.version,
+        split=body.split,
         base_provider=base_provider,
         base_model=body.base_model,
         forged_provider=forged_provider,
