@@ -435,3 +435,30 @@ def test_assign_split_deterministic():
 def test_assign_split_invalid_ratios():
     with pytest.raises(ValueError, match="Invalid split ratios"):
         _assign_split("session:1", {"train": 0.5, "validation": 0.1, "heldout": 0.1})
+
+@pytest.mark.asyncio
+async def test_version_allocation_retries_on_duplicate_key(monkeypatch):
+    """Test that _reserve_next_version retries when another process creates the same version."""
+    from app.services.forging import _reserve_next_version
+
+    mdb = _FakeMongo([])
+    attempts = 0
+
+    original_insert_one = mdb["dataset_versions"].insert_one
+
+    async def flaky_insert(doc):
+        nonlocal attempts
+        attempts += 1
+        # Simulate a race collision on the first attempt
+        if attempts == 1:
+            raise Exception("E11000 duplicate key error collection: dataset_versions")
+        await original_insert_one(doc)
+
+    monkeypatch.setattr(mdb["dataset_versions"], "insert_one", flaky_insert)
+
+    base_manifest = {"status": "building", "counts": {"train": 1, "validation": 0, "heldout": 0}}
+    version, manifest = await _reserve_next_version(mdb, user_id=1, base_manifest=base_manifest)
+
+    assert version == 1
+    assert manifest["status"] == "building"
+    assert attempts == 2  # Proves that it caught the collision and retried!

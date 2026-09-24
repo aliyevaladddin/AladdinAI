@@ -48,6 +48,8 @@ class GoldenExampleResponse(BaseModel):
     split: SplitName | None = None
     session_id: str | None = None
     split_group_key: str | None = None
+    rejected_response: str | None = None
+    dpo_pair_status: str | None = None
 
 
 class ExportRequest(BaseModel):
@@ -61,6 +63,7 @@ class ExportRequest(BaseModel):
 class ExportResponse(BaseModel):
     format: str
     split: str = "train"
+    dataset_version: int | None = None
     examples: int
     golden_available: int
     jsonl: str
@@ -72,9 +75,14 @@ class ExportResponse(BaseModel):
 class HarnessRequest(BaseModel):
     version: int | None = None
     split: SplitName = "heldout"
+
+    base_provider_id: int
     base_model: str
+
+    forged_provider_id: int
     forged_model: str
-    system_prompt: str = ""
+
+    system_prompt: str | None = None
     limit: int = Field(100, gt=0, le=1000)
 
 
@@ -88,6 +96,7 @@ class HarnessExampleResult(BaseModel):
 class HarnessResponse(BaseModel):
     evaluated: int
     split: str = "heldout"
+    dataset_version: int | None = None
     base_model: str
     forged_model: str
     mean_base: float
