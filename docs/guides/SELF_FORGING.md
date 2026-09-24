@@ -53,7 +53,7 @@ Inspect it: `GET /api/forging/golden-set`.
 
 ## Layer 2b — export the golden set for training
 
-The golden set lives in Mongo; a trainer wants JSONL. This export is the step
+The golden set lives in Mongo; a trainer wants JSONL. Training exports default to `split=train` (excluding validation and heldout inputs), while evaluation in the harness defaults to `split=heldout`. This export is the step
 between "we can measure a forged model" and actually having one.
 
 ```bash
