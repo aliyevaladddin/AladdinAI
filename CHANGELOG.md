@@ -12,6 +12,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Filter unexpected tool arguments and increase HTTP client timeouts to 15s ([fb6ac5b](https://github.com/aliyevaladddin/AladdinAI/commit/fb6ac5b6858a485e0aa02d9b1734d0cf8cfb2332))
 
+- JSON-aware tool error detection and offline recovery tests (#936) ([ff62a34](https://github.com/aliyevaladddin/AladdinAI/commit/ff62a34898859e6fdd576eef200aa4163622c141))
+
 
 ### Documentation
 
@@ -40,6 +42,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#926) ([c361367](https://github.com/aliyevaladddin/AladdinAI/commit/c36136713e2000c9225e4643b4c14b173c96bd51))
 
 - Update changelog [skip ci] (#932) ([ab8c143](https://github.com/aliyevaladddin/AladdinAI/commit/ab8c143f17bc991886fa319a822f435fbec6fbfd))
+
+- Update changelog [skip ci] (#935) ([764bc93](https://github.com/aliyevaladddin/AladdinAI/commit/764bc93e0b6f216cbf9074451897be39aae71b2e))
 
 
 ### Refactor
