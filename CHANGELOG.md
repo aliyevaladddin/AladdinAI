@@ -62,6 +62,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update frontend dependencies ([e61e95d](https://github.com/aliyevaladddin/AladdinAI/commit/e61e95da6e8bdfbc004b55f86cdbf69a67d6c736))
 
+- Update changelog [skip ci] (#964) ([68fcd39](https://github.com/aliyevaladddin/AladdinAI/commit/68fcd393f10145e58c78c0ef847a8eebc109a8d3))
+
+- Add smol-toml, adm-zip, and decode-uri-component dependencies ([a4a3d0e](https://github.com/aliyevaladddin/AladdinAI/commit/a4a3d0ef5976a4cd0d20e1e9e84d69c3a3e0ca4b))
+
 
 ### Refactor
 
