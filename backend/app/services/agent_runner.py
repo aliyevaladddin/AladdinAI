@@ -17,7 +17,6 @@ import json
 import logging
 from typing import Any, Callable
 
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -465,7 +464,7 @@ async def run_agent(
             tool_events.append({
                 "name": fn.get("name", ""),
                 "arguments": parsed_args,
-                "is_error": '"error"' in (tool_msg.get("content") or ""),
+                "is_error": isinstance(parsed_res, dict) and bool(parsed_res.get("error")),
             })
             messages.append(tool_msg)
 
