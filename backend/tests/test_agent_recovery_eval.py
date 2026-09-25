@@ -13,8 +13,13 @@ def base_agent():
     db = AsyncMock()
     provider_mock = MagicMock()
     provider_mock.type = "openai"
-    db.execute.return_value.scalar_one_or_none.return_value = provider_mock
-    db.execute.return_value.scalars.return_value.all.return_value = []
+    # db.execute is an AsyncMock; await db.execute(...) returns return_value.
+    # Use a plain MagicMock so .scalar_one_or_none() / .scalars() don't create
+    # unawaited coroutines (AsyncMock child mocks would).
+    exec_result = MagicMock()
+    exec_result.scalar_one_or_none.return_value = provider_mock
+    exec_result.scalars.return_value.all.return_value = []
+    db.execute.return_value = exec_result
 
     agent = MagicMock(spec=Agent)
     agent.id = 1
