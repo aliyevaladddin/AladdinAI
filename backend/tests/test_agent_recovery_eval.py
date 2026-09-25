@@ -11,7 +11,6 @@ from app.services.agent_runner import run_agent
 @pytest.fixture
 def base_agent():
     db = AsyncMock()
-    # Explicit database-provider mock that supports both scalar_one_or_none and scalars.all
     provider_mock = MagicMock()
     provider_mock.type = "openai"
     db.execute.return_value.scalar_one_or_none.return_value = provider_mock
@@ -23,7 +22,6 @@ def base_agent():
     agent.llm_provider_id = 1
     agent.model = "gpt-4o"
     agent.role = "assistant"
-    # Set to 3 to easily test persistent failure exhaustion
     agent.tools_config = {"allowed": ["recall"], "max_iterations": 3}
     return db, agent
 
@@ -38,7 +36,6 @@ def base_messages():
 
 @pytest.fixture
 def mock_agent_runner(base_agent, base_messages):
-    """Reusable fixture to inject mocked LLM turns and tool results."""
     db, agent = base_agent
 
     async def _run(llm_turns: list[dict], tool_results: list[dict]):
@@ -62,7 +59,6 @@ def mock_agent_runner(base_agent, base_messages):
 
 @pytest.mark.asyncio
 async def test_successful_tool_call(mock_agent_runner):
-    """Scenario 1: Agent obtains the correct result and completes the task."""
     llm_turns = [
         {
             "content": None,
@@ -81,7 +77,6 @@ async def test_successful_tool_call(mock_agent_runner):
 
 @pytest.mark.asyncio
 async def test_temporary_failure(mock_agent_runner):
-    """Scenario 2: Agent retries or follows a valid alternative recovery path."""
     llm_turns = [
         {
             "content": None,
@@ -109,7 +104,6 @@ async def test_temporary_failure(mock_agent_runner):
 
 @pytest.mark.asyncio
 async def test_persistent_failure(mock_agent_runner):
-    """Scenario 3: Agent does not falsely claim that an unsuccessful operation completed."""
     llm_turns = [
         {
             "content": None,
@@ -139,7 +133,6 @@ async def test_persistent_failure(mock_agent_runner):
 
 @pytest.mark.asyncio
 async def test_unexpected_tool_result(mock_agent_runner):
-    """Scenario 4: Agent handles missing or unusable data without inventing a result."""
     llm_turns = [
         {
             "content": None,
@@ -159,7 +152,6 @@ async def test_unexpected_tool_result(mock_agent_runner):
 
 @pytest.mark.asyncio
 async def test_incidental_nested_error_key(mock_agent_runner):
-    """Scenario 5: A successful response containing a nested error field isn't incorrectly recorded as a tool failure."""
     llm_turns = [
         {
             "content": None,
