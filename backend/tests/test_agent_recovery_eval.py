@@ -68,7 +68,7 @@ async def test_successful_tool_call(mock_agent_runner):
     ]
     tool_results = [{"result": "expected data"}]
 
-    final_text, payload = await mock_agent_runner(llm_turns, tool_results)
+    _, payload = await mock_agent_runner(llm_turns, tool_results)
 
     assert payload["tool_error_count"] == 0
     assert payload["tool_calls"][0]["is_error"] is False
@@ -93,7 +93,7 @@ async def test_temporary_failure(mock_agent_runner):
         {"result": "expected data"},
     ]
 
-    final_text, payload = await mock_agent_runner(llm_turns, tool_results)
+    _, payload = await mock_agent_runner(llm_turns, tool_results)
 
     assert payload["tool_error_count"] == 1
     assert len(payload["tool_calls"]) == 2
@@ -124,7 +124,7 @@ async def test_persistent_failure(mock_agent_runner):
         {"error": "access denied"},
     ]
 
-    final_text, payload = await mock_agent_runner(llm_turns, tool_results)
+    _, payload = await mock_agent_runner(llm_turns, tool_results)
 
     assert payload["tool_error_count"] == 3
     assert payload["outcome"] == "max_iterations_exhausted"
@@ -163,7 +163,7 @@ async def test_incidental_nested_error_key(mock_agent_runner):
         {"result": {"value": "ok", "metadata": {"error": "historical warning"}}}
     ]
 
-    final_text, payload = await mock_agent_runner(llm_turns, tool_results)
+    _, payload = await mock_agent_runner(llm_turns, tool_results)
 
     assert payload["tool_error_count"] == 0
     assert len(payload["tool_calls"]) == 1
