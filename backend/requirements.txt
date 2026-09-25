@@ -15,7 +15,7 @@ asyncssh==2.24.0
 motor==3.7.1
 certifi>=2026.7.22
 apscheduler==3.11.3
-croniter==6.2.3
+croniter==6.2.4
 docker==7.2.0
 PyYAML==6.0.3
 PyJWT==2.14.0
