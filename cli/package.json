@@ -57,7 +57,7 @@
     "execa": "^9.1.0",
     "fs-extra": "^11.2.0",
     "ink": "^7.1.1",
-    "inquirer": "^9.2.22",
+    "inquirer": "^14.2.2",
     "ora": "^8.0.1",
     "prompts": "^2.4.2",
     "rcf-protocol": "^2.1.8",
