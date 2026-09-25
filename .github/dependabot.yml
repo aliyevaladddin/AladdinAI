@@ -1,8 +1,8 @@
 version: 2
 updates:
-  # npm / Node.js — root (cli)
+  # npm / Node.js — CLI
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/cli"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
@@ -18,9 +18,9 @@ updates:
         patterns: ["*"]
         update-types: ["patch"]
 
-  # Python (pip)
+  # Python (pip) — backend
   - package-ecosystem: "pip"
-    directory: "/"
+    directory: "/backend"
     schedule:
       interval: "weekly"
 
