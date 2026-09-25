@@ -15,6 +15,13 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - JSON-aware tool error detection and offline recovery tests (#936) ([ff62a34](https://github.com/aliyevaladddin/AladdinAI/commit/ff62a34898859e6fdd576eef200aa4163622c141))
 
 
+### Dependencies
+
+- Update frontend package-lock.json ([eb328f2](https://github.com/aliyevaladddin/AladdinAI/commit/eb328f25db1d15c17349e73653231f771fc63c64))
+
+- Bump the security-patches group across 1 directory with 6 updates (#961) ([88eba4b](https://github.com/aliyevaladddin/AladdinAI/commit/88eba4b3d5bfa6d7bf01492f26f49d8440c74a40))
+
+
 ### Documentation
 
 - Update API documentation [skip ci] (#931) ([a04519b](https://github.com/aliyevaladddin/AladdinAI/commit/a04519b4930a9636354f0592946450ac79c2786e))
@@ -44,6 +51,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#932) ([ab8c143](https://github.com/aliyevaladddin/AladdinAI/commit/ab8c143f17bc991886fa319a822f435fbec6fbfd))
 
 - Update changelog [skip ci] (#935) ([764bc93](https://github.com/aliyevaladddin/AladdinAI/commit/764bc93e0b6f216cbf9074451897be39aae71b2e))
+
+- Update changelog [skip ci] (#937) ([c5d1256](https://github.com/aliyevaladddin/AladdinAI/commit/c5d1256ae7188141df0b84095150b8d3a97eda18))
+
+- Update dependabot directories to target cli and backend ([763eee7](https://github.com/aliyevaladddin/AladdinAI/commit/763eee79a9a6bf686e4192a491eea68fa147597f))
+
+- Update backend requirements and CLI dependencies ([5531d76](https://github.com/aliyevaladddin/AladdinAI/commit/5531d76d1b96ffdeee00e784acfd4c8e38158d4a))
+
+- Update frontend dependencies ([a164ac0](https://github.com/aliyevaladddin/AladdinAI/commit/a164ac09fe2e9cc8cfb695ab924c4f034678b785))
 
 
 ### Refactor
