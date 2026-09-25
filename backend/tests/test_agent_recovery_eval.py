@@ -1,9 +1,69 @@
+from __future__ import annotations
+
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
+
+from app.models.agent import Agent
+from app.services.agent_runner import run_agent
+
+
+@pytest.fixture
+def base_agent():
+    db = AsyncMock()
+    provider_mock = MagicMock()
+    provider_mock.type = "openai"
+    db.execute.return_value.scalar_one_or_none.return_value = provider_mock
+    db.execute.return_value.scalars.return_value.all.return_value = []
+
+    agent = MagicMock(spec=Agent)
+    agent.id = 1
+    agent.user_id = 1
+    agent.llm_provider_id = 1
+    agent.model = "gpt-4o"
+    agent.role = "assistant"
+    agent.tools_config = {"allowed": ["recall"], "max_iterations": 3}
+    return db, agent
+
+
+@pytest.fixture
+def base_messages():
+    return [
+        {"role": "system", "content": "You are a test agent."},
+        {"role": "user", "content": "Execute test command."},
+    ]
+
+
+@pytest.fixture
+def mock_agent_runner(base_agent, base_messages):
+    db, agent = base_agent
+
+    async def _run(llm_turns: list[dict], tool_results: list[dict]):
+        messages = list(base_messages)
+        with (
+            patch("app.services.agent_runner.safety_ingress", new_callable=AsyncMock, return_value={"safe": True, "reason": "ok"}),
+            patch("app.services.agent_runner.safety_egress", new_callable=AsyncMock, return_value={"safe": True, "reason": "ok"}),
+            patch("app.services.agent_runner.chat_completion", new_callable=AsyncMock, side_effect=llm_turns),
+            patch("app.services.agent_runner.execute", new_callable=AsyncMock, side_effect=tool_results),
+            patch("app.services.agent_runner.openai_schemas", return_value=[{"type": "function"}]),
+            patch("app.services.agent_runner.model_supports_tools", return_value=True),
+            patch("app.services.agent_runner.schedule_extraction"),
+            patch("app.services.agent_runner.schedule_trace_capture") as trace_mock,
+        ):
+            final_text = await run_agent(db, agent, messages)
+            payload = trace_mock.call_args.kwargs["payload"]
+            return final_text, payload
+
+    return _run
+
 
 @pytest.mark.asyncio
 async def test_successful_tool_call(mock_agent_runner):
     llm_turns = [
-        {"content": "", "tool_calls": [{"name": "search", "arguments": {"query": "data"}}]},
+        {
+            "content": None,
+            "tool_calls": [{"id": "call_1", "function": {"name": "recall", "arguments": '{"query": "data"}'}}],
+        },
         {"content": "I found expected data.", "tool_calls": None},
     ]
     tool_results = [{"result": "expected data"}]
@@ -16,15 +76,22 @@ async def test_successful_tool_call(mock_agent_runner):
     assert "expected data" in final_text.lower()
     assert payload["tool_calls"][0]["arguments"]["query"] == "data"
 
+
 @pytest.mark.asyncio
 async def test_temporary_failure(mock_agent_runner):
     llm_turns = [
-        {"content": "", "tool_calls": [{"name": "search", "arguments": {"query": "data"}}]},
-        {"content": "", "tool_calls": [{"name": "search", "arguments": {"query": "data_retry"}}]},
+        {
+            "content": None,
+            "tool_calls": [{"id": "call_1", "function": {"name": "recall", "arguments": '{"query": "data"}'}}],
+        },
+        {
+            "content": None,
+            "tool_calls": [{"id": "call_2", "function": {"name": "recall", "arguments": '{"query": "data_retry"}'}}],
+        },
         {"content": "I found expected data after retrying.", "tool_calls": None},
     ]
     tool_results = [
-        {"error": "temporary glitch"},
+        {"error": "timeout"},
         {"result": "expected data"},
     ]
 
@@ -39,13 +106,22 @@ async def test_temporary_failure(mock_agent_runner):
     assert payload["tool_calls"][1]["arguments"]["query"] == "data_retry"
     assert "expected data" in final_text.lower()
 
+
 @pytest.mark.asyncio
 async def test_persistent_failure(mock_agent_runner):
     llm_turns = [
-        {"content": "", "tool_calls": [{"name": "search", "arguments": {"query": "data"}}]},
-        {"content": "", "tool_calls": [{"name": "search", "arguments": {"query": "data"}}]},
-        {"content": "", "tool_calls": [{"name": "search", "arguments": {"query": "data"}}]},
-        {"content": "I am unable to complete the task.", "tool_calls": None},
+        {
+            "content": None,
+            "tool_calls": [{"id": "call_1", "function": {"name": "recall", "arguments": '{"query": "data"}'}}],
+        },
+        {
+            "content": None,
+            "tool_calls": [{"id": "call_2", "function": {"name": "recall", "arguments": '{"query": "data"}'}}],
+        },
+        {
+            "content": None,
+            "tool_calls": [{"id": "call_3", "function": {"name": "recall", "arguments": '{"query": "data"}'}}],
+        },
     ]
     tool_results = [
         {"error": "access denied"},
@@ -62,13 +138,17 @@ async def test_persistent_failure(mock_agent_runner):
     assert "unable to complete" in final_text.lower()
     assert "expected data" not in final_text.lower()
 
+
 @pytest.mark.asyncio
 async def test_unexpected_tool_result(mock_agent_runner):
     llm_turns = [
-        {"content": "", "tool_calls": [{"name": "search", "arguments": {"query": "data"}}]},
+        {
+            "content": None,
+            "tool_calls": [{"id": "call_1", "function": {"name": "recall", "arguments": '{"query": "data"}'}}],
+        },
         {"content": "The returned data was unusable.", "tool_calls": None},
     ]
-    tool_results = [{"result": None}]
+    tool_results = [{"unrelated_field": "useless info"}]
 
     final_text, payload = await mock_agent_runner(llm_turns, tool_results)
 
@@ -78,10 +158,14 @@ async def test_unexpected_tool_result(mock_agent_runner):
     assert "unusable" in final_text.lower()
     assert "expected data" not in final_text.lower()
 
+
 @pytest.mark.asyncio
 async def test_incidental_nested_error_key(mock_agent_runner):
     llm_turns = [
-        {"content": "", "tool_calls": [{"name": "search", "arguments": {"query": "data"}}]},
+        {
+            "content": None,
+            "tool_calls": [{"id": "call_1", "function": {"name": "recall", "arguments": '{"query": "test"}'}}],
+        },
         {"content": "Result processed successfully with value ok.", "tool_calls": None},
     ]
     tool_results = [
