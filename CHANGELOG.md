@@ -2,7 +2,7 @@
 
 All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
-## [Unreleased]
+## [v2.2.7] - 2026-09-25
 
 ### Bug Fixes
 
@@ -67,6 +67,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Add smol-toml, adm-zip, and decode-uri-component dependencies ([a4a3d0e](https://github.com/aliyevaladddin/AladdinAI/commit/a4a3d0ef5976a4cd0d20e1e9e84d69c3a3e0ca4b))
 
 - Bump decode-uri-component to ^0.5.0 ([28279fa](https://github.com/aliyevaladddin/AladdinAI/commit/28279fabbc3590885211d5e87b0aa9d99973a60c))
+
+- Update changelog [skip ci] (#966) ([aee8f3c](https://github.com/aliyevaladddin/AladdinAI/commit/aee8f3cf6a05b3bf11b9fc4e0868b8d43055e4d0))
+
+- Downgrade execa dependency to v9.6.1 in cli ([4580049](https://github.com/aliyevaladddin/AladdinAI/commit/45800492eefa23e92be1bc7d56b843e7e9ce23e3))
 
 
 ### Refactor
