@@ -2,6 +2,14 @@
 
 All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
+## [Unreleased]
+
+### Maintenance
+
+- Update changelog [skip ci] (#968) ([a241aaf](https://github.com/aliyevaladddin/AladdinAI/commit/a241aaf6353fe245fe7e4b8d4eafb97d806e274b))
+
+- Update sql-formatter and electron dependencies ([5dfc720](https://github.com/aliyevaladddin/AladdinAI/commit/5dfc7201de3b9294dd1aa7ab4a048aeba72bd43c))
+
 ## [v2.2.7] - 2026-09-25
 
 ### Bug Fixes
