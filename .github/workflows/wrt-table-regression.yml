@@ -1,0 +1,30 @@
+name: WRT table round-trip regression
+
+on:
+  push:
+    branches: [fix/wrt-table-roundtrip]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  table-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test and native build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc make libzip-dev zlib1g-dev
+          python -m pip install python-docx==1.2.0 pytest
+      - name: Build native WRT engine
+        run: make -C backend/native/wrt wrt-engine
+      - name: Run focused table regressions
+        run: python -m unittest discover -s backend/tests -p test_wrt_docx_table_roundtrip.py -v
+      - name: Run existing native WRT regressions
+        run: python -m pytest backend/tests/test_native_wrt.py -q
