@@ -27,4 +27,4 @@ jobs:
       - name: Run focused table regressions
         run: python -m unittest discover -s backend/tests -p test_wrt_docx_table_roundtrip.py -v
       - name: Run existing native WRT regressions
-        run: python -m pytest backend/tests/test_native_wrt.py -q
+        run: python -m pytest --noconftest backend/tests/test_native_wrt.py -q
