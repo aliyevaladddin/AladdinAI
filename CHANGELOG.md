@@ -4,11 +4,18 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- Prevent OOXML tag-prefix matches in DOCX table parsing (#972) ([bf6acdc](https://github.com/aliyevaladddin/AladdinAI/commit/bf6acdcba582d0cb295759205b17b093cacbe172))
+
+
 ### Maintenance
 
 - Update changelog [skip ci] (#968) ([a241aaf](https://github.com/aliyevaladddin/AladdinAI/commit/a241aaf6353fe245fe7e4b8d4eafb97d806e274b))
 
 - Update sql-formatter and electron dependencies ([5dfc720](https://github.com/aliyevaladddin/AladdinAI/commit/5dfc7201de3b9294dd1aa7ab4a048aeba72bd43c))
+
+- Update changelog [skip ci] (#971) ([7f2e877](https://github.com/aliyevaladddin/AladdinAI/commit/7f2e87719d42fee7c28e5af8825b46c6c3bf9b78))
 
 ## [v2.2.7] - 2026-09-25
 
