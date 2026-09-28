@@ -83,6 +83,91 @@ class TestWRTDocxTableRoundtrip(unittest.TestCase):
         self.assertNotIn("<w:", wrt)
         self.assertEqual(cell_matrix(restored), expected)
 
+    def test_paragraph_with_xml_like_tag_names_in_text(self):
+        """Verify that text containing XML-like tag-name patterns is extracted correctly.
+
+        Previously, strstr for <w:t could match <w:tbl>, <w:tab>, etc.
+        This test ensures text containing words like 'w:tbl', 'w:pStyle' etc.
+        (without the angle brackets) is extracted correctly.
+        """
+        doc = Document()
+        doc.add_paragraph("The token w:tbl is not a tag here")
+        doc.add_paragraph("w:tblPr and w:tcPr are style names")
+        doc.add_paragraph("Normal text with w:t and w:r in words")
+        wrt, restored = self.roundtrip(doc)
+        # Verify the actual text content is present (using word tokens, not tags)
+        for text in (
+            "The token w:tbl is not a tag here",
+            "w:tblPr and w:tcPr are style names",
+            "Normal text with w:t and w:r in words",
+        ):
+            self.assertIn(text, wrt)
+        # Verify restored docx has the same text
+        texts = [p.text for p in restored.paragraphs if p.text.strip()]
+        self.assertEqual(texts, [
+            "The token w:tbl is not a tag here",
+            "w:tblPr and w:tcPr are style names",
+            "Normal text with w:t and w:r in words",
+        ])
+
+    def test_paragraph_with_bold_italic_styling(self):
+        """Verify that bold/italic formatting is preserved through round-trip."""
+        doc = Document()
+        p = doc.add_paragraph()
+        run = p.add_run("Bold text")
+        run.bold = True
+        run = p.add_run(" and italic text")
+        run.italic = True
+        run = p.add_run(" and normal text")
+        wrt, restored = self.roundtrip(doc)
+        self.assertIn("[b]Bold text[/b]", wrt)
+        self.assertIn("[i] and italic text[/i]", wrt)
+        self.assertIn("and normal text", wrt)
+        self.assertNotIn("<w:", wrt)
+        # Verify restored paragraph
+        restored_texts = [p.text for p in restored.paragraphs if p.text.strip()]
+        self.assertEqual(restored_texts, ["Bold text and italic text and normal text"])
+
+    def test_paragraph_with_underline_formatting(self):
+        """Verify that underline formatting is preserved through round-trip.
+
+        Uses python-docx's low-level API to set underline.
+        """
+        from docx.oxml.ns import qn
+        doc = Document()
+        p = doc.add_paragraph()
+        run = p.add_run("underlined text")
+        rPr = run._r.get_or_add_rPr()
+        u = rPr.makeelement(qn("w:u"), {qn("w:val"): "single"})
+        rPr.append(u)
+        run = p.add_run(" normal text")
+        wrt, restored = self.roundtrip(doc)
+        self.assertIn("[u]underlined text[/u]", wrt)
+        self.assertIn("normal text", wrt)
+        self.assertNotIn("<w:", wrt)
+
+    def test_heading_with_tag_name_tokens_in_text(self):
+        """Verify that heading text containing tag-name tokens is handled correctly.
+
+        The text contains 'w:t' and 'w:tbl' as words — ensure they're treated
+        as plain text, not matched against XML tags.
+        """
+        doc = Document()
+        doc.add_heading("Heading with w:t in text", level=1)
+        doc.add_paragraph("Paragraph with w:tbl reference")
+        wrt, restored = self.roundtrip(doc)
+        # Verify the actual text content is present
+        self.assertIn("Heading with w:t in text", wrt)
+        self.assertIn("Paragraph with w:tbl reference", wrt)
+        # Should be tagged as heading
+        self.assertIn("[h1]", wrt)
+        # Verify restored
+        restored_headings = [p.text for p in restored.paragraphs if p.text.strip()]
+        self.assertEqual(restored_headings, [
+            "Heading with w:t in text",
+            "Paragraph with w:tbl reference",
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()
