@@ -800,9 +800,6 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
         d_buf_t para_buf;
         dbuf_init(&para_buf);
 
-        d_buf_t images_buf;
-        dbuf_init(&images_buf);
-
         // Scan runs <w:r> inside this paragraph
         const char *r_scan = next_p;
         while ((r_scan = find_xml_open_tag(r_scan, "<w:r", p_end)) != NULL) {
@@ -859,11 +856,11 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
                                     else if (strstr(zip_entry, ".gif")) mime = "image/gif";
                                     else if (strstr(zip_entry, ".bmp")) mime = "image/bmp";
 
-                                    dbuf_append(&images_buf, "[img src=\"data:");
-                                    dbuf_append(&images_buf, mime);
-                                    dbuf_append(&images_buf, ";base64,");
-                                    dbuf_append(&images_buf, b64);
-                                    dbuf_append(&images_buf, "\" alt=\"image\"]\n");
+                                    dbuf_append(&para_buf, "[img src=\"data:");
+                                    dbuf_append(&para_buf, mime);
+                                    dbuf_append(&para_buf, ";base64,");
+                                    dbuf_append(&para_buf, b64);
+                                    dbuf_append(&para_buf, "\" alt=\"image\"]");
                                     free(b64);
                                 }
                             }
@@ -916,10 +913,6 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
         }
 
         // Emit paragraph
-        if (images_buf.len > 0) {
-            dbuf_append(&out, images_buf.data);
-        }
-
         if (para_buf.len > 0) {
             if (heading_level > 0) {
                 char htag[8];
@@ -942,7 +935,6 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
         }
 
         free(para_buf.data);
-        free(images_buf.data);
 
         p = p_end + 6;
     }
