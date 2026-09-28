@@ -1,0 +1,36 @@
+name: WRT inline image order regression
+
+on:
+  push:
+    branches: [fix/wrt-inline-image-roundtrip]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inline-image-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gcc make libzip-dev zlib1g-dev
+          python -m pip install pytest python-docx==1.2.0 pillow
+
+      - name: Build native WRT engine
+        run: make -C backend/native/wrt wrt-engine
+
+      - name: Run inline image order regression
+        env:
+          PYTHONPATH: backend
+        run: |
+          python -m pytest --noconftest backend/tests/test_wrt_docx_inline_image_order.py -q
