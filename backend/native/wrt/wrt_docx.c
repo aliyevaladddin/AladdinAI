@@ -623,6 +623,20 @@ typedef struct {
     char target[256];
 } rel_item_t;
 
+/* Match complete XML element names, not prefixes of longer names.
+ * For example, <w:t> is text; <w:tc> and <w:tblPr> are not. */
+static const char *find_xml_open_tag(const char *start, const char *tag, const char *limit) {
+    size_t tag_len = strlen(tag);
+    const char *p = start;
+    while ((p = strstr(p, tag)) != NULL) {
+        if (limit && p >= limit) return NULL;
+        unsigned char next = (unsigned char)p[tag_len];
+        if (next == '>' || next == '/' || isspace(next)) return p;
+        p += tag_len;
+    }
+    return NULL;
+}
+
 char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
     if (!docx_data || docx_len == 0) return strdup("");
 
@@ -696,8 +710,8 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
     // Scan for paragraphs <w:p> and tables <w:tbl>
     const char *p = doc_xml;
     while (*p) {
-        const char *next_p = strstr(p, "<w:p");
-        const char *next_tbl = strstr(p, "<w:tbl");
+        const char *next_p = find_xml_open_tag(p, "<w:p", NULL);
+        const char *next_tbl = find_xml_open_tag(p, "<w:tbl", NULL);
 
         if (!next_p && !next_tbl) break;
 
@@ -709,20 +723,20 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
             dbuf_append(&out, "[table]\n");
 
             const char *tr_scan = next_tbl;
-            while ((tr_scan = strstr(tr_scan, "<w:tr")) != NULL && tr_scan < tbl_end) {
+            while ((tr_scan = find_xml_open_tag(tr_scan, "<w:tr", tbl_end)) != NULL) {
                 const char *tr_end = strstr(tr_scan, "</w:tr>");
                 if (!tr_end || tr_end > tbl_end) break;
 
                 dbuf_append(&out, "|");
                 const char *tc_scan = tr_scan;
-                while ((tc_scan = strstr(tc_scan, "<w:tc")) != NULL && tc_scan < tr_end) {
+                while ((tc_scan = find_xml_open_tag(tc_scan, "<w:tc", tr_end)) != NULL) {
                     const char *tc_end = strstr(tc_scan, "</w:tc>");
                     if (!tc_end || tc_end > tr_end) break;
 
                     dbuf_append(&out, " ");
                     // Extract text inside this cell
                     const char *t_scan = tc_scan;
-                    while ((t_scan = strstr(t_scan, "<w:t")) != NULL && t_scan < tc_end) {
+                    while ((t_scan = find_xml_open_tag(t_scan, "<w:t", tc_end)) != NULL) {
                         const char *t_val = strchr(t_scan, '>');
                         if (t_val && t_val < tc_end) {
                             t_val++;
@@ -754,7 +768,7 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
         int is_quote = 0;
         int is_list = 0;
 
-        const char *style_ptr = strstr(next_p, "<w:pStyle ");
+        const char *style_ptr = find_xml_open_tag(next_p, "<w:pStyle", p_end);
         if (style_ptr && style_ptr < p_end) {
             const char *val_ptr = strstr(style_ptr, "w:val=\"");
             if (val_ptr && val_ptr < p_end) {
@@ -791,12 +805,12 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
 
         // Scan runs <w:r> inside this paragraph
         const char *r_scan = next_p;
-        while ((r_scan = strstr(r_scan, "<w:r")) != NULL && r_scan < p_end) {
+        while ((r_scan = find_xml_open_tag(r_scan, "<w:r", p_end)) != NULL) {
             const char *r_end = strstr(r_scan, "</w:r>");
             if (!r_end || r_end > p_end) break;
 
             // Check drawing/image
-            const char *drawing_ptr = strstr(r_scan, "<w:drawing");
+            const char *drawing_ptr = find_xml_open_tag(r_scan, "<w:drawing", r_end);
             if (drawing_ptr && drawing_ptr < r_end) {
                 const char *blip_ptr = strstr(drawing_ptr, "r:embed=\"");
                 if (blip_ptr && blip_ptr < r_end) {
@@ -874,7 +888,7 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
 
             // Text in <w:t>
             const char *t_scan = r_scan;
-            while ((t_scan = strstr(t_scan, "<w:t")) != NULL && t_scan < r_end) {
+            while ((t_scan = find_xml_open_tag(t_scan, "<w:t", r_end)) != NULL) {
                 const char *t_val = strchr(t_scan, '>');
                 if (t_val && t_val < r_end) {
                     t_val++;
