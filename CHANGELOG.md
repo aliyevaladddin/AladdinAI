@@ -21,6 +21,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#973) ([585028d](https://github.com/aliyevaladddin/AladdinAI/commit/585028d057d9fdc1d26d97d950470a9153b8dc3d))
 
+- Update changelog [skip ci] (#975) ([e2756c5](https://github.com/aliyevaladddin/AladdinAI/commit/e2756c57f953496e016f8b5b779d965220d70732))
+
+- Override undici version and downgrade actions/checkout to v4 ([b8ccc57](https://github.com/aliyevaladddin/AladdinAI/commit/b8ccc5771fe673aeb562a89c71fc9b83e3aef14b))
+
 ## [v2.2.7] - 2026-09-25
 
 ### Bug Fixes
