@@ -116,6 +116,7 @@
     "wait-on": "^9.0.10"
   },
   "overrides": {
+    "undici": "^7.29.1",
     "brace-expansion": "^2.1.2",
     "minimatch": {
       "brace-expansion": "^5.0.8"
