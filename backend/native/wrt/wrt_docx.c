@@ -272,7 +272,11 @@ static void append_run_with_formatting(d_buf_t *out, const char *text, size_t le
     dbuf_append(out, "</w:t></w:r>");
 }
 
-static void parse_and_emit_inline_runs(d_buf_t *out, const char *text) {
+static void emit_img_run(d_buf_t *out, const char *tag, size_t tag_len,
+                         docx_image_t *images, int *image_count);
+
+static void parse_and_emit_inline_runs(d_buf_t *out, char *text,
+                                       docx_image_t *images, int *image_count) {
     size_t len = strlen(text);
     size_t pos = 0;
     size_t seg_start = 0;
@@ -281,6 +285,21 @@ static void parse_and_emit_inline_runs(d_buf_t *out, const char *text) {
 
     while (pos < len) {
         if (text[pos] == '[') {
+            // Inline image tag: emit a drawing run in place, preserving run order
+            if (strncmp(text + pos, "[img ", 5) == 0) {
+                size_t img_close = pos + 1;
+                while (img_close < len && text[img_close] != ']' && text[img_close] != '\n') {
+                    img_close++;
+                }
+                if (img_close < len && text[img_close] == ']') {
+                    append_run_with_formatting(out, text + seg_start, pos - seg_start, b, i_tag, u, s, code);
+                    emit_img_run(out, text + pos, img_close - pos + 1, images, image_count);
+                    pos = img_close + 1;
+                    seg_start = pos;
+                    continue;
+                }
+            }
+
             size_t end_bracket = pos + 1;
             while (end_bracket < len && text[end_bracket] != ']' && text[end_bracket] != '\n') {
                 end_bracket++;
@@ -354,6 +373,68 @@ static void emit_drawing_xml(d_buf_t *out, const char *rel_id, int doc_pr_id, co
     dbuf_append(out, buf);
 }
 
+/* Find needle in a NOT NUL-terminated region of hay_len bytes. */
+static const char *bstrnstr(const char *hay, size_t hay_len, const char *needle) {
+    size_t n = strlen(needle);
+    if (n == 0 || hay_len < n) return (n == 0) ? hay : NULL;
+    for (size_t i = 0; i + n <= hay_len; i++) {
+        if (memcmp(hay + i, needle, n) == 0) return hay + i;
+    }
+    return NULL;
+}
+
+/* Emit one <w:r> for an "[img ...]" tag (tag points at '[', tag_len ends at ']',
+ * no newline inside). On success emits a drawing run and registers the image;
+ * otherwise emits an "[Image: alt]" text placeholder run. */
+static void emit_img_run(d_buf_t *out, const char *tag, size_t tag_len,
+                         docx_image_t *images, int *image_count) {
+    char alt_val[256] = "image";
+
+    const char *alt_ptr = bstrnstr(tag, tag_len, "alt=\"");
+    if (alt_ptr) {
+        alt_ptr += 5;
+        const char *alt_end = memchr(alt_ptr, '"', tag_len - (size_t)(alt_ptr - tag));
+        if (alt_end) {
+            size_t alen = (size_t)(alt_end - alt_ptr);
+            if (alen >= sizeof(alt_val)) alen = sizeof(alt_val) - 1;
+            memcpy(alt_val, alt_ptr, alen);
+            alt_val[alen] = '\0';
+        }
+    }
+
+    const char *b64_start = bstrnstr(tag, tag_len, ";base64,");
+    if (b64_start && *image_count < MAX_DOCX_IMAGES) {
+        b64_start += 8;
+        const char *b64_end = memchr(b64_start, '"', tag_len - (size_t)(b64_start - tag));
+        if (b64_end && b64_end > b64_start) {
+            size_t b64_len = (size_t)(b64_end - b64_start);
+            char *b64 = (char *)malloc(b64_len + 1);
+            if (b64) {
+                memcpy(b64, b64_start, b64_len);
+                b64[b64_len] = '\0';
+                size_t raw_len = 0;
+                unsigned char *img_data = base64_decode(b64, &raw_len);
+                free(b64);
+                if (img_data) {
+                    int idx = (*image_count)++;
+                    snprintf(images[idx].r_id, sizeof(images[idx].r_id), "rIdImg%d", idx + 1);
+                    snprintf(images[idx].filename, sizeof(images[idx].filename), "image%d.png", idx + 1);
+                    images[idx].bytes = img_data;
+                    images[idx].size = raw_len;
+                    snprintf(images[idx].alt, sizeof(images[idx].alt), "%s", alt_val);
+                    emit_drawing_xml(out, images[idx].r_id, idx + 10, images[idx].alt);
+                    return;
+                }
+            }
+        }
+    }
+
+    // Fallback placeholder
+    dbuf_append(out, "<w:r><w:t xml:space=\"preserve\">[Image: ");
+    dbuf_append_xml_escaped(out, alt_val, strlen(alt_val));
+    dbuf_append(out, "]</w:t></w:r>");
+}
+
 unsigned char *wrt_to_docx(const char *wrt_text, size_t *out_len) {
     if (!wrt_text) wrt_text = "";
 
@@ -402,50 +483,9 @@ unsigned char *wrt_to_docx(const char *wrt_text, size_t *out_len) {
 
         // Check for Image tag: [img src="data:image/png;base64,..." alt="..."]
         if (strncmp(line, "[img ", 5) == 0) {
-            char *b64_start = strstr(line, ";base64,");
-            char alt_val[256] = "image";
-            char *alt_ptr = strstr(line, "alt=\"");
-            if (alt_ptr) {
-                alt_ptr += 5;
-                char *alt_end = strchr(alt_ptr, '"');
-                if (alt_end) {
-                    size_t alen = alt_end - alt_ptr;
-                    if (alen >= sizeof(alt_val)) alen = sizeof(alt_val) - 1;
-                    strncpy(alt_val, alt_ptr, alen);
-                    alt_val[alen] = '\0';
-                }
-            }
-
-            int handled_image = 0;
-            if (b64_start && image_count < MAX_DOCX_IMAGES) {
-                b64_start += 8;
-                char *b64_end = strchr(b64_start, '"');
-                if (b64_end) {
-                    *b64_end = '\0';
-                    size_t raw_len = 0;
-                    unsigned char *img_data = base64_decode(b64_start, &raw_len);
-                    if (img_data) {
-                        int idx = image_count++;
-                        snprintf(images[idx].r_id, sizeof(images[idx].r_id), "rIdImg%d", idx + 1);
-                        snprintf(images[idx].filename, sizeof(images[idx].filename), "image%d.png", idx + 1);
-                        images[idx].bytes = img_data;
-                        images[idx].size = raw_len;
-                        snprintf(images[idx].alt, sizeof(images[idx].alt), "%s", alt_val);
-
-                        dbuf_append(&doc_xml, "<w:p>");
-                        emit_drawing_xml(&doc_xml, images[idx].r_id, idx + 10, images[idx].alt);
-                        dbuf_append(&doc_xml, "</w:p>\n");
-                        handled_image = 1;
-                    }
-                }
-            }
-
-            if (!handled_image) {
-                // Fallback placeholder
-                dbuf_append(&doc_xml, "<w:p><w:r><w:t>[Image: ");
-                dbuf_append_xml_escaped(&doc_xml, alt_val, strlen(alt_val));
-                dbuf_append(&doc_xml, "]</w:t></w:r></w:p>\n");
-            }
+            dbuf_append(&doc_xml, "<w:p>");
+            emit_img_run(&doc_xml, line, strlen(line), images, &image_count);
+            dbuf_append(&doc_xml, "</w:p>\n");
         } else if (strcmp(line, "[table]") == 0) {
             in_table = 1;
             dbuf_append(&doc_xml,
@@ -474,7 +514,7 @@ unsigned char *wrt_to_docx(const char *wrt_text, size_t *out_len) {
                 cell[clen] = '\0';
 
                 dbuf_append(&doc_xml, "    <w:tc><w:p>");
-                parse_and_emit_inline_runs(&doc_xml, cell);
+                parse_and_emit_inline_runs(&doc_xml, cell, images, &image_count);
                 dbuf_append(&doc_xml, "</w:p></w:tc>\n");
                 cell = strtok(NULL, "|");
             }
@@ -486,36 +526,36 @@ unsigned char *wrt_to_docx(const char *wrt_text, size_t *out_len) {
             in_list = 0;
         } else if (in_list && line[0] == '*' && line[1] == ' ') {
             dbuf_append(&doc_xml, "<w:p><w:pPr><w:pStyle w:val=\"ListBullet\"/></w:pPr>");
-            parse_and_emit_inline_runs(&doc_xml, line + 2);
+            parse_and_emit_inline_runs(&doc_xml, line + 2, images, &image_count);
             dbuf_append(&doc_xml, "</w:p>\n");
         } else if (strncmp(line, "[h1]", 4) == 0) {
             char *end_tag = strstr(line + 4, "[/h1]");
             if (end_tag) *end_tag = '\0';
             dbuf_append(&doc_xml, "<w:p><w:pPr><w:pStyle w:val=\"Heading1\"/></w:pPr>");
-            parse_and_emit_inline_runs(&doc_xml, line + 4);
+            parse_and_emit_inline_runs(&doc_xml, line + 4, images, &image_count);
             dbuf_append(&doc_xml, "</w:p>\n");
         } else if (strncmp(line, "[h2]", 4) == 0) {
             char *end_tag = strstr(line + 4, "[/h2]");
             if (end_tag) *end_tag = '\0';
             dbuf_append(&doc_xml, "<w:p><w:pPr><w:pStyle w:val=\"Heading2\"/></w:pPr>");
-            parse_and_emit_inline_runs(&doc_xml, line + 4);
+            parse_and_emit_inline_runs(&doc_xml, line + 4, images, &image_count);
             dbuf_append(&doc_xml, "</w:p>\n");
         } else if (strncmp(line, "[h3]", 4) == 0) {
             char *end_tag = strstr(line + 4, "[/h3]");
             if (end_tag) *end_tag = '\0';
             dbuf_append(&doc_xml, "<w:p><w:pPr><w:pStyle w:val=\"Heading3\"/></w:pPr>");
-            parse_and_emit_inline_runs(&doc_xml, line + 4);
+            parse_and_emit_inline_runs(&doc_xml, line + 4, images, &image_count);
             dbuf_append(&doc_xml, "</w:p>\n");
         } else if (strncmp(line, "[quote]", 7) == 0) {
             char *end_tag = strstr(line + 7, "[/quote]");
             if (end_tag) *end_tag = '\0';
             dbuf_append(&doc_xml, "<w:p><w:pPr><w:pStyle w:val=\"Quote\"/></w:pPr>");
-            parse_and_emit_inline_runs(&doc_xml, line + 7);
+            parse_and_emit_inline_runs(&doc_xml, line + 7, images, &image_count);
             dbuf_append(&doc_xml, "</w:p>\n");
         } else {
             // Regular Paragraph
             dbuf_append(&doc_xml, "<w:p>");
-            parse_and_emit_inline_runs(&doc_xml, line);
+            parse_and_emit_inline_runs(&doc_xml, line, images, &image_count);
             dbuf_append(&doc_xml, "</w:p>\n");
         }
         free(line);

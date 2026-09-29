@@ -122,6 +122,7 @@ backend/native/wrt/wrt-*
 backend/guacamole-config/user-mapping.xml
 backend/guacamole-config/guacamole.properties
 RCF-AUDIT-REPORT.json
+payload.json
 # git filter-branch temp leftovers
 .git-rewrite/
 frontend/coverage
