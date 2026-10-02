@@ -3,7 +3,7 @@
 <rect width="800" height="340" rx="12" fill="#0d1117" stroke="#30363d"/>
 <rect width="800" height="34" rx="12" fill="#161b22"/><rect y="22" width="800" height="12" fill="#161b22"/>
 <circle cx="22" cy="17" r="5.5" fill="#ff5f56"/><circle cx="42" cy="17" r="5.5" fill="#ffbd2e"/><circle cx="62" cy="17" r="5.5" fill="#27c93f"/>
-<text x="400" y="17" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#6e7681">aladdinai — agents at work</text>
+<text x="400" y="17" text-anchor="middle" dominant-baseline="central" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#6e7681">AladdinAi — agents at work</text>
 <line x1="30" y1="202" x2="770" y2="202" stroke="#30363d" stroke-width="1" stroke-dasharray="4 7"/>
 <rect x="40" y="60" width="130" height="76" rx="12" fill="#21262d" stroke="#484f58"/><text x="105" y="88" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#e6edf3">Channels</text><text x="105" y="110" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e">Telegram · email</text>
 <rect x="335" y="60" width="130" height="76" rx="12" fill="#26215c" stroke="#afa9ec"/><text x="400" y="88" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#cecbf6">Agent</text><text x="400" y="110" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="12" fill="#afa9ec">swarm + tools</text>
@@ -94,5 +94,5 @@
 <g opacity="0"><animate attributeName="opacity" calcMode="discrete" keyTimes="0;0.1137;0.1542;0.2486;0.2629;0.3357;0.35;0.4444;0.4727;0.5259;0.5745;0.635;0.6755;0.9029;1" values="0;0;0;0;0;0;0;1;1;1;1;0;0;0;0" dur="12.3548s" repeatCount="indefinite" begin="-8.4s"/><rect x="-24" y="-60" width="48" height="17" rx="8.5" fill="#9fe1cb"/><text x="0" y="-51" text-anchor="middle" dominant-baseline="central" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="11" fill="#085041">fact</text></g>
 </g>
 
-<text x="400" y="322" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#4ecdc4" opacity=".7">your data · your models · your rules</text>
+<text x="400" y="322" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" font-size="12" fill="#4ecdc4" opacity=".7">My data · My models · My rules</text>
 </svg>
