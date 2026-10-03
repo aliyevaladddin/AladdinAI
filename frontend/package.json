@@ -113,7 +113,7 @@
     "normalize-path": "^3.0.0",
     "tailwindcss": "^4",
     "typescript": "^6",
-    "wait-on": "^9.0.10"
+    "wait-on": "^9.5.1"
   },
   "overrides": {
     "undici": "^7.29.1",
