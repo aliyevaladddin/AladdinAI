@@ -64,6 +64,16 @@ async def list_all_traces(
             status_code=400,
             detail="No MongoDB cluster configured — connect one first.",
         )
+    except Exception as e:
+        # get_mongo_db() only raises MemSvcError when nothing is configured — a
+        # configured-but-unreachable cluster fails later, inside pymongo. A brief
+        # DNS outage therefore surfaced as a 500 here, and answering 400 ("not
+        # configured") would be a lie the user cannot act on. 503 says what is
+        # true: try again in a moment.
+        raise HTTPException(
+            status_code=503,
+            detail=f"MongoDB cluster unreachable: {e}",
+        )
 
     query: dict[str, Any] = {"user_id": user.id}
     if agent_id is not None:

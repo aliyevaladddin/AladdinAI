@@ -407,6 +407,161 @@ char *wrt_fix(const char *text) {
  * HTML CONVERTER
  * ============================================================ */
 
+/* Locate the ']' that closes a WRT self-closing tag such as
+ *   [img src="data:image/png;base64,..." alt="logo"]
+ * `start` points at the opening '['. The scan is quote-aware so a ']' inside an
+ * attribute value cannot truncate the tag, and it refuses to cross a newline —
+ * these tags are single-line by construction. Returns NULL if unterminated. */
+static const char *find_self_closing_tag_end(const char *start, const char *limit) {
+    int in_quote = 0;
+    for (const char *q = start + 1; q < limit; q++) {
+        if (*q == '\n') return NULL;
+        if (*q == '"') { in_quote = !in_quote; continue; }
+        if (!in_quote && *q == ']') return q;
+    }
+    return NULL;
+}
+
+/* Append the attributes of a WRT self-closing tag as escaped HTML attributes.
+ * `p` points just past the tag name, `limit` at the closing ']'. The WRT
+ * attribute syntax is already `name="value"`, so each value is re-escaped on the
+ * way out rather than the raw region being pasted in — pasting it would turn the
+ * value's own quotes into &quot; and corrupt the URL. */
+static void append_wrt_attrs_as_html(str_buf_t *b, const char *p, const char *limit) {
+    while (p < limit) {
+        while (p < limit && isspace((unsigned char)*p)) p++;
+        if (p >= limit) break;
+
+        const char *name = p;
+        while (p < limit && *p != '=' && !isspace((unsigned char)*p)) p++;
+        size_t nlen = (size_t)(p - name);
+        if (nlen == 0) { p++; continue; }
+
+        while (p < limit && isspace((unsigned char)*p)) p++;
+        if (p >= limit || *p != '=') {
+            buf_append_c(b, ' ');
+            buf_append_len(b, name, nlen);
+            continue;
+        }
+        p++; /* '=' */
+        while (p < limit && isspace((unsigned char)*p)) p++;
+
+        if (p < limit && (*p == '"' || *p == '\'')) {
+            char quote = *p++;
+            buf_append_c(b, ' ');
+            buf_append_len(b, name, nlen);
+            buf_append(b, "=\"");
+            while (p < limit && *p != quote) {
+                buf_append_escaped_html(b, p, 1);
+                p++;
+            }
+            buf_append(b, "\"");
+            if (p < limit) p++; /* closing quote */
+        } else {
+            buf_append_c(b, ' ');
+            buf_append_len(b, name, nlen);
+            buf_append(b, "=\"");
+            while (p < limit && !isspace((unsigned char)*p)) {
+                buf_append_escaped_html(b, p, 1);
+                p++;
+            }
+            buf_append(b, "\"");
+        }
+    }
+}
+
+/* Append the decoded value of HTML attribute `name` found in the tag body
+ * [p, limit) to `b`. Returns 1 when the attribute was present. Entity
+ * references inside the value are decoded so the reconstructed WRT tag carries
+ * the original characters, not their HTML spelling. */
+static int append_html_attr_value(str_buf_t *b, const char *p, const char *limit, const char *name) {
+    size_t nlen = strlen(name);
+    for (const char *q = p; q < limit; q++) {
+        /* Require whitespace before the name so "src" cannot match inside
+         * "data-src" or inside another attribute's value. */
+        if (q != p && !isspace((unsigned char)q[-1])) continue;
+        if (strncmp(q, name, nlen) != 0) continue;
+
+        const char *r = q + nlen;
+        while (r < limit && isspace((unsigned char)*r)) r++;
+        if (r >= limit || *r != '=') continue;
+        r++;
+        while (r < limit && isspace((unsigned char)*r)) r++;
+        if (r >= limit || (*r != '"' && *r != '\'')) continue;
+
+        char quote = *r++;
+        while (r < limit && *r != quote) {
+            if (*r == '&') {
+                if (strncmp(r, "&amp;", 5) == 0)       { buf_append_c(b, '&');  r += 5; continue; }
+                if (strncmp(r, "&lt;", 4) == 0)        { buf_append_c(b, '<');  r += 4; continue; }
+                if (strncmp(r, "&gt;", 4) == 0)        { buf_append_c(b, '>');  r += 4; continue; }
+                if (strncmp(r, "&quot;", 6) == 0)      { buf_append_c(b, '"');  r += 6; continue; }
+                if (strncmp(r, "&#39;", 5) == 0)       { buf_append_c(b, '\''); r += 5; continue; }
+            }
+            buf_append_c(b, *r);
+            r++;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+/* If `*p` points at an <img> element, append the equivalent WRT [img] tag to
+ * `b` and advance `*p` past the element, returning 1. Returns 0 when `*p` is
+ * some other tag and 1 is not the right handler. Shared by the main parse loop
+ * and the heading collector, which sees inline elements before the main loop
+ * does. */
+static int consume_img_element(str_buf_t *b, const char **p) {
+    const char *cur = *p;
+    if (strncmp(cur, "<img", 4) != 0) return 0;
+    if (!(cur[4] == '>' || cur[4] == ' ' || cur[4] == '/')) return 0;
+
+    const char *tag_end = strchr(cur, '>');
+    if (!tag_end) return 0; /* unterminated: leave it to the caller's skip logic */
+
+    str_buf_t src, alt;
+    buf_init(&src);
+    buf_init(&alt);
+    int has_src = append_html_attr_value(&src, cur + 4, tag_end, "src");
+    int has_alt = append_html_attr_value(&alt, cur + 4, tag_end, "alt");
+
+    /* Without a src there is no image data to preserve, so emitting a bare
+     * [img] would only add a tag the validator flags as malformed. */
+    if (has_src && src.len > 0) {
+        buf_append(b, "[img src=\"");
+        buf_append(b, src.data);
+        if (has_alt && alt.len > 0) {
+            buf_append(b, "\" alt=\"");
+            buf_append(b, alt.data);
+        }
+        buf_append(b, "\"]");
+    }
+    free(src.data);
+    free(alt.data);
+    *p = tag_end + 1;
+    return 1;
+}
+
+/* Emit a run of WRT as HTML: text escaped as usual, except [img ...], which
+ * becomes a real <img> element. Needed wherever a block body (heading, quote,
+ * list item, table cell) is copied in one go -- a blanket escape renders an
+ * image as visible markup inside the block. */
+static void append_wrt_inline_to_html(str_buf_t *b, const char *s, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        if (s[i] == '[' && n - i >= 5 && strncmp(s + i, "[img ", 5) == 0) {
+            const char *tag_end = find_self_closing_tag_end(s + i, s + n);
+            if (tag_end) {
+                buf_append(b, "<img");
+                append_wrt_attrs_as_html(b, s + i + 5, tag_end);
+                buf_append(b, " class=\"wrt-image max-w-full rounded my-2\" />");
+                i = (size_t)(tag_end - s); /* loop's i++ steps past the ']' */
+                continue;
+            }
+        }
+        buf_append_escaped_html(b, s + i, 1);
+    }
+}
+
 char *wrt_to_html(const char *text) {
     str_buf_t b;
     buf_init(&b);
@@ -433,7 +588,7 @@ char *wrt_to_html(const char *text) {
                 buf_append(&b, "<");
                 buf_append(&b, htag);
                 buf_append(&b, " class=\"wrt-heading\">");
-                buf_append_escaped_html(&b, text + i + 4, end - (text + i + 4));
+                append_wrt_inline_to_html(&b, text + i + 4, end - (text + i + 4));
                 buf_append(&b, "</");
                 buf_append(&b, htag);
                 buf_append(&b, ">\n");
@@ -453,7 +608,7 @@ char *wrt_to_html(const char *text) {
                     in_paragraph = 0;
                 }
                 buf_append(&b, "<blockquote class=\"wrt-quote border-l-4 border-sky-500 pl-4 my-3 text-slate-300 italic\">");
-                buf_append_escaped_html(&b, text + i + 7, end - (text + i + 7));
+                append_wrt_inline_to_html(&b, text + i + 7, end - (text + i + 7));
                 buf_append(&b, "</blockquote>\n");
 
                 i = (end - text) + 8;
@@ -498,7 +653,7 @@ char *wrt_to_html(const char *text) {
                                 while (cell < cell_end && isspace((unsigned char)*cell)) cell++;
                                 const char *trim_end = cell_end;
                                 while (trim_end > cell && isspace((unsigned char)*(trim_end - 1))) trim_end--;
-                                buf_append_escaped_html(&b, cell, trim_end - cell);
+                                append_wrt_inline_to_html(&b, cell, trim_end - cell);
                                 buf_append(&b, "</");
                                 buf_append(&b, tag);
                                 buf_append(&b, ">\n");
@@ -543,7 +698,7 @@ char *wrt_to_html(const char *text) {
                     }
 
                     buf_append(&b, "  <li>");
-                    buf_append_escaped_html(&b, item, item_end - item);
+                    append_wrt_inline_to_html(&b, item, item_end - item);
                     buf_append(&b, "</li>\n");
 
                     item = item_end + 1;
@@ -552,6 +707,25 @@ char *wrt_to_html(const char *text) {
                 buf_append(&b, "</ul>\n");
                 i = (end - text) + 7;
                 if (i < len && text[i] == '\n') i++;
+                continue;
+            }
+        }
+
+        /* Check for inline image: [img src="data:image/png;base64,..." alt="logo"].
+         * Previously unhandled, so the tag fell through to the escaping branch
+         * and rendered as literal text — and on the way back the parser skipped
+         * the <img> element entirely, dropping the image from the file. */
+        if (strncmp(text + i, "[img ", 5) == 0) {
+            const char *tag_end = find_self_closing_tag_end(text + i, text + len);
+            if (tag_end) {
+                if (!in_paragraph) {
+                    buf_append(&b, "<p class=\"my-2 leading-relaxed\">");
+                    in_paragraph = 1;
+                }
+                buf_append(&b, "<img");
+                append_wrt_attrs_as_html(&b, text + i + 5, tag_end);
+                buf_append(&b, " class=\"wrt-image max-w-full rounded my-2\" />");
+                i = (tag_end - text) + 1;
                 continue;
             }
         }
@@ -843,6 +1017,9 @@ char *wrt_from_editable_html(const char *html) {
             buf_init(&hcontent);
             while (*p && strncmp(p, htag_close, strlen(htag_close)) != 0) {
                 if (*p == '<') {
+                    /* An image carries data, so it must not be lumped in with the
+                     * inline tags that are simply dropped here. */
+                    if (consume_img_element(&hcontent, &p)) continue;
                     /* Skip inline tags inside heading */
                     p++;
                     while (*p && *p != '>') p++;
@@ -967,6 +1144,13 @@ char *wrt_from_editable_html(const char *html) {
         if (strncmp(p, "</td>", 5) == 0) {
             p += 5;
             buf_append_c(&b, '|');
+            continue;
+        }
+
+        /* <img ...> — round-trip back to a WRT [img] tag. This must precede the
+         * generic "skip remaining tags" branch below, which swallowed the element
+         * whole: every save from Visual mode silently deleted the image. */
+        if (consume_img_element(&b, &p)) {
             continue;
         }
 

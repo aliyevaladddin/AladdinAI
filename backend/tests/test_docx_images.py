@@ -7,7 +7,7 @@ import pytest
 from docx import Document
 from PIL import Image
 
-from app.services.wrt_engine_service import docx_to_wrt, wrt_to_docx
+from app.services.wrt_engine_service import docx_to_wrt_sync, wrt_to_docx_sync
 
 
 def create_test_image(width: int = 100, height: int = 100, color: str = "red") -> bytes:
@@ -38,7 +38,7 @@ def test_docx_to_wrt_extracts_images():
     docx_bytes = docx_buf.getvalue()
 
     # Convert to .wrt
-    wrt = docx_to_wrt(docx_bytes)
+    wrt = docx_to_wrt_sync(docx_bytes)
 
     # Verify structure
     assert "[h1]Test Document[/h1]" in wrt
@@ -68,7 +68,7 @@ Text after image.
 """
 
     # Convert to .docx
-    docx_bytes = wrt_to_docx(wrt_text)
+    docx_bytes = wrt_to_docx_sync(wrt_text)
 
     # Parse resulting .docx
     doc = Document(io.BytesIO(docx_bytes))
@@ -111,8 +111,8 @@ def test_image_round_trip():
     docx1_bytes = docx1_buf.getvalue()
 
     # Round-trip: .docx → .wrt → .docx
-    wrt = docx_to_wrt(docx1_bytes)
-    docx2_bytes = wrt_to_docx(wrt)
+    wrt = docx_to_wrt_sync(docx1_bytes)
+    docx2_bytes = wrt_to_docx_sync(wrt)
 
     # Parse result
     doc2 = Document(io.BytesIO(docx2_bytes))
@@ -140,7 +140,7 @@ Text after.
 """
 
     # Convert to .docx
-    docx_bytes = wrt_to_docx(wrt_text)
+    docx_bytes = wrt_to_docx_sync(wrt_text)
     doc = Document(io.BytesIO(docx_bytes))
 
     # Verify placeholder text appears
@@ -168,7 +168,7 @@ End.
 """
 
     # Convert to .docx
-    docx_bytes = wrt_to_docx(wrt_text)
+    docx_bytes = wrt_to_docx_sync(wrt_text)
     doc = Document(io.BytesIO(docx_bytes))
 
     # Verify structure
@@ -189,7 +189,7 @@ Done.
 """
 
     # Should not raise, should insert placeholder
-    docx_bytes = wrt_to_docx(wrt_text)
+    docx_bytes = wrt_to_docx_sync(wrt_text)
     doc = Document(io.BytesIO(docx_bytes))
 
     # Verify placeholder appears

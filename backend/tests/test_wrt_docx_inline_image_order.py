@@ -8,7 +8,7 @@ from docx.oxml.ns import qn
 from docx.shared import Inches
 from PIL import Image
 
-from app.services.wrt_engine_service import docx_to_wrt, wrt_to_docx
+from app.services.wrt_engine_service import docx_to_wrt_sync, wrt_to_docx_sync
 
 
 def _png_bytes() -> bytes:
@@ -29,7 +29,7 @@ def test_inline_image_stays_between_surrounding_text_runs():
     buf = io.BytesIO()
     doc.save(buf)
 
-    wrt = docx_to_wrt(buf.getvalue())
+    wrt = docx_to_wrt_sync(buf.getvalue())
 
     before = wrt.index("before")
     image = wrt.index("[img ")
@@ -49,7 +49,7 @@ def test_inline_image_is_not_hoisted_before_paragraph_text():
     buf = io.BytesIO()
     doc.save(buf)
 
-    wrt = docx_to_wrt(buf.getvalue())
+    wrt = docx_to_wrt_sync(buf.getvalue())
 
     assert not wrt.lstrip().startswith("[img ")
     assert wrt.index("prefix") < wrt.index("[img ")
@@ -81,8 +81,8 @@ def test_inline_image_round_trips_back_to_docx():
     buf = io.BytesIO()
     doc.save(buf)
 
-    wrt = docx_to_wrt(buf.getvalue())
-    docx2 = wrt_to_docx(wrt)
+    wrt = docx_to_wrt_sync(buf.getvalue())
+    docx2 = wrt_to_docx_sync(wrt)
 
     doc2 = Document(io.BytesIO(docx2))
     target = None
@@ -106,7 +106,7 @@ def test_inline_image_round_trips_back_to_docx():
 def test_inline_image_invalid_base64_falls_back_to_inline_placeholder():
     """A malformed inline image between text runs degrades to an inline text placeholder."""
     wrt = 'before [img src="data:image/png;base64,INVALID_BASE64_DATA!!!" alt="broken"] after'
-    docx_bytes = wrt_to_docx(wrt)
+    docx_bytes = wrt_to_docx_sync(wrt)
 
     doc = Document(io.BytesIO(docx_bytes))
     texts = [p.text for p in doc.paragraphs if p.text.strip()]

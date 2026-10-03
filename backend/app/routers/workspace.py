@@ -457,7 +457,7 @@ async def upload_file(
     if filename.lower().endswith(".docx"):
         try:
             from app.services.wrt_engine_service import docx_to_wrt
-            wrt_text = docx_to_wrt(data)
+            wrt_text = await docx_to_wrt(data)
             data = wrt_text.encode("utf-8")
             # Change extension to .wrt and update MIME type
             filename = filename.rsplit(".", 1)[0] + ".wrt"
@@ -469,7 +469,7 @@ async def upload_file(
         try:
             from app.services.wrt_engine_service import md_to_wrt
             md_text = data.decode("utf-8", errors="replace")
-            wrt_text = md_to_wrt(md_text)
+            wrt_text = await md_to_wrt(md_text)
             data = wrt_text.encode("utf-8")
             filename = filename.rsplit(".", 1)[0] + ".wrt"
             content_type = "text/plain"
@@ -478,7 +478,7 @@ async def upload_file(
     elif filename.lower().endswith(".odt"):
         try:
             from app.services.wrt_engine_service import odt_to_wrt
-            wrt_text = odt_to_wrt(data)
+            wrt_text = await odt_to_wrt(data)
             data = wrt_text.encode("utf-8")
             filename = filename.rsplit(".", 1)[0] + ".wrt"
             content_type = "text/plain"
@@ -487,7 +487,7 @@ async def upload_file(
     elif filename.lower().endswith(".pptx"):
         try:
             from app.services.wrt_engine_service import pptx_to_wrt
-            wrt_text = pptx_to_wrt(data)
+            wrt_text = await pptx_to_wrt(data)
             data = wrt_text.encode("utf-8")
             filename = filename.rsplit(".", 1)[0] + ".wrt"
             content_type = "text/plain"
@@ -569,7 +569,7 @@ async def get_file_content(
     if ext == ".docx":
         try:
             from app.services.wrt_engine_service import docx_to_wrt
-            content = docx_to_wrt(data)
+            content = await docx_to_wrt(data)
         except Exception:
             content = data.decode("utf-8", errors="replace")
     elif ext == ".pdf":
@@ -645,7 +645,7 @@ async def download_file(
         if req_fmt == "odt":
             try:
                 from app.services.wrt_engine_service import wrt_to_odt
-                data = wrt_to_odt(wrt_text)
+                data = await wrt_to_odt(wrt_text)
                 content_type = "application/vnd.oasis.opendocument.text"
                 download_name = ws_file.name.rsplit(".", 1)[0] + ".odt"
             except Exception as e:
@@ -653,7 +653,7 @@ async def download_file(
         elif req_fmt == "pptx" or (not req_fmt and "[slide " in wrt_text):
             try:
                 from app.services.wrt_engine_service import wrt_to_pptx
-                data = wrt_to_pptx(wrt_text)
+                data = await wrt_to_pptx(wrt_text)
                 content_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
                 download_name = ws_file.name.rsplit(".", 1)[0] + ".pptx"
             except Exception as e:
@@ -661,7 +661,7 @@ async def download_file(
         elif req_fmt == "md":
             try:
                 from app.services.wrt_engine_service import wrt_to_md
-                data = wrt_to_md(wrt_text).encode("utf-8")
+                data = (await wrt_to_md(wrt_text)).encode("utf-8")
                 content_type = "text/markdown"
                 download_name = ws_file.name.rsplit(".", 1)[0] + ".md"
             except Exception as e:
@@ -673,7 +673,7 @@ async def download_file(
             # Default to .docx
             try:
                 from app.services.wrt_engine_service import wrt_to_docx
-                data = wrt_to_docx(wrt_text)
+                data = await wrt_to_docx(wrt_text)
                 content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 download_name = ws_file.name.rsplit(".", 1)[0] + ".docx"
             except Exception:
@@ -681,14 +681,14 @@ async def download_file(
     elif name_lower.endswith(".odt") and not data[:4] == b"PK\x03\x04":
         try:
             from app.services.wrt_engine_service import wrt_to_odt
-            data = wrt_to_odt(data.decode("utf-8", errors="replace"))
+            data = await wrt_to_odt(data.decode("utf-8", errors="replace"))
             content_type = "application/vnd.oasis.opendocument.text"
         except Exception:
             log.warning("workspace: wrt→odt conversion failed on download; sending raw .wrt", exc_info=True)
     elif name_lower.endswith(".pptx") and not data[:4] == b"PK\x03\x04":
         try:
             from app.services.wrt_engine_service import wrt_to_pptx
-            data = wrt_to_pptx(data.decode("utf-8", errors="replace"))
+            data = await wrt_to_pptx(data.decode("utf-8", errors="replace"))
             content_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
         except Exception:
             log.warning("workspace: wrt→pptx conversion failed on download; sending raw .wrt", exc_info=True)
@@ -696,7 +696,7 @@ async def download_file(
         try:
             from app.services.wrt_engine_service import wrt_to_docx
             wrt_text = data.decode("utf-8", errors="replace")
-            data = wrt_to_docx(wrt_text)
+            data = await wrt_to_docx(wrt_text)
             content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         except Exception:
             log.warning("workspace: wrt→docx conversion failed on download; sending raw .wrt", exc_info=True)
@@ -743,7 +743,7 @@ async def upload_new_version(
     if ws_file.name.lower().endswith(".docx") or upload_name.endswith(".docx"):
         try:
             from app.services.wrt_engine_service import docx_to_wrt
-            wrt_text = docx_to_wrt(data)
+            wrt_text = await docx_to_wrt(data)
             data = wrt_text.encode("utf-8")
             # Ensure file name and MIME type reflect .wrt
             if ws_file.name.lower().endswith(".docx"):
@@ -757,7 +757,7 @@ async def upload_new_version(
         try:
             from app.services.wrt_engine_service import md_to_wrt
             md_text = data.decode("utf-8", errors="replace")
-            wrt_text = md_to_wrt(md_text)
+            wrt_text = await md_to_wrt(md_text)
             data = wrt_text.encode("utf-8")
             if ws_file.name.lower().endswith(".md"):
                 ws_file.name = ws_file.name.rsplit(".", 1)[0] + ".wrt"
@@ -768,7 +768,7 @@ async def upload_new_version(
     elif ws_file.name.lower().endswith(".odt") or upload_name.endswith(".odt"):
         try:
             from app.services.wrt_engine_service import odt_to_wrt
-            wrt_text = odt_to_wrt(data)
+            wrt_text = await odt_to_wrt(data)
             data = wrt_text.encode("utf-8")
             if ws_file.name.lower().endswith(".odt"):
                 ws_file.name = ws_file.name.rsplit(".", 1)[0] + ".wrt"
@@ -779,7 +779,7 @@ async def upload_new_version(
     elif ws_file.name.lower().endswith(".pptx") or upload_name.endswith(".pptx"):
         try:
             from app.services.wrt_engine_service import pptx_to_wrt
-            wrt_text = pptx_to_wrt(data)
+            wrt_text = await pptx_to_wrt(data)
             data = wrt_text.encode("utf-8")
             if ws_file.name.lower().endswith(".pptx"):
                 ws_file.name = ws_file.name.rsplit(".", 1)[0] + ".wrt"

@@ -151,7 +151,7 @@ async def files_read(ctx: ToolContext, file_id: int, version_no: int | None = No
         if ext == ".docx":
             try:
                 from app.services.wrt_engine_service import docx_to_wrt
-                content = docx_to_wrt(data)
+                content = await docx_to_wrt(data)
             except Exception as e:
                 log.warning("docx→wrt failed for file %s: %s", ws_file.name, e)
                 return {"status": "error",
@@ -159,14 +159,14 @@ async def files_read(ctx: ToolContext, file_id: int, version_no: int | None = No
         elif ext == ".md":
             try:
                 from app.services.wrt_engine_service import md_to_wrt
-                content = md_to_wrt(data.decode("utf-8", errors="replace"))
+                content = await md_to_wrt(data.decode("utf-8", errors="replace"))
             except Exception as e:
                 log.warning("md→wrt failed for file %s: %s", ws_file.name, e)
                 content = data.decode("utf-8", errors="replace")
         elif ext == ".odt":
             try:
                 from app.services.wrt_engine_service import odt_to_wrt
-                content = odt_to_wrt(data)
+                content = await odt_to_wrt(data)
             except Exception as e:
                 log.warning("odt→wrt failed for file %s: %s", ws_file.name, e)
                 return {"status": "error",
@@ -174,7 +174,7 @@ async def files_read(ctx: ToolContext, file_id: int, version_no: int | None = No
         elif ext == ".pptx":
             try:
                 from app.services.wrt_engine_service import pptx_to_wrt
-                content = pptx_to_wrt(data)
+                content = await pptx_to_wrt(data)
             except Exception as e:
                 log.warning("pptx→wrt failed for file %s: %s", ws_file.name, e)
                 return {"status": "error",

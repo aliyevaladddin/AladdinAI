@@ -69,7 +69,7 @@ jobs:
       - name: Build native WRT engine
         run: |
           cd backend
-          make -C native wrt-engine wrt-edit wrt-validate
+          make -C native wrt-engine wrt-validate
 
       - name: Run tests
         env:

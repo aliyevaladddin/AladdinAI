@@ -131,6 +131,7 @@ frontend/coverage
 backend/whatsapp_bridge/node_modules/
 root/*
 Screenshot*.png
+image*.png
 # Sanity local dev
 frontend/.sanity/*
 frontend/sanity/
