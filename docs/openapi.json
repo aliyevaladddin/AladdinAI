@@ -10974,6 +10974,53 @@
         ]
       }
     },
+    "/api/wrt/import": {
+      "post": {
+        "tags": [
+          "WRT Document Engine"
+        ],
+        "summary": "Import Document",
+        "description": "Convert an uploaded .docx/.odt/.pptx/.md into WRT for the editor.\n\nThe body is the raw file -- a multi-megabyte .pptx sent as base64 JSON\nwould inflate by a third and cost a decode. The format comes from the\nfilename in the query string, which is the only thing that reliably\ncarries it: browsers set Content-Type inconsistently for Office files, and\nseveral of them send application/octet-stream.",
+        "operationId": "import_document_api_wrt_import_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 512,
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",

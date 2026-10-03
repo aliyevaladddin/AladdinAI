@@ -5715,6 +5715,42 @@ Export WRT document content to Word .docx, OpenDocument .odt, PowerPoint .pptx, 
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/wrt/import
+
+#### POST
+##### Summary:
+
+Import Document
+
+##### Description:
+
+Convert an uploaded .docx/.odt/.pptx/.md into WRT for the editor.
+
+The body is the raw file -- a multi-megabyte .pptx sent as base64 JSON
+would inflate by a third and cost a decode. The format comes from the
+filename in the query string, which is the only thing that reliably
+carries it: browsers set Content-Type inconsistently for Office files, and
+several of them send application/octet-stream.
+
+##### Parameters
+
+| Name | Located in | Description | Required | Schema |
+| ---- | ---------- | ----------- | -------- | ---- |
+| filename | query |  | Yes | string |
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /
 
 #### GET
