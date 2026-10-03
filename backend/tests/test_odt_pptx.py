@@ -6,10 +6,10 @@ import json
 import socket
 import pytest
 from app.services.wrt_engine_service import (
-    odt_to_wrt,
-    wrt_to_odt,
-    pptx_to_wrt,
-    wrt_to_pptx,
+    odt_to_wrt_sync,
+    wrt_to_odt_sync,
+    pptx_to_wrt_sync,
+    wrt_to_pptx_sync,
     SOCKET_PATH,
 )
 
@@ -37,12 +37,12 @@ This paragraph features [b]bold text[/b], [i]italic styling[/i], [u]underlined t
 | Transport | Unix Socket | 0.1ms |
 [/table]
 """
-    odt_bytes = wrt_to_odt(original_wrt)
+    odt_bytes = wrt_to_odt_sync(original_wrt)
     assert isinstance(odt_bytes, bytes)
     assert len(odt_bytes) > 0
     assert odt_bytes[:4] == b"PK\x03\x04"  # Valid ZIP archive
 
-    converted_wrt = odt_to_wrt(odt_bytes)
+    converted_wrt = odt_to_wrt_sync(odt_bytes)
     assert "[h1]Project Aurora Architecture[/h1]" in converted_wrt
     assert "[h2]System Overview[/h2]" in converted_wrt
     assert "[b]bold text[/b]" in converted_wrt
@@ -74,8 +74,8 @@ def test_odt_markdown_auto_detection():
 * Fast compilation
 * Microsecond socket RPC
 """
-    odt_bytes = wrt_to_odt(md_content)
-    converted_wrt = odt_to_wrt(odt_bytes)
+    odt_bytes = wrt_to_odt_sync(md_content)
+    converted_wrt = odt_to_wrt_sync(odt_bytes)
 
     # Verify Markdown was parsed into proper WRT tags
     assert "[h1]AladdinAI Sovereign Engine[/h1]" in converted_wrt
@@ -110,12 +110,12 @@ Presented by [i]Aladdin Aliyev[/i].
 * Instant file round-trip
 [/slide]
 """
-    pptx_bytes = wrt_to_pptx(original_wrt)
+    pptx_bytes = wrt_to_pptx_sync(original_wrt)
     assert isinstance(pptx_bytes, bytes)
     assert len(pptx_bytes) > 0
     assert pptx_bytes[:4] == b"PK\x03\x04"  # Valid ZIP / OpenXML archive
 
-    converted_wrt = pptx_to_wrt(pptx_bytes)
+    converted_wrt = pptx_to_wrt_sync(pptx_bytes)
     assert "[slide 1]" in converted_wrt
     assert "[h1]Aurora OS: Keynote[/h1]" in converted_wrt
     assert "[b]deterministic computing[/b]" in converted_wrt
@@ -143,8 +143,8 @@ def test_pptx_markdown_auto_detection():
 * Cryptographic audit log
 [/slide]
 """
-    pptx_bytes = wrt_to_pptx(md_presentation)
-    converted_wrt = pptx_to_wrt(pptx_bytes)
+    pptx_bytes = wrt_to_pptx_sync(md_presentation)
+    converted_wrt = pptx_to_wrt_sync(pptx_bytes)
 
     assert "[slide 1]" in converted_wrt
     assert "[h1]Sentient Intelligence Architecture[/h1]" in converted_wrt

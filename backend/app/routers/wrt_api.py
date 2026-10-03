@@ -5,7 +5,7 @@ import logging
 import os
 from typing import Optional
 from urllib.parse import quote
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 from app.security import get_current_user
 from app.services.wrt_engine_service import WORKSPACE_ROOT
@@ -79,8 +79,12 @@ async def convert_from_editable_html(req: WrtContentRequest, user: User = Depend
 @router.post("/stats")
 async def document_stats(req: WrtContentRequest, user: User = Depends(get_current_user)):
     """Calculate character, word, line, and tag statistics using native C engine."""
-    stats = await wrt_engine_service.wrt_stats(req.content)
-    return stats
+    try:
+        return await wrt_engine_service.wrt_stats(req.content)
+    except wrt_engine_service.WrtEngineUnavailable as e:
+        # 503, not 200 with zeros: a zeroed report with valid=True is exactly
+        # the shape that let a dead engine read as a healthy one.
+        raise HTTPException(status_code=503, detail=str(e))
 
 
 @router.get("/files")
@@ -129,30 +133,35 @@ async def export_document(req: ExportDocumentRequest, user: User = Depends(get_c
     filename = req.filename or "document"
     base_name = filename.rsplit(".", 1)[0] if "." in filename else filename
 
-    if fmt == "odt":
-        from app.services.wrt_engine_service import wrt_to_odt
-        data = wrt_to_odt(req.content)
-        media_type = "application/vnd.oasis.opendocument.text"
-        out_name = f"{base_name}.odt"
-    elif fmt == "pptx" or (not fmt and "[slide " in req.content):
-        from app.services.wrt_engine_service import wrt_to_pptx
-        data = wrt_to_pptx(req.content)
-        media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-        out_name = f"{base_name}.pptx"
-    elif fmt == "md":
-        from app.services.wrt_engine_service import wrt_to_md
-        data = wrt_to_md(req.content).encode("utf-8")
-        media_type = "text/markdown; charset=utf-8"
-        out_name = f"{base_name}.md"
-    elif fmt == "wrt":
+    if fmt == "wrt":
         data = req.content.encode("utf-8")
         media_type = "text/plain; charset=utf-8"
         out_name = f"{base_name}.wrt"
+    elif fmt == "md":
+        data = (await wrt_engine_service.wrt_to_md(req.content)).encode("utf-8")
+        media_type = "text/markdown; charset=utf-8"
+        out_name = f"{base_name}.md"
+    elif fmt == "odt":
+        data = await wrt_engine_service.wrt_to_odt(req.content)
+        media_type = "application/vnd.oasis.opendocument.text"
+        out_name = f"{base_name}.odt"
+    elif fmt == "pptx" or (not fmt and "[slide " in req.content):
+        data = await wrt_engine_service.wrt_to_pptx(req.content)
+        media_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        out_name = f"{base_name}.pptx"
     else:
-        from app.services.wrt_engine_service import wrt_to_docx
-        data = wrt_to_docx(req.content)
+        data = await wrt_engine_service.wrt_to_docx(req.content)
         media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         out_name = f"{base_name}.docx"
+
+    if not data:
+        # Every branch above raises on a failed conversion, so an empty body
+        # here means the engine produced nothing. Returning it as a download
+        # would hand the user a zero-byte file that looks like a success.
+        raise HTTPException(
+            status_code=502,
+            detail=f"Export to {out_name.rsplit('.', 1)[-1]} produced no data.",
+        )
 
     safe_name = out_name.encode("ascii", "ignore").decode() or "document"
     ascii_name = safe_name.replace('"', "").replace("\\", "")
@@ -164,4 +173,73 @@ async def export_document(req: ExportDocumentRequest, user: User = Depends(get_c
         media_type=media_type,
         headers={"Content-Disposition": disposition},
     )
+
+
+# A .pptx with embedded media runs to tens of megabytes; the editor's own
+# content limit is 100 MB, so anything past that is a mistake, not a document.
+MAX_IMPORT_BYTES = 100 * 1024 * 1024
+
+
+@router.post("/import")
+async def import_document(
+    request: Request,
+    filename: str = Query(..., max_length=512),
+    user: User = Depends(get_current_user),
+):
+    """Convert an uploaded .docx/.odt/.pptx/.md into WRT for the editor.
+
+    The body is the raw file -- a multi-megabyte .pptx sent as base64 JSON
+    would inflate by a third and cost a decode. The format comes from the
+    filename in the query string, which is the only thing that reliably
+    carries it: browsers set Content-Type inconsistently for Office files, and
+    several of them send application/octet-stream.
+    """
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in ("docx", "odt", "pptx", "md", "markdown", "txt", "wrt"):
+        raise HTTPException(
+            status_code=415,
+            detail=f"Cannot import .{ext or '?'} — supported: docx, odt, pptx, md.",
+        )
+
+    body = await request.body()
+    if not body:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    if len(body) > MAX_IMPORT_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File is too large to import (limit {MAX_IMPORT_BYTES // (1024 * 1024)} MB).",
+        )
+
+    try:
+        if ext == "docx":
+            content = await wrt_engine_service.docx_to_wrt(body)
+        elif ext == "odt":
+            content = await wrt_engine_service.odt_to_wrt(body)
+        elif ext == "pptx":
+            content = await wrt_engine_service.pptx_to_wrt(body)
+        else:
+            # Markdown, plain text and .wrt itself all take the same path: the
+            # engine's md parser is what turns headings/lists/links into WRT.
+            content = await wrt_engine_service.md_to_wrt(
+                body.decode("utf-8", errors="replace")
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        # A corrupt archive fails deep inside the C reader. 422 says the file
+        # itself is bad, which is the one thing the user can act on.
+        log.warning("Import of %s failed: %s", filename, e)
+        raise HTTPException(
+            status_code=422,
+            detail=f"Could not read {filename} — the file may be corrupt or password-protected.",
+        )
+
+    if not content.strip():
+        raise HTTPException(
+            status_code=422,
+            detail=f"No text could be extracted from {filename}.",
+        )
+
+    suggested = filename.rsplit(".", 1)[0] if "." in filename else filename
+    return {"content": content, "filename": f"{suggested}.wrt"}
 

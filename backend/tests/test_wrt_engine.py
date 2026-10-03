@@ -121,7 +121,7 @@ This has **bold text**, *italic text*, ~~strike~~, and `inline code`.
 |---|---|
 | A | B |
 """
-    wrt = md_to_wrt(md_input)
+    wrt = await md_to_wrt(md_input)
     assert "[h1]Document Title[/h1]" in wrt
     assert "[h2]Subsection[/h2]" in wrt
     assert "[b]bold text[/b]" in wrt
@@ -134,7 +134,7 @@ This has **bold text**, *italic text*, ~~strike~~, and `inline code`.
     assert "| A | B |" in wrt
 
     # Roundtrip test
-    md_back = wrt_to_md(wrt)
+    md_back = await wrt_to_md(wrt)
     assert "# Document Title" in md_back
     assert "## Subsection" in md_back
     assert "**bold text**" in md_back

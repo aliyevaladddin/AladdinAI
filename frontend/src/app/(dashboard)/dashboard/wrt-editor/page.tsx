@@ -25,20 +25,34 @@ import type {
   FileVersion,
   FileEvent,
 } from "@/app/(dashboard)/dashboard/files/types";
-import { NativeTerminal, NativeTerminalRef } from "@/components/terminal/NativeTerminal";
+import { WrtEditor, type WrtIssue } from "@/components/wrt-editor";
+
+/**
+ * Draft key for a native file. Hashing the path keeps the key short and stable
+ * across reloads, and avoids putting an absolute filesystem path into
+ * localStorage keys. Kept in sync with getDraftKey below.
+ */
+const nativeDraftKey = (filePath: string): string => {
+  let hash = 0;
+  for (let i = 0; i < filePath.length; i++) {
+    hash = ((hash << 5) - hash) + filePath.charCodeAt(i);
+    hash |= 0;
+  }
+  return `wrt-draft-native-${hash}`;
+};
 
 export default function WrtEditorPage() {
   const [content, setContent] = useState("");
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
   const [validation, setValidation] = useState<{ type: string; message: string } | null>(null);
   const [sidePanel, setSidePanel] = useState<"versions" | "timeline" | null>(null);
-  const [editorMode, setEditorMode] = useState<"visual" | "code" | "ide">("visual");
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const [editorMode, setEditorMode] = useState<"visual" | "code">("visual");
+  const editorRef = useRef<import("monaco-editor").editor.IStandaloneCodeEditor | null>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
   const visualContentRef = useRef("");
-  const ideTerminalRef = useRef<NativeTerminalRef>(null);
   const updateSeq = useRef(0);
-  const [ideConnected, setIdeConnected] = useState(false);
+  const syncSeq = useRef(0);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Native C Filesystem Workspace state (Universal C Engine)
   // Workspace root is configured exclusively via NEXT_PUBLIC_WORKSPACE_ROOT.
@@ -68,30 +82,81 @@ export default function WrtEditorPage() {
   const [saving, setSaving] = useState(false);
   const [modified, setModified] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const showStatus = (msg: string) => {
     setStatusMessage(msg);
-    setTimeout(() => setStatusMessage(null), 3500);
+    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+    statusTimerRef.current = setTimeout(() => setStatusMessage(null), 3500);
   };
 
+  // Draft key for the file currently open. Declared before its first use so the
+  // save paths and the autosave effect cannot drift apart.
+  const getDraftKey = useCallback(() => {
+    if (nativePath) return nativeDraftKey(nativePath);
+    if (currentFile) return `wrt-draft-cloud-${currentFile.id}`;
+    // No file open - use default for unsaved draft
+    return "wrt-draft-unsaved";
+  }, [nativePath, currentFile]);
+
+  // Timers are dropped on unmount so a late callback cannot setState on a gone
+  // component and spam the console after the editor is closed.
+  useEffect(() => {
+    return () => {
+      if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
+      if (validateTimerRef.current) clearTimeout(validateTimerRef.current);
+    };
+  }, []);
+
   const syncVisualEditor = useCallback(async (wrt: string) => {
-    if (visualEditorRef.current) {
+    if (!visualEditorRef.current) return;
+    const seq = ++syncSeq.current;
+    try {
       const html = await wrtClient.toEditableHtml(wrt);
+      // A slow reply must never repaint over text the user typed meanwhile.
+      if (seq !== syncSeq.current) return;
+      if (!visualEditorRef.current) return;
       visualEditorRef.current.innerHTML = html;
       visualContentRef.current = wrt;
+    } catch (err) {
+      if (seq !== syncSeq.current) return;
+      console.error("[WRT] Failed to render WRT into the visual editor:", err);
+      showStatus("Native engine unavailable — visual view not updated");
     }
   }, []);
 
-  const updateVisualDocument = useCallback(async () => {
-    if (!visualEditorRef.current) return;
+  /**
+   * Serialize the visual surface back into WRT and commit it to `content`.
+   *
+   * Returns the freshly serialized WRT, or null when the engine refused it or a
+   * newer call superseded this one — callers that persist (Ctrl+S) use the return
+   * value instead of reading `content` from their closure, which would still be
+   * one render behind at that point.
+   */
+  const updateVisualDocument = useCallback(async (): Promise<string | null> => {
+    if (!visualEditorRef.current) return null;
     const seq = ++updateSeq.current;
     const html = visualEditorRef.current.innerHTML;
-    const nextContent = await wrtClient.fromEditableHtml(html);
-    if (seq !== updateSeq.current) return; // stale response, discard
+    let nextContent: string;
+    try {
+      nextContent = await wrtClient.fromEditableHtml(html);
+    } catch (err) {
+      if (seq !== updateSeq.current) return null; // stale response, discard
+      // Deliberately no setContent here. A failed serialization must never blank
+      // the document: the typed HTML stays on screen and the draft stays readable,
+      // so the user can retry or copy the text out.
+      console.error("[WRT] Failed to serialize the visual editor:", err);
+      showStatus("Native engine unavailable — edits kept on screen, document not updated");
+      return null;
+    }
+    if (seq !== updateSeq.current) return null; // stale response, discard
     visualContentRef.current = nextContent;
     setContent(nextContent);
     setModified(true);
     validateWRT(nextContent);
+    return nextContent;
   }, []);
 
   const executeVisualCommand = (command: string, value?: string) => {
@@ -136,14 +201,7 @@ export default function WrtEditorPage() {
     updateVisualDocument();
   };
 
-  const isWrtFile = (pathOrId: string) => {
-    if (!pathOrId) return false;
-    if (nativePath && nativePath.split("/").pop()?.endsWith(".wrt")) return true;
-    if (currentFile && currentFile.name.endsWith(".wrt")) return true;
-    return false;
-  };
-
-  const switchEditorMode = useCallback(async (mode: "visual" | "code" | "ide") => {
+  const switchEditorMode = useCallback(async (mode: "visual" | "code") => {
     if (mode === editorMode) return;
 
     // Save current visual content before switching away
@@ -151,45 +209,28 @@ export default function WrtEditorPage() {
       await updateVisualDocument();
     }
 
-    // When switching to IDE mode, only allow if current file is .wrt
-    if (mode === "ide" && !isWrtFile(nativePath?.split("/").pop() ?? currentFile?.name ?? "")) {
-      showStatus("C IDE is only available for .wrt files");
-      return;
-    }
-
-    // When leaving IDE mode, reload the file (C IDE may have modified it on disk)
-    if (editorMode === "ide" && mode !== "ide") {
-      try {
-        if (nativePath) {
-          const data = await wrtClient.readFile(nativePath);
-          setContent(data.content);
-          setModified(false);
-          validateWRT(data.content);
-          showStatus("Reloaded from disk after C IDE edit");
-        } else if (currentFile) {
-          const data = await getFileContent(currentFile.id);
-          setContent(data.content);
-          setModified(false);
-          validateWRT(data.content);
-          showStatus("Reloaded from workspace after C IDE edit");
-        }
-      } catch (err) {
-        console.error("Failed to reload file after IDE:", err);
-      }
-    }
-
     setEditorMode(mode);
     if (mode === "visual") {
-      // Wait for next render cycle, then sync with fresh content from C API
-      requestAnimationFrame(async () => {
-        await syncVisualEditor(content);
+      // The keyed remount hands the visual surface a fresh, empty node, and
+      // the sync effect only repaints when content differs from
+      // visualContentRef — so make the mismatch explicit here, or the no-edit
+      // round-trip (visual → code → visual) would show a blank page. The ref
+      // is unmounted in code mode, so clearing it cannot lose anything.
+      visualContentRef.current = "";
+      // The sync effect below is the single source of truth for repainting the
+      // visual surface. Rendering here too would race it with the `content` this
+      // closure captured a render ago, and could overwrite fresher text.
+      requestAnimationFrame(() => {
         visualEditorRef.current?.focus();
       });
     }
-  }, [editorMode, nativePath, currentFile, content, syncVisualEditor, updateVisualDocument]);
+  }, [editorMode, updateVisualDocument]);
 
   // Validate WRT using Native C Engine (with debounce & fallback)
   const validateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Kept separately from `validation` so the code editor can underline each
+  // problem in place; the banner only ever showed the first one.
+  const [validationIssues, setValidationIssues] = useState<WrtIssue[]>([]);
 
   const validateWRT = useCallback((wrt: string) => {
     // Call Native C Engine via REST for deep structural validation
@@ -197,6 +238,7 @@ export default function WrtEditorPage() {
     validateTimerRef.current = setTimeout(async () => {
       try {
         const report: WrtValidationReport = await wrtClient.validate(wrt);
+        setValidationIssues(report.issues ?? []);
         if (report.valid) {
           setValidation({ type: "success", message: "✓ Valid (Native C)" });
         } else if (report.issues && report.issues.length > 0) {
@@ -204,16 +246,35 @@ export default function WrtEditorPage() {
           const desc = first.message || `[${first.tag}] error at line ${first.line}`;
           setValidation({ type: "warning", message: `⚠ ${desc}` });
         }
-      } catch {
-        // Fallback: quick local validation for immediate feedback
-        const tags = ["b", "i", "u", "s", "code", "h1", "h2", "h3", "quote", "list", "table"];
+      } catch (err) {
+        // Fallback: quick local validation for immediate feedback. Only reached
+        // when the native engine actually fails — the label below says so, so the
+        // user is never told "Valid (Native C)" while the engine is down.
+        console.debug("[WRT] Native validation unavailable, using local check:", err);
+
+        // Must mirror VALID_TAGS in backend/native/wrt/wrt_engine.c. Paired tags
+        // are balance-checked; self-closing ones only need their attributes.
+        const pairedTags = [
+          "b", "i", "u", "s", "code",
+          "h1", "h2", "h3", "quote",
+          "list", "table", "tr", "th", "td",
+        ];
+        const selfClosingTags = ["img", "link", "url"];
         const issues: Array<{ tag: string; open?: number; close?: number; count?: number }> = [];
 
-        tags.forEach((tag) => {
+        pairedTags.forEach((tag) => {
           const open = (wrt.match(new RegExp(`\\[${tag}\\]`, "g")) || []).length;
           const close = (wrt.match(new RegExp(`\\[\\/${tag}\\]`, "g")) || []).length;
           if (open !== close) {
             issues.push({ tag, open, close });
+          }
+        });
+
+        selfClosingTags.forEach((tag) => {
+          // `[img]` with no attribute is malformed; `[img src="..."]` is fine.
+          const bare = (wrt.match(new RegExp(`\\[${tag}\\](?!\\s)`, "g")) || []).length;
+          if (bare > 0) {
+            issues.push({ tag, count: bare });
           }
         });
 
@@ -222,13 +283,45 @@ export default function WrtEditorPage() {
           issues.push({ tag: "empty", count: emptyTags });
         }
 
+        // Turn the counts into located problems, so the code editor can
+        // underline the offending tag rather than only naming it in a banner.
+        const lines = wrt.split("\n");
+        const firstLineOf = (pattern: RegExp): number => {
+          const re = new RegExp(pattern.source, pattern.flags.replace("g", ""));
+          const idx = lines.findIndex((line) => re.test(line));
+          return idx === -1 ? 1 : idx + 1;
+        };
+        setValidationIssues(
+          issues.map((i) => {
+            const isSelfClosing = i.open === undefined;
+            const pattern = isSelfClosing
+              ? new RegExp(`\\[${i.tag}\\]`)
+              : i.open! > i.close!
+                ? new RegExp(`\\[${i.tag}\\]`)
+                : new RegExp(`\\[\\/${i.tag}\\]`);
+            return {
+              line: firstLineOf(pattern),
+              tag: i.tag,
+              message:
+                i.tag === "empty"
+                  ? "Empty []"
+                  : isSelfClosing
+                    ? `[${i.tag}] without attributes`
+                    : `[${i.tag}] unbalanced: ${i.open} opening, ${i.close} closing`,
+              severity: 1,
+            };
+          })
+        );
+
         if (issues.length === 0) {
-          setValidation({ type: "success", message: "✓ Valid (local)" });
+          setValidation({ type: "success", message: "✓ Valid (local — native engine offline)" });
         } else {
           const msg = issues
-            .map((i) =>
-              i.tag === "empty" ? `${i.count} empty []` : `[${i.tag}]: ${i.open}→${i.close}`
-            )
+            .map((i) => {
+              if (i.tag === "empty") return `${i.count} empty []`;
+              if (i.open === undefined) return `${i.count}× [${i.tag}] without attributes`;
+              return `[${i.tag}]: ${i.open}→${i.close}`;
+            })
             .join(" • ");
           setValidation({ type: "warning", message: `⚠ ${msg}` });
         }
@@ -249,82 +342,59 @@ export default function WrtEditorPage() {
     }
   };
 
-  // Insert tag
-  const insertTag = (tag: string) => {
-    if (!editorRef.current) return;
+  /**
+   * Insert text at the current selection in the code editor, replacing whatever
+   * is selected and leaving the caret inside the new text.
+   *
+   * Monaco owns the selection now, so this goes through the model rather than
+   * through a textarea ref: a toolbar click and a Ctrl+B keystroke have to land
+   * at the same place, and the old offset arithmetic only worked for the
+   * textarea.
+   */
+  const insertAtSelection = (makeText: (selected: string) => string) => {
+    const ed = editorRef.current;
+    const model = ed?.getModel();
+    const selection = ed?.getSelection();
+    if (!ed || !model || !selection) return;
 
-    const start = editorRef.current.selectionStart;
-    const end = editorRef.current.selectionEnd;
-    const selected = content.substring(start, end);
-    const insertion = `[${tag}]${selected}[/${tag}]`;
+    const selected = model.getValueInRange(selection);
+    const text = makeText(selected);
 
-    const newContent =
-      content.substring(0, start) + insertion + content.substring(end);
-    setContent(newContent);
+    ed.executeEdits("toolbar", [{ range: selection, text, forceMoveMarkers: true }]);
+    ed.pushUndoStop();
+    ed.focus();
     setModified(true);
-
-    setTimeout(() => {
-      if (editorRef.current) {
-        const newPos = selected === "" ? start + tag.length + 2 : start + insertion.length;
-        editorRef.current.selectionStart = newPos;
-        editorRef.current.selectionEnd = newPos;
-        editorRef.current.focus();
-      }
-    }, 0);
   };
+
+  /** Wrap the selection in a tag, or drop in a bare pair with the caret between. */
+  const insertTag = (tag: string) => {
+    insertAtSelection((selected) =>
+      selected ? `[${tag}]${selected}[/${tag}]` : `[${tag}][/${tag}]`
+    );
+  };
+
+  /** Bound to Monaco's Ctrl+B/I/U/K and to the toolbar's inline buttons. */
+  const formatInCodeMode = (tag: string) => insertTag(tag);
 
   // Insert list
   const insertList = () => {
-    if (!editorRef.current) return;
-
-    const start = editorRef.current.selectionStart;
-    const insertion = "[list]\n* Item 1\n* Item 2\n* Item 3\n[/list]";
-    const newContent = content.substring(0, start) + insertion + content.substring(start);
-
-    setContent(newContent);
-    setModified(true);
-
-    setTimeout(() => {
-      if (editorRef.current) {
-        editorRef.current.selectionStart = start + insertion.length;
-        editorRef.current.selectionEnd = start + insertion.length;
-        editorRef.current.focus();
-      }
-    }, 0);
+    insertAtSelection(() => "[list]\n* Item 1\n* Item 2\n* Item 3\n[/list]");
   };
 
   // Insert table
   const insertTable = () => {
-    if (!editorRef.current) return;
-
-    const start = editorRef.current.selectionStart;
-    const insertion =
-      "[table]\n| Header 1 | Header 2 | Header 3 |\n| Cell 1 | Cell 2 | Cell 3 |\n| Cell 4 | Cell 5 | Cell 6 |\n[/table]";
-    const newContent = content.substring(0, start) + insertion + content.substring(start);
-
-    setContent(newContent);
-    setModified(true);
-
-    setTimeout(() => {
-      if (editorRef.current) {
-        editorRef.current.selectionStart = start + insertion.length;
-        editorRef.current.selectionEnd = start + insertion.length;
-        editorRef.current.focus();
-      }
-    }, 0);
+    insertAtSelection(
+      () =>
+        "[table]\n| Header 1 | Header 2 | Header 3 |\n| Cell 1 | Cell 2 | Cell 3 |\n| Cell 4 | Cell 5 | Cell 6 |\n[/table]"
+    );
   };
 
   // Insert Image
   const insertImage = () => {
-    if (!editorRef.current) return;
     const src = prompt("Image URL or path:", "/image.png");
     if (!src) return;
     const alt = prompt("Image alt description:", "Image") || "Image";
-    const start = editorRef.current.selectionStart;
-    const insertion = `[img src="${src}" alt="${alt}"]`;
-    const newContent = content.substring(0, start) + insertion + content.substring(start);
-    setContent(newContent);
-    setModified(true);
+    insertAtSelection(() => `[img src="${src}" alt="${alt}"]`);
   };
 
   const applyFormatting = (
@@ -382,7 +452,16 @@ export default function WrtEditorPage() {
   const handleVisualKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
       event.preventDefault();
-      void handleSave();
+      void (async () => {
+        // Flush the visual surface first. Saving straight away would persist the
+        // previous serialization, silently dropping whatever was typed since.
+        const fresh = await updateVisualDocument();
+        if (fresh === null) {
+          showStatus("Not saved — the visual document could not be serialized");
+          return;
+        }
+        await handleSave(fresh);
+      })();
     }
   };
 
@@ -420,8 +499,7 @@ export default function WrtEditorPage() {
       // Check for draft specific to this file
       let fileContent = res.content;
       try {
-        const draftKey = `wrt-draft-native-${(() => { let h = 0; for (let i = 0; i < filePath.length; i++) { h = ((h << 5) - h) + filePath.charCodeAt(i); h |= 0; } return h; })()}`;
-        const draft = localStorage.getItem(draftKey);
+        const draft = localStorage.getItem(nativeDraftKey(filePath));
         if (draft) {
           fileContent = draft;
           showStatus(`Loaded draft for "${filePath.split("/").pop()}"`);
@@ -442,22 +520,60 @@ export default function WrtEditorPage() {
     }
   };
 
-  const saveToNativeFile = async (targetPath?: string) => {
-    const savePath = targetPath || nativePath;
+  /**
+   * Import an office/markdown file dropped onto the editor.
+   *
+   * The result replaces the document only after the conversion succeeds, so a
+   * failed import never destroys what the user was writing. The file is read
+   * by the browser as a Blob and sent raw -- a .pptx with embedded media is
+   * tens of megabytes, and reading it as a data URL first would double it.
+   */
+  const handleImportFile = async (file: File) => {
+    setImporting(true);
+    try {
+      const { content: imported, filename } = await wrtClient.importDocument(file);
+
+      // Unsaved work would be silently replaced by the drop, so say so first.
+      if (modified && !window.confirm("Importing will replace your current document. Continue?")) {
+        return;
+      }
+
+      setContent(imported);
+      setNativePath(null);
+      setCurrentFile(null);
+      setModified(true);
+      setEditorMode("visual");
+      validateWRT(imported);
+      showStatus(`Imported "${file.name}" as "${filename}"`);
+    } catch (err) {
+      // The engine's message already says which file and why ("corrupt",
+      // "unsupported format"), which is what the user can act on.
+      console.error("Import failed:", err);
+      alert(`Import failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const saveToNativeFile = async (targetPath?: string, override?: string) => {    const savePath = targetPath || nativePath;
+    const body = override ?? content;
     if (!savePath) {
       const defaultName = "document.wrt";
       const customPath = prompt("Save file path on disk (Native C):", `${nativeDir}/${defaultName}`);
       if (!customPath) return;
-      return void saveToNativeFile(customPath);
+      return void saveToNativeFile(customPath, override);
     }
 
     try {
       setSaving(true);
-      await wrtClient.saveFile(savePath, content);
+      await wrtClient.saveFile(savePath, body);
       setNativePath(savePath);
       setModified(false);
       // Clear draft since file is now saved
-      try { localStorage.removeItem(getDraftKey()); } catch {}
+      try {
+        localStorage.removeItem(getDraftKey());
+        setDraftSavedAt(null);
+      } catch {}
       const fileName = savePath.split("/").pop() || savePath;
       showStatus(`✓ Saved "${fileName}" to disk (Native C)`);
       void loadRecentFiles();
@@ -470,13 +586,18 @@ export default function WrtEditorPage() {
     }
   };
 
-  const handleSave = async () => {
+  /**
+   * @param override freshly serialized WRT, when the caller just produced it
+   *   (visual mode). Without it the closure's `content` is used, which can be a
+   *   render behind the text on screen.
+   */
+  const handleSave = async (override?: string) => {
     if (nativePath) {
-      await saveToNativeFile();
+      await saveToNativeFile(undefined, override);
     } else if (currentFile) {
-      await saveToWorkspace();
+      await saveToWorkspace(override);
     } else {
-      await saveToNativeFile();
+      await saveToNativeFile(undefined, override);
     }
   };
 
@@ -603,7 +724,7 @@ export default function WrtEditorPage() {
   };
 
   // Save to workspace (new version)
-  const saveToWorkspace = async () => {
+  const saveToWorkspace = async (override?: string) => {
     if (!currentFile) {
       setShowSaveAsModal(true);
       return;
@@ -612,7 +733,7 @@ export default function WrtEditorPage() {
     try {
       setSaving(true);
       const comment = prompt("Version comment (optional):", "Edited via WRT Editor") || "Updated via WRT Editor";
-      const newVersion = await uploadTextVersion(currentFile.id, content, currentFile.name, comment);
+      const newVersion = await uploadTextVersion(currentFile.id, override ?? content, currentFile.name, comment);
       setModified(false);
       setCurrentFile((prev) => (prev ? { ...prev, current_version_no: newVersion.version_no } : null));
       await refreshFileHistory(currentFile.id);
@@ -620,7 +741,10 @@ export default function WrtEditorPage() {
         await loadFilesForSpace(selectedSpaceId);
       }
       // Clear draft since file is now saved
-      try { localStorage.removeItem(getDraftKey()); } catch {}
+      try {
+        localStorage.removeItem(getDraftKey());
+        setDraftSavedAt(null);
+      } catch {}
       showStatus(`Saved version v${newVersion.version_no}`);
     } catch (err) {
       console.error("Failed to save:", err);
@@ -694,78 +818,6 @@ export default function WrtEditorPage() {
     }
   };
 
-  // Update cursor position
-  const updateCursor = () => {
-    if (!editorRef.current) return;
-
-    const pos = editorRef.current.selectionStart;
-    const text = content.substring(0, pos);
-    const lines = text.split("\n");
-
-    setCursorPos({
-      line: lines.length,
-      col: lines[lines.length - 1].length + 1,
-    });
-  };
-
-  // Handle input
-  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
-    setModified(true);
-    validateWRT(e.target.value);
-  };
-
-  // Keyboard shortcuts
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-      e.preventDefault();
-      void handleSave();
-    } else if ((e.metaKey || e.ctrlKey) && e.key === "b") {
-      e.preventDefault();
-      insertTag("b");
-    } else if ((e.metaKey || e.ctrlKey) && e.key === "i") {
-      e.preventDefault();
-      insertTag("i");
-    } else if ((e.metaKey || e.ctrlKey) && e.key === "u") {
-      e.preventDefault();
-      insertTag("u");
-    } else if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-      e.preventDefault();
-      insertTag("code");
-    } else if ((e.metaKey || e.ctrlKey) && e.key === "j") {
-      e.preventDefault();
-      switchEditorMode("ide");
-    }
-  };
-
-  // Focus IDE terminal when entering IDE mode
-  useEffect(() => {
-    if (editorMode === "ide") {
-      const timer = setTimeout(() => {
-        ideTerminalRef.current?.focus();
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [editorMode]);
-
-  // Get draft key specific to current file/source
-  const getDraftKey = useCallback(() => {
-    if (nativePath) {
-      // Hash the path for a consistent key
-      let hash = 0;
-      for (let i = 0; i < nativePath.length; i++) {
-        hash = ((hash << 5) - hash) + nativePath.charCodeAt(i);
-        hash |= 0;
-      }
-      return `wrt-draft-native-${hash}`;
-    }
-    if (currentFile) {
-      return `wrt-draft-cloud-${currentFile.id}`;
-    }
-    // No file open - use default for unsaved draft
-    return "wrt-draft-unsaved";
-  }, [nativePath, currentFile]);
-
   // Load draft on mount
   useEffect(() => {
     validateWRT(content);
@@ -789,22 +841,27 @@ export default function WrtEditorPage() {
     }
   }, [content, editorMode, syncVisualEditor]);
 
-  // Auto-save to localStorage (only for unsaved drafts)
+  // Auto-save to localStorage as a per-file draft.
+  //
+  // This used to be a setInterval with `content` in its dependency array, which
+  // meant the interval was torn down and recreated on every keystroke: while the
+  // user was typing continuously the 5s tick never fired, so the draft was never
+  // written. It also returned early whenever a file was open, so open files got
+  // no draft at all. A debounce fixes both — the write lands shortly after typing
+  // stops, for whatever file is currently open.
   useEffect(() => {
-    // Only auto-save if we have an unsaved draft (no nativePath AND no currentFile)
-    const isDraft = !nativePath && !currentFile;
-    if (!isDraft) return;
-
-    const timer = setInterval(() => {
+    if (!content) return;
+    const timer = setTimeout(() => {
       try {
-        const draftKey = getDraftKey();
-        localStorage.setItem(draftKey, content);
+        localStorage.setItem(getDraftKey(), content);
+        setDraftSavedAt(Date.now());
       } catch {
-        // Storage full
+        // Storage full or unavailable (private mode) — not worth interrupting for.
+        setDraftSavedAt(null);
       }
-    }, 5000);
+    }, 800);
 
-    return () => clearInterval(timer);
+    return () => clearTimeout(timer);
   }, [content, nativePath, currentFile, getDraftKey]);
 
   // Filtered files for search
@@ -1315,7 +1372,8 @@ export default function WrtEditorPage() {
         />
       )}
 
-      {/* Toolbar */}
+      {/* Toolbar. The formatting buttons drive the visual surface and the code
+          editor, both of which exist in every remaining mode. */}
       <div className="flex flex-wrap items-center gap-1.5 px-4 py-1.5 border-b bg-card text-xs">
         <div className="flex items-center gap-1 pr-2 border-r">
           <button
@@ -1444,7 +1502,7 @@ export default function WrtEditorPage() {
         <div className="flex flex-col flex-1 min-w-0">
           <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider border-b bg-card text-muted-foreground flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span>{editorMode === "visual" ? "Visual Editor" : editorMode === "code" ? "WRT Code" : "C IDE"}</span>
+              <span>{editorMode === "visual" ? "Visual Editor" : "WRT Code"}</span>
               <div className="flex rounded border overflow-hidden normal-case font-medium">
                 <button
                   onClick={() => switchEditorMode("visual")}
@@ -1459,14 +1517,6 @@ export default function WrtEditorPage() {
                   title="View and edit the underlying WRT markup"
                 >
                   WRT Code
-                </button>
-                <button
-                  onClick={() => switchEditorMode("ide")}
-                  disabled={!isWrtFile(nativePath?.split("/").pop() ?? currentFile?.name ?? "")}
-                  className={`px-2 py-0.5 text-[11px] transition-colors ${editorMode === "ide" ? "bg-primary text-primary-foreground" : "hover:bg-muted"} ${!isWrtFile(nativePath?.split("/").pop() ?? currentFile?.name ?? "") ? "opacity-40 cursor-not-allowed" : ""}`}
-                  title="Open the native C IDE for .wrt files"
-                >
-                  C IDE
                 </button>
               </div>
             </div>
@@ -1495,10 +1545,49 @@ export default function WrtEditorPage() {
           </div>
 
           {/* Editor surface — centered with max-width for readability */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-3xl mx-auto w-full pt-8 pb-16">
+          <div
+            className="relative flex-1 overflow-y-auto min-h-0"
+            onDragOver={(e) => {
+              // Without preventDefault the browser navigates to the dropped
+              // file and the whole SPA is lost — the classic data-loss bug.
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "copy";
+              setDragOver(true);
+            }}
+            onDragLeave={(e) => {
+              // Ignore the leave events fired while moving between child
+              // elements, or the highlight flickers off mid-drag.
+              if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+              setDragOver(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const file = e.dataTransfer.files?.[0];
+              if (file) void handleImportFile(file);
+            }}
+          >
+            <div
+              className={`max-w-3xl mx-auto w-full pt-8 ${
+                editorMode === "code" ? "pb-8" : "pb-16"
+              }`}
+            >
+              {dragOver && (
+                <div className="pointer-events-none absolute inset-4 z-10 flex items-center justify-center rounded-xl border-2 border-dashed border-primary bg-primary/5">
+                  <p className="rounded-lg bg-background px-4 py-2 text-sm font-medium text-primary shadow-sm">
+                    {importing ? "Importing…" : "Drop a .docx, .odt, .pptx or .md file to open it"}
+                  </p>
+                </div>
+              )}
               {editorMode === "visual" ? (
+                // The two branches are both <div> at the same position, so
+                // without keys React reuses the contentEditable node on the
+                // visual → code switch. Its innerHTML was set imperatively
+                // (syncVisualEditor), outside React's knowledge, so the old
+                // document text stayed rendered above the Monaco editor —
+                // the document appearing twice. Keys force a fresh node.
                 <div
+                  key="visual"
                   ref={visualEditorRef}
                   contentEditable
                   suppressContentEditableWarning
@@ -1510,30 +1599,24 @@ export default function WrtEditorPage() {
                   onKeyDown={handleVisualKeyDown}
                   className="wrt-visual-editor min-h-full p-4 text-sm leading-relaxed bg-background text-foreground focus:outline-none"
                 />
-              ) : editorMode === "code" ? (
-                <textarea
-                  ref={editorRef}
-                  value={content}
-                  onChange={handleInput}
-                  onKeyUp={updateCursor}
-                  onClick={updateCursor}
-                  onKeyDown={handleKeyDown}
-                  className="w-full min-h-[50vh] p-4 font-mono text-sm leading-relaxed resize-none bg-background text-foreground focus:outline-none"
-                  placeholder="[h1]Document Title[/h1]
-
-Write your content here...
-
-Use [b]bold[/b], [i]italic[/i], [u]underline[/u], [quote], [list], [table], [img] tags."
-                  spellCheck={false}
-                />
               ) : (
-                <div className="h-full min-h-[50vh]">
-                  <NativeTerminal
-                    ref={ideTerminalRef}
-                    terminalEndpoint="/api/ws/terminal/ide"
-                    filePath={nativePath || undefined}
-                    onConnected={() => setIdeConnected(true)}
-                    onError={(msg) => showStatus(`C IDE: ${msg}`)}
+                // Monaco sizes itself from its container, so this box needs a
+                // real height. Without one `h-full` on the editor resolves to
+                // zero and the pane collapses — the same shape used on the
+                // files page, where WrtEditor already renders correctly.
+                <div key="code" className="h-[60vh] overflow-hidden rounded-xl border border-border/60">
+                  <WrtEditor
+                    content={content}
+                    onChange={(value) => {
+                      setContent(value);
+                      setModified(true);
+                      validateWRT(value);
+                    }}
+                    onSave={(value) => void handleSave(value)}
+                    onFormat={(tag) => formatInCodeMode(tag)}
+                    onCursorChange={setCursorPos}
+                    issues={validationIssues}
+                    className="h-full"
                   />
                 </div>
               )}
@@ -1654,12 +1737,17 @@ Use [b]bold[/b], [i]italic[/i], [u]underline[/u], [quote], [list], [table], [img
         </div>
         <div className="flex items-center gap-2">
           {modified && <span className="text-yellow-500 font-sans text-xs">● Unsaved changes</span>}
-          <span>Auto-saved locally</span>
+          {draftSavedAt ? (
+            <span title={`Local draft written at ${new Date(draftSavedAt).toLocaleTimeString()}`}>
+              Draft saved locally
+            </span>
+          ) : (
+            <span className="text-muted-foreground/70">No local draft</span>
+          )}
         </div>
       </div>
 
       <style jsx global>{`
-        .wrt-preview h1,
         .wrt-visual-editor h1 {
           font-size: 1.75rem;
           font-weight: 700;
@@ -1667,7 +1755,6 @@ Use [b]bold[/b], [i]italic[/i], [u]underline[/u], [quote], [list], [table], [img
           margin-bottom: 0.75rem;
           line-height: 1.25;
         }
-        .wrt-preview h2,
         .wrt-visual-editor h2 {
           font-size: 1.35rem;
           font-weight: 600;
@@ -1675,19 +1762,16 @@ Use [b]bold[/b], [i]italic[/i], [u]underline[/u], [quote], [list], [table], [img
           margin-bottom: 0.5rem;
           line-height: 1.3;
         }
-        .wrt-preview h3,
         .wrt-visual-editor h3 {
           font-size: 1.1rem;
           font-weight: 600;
           margin-top: 1rem;
           margin-bottom: 0.5rem;
         }
-        .wrt-preview p,
         .wrt-visual-editor p {
           margin-bottom: 0.85rem;
           line-height: 1.6;
         }
-        .wrt-preview blockquote,
         .wrt-visual-editor blockquote {
           border-left: 3px solid var(--primary, #0070f3);
           padding-left: 1rem;
@@ -1695,37 +1779,30 @@ Use [b]bold[/b], [i]italic[/i], [u]underline[/u], [quote], [list], [table], [img
           font-style: italic;
           opacity: 0.85;
         }
-        .wrt-preview ul,
         .wrt-visual-editor ul {
           list-style-type: disc;
           padding-left: 1.5rem;
           margin: 0.75rem 0;
         }
-        .wrt-preview li,
         .wrt-visual-editor li {
           margin-bottom: 0.25rem;
         }
-        .wrt-preview table,
         .wrt-visual-editor table {
           width: 100%;
           border-collapse: collapse;
           margin: 1rem 0;
           font-size: 0.85rem;
         }
-        .wrt-preview th,
-        .wrt-preview td,
         .wrt-visual-editor th,
         .wrt-visual-editor td {
           border: 1px solid rgba(128, 128, 128, 0.3);
           padding: 0.5rem 0.75rem;
           text-align: left;
         }
-        .wrt-preview th,
         .wrt-visual-editor th {
           background-color: rgba(128, 128, 128, 0.1);
           font-weight: 600;
         }
-        .wrt-preview code,
         .wrt-visual-editor code,
         .wrt-visual-editor pre {
           background-color: rgba(128, 128, 128, 0.15);
@@ -1739,7 +1816,6 @@ Use [b]bold[/b], [i]italic[/i], [u]underline[/u], [quote], [list], [table], [img
           padding: 0.75rem;
           white-space: pre-wrap;
         }
-        .wrt-preview img,
         .wrt-visual-editor img {
           max-width: 100%;
           height: auto;

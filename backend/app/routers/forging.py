@@ -56,6 +56,15 @@ async def _mongo(db: AsyncSession, user_id: int):
             status_code=400,
             detail="No MongoDB cluster configured for this user — connect one first.",
         )
+    except Exception as e:
+        # See the note in traces.py: only an unconfigured cluster raises
+        # MemSvcError here. A configured cluster that is briefly unreachable
+        # fails inside pymongo, and reporting that as "not configured" sends the
+        # user to re-add a connection string they already have.
+        raise HTTPException(
+            status_code=503,
+            detail=f"MongoDB cluster unreachable: {e}",
+        )
 
 
 # [RCF:PROTECTED]

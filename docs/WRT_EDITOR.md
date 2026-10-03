@@ -103,14 +103,13 @@ Thin wrapper around C engine via `subprocess`:
 ### Frontend TypeScript (`frontend/src/app/(dashboard)/dashboard/wrt-editor/`)
 
 **Components:**
-- `page.tsx` — main editor page, mode switching (Visual / WRT Code / C IDE)
+- `page.tsx` — main editor page, mode switching (Visual / WRT Code)
 - `WrtEngineClient` (`@/lib/wrt-engine-client.ts`) — async client for C API
 - `contentEditable` div — WYSIWYG editing surface
 
 **Key Features:**
 - **Visual Mode** (default): contentEditable with semantic HTML, toolbar for formatting
 - **WRT Code Mode**: raw WRT source with syntax highlighting (Monaco)
-- **C IDE Mode**: terminal-based C editor for `.wrt` files (only for `.wrt` files)
 - **Seamless Sync**: Bi-directional conversion preserves semantic structure
 - **Auto-save**: File-specific localStorage drafts (`wrt-draft-{source}-{hash}`)
 
@@ -127,14 +126,13 @@ For normal document authors who do not want to manage raw WRT tags (`[b]`, `[i]`
 - **WYSIWYG Editing:** Edit formatted text directly without seeing WRT markup.
 - **Seamless Sync:** Bi-directional conversion (`ContentEditable` HTML ↔ `.wrt`) via C engine.
 - **Integrated Layout:** Centered document canvas with collapsible side drawer (Versions, Timeline).
-- **Mode Switching:** Easily toggle between **Visual**, **WRT Code**, and **C IDE** modes.
+- **Mode Switching:** Easily toggle between **Visual** and **WRT Code** modes.
 
 ### Usage
 1. Open any `.wrt` or `.docx` file in the Dashboard.
 2. The document appears in **Visual** mode by default.
 3. Use the toolbar buttons to format text (Bold, Italic, Underline, Strikethrough, Code, Quote, Headings, Lists, Tables).
 4. Use the toggle to switch to **WRT Code** mode if you need direct tag control for agents.
-5. Use **C IDE** mode (for `.wrt` files only) for terminal-based editing with ANSI highlighting.
 
 ---
 
@@ -254,7 +252,7 @@ Creates `wrt-engine` binary in `backend/native/wrt/`.
 1. **Backend development** — quick `.wrt` file editing when debugging converters
 2. **Testing** — manually creating test documents
 3. **Agent debugging** — viewing what the agent sees after conversion
-4. **Direct editing** — alternative to editing through UI (C IDE mode)
+4. **Direct editing** — alternative to editing through UI (WRT Code mode)
 5. **Web dashboard** — Visual mode for document authors
 
 ---
@@ -296,7 +294,6 @@ Creates `wrt-engine` binary in `backend/native/wrt/`.
 ### Long-Term Plans
 - [ ] **Collaborative editing** — real-time multi-user via WebSockets
 - [ ] **Vim/Emacs keybindings** — optional keybinding modes in Code Mode
-- [ ] **Integration with aladdin_term** — launch C IDE from PTY daemon
 - [ ] **JSON-RPC protocol** — AI agent control of editor
 
 ---
@@ -307,7 +304,7 @@ Creates `wrt-engine` binary in `backend/native/wrt/`.
 |--------|---------|----------|----------------|------|
 | **Current (C + contentEditable)** | Pure C (`wrt-engine`) | React + contentEditable | ✅ Full (single source) | ~1800 LOC C |
 | Monaco Editor (PR #790) | Python | Monaco | ✅ Highlighting only | ~2MB JS |
-| Terminal `wrt-edit` | C (separate) | ANSI terminal | ✅ Highlighting | ~70KB |
+| ~~Terminal `wrt-edit`~~ | C (separate) | ANSI terminal | ✅ Highlighting | ~70KB — **removed Oct 2026** (superseded by WRT Code mode) |
 
 ### Advantages of Current Architecture
 ✅ **Single source of truth** — C engine handles all parsing/serialization  
@@ -366,9 +363,6 @@ cd backend/native/wrt && make
 cd backend/native/wrt && make
 python -m pytest tests/test_native_wrt.py -v
 ```
-
-### Problem: Visual Mode not editable after C IDE
-**Cause:** Fixed — now requests fresh HTML from C engine on mode switch.
 
 ### Problem: localStorage conflicts between files
 **Cause:** Fixed — keys now file-specific: `wrt-draft-{source}-{hash}`

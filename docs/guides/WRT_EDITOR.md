@@ -1,6 +1,6 @@
 # WRT Editor — In-Browser Editing for `.wrt` Files
 
-**Added in:** PR #790 (31 Aug 2026) | **Updated:** Sept 24, 2026 (Pure C Backend Refactoring)
+**Added in:** PR #790 (31 Aug 2026) | **Updated:** Oct 3, 2026 (C IDE mode and the terminal `wrt-edit` editor removed — Monaco WRT Code mode covers raw tag editing)
 
 ---
 
@@ -9,7 +9,6 @@
 The **WRT Editor** is a multi-mode document editor for `.wrt` (Word Rich Text) files in AladdinAI:
 - **Visual Mode** (default): WYSIWYG editing via `contentEditable` with semantic toolbar
 - **WRT Code Mode**: Monaco-based raw tag editor with custom syntax highlighting
-- **C IDE Mode**: Terminal-based C editor with ANSI highlighting (for `.wrt` files)
 
 ### Key Architectural Principle
 **Pure C Backend as Single Source of Truth:** All parsing, validation, serialization, and WRT ↔ HTML conversion are handled by the native C engine (`backend/native/wrt/wrt_engine.c`). The TypeScript frontend (`page.tsx`) is a thin client that handles UI rendering and proxies operations to the C engine via `WrtEngineClient`.
@@ -56,12 +55,7 @@ See [`PULL_REQUEST_DOCX_WRT.md`](../PULL_REQUEST_DOCX_WRT.md) for the full forma
 - Custom syntax highlighting rules for `.wrt` syntax
 - Dark / Light theme support matching dashboard theme
 - Real-time syntax validation via C engine (`wrt_validate`)
-
-### 3. C IDE Mode (Terminal)
-- Native terminal editor (`wrt_edit.c`) with ANSI color highlighting
-- Direct keyboard shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+S`, `Ctrl+Q`)
-- Accessible only for `.wrt` files
-- Seamless state reload on switching back to Visual/Code mode
+- Tag shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`, `Ctrl+K`) and a tag autocomplete provider
 
 ---
 
