@@ -4,8 +4,11 @@
 Covers contacts, deals, products, orders, and activities CRUD + edge cases.
 """
 from io import BytesIO
+from types import SimpleNamespace
 
 from openpyxl import Workbook
+
+import app.routers.crm_activities as crm_activities_router
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -386,3 +389,91 @@ class TestActivities:
             r.json()["detail"]
             == "Can only suggest replies for inbound messages"
         )
+
+    def _create_inbound_activity(self, client, auth_headers):
+        c = _create_contact(
+            client,
+            auth_headers,
+            name="Inbound Client",
+            email="inbound@x.com",
+        )
+        create = client.post(
+            "/api/crm/activities",
+            headers=auth_headers,
+            json={
+                "contact_id": c["id"],
+                "type": "email_in",
+                "subject": "Question from client",
+                "content": "Hi, when will my order ship?",
+            },
+        )
+        assert create.status_code == 201, create.text
+        return create.json()["id"]
+
+    def test_suggest_reply_inbound_returns_draft(
+        self,
+        client,
+        auth_headers,
+        monkeypatch,
+    ):
+        fake_agent = SimpleNamespace(
+            id=42,
+            name="Support Bot",
+            system_prompt="You are a helpful support agent.",
+        )
+        captured = {}
+
+        async def fake_pick_agent(db, user, activity):
+            return fake_agent
+
+        async def fake_run_agent(db, agent, messages, extras=None):
+            captured["agent"] = agent
+            captured["messages"] = messages
+            captured["extras"] = extras
+            return "  Your order ships tomorrow.  "
+
+        monkeypatch.setattr(crm_activities_router, "_pick_agent", fake_pick_agent)
+        monkeypatch.setattr(crm_activities_router, "run_agent", fake_run_agent)
+
+        aid = self._create_inbound_activity(client, auth_headers)
+        r = client.post(
+            f"/api/crm/activities/{aid}/suggest-reply",
+            headers=auth_headers,
+        )
+
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["draft"] == "Your order ships tomorrow."
+        assert body["agent_id"] == 42
+        assert body["agent_name"] == "Support Bot"
+
+        assert captured["agent"] is fake_agent
+        assert captured["extras"] == {"mode": "suggest_reply"}
+        assert captured["messages"][0] == {
+            "role": "system",
+            "content": "You are a helpful support agent.",
+        }
+        user_prompt = captured["messages"][1]["content"]
+        assert "Question from client" in user_prompt
+        assert "when will my order ship?" in user_prompt
+        assert "Inbound Client" in user_prompt
+
+    def test_suggest_reply_without_agent(
+        self,
+        client,
+        auth_headers,
+        monkeypatch,
+    ):
+        async def no_agent(db, user, activity):
+            return None
+
+        monkeypatch.setattr(crm_activities_router, "_pick_agent", no_agent)
+
+        aid = self._create_inbound_activity(client, auth_headers)
+        r = client.post(
+            f"/api/crm/activities/{aid}/suggest-reply",
+            headers=auth_headers,
+        )
+
+        assert r.status_code == 400
+        assert r.json()["detail"] == "No agent available to draft a reply"
