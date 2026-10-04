@@ -11,6 +11,32 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Preserve inline image run order in DOCX parsing (#974) ([c839ca7](https://github.com/aliyevaladddin/AladdinAI/commit/c839ca7e2b8b9f7c502b9e9c42f89056b2191a00))
 
 
+### Dependencies
+
+- Bump actions/setup-python from 5 to 7 (#981) ([b9e77eb](https://github.com/aliyevaladddin/AladdinAI/commit/b9e77eb4124e0797c6c7558c46f1c3b4ad20fc59))
+
+- Bump sqlalchemy from 2.0.54 to 2.1.1 in /backend (#982) ([0bfd263](https://github.com/aliyevaladddin/AladdinAI/commit/0bfd263fc7104749c291283dcfc40da19b4f987a))
+
+- Bump pyjwt from 2.14.0 to 2.15.1 in /backend (#983) ([b4bea0d](https://github.com/aliyevaladddin/AladdinAI/commit/b4bea0dfc503bcf6ac7477c1fbfea3ca1e84abef))
+
+- Bump chalk from 6.0.0 to 6.0.1 in /cli (#984) ([8a55d99](https://github.com/aliyevaladddin/AladdinAI/commit/8a55d99b81f66561e1e5cf61b82fe8a6c87a7c42))
+
+- Bump actions/checkout from 4 to 7 (#985) ([fd48109](https://github.com/aliyevaladddin/AladdinAI/commit/fd4810917a694322065257ab0f404ee1921f01fa))
+
+- Bump uvicorn from 0.53.0 to 0.54.0 in /backend (#986) ([e2a33cf](https://github.com/aliyevaladddin/AladdinAI/commit/e2a33cf87de6c18921368a2204d3eb580814ef17))
+
+- Bump dotenv from 18.0.4 to 18.0.5 in /cli (#987) ([87297d1](https://github.com/aliyevaladddin/AladdinAI/commit/87297d128db502fa22b944973e5223c0bc02bfcc))
+
+- Bump fastapi from 0.141.1 to 0.142.2 in /backend (#988) ([c26d198](https://github.com/aliyevaladddin/AladdinAI/commit/c26d1989ab0e20370cbf7c7c2d22b109f8e426d7))
+
+- Bump rcf-protocol from 2.1.8 to 2.1.9 in /cli (#989) ([7e5c849](https://github.com/aliyevaladddin/AladdinAI/commit/7e5c849bf77d5da74270288d46e7b6c7b2c571e8))
+
+
+### Documentation
+
+- Update API documentation [skip ci] (#998) ([a306f75](https://github.com/aliyevaladddin/AladdinAI/commit/a306f75a7372903bc0318cddca0e1ab426c10da1))
+
+
 ### Maintenance
 
 - Update changelog [skip ci] (#968) ([a241aaf](https://github.com/aliyevaladddin/AladdinAI/commit/a241aaf6353fe245fe7e4b8d4eafb97d806e274b))
@@ -26,6 +52,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Override undici version and downgrade actions/checkout to v4 ([b8ccc57](https://github.com/aliyevaladddin/AladdinAI/commit/b8ccc5771fe673aeb562a89c71fc9b83e3aef14b))
 
 - Update changelog [skip ci] (#976) ([ac61fa0](https://github.com/aliyevaladddin/AladdinAI/commit/ac61fa0441b7e5b2204ccb2aab9f9fd169fcb432))
+
+- Update changelog [skip ci] (#1000) ([ed47d84](https://github.com/aliyevaladddin/AladdinAI/commit/ed47d84550b888806bf5142536db9bcc1ef0a0bf))
 
 
 ### Testing
