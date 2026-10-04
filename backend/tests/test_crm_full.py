@@ -3,7 +3,9 @@
 
 Covers contacts, deals, products, orders, and activities CRUD + edge cases.
 """
-import pytest
+from io import BytesIO
+
+from openpyxl import Workbook
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -67,12 +69,32 @@ class TestContacts:
         assert any("Searchable" in c["name"] for c in r.json())
 
     def test_import_contacts(self, client, auth_headers):
-        r = client.post("/api/crm/contacts/import", headers=auth_headers, json=[
-            {"name": "Import1", "email": "imp1@x.com"},
-            {"name": "Import2", "email": "imp2@x.com"},
-        ])
-        # Import may require specific CSV format or have validation
-        assert r.status_code in (201, 400, 422)
+        wb = Workbook()
+        ws = wb.active
+        ws.append(["name", "email"])
+        ws.append(["Import1", "imp1@x.com"])
+        ws.append(["Import2", "imp2@x.com"])
+
+        payload = BytesIO()
+        wb.save(payload)
+
+        r = client.post(
+            "/api/crm/contacts/import",
+            headers=auth_headers,
+            files={
+                "file": (
+                    "contacts.xlsx",
+                    payload.getvalue(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+            },
+        )
+
+        assert r.status_code == 201, r.text
+        body = r.json()
+        assert body["created"] == 2
+        assert body["skipped"] == 0
+        assert body["total_rows"] == 2
 
     def test_export_contacts(self, client, auth_headers):
         _create_contact(client, auth_headers, name="Exportable")
@@ -216,11 +238,44 @@ class TestOrders:
 
     def test_status_transition(self, client, auth_headers):
         c = _create_contact(client, auth_headers)
-        create = client.post("/api/crm/orders", headers=auth_headers, json={"contact_id": c["id"], "items": []})
+        create = client.post(
+            "/api/crm/orders",
+            headers=auth_headers,
+            json={"contact_id": c["id"], "items": []},
+        )
+        assert create.status_code == 201, create.text
+
         oid = create.json()["id"]
-        r = client.put(f"/api/crm/orders/{oid}/status?status=confirmed", headers=auth_headers)
-        # Status may require valid transition or body
-        assert r.status_code in (200, 400, 422)
+        r = client.put(
+            f"/api/crm/orders/{oid}/status?status=processing",
+            headers=auth_headers,
+        )
+
+        assert r.status_code == 200, r.text
+        assert r.json()["status"] == "processing"
+
+    def test_invalid_status_transition(self, client, auth_headers):
+        c = _create_contact(
+            client,
+            auth_headers,
+            name="Invalid Transition",
+            email="invalid-transition@x.com",
+        )
+        create = client.post(
+            "/api/crm/orders",
+            headers=auth_headers,
+            json={"contact_id": c["id"], "items": []},
+        )
+        assert create.status_code == 201, create.text
+
+        oid = create.json()["id"]
+        r = client.put(
+            f"/api/crm/orders/{oid}/status?status=delivered",
+            headers=auth_headers,
+        )
+
+        assert r.status_code == 400
+        assert "Cannot move order" in r.json()["detail"]
 
     def test_order_history(self, client, auth_headers):
         c = _create_contact(client, auth_headers)
@@ -251,34 +306,83 @@ class TestActivities:
 
     def test_create_activity(self, client, auth_headers):
         c = _create_contact(client, auth_headers)
-        r = client.post("/api/crm/activities", headers=auth_headers, json={
-            "contact_id": c["id"],
-            "activity_type": "call",
-            "subject": "Follow up",
-        })
-        # May require additional fields
-        assert r.status_code in (201, 422)
+        r = client.post(
+            "/api/crm/activities",
+            headers=auth_headers,
+            json={
+                "contact_id": c["id"],
+                "type": "call",
+                "subject": "Follow up",
+            },
+        )
+
+        assert r.status_code == 201, r.text
+        body = r.json()
+        assert body["contact_id"] == c["id"]
+        assert body["type"] == "call"
+        assert body["subject"] == "Follow up"
 
     def test_update_activity(self, client, auth_headers):
-        c = _create_contact(client, auth_headers)
-        create = client.post("/api/crm/activities", headers=auth_headers, json={
-            "contact_id": c["id"], "activity_type": "email", "subject": "Initial",
-        })
-        if create.status_code != 201:
-            pytest.skip("Activity creation failed — schema mismatch")
-        aid = create.json()["id"]
-        r = client.patch(f"/api/crm/activities/{aid}", headers=auth_headers, json={"subject": "Updated"})
-        assert r.status_code == 200
-        assert r.json()["subject"] == "Updated"
+        first = _create_contact(
+            client,
+            auth_headers,
+            name="Activity Contact One",
+            email="activity-one@x.com",
+        )
+        second = _create_contact(
+            client,
+            auth_headers,
+            name="Activity Contact Two",
+            email="activity-two@x.com",
+        )
 
-    def test_suggest_reply(self, client, auth_headers):
-        c = _create_contact(client, auth_headers)
-        create = client.post("/api/crm/activities", headers=auth_headers, json={
-            "contact_id": c["id"], "activity_type": "email", "subject": "Question from client",
-        })
-        if create.status_code != 201:
-            pytest.skip("Activity creation failed — schema mismatch")
+        create = client.post(
+            "/api/crm/activities",
+            headers=auth_headers,
+            json={
+                "contact_id": first["id"],
+                "type": "email_in",
+                "subject": "Initial",
+            },
+        )
+        assert create.status_code == 201, create.text
+
         aid = create.json()["id"]
-        r = client.post(f"/api/crm/activities/{aid}/suggest-reply", headers=auth_headers)
-        # May return 200 with suggestion or 500 if LLM unavailable
-        assert r.status_code in (200, 500)
+        r = client.patch(
+            f"/api/crm/activities/{aid}",
+            headers=auth_headers,
+            json={"contact_id": second["id"]},
+        )
+
+        assert r.status_code == 200, r.text
+        assert r.json()["contact_id"] == second["id"]
+        assert r.json()["subject"] == "Initial"
+
+    def test_suggest_reply_rejects_non_inbound_activity(
+        self,
+        client,
+        auth_headers,
+    ):
+        c = _create_contact(client, auth_headers)
+        create = client.post(
+            "/api/crm/activities",
+            headers=auth_headers,
+            json={
+                "contact_id": c["id"],
+                "type": "note",
+                "subject": "Internal note",
+            },
+        )
+        assert create.status_code == 201, create.text
+
+        aid = create.json()["id"]
+        r = client.post(
+            f"/api/crm/activities/{aid}/suggest-reply",
+            headers=auth_headers,
+        )
+
+        assert r.status_code == 400
+        assert (
+            r.json()["detail"]
+            == "Can only suggest replies for inbound messages"
+        )
