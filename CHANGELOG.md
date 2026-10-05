@@ -55,6 +55,13 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#1000) ([ed47d84](https://github.com/aliyevaladddin/AladdinAI/commit/ed47d84550b888806bf5142536db9bcc1ef0a0bf))
 
+- Update changelog [skip ci] (#1010) ([e670fe0](https://github.com/aliyevaladddin/AladdinAI/commit/e670fe0bfb396171de1e668eb1667c8298dbedee))
+
+
+### Refactor
+
+- Consolidate page error boundaries (#1011) ([348212c](https://github.com/aliyevaladddin/AladdinAI/commit/348212c874fa7eae65589c77138b5762f3f537b8))
+
 
 ### Testing
 
