@@ -10,6 +10,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Preserve inline image run order in DOCX parsing (#974) ([c839ca7](https://github.com/aliyevaladddin/AladdinAI/commit/c839ca7e2b8b9f7c502b9e9c42f89056b2191a00))
 
+- Fix CORS preflight OPTIONS headers for dev and prod environments (#1013) ([47d7a5e](https://github.com/aliyevaladddin/AladdinAI/commit/47d7a5e8ba2d1182c9c2255e4e1992e28f012c7a))
+
 
 ### Dependencies
 
@@ -54,6 +56,13 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#976) ([ac61fa0](https://github.com/aliyevaladddin/AladdinAI/commit/ac61fa0441b7e5b2204ccb2aab9f9fd169fcb432))
 
 - Update changelog [skip ci] (#1000) ([ed47d84](https://github.com/aliyevaladddin/AladdinAI/commit/ed47d84550b888806bf5142536db9bcc1ef0a0bf))
+
+- Update changelog [skip ci] (#1010) ([e670fe0](https://github.com/aliyevaladddin/AladdinAI/commit/e670fe0bfb396171de1e668eb1667c8298dbedee))
+
+
+### Refactor
+
+- Consolidate page error boundaries (#1011) ([348212c](https://github.com/aliyevaladddin/AladdinAI/commit/348212c874fa7eae65589c77138b5762f3f537b8))
 
 
 ### Testing
