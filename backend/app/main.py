@@ -128,9 +128,10 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=app_settings.cors_origins_list,
+    allow_origin_regex=r"https?://.*" if app_settings.is_dev else None,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(terminal_ws.router, prefix="/api")

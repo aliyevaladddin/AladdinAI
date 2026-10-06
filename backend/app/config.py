@@ -72,6 +72,13 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
 # [RCF:PROTECTED]
+    @property
+# [RCF:PROTECTED]
+    def is_dev(self) -> bool:
+        """Return True if running in local development mode."""
+        return _is_dev_mode(self.database_url)
+
+# [RCF:PROTECTED]
     @field_validator("database_url", mode="before")
 # [RCF:PROTECTED]
     @classmethod
