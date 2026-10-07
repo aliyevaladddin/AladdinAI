@@ -143,3 +143,4 @@ test_wrt
 wrt-edit
 wrt-validate
 wrt*.o
+backend/native/wrt/samples/*
