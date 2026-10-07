@@ -59,6 +59,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#1010) ([e670fe0](https://github.com/aliyevaladddin/AladdinAI/commit/e670fe0bfb396171de1e668eb1667c8298dbedee))
 
+- Update changelog [skip ci] (#1014) ([6c61fb7](https://github.com/aliyevaladddin/AladdinAI/commit/6c61fb7af869f55d6251557df91a581c394a84e0))
+
+- Ignore sample files in backend native wrt directory ([aa51828](https://github.com/aliyevaladddin/AladdinAI/commit/aa51828efed9a3b4fefb6258ec296effe20564d5))
+
 
 ### Refactor
 
