@@ -45,18 +45,27 @@ def compile_test_wrt():
         if TEST_WRT_C.stat().st_mtime < TEST_WRT_BINARY.stat().st_mtime:
             return True
 
+    engine_sources = [
+        str(WRT_DIR / "wrt_docx.c"),
+        str(WRT_DIR / "wrt_markdown.c"),
+        str(WRT_DIR / "wrt_odt.c"),
+        str(WRT_DIR / "wrt_pptx.c"),
+        str(WRT_DIR / "wrt_check.c"),
+        str(WRT_DIR / "wrt_daemon.c"),
+        str(WRT_DIR / "wrt_files.c"),
+        str(WRT_DIR / "wrt_html.c"),
+        str(WRT_DIR / "wrt_json.c"),
+        str(WRT_DIR / "wrt_tags.c"),
+        str(WRT_DIR / "wrt_util.c"),
+    ]
+
     # Compile with all the engine source files
     result = subprocess.run(
         [
             "gcc", "-O2", "-Wall", "-Wextra", "-std=c11",
             "-D_POSIX_C_SOURCE=200809L", "-D_DEFAULT_SOURCE", "-D_GNU_SOURCE",
-            "-DWRT_ENGINE_NO_MAIN",
             str(TEST_WRT_C),
-            str(WRT_DIR / "wrt_engine.c"),
-            str(WRT_DIR / "wrt_docx.c"),
-            str(WRT_DIR / "wrt_markdown.c"),
-            str(WRT_DIR / "wrt_odt.c"),
-            str(WRT_DIR / "wrt_pptx.c"),
+            *engine_sources,
             "-o", str(TEST_WRT_BINARY),
             "-lzip", "-lz"
         ],
