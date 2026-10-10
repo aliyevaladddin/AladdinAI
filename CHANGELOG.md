@@ -65,6 +65,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update changelog [skip ci] (#1015) ([1a53ea6](https://github.com/aliyevaladddin/AladdinAI/commit/1a53ea65bebf3691be44acec3f200768ec8245ff))
 
+- Update changelog [skip ci] (#1020) ([246792e](https://github.com/aliyevaladddin/AladdinAI/commit/246792eb9155afffc7276df21a2624b70f0a5f6f))
+
+- Update frontend dependencies in package.json and package-lock.json ([de2b416](https://github.com/aliyevaladddin/AladdinAI/commit/de2b41676a0bb6c32befa49cf72a0965328e258b))
+
 
 ### Refactor
 
