@@ -63,10 +63,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Ignore sample files in backend native wrt directory ([aa51828](https://github.com/aliyevaladddin/AladdinAI/commit/aa51828efed9a3b4fefb6258ec296effe20564d5))
 
+- Update changelog [skip ci] (#1015) ([1a53ea6](https://github.com/aliyevaladddin/AladdinAI/commit/1a53ea65bebf3691be44acec3f200768ec8245ff))
+
 
 ### Refactor
 
 - Consolidate page error boundaries (#1011) ([348212c](https://github.com/aliyevaladddin/AladdinAI/commit/348212c874fa7eae65589c77138b5762f3f537b8))
+
+- Modularize wrt-engine into dedicated C subsystem files (#1019) ([337848b](https://github.com/aliyevaladddin/AladdinAI/commit/337848b9c0fa4409ff378bbf4549850e3027c28b))
 
 
 ### Testing
