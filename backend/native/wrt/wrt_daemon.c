@@ -321,23 +321,25 @@ int wrt_engine_daemon(const char *socket_path) {
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
 
-    if (bind(server_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    mode_t old_mask = umask(0177);
+    int bind_res = bind(server_fd, (struct sockaddr *)&addr, sizeof(addr));
+    umask(old_mask);
+
+    if (bind_res < 0) {
         perror("unix bind failed");
         close(server_fd);
         return 1;
     }
 
-    chmod(socket_path, 0666);
-
-    if (listen(server_fd, 32) < 0) {
-        perror("unix listen failed");
+    // Secure socket permissions: only owner can read/write, set BEFORE listen()
+    if (chmod(socket_path, 0600) < 0) {
+        perror("unix chmod failed");
         close(server_fd);
         return 1;
     }
 
-    // Secure socket permissions: only owner can read/write
-    if (chmod(socket_path, 0600) < 0) {
-        perror("unix chmod failed");
+    if (listen(server_fd, 32) < 0) {
+        perror("unix listen failed");
         close(server_fd);
         return 1;
     }
