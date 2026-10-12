@@ -66,6 +66,10 @@ static void handle_daemon_request(int client_fd, const char *req) {
         buf_append_json_escaped(&resp, wrt);
         buf_append(&resp, "\"}\n");
         free(wrt);
+    } else if (action && strcmp(action, "spellcheck") == 0) {
+        char *json = wrt_spellcheck_json(doc);
+        buf_append(&resp, json);
+        free(json);
     } else if (action && strcmp(action, "stats") == 0) {
         wrt_report_t rep;
         wrt_validate(doc, &rep);
@@ -347,6 +351,9 @@ int wrt_engine_daemon(const char *socket_path) {
     printf("[Aladdin WRT Engine Daemon] Listening on Unix Socket: %s\n", socket_path);
     fflush(stdout);
 
+    /* Pre-load SymSpell dictionary */
+    wrt_spellcheck_init(NULL);
+
     while (g_daemon_running) {
         struct pollfd pfd;
         pfd.fd = server_fd;
@@ -374,6 +381,7 @@ int wrt_engine_daemon(const char *socket_path) {
         close(client_fd);
     }
 
+    wrt_spellcheck_cleanup();
     close(server_fd);
     unlink(socket_path);
     return 0;

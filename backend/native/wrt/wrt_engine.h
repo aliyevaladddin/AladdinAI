@@ -55,6 +55,11 @@ void  wrt_record_recent_file(const char *file_path);
 
 int  wrt_engine_daemon(const char *socket_path);
 
+/* Native Spell Checking API (SymSpell C99) */
+void wrt_spellcheck_init(const char *dict_path);
+void wrt_spellcheck_cleanup(void);
+char *wrt_spellcheck_json(const char *text);
+
 /* DOCX <-> WRT Conversion API */
 #include "wrt_docx.h"
 

@@ -99,16 +99,10 @@ void wrt_validate(const char *text, wrt_report_t *out) {
                         out->tag_count++;
 
                         if (!is_known_tag(tag_name)) {
-                            if (out->issue_count < WRT_MAX_ISSUES) {
-                                wrt_issue_t *issue = &out->issues[out->issue_count++];
-                                issue->line = line;
-                                issue->col = col;
-                                snprintf(issue->tag, sizeof(issue->tag), "%s", tag_name);
-                                snprintf(issue->message, sizeof(issue->message),
-                                         "Unknown tag [%s]", tag_name);
-                                issue->severity = 0;
-                            }
-                            out->valid = 0;
+                            /* Not a WRT tag (e.g. [https://...], [1], [notes]) — treat as normal prose */
+                            col++;
+                            i++;
+                            continue;
                         } else if (strcmp(tag_name, "img") == 0) {
                             // Self-closing tag
                         } else if (!is_close) {
