@@ -55,6 +55,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update API documentation [skip ci] (#998) ([a306f75](https://github.com/aliyevaladddin/AladdinAI/commit/a306f75a7372903bc0318cddca0e1ab426c10da1))
 
 
+### Features
+
+- Add support for image attachments, clipboard pasting, and vision model fallback in chat ([fdc7909](https://github.com/aliyevaladddin/AladdinAI/commit/fdc7909a7c39517d4e4e32724d32ee3474fe4a9f))
+
+
 ### Maintenance
 
 - Update changelog [skip ci] (#968) ([a241aaf](https://github.com/aliyevaladddin/AladdinAI/commit/a241aaf6353fe245fe7e4b8d4eafb97d806e274b))
@@ -90,6 +95,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update backend dependency versions in requirements.txt ([9b04451](https://github.com/aliyevaladddin/AladdinAI/commit/9b044519590bcdc4233d85d92619a2df668c8d09))
 
 - Update frontend dependencies in package-lock.json ([6108f4e](https://github.com/aliyevaladddin/AladdinAI/commit/6108f4e05182b9e1c691271aca31863bc653aedf))
+
+- Update changelog [skip ci] (#1042) ([14fa4bb](https://github.com/aliyevaladddin/AladdinAI/commit/14fa4bb992184db3325ec77fab97632c0ca34f7d))
 
 
 ### Refactor
