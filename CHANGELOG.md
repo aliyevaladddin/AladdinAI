@@ -12,6 +12,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Fix CORS preflight OPTIONS headers for dev and prod environments (#1013) ([47d7a5e](https://github.com/aliyevaladddin/AladdinAI/commit/47d7a5e8ba2d1182c9c2255e4e1992e28f012c7a))
 
+- Add braces override to minimatch in package.json dependencies ([7dd77da](https://github.com/aliyevaladddin/AladdinAI/commit/7dd77da65f2331d8ae883057012fff52b5cf0a56))
+
 
 ### Dependencies
 
@@ -55,6 +57,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update API documentation [skip ci] (#998) ([a306f75](https://github.com/aliyevaladddin/AladdinAI/commit/a306f75a7372903bc0318cddca0e1ab426c10da1))
 
 
+### Features
+
+- Add support for image attachments, clipboard pasting, and vision model fallback in chat ([fdc7909](https://github.com/aliyevaladddin/AladdinAI/commit/fdc7909a7c39517d4e4e32724d32ee3474fe4a9f))
+
+
 ### Maintenance
 
 - Update changelog [skip ci] (#968) ([a241aaf](https://github.com/aliyevaladddin/AladdinAI/commit/a241aaf6353fe245fe7e4b8d4eafb97d806e274b))
@@ -91,12 +98,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update frontend dependencies in package-lock.json ([6108f4e](https://github.com/aliyevaladddin/AladdinAI/commit/6108f4e05182b9e1c691271aca31863bc653aedf))
 
+- Update changelog [skip ci] (#1042) ([14fa4bb](https://github.com/aliyevaladddin/AladdinAI/commit/14fa4bb992184db3325ec77fab97632c0ca34f7d))
+
 
 ### Refactor
 
 - Consolidate page error boundaries (#1011) ([348212c](https://github.com/aliyevaladddin/AladdinAI/commit/348212c874fa7eae65589c77138b5762f3f537b8))
 
 - Modularize wrt-engine into dedicated C subsystem files (#1019) ([337848b](https://github.com/aliyevaladddin/AladdinAI/commit/337848b9c0fa4409ff378bbf4549850e3027c28b))
+
+- Migrate JWT handling from python-jose to PyJWT across backend modules and dependencies ([1ca8de5](https://github.com/aliyevaladddin/AladdinAI/commit/1ca8de5d903162b69b747680eb92bf7ee0ebc65e))
 
 
 ### Testing
