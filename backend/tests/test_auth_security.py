@@ -1,7 +1,7 @@
 # NOTICE: This file is protected under RCF-PL
 import pytest
 from fastapi import HTTPException
-from jose import jwt
+import jwt
 from pydantic import ValidationError
 
 from app.config import settings
