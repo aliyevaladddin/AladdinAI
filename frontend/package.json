@@ -119,8 +119,7 @@
     "undici": "^7.29.1",
     "brace-expansion": "^2.1.2",
     "minimatch": {
-      "brace-expansion": "^5.0.8",
-      "braces": "^3.0.4"
+      "brace-expansion": "^5.0.8"
     },
     "js-yaml": "^4.2.1",
     "qs": "^6.15.2",
