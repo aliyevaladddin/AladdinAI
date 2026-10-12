@@ -512,10 +512,37 @@ async def chat(
 
     messages_payload = [{"role": "system", "content": agent.system_prompt}]
     for msg in history:
-        messages_payload.append({"role": msg.role, "content": msg.content})
+        content = msg.content or ""
+        if msg.role == "user" and msg.attachments:
+            past_image_names = [
+                a.get("filename")
+                for a in msg.attachments
+                if a.get("filename") and (a.get("kind") != "audio" and not str(a.get("mime", "")).startswith("audio/"))
+            ]
+            if past_image_names:
+                listing = ", ".join(past_image_names)
+                if listing not in content:
+                    note = (
+                        f"\n\n[Attached images from the user: {listing}]\n"
+                        "Use the `analyze_image` tool with one of these filenames to "
+                        "inspect the photo. Use `send_image` with a filename to reply "
+                        "with a picture."
+                    )
+                    content = f"{content}{note}" if content else note.lstrip()
+        messages_payload.append({"role": msg.role, "content": content})
 
     user_text = effective_message or ""
+    image_blocks = []
     if image_atts:
+        for a in image_atts:
+            fn = a.get("filename")
+            if fn:
+                handle = await media_storage.resolve(db, user.id, fn)
+                if handle:
+                    data_url = await media_storage.to_data_url(db, user.id, handle, a.get("mime"))
+                    if data_url:
+                        image_blocks.append({"type": "image_url", "image_url": {"url": data_url}})
+
         names = [a.get("filename") for a in image_atts if a.get("filename")]
         if names:
             listing = ", ".join(names)
@@ -526,7 +553,15 @@ async def chat(
                 "with a picture."
             )
             user_text = f"{user_text}{note}" if user_text else note.lstrip()
-    messages_payload.append({"role": "user", "content": user_text})
+
+    if image_blocks:
+        user_content = [
+            {"type": "text", "text": user_text or "Please analyze the attached image."},
+            *image_blocks,
+        ]
+        messages_payload.append({"role": "user", "content": user_content})
+    else:
+        messages_payload.append({"role": "user", "content": user_text})
 
     outgoing_attachments: list[dict] = []
     extras = {

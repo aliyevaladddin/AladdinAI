@@ -360,6 +360,30 @@ export default function ChatPage() {
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const clipboardFiles = Array.from(e.clipboardData?.files ?? []);
+    if (clipboardFiles.length > 0) {
+      e.preventDefault();
+      await uploadFileList(clipboardFiles);
+      return;
+    }
+
+    const items = Array.from(e.clipboardData?.items ?? []);
+    const imageFiles: File[] = [];
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          imageFiles.push(file);
+        }
+      }
+    }
+    if (imageFiles.length > 0) {
+      e.preventDefault();
+      await uploadFileList(imageFiles);
+    }
+  };
+
   const removePending = (filename: string) => {
     setPendingAttachments((prev) => prev.filter((a) => a.filename !== filename));
   };
@@ -921,6 +945,7 @@ export default function ChatPage() {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
+                        onPaste={handlePaste}
                         rows={1}
                         placeholder={
                           !selectedAgentId ? "Select an agent to start…" : "Message AladdinAI"

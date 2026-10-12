@@ -311,6 +311,7 @@ async def run_agent(
             "- Always be helpful, respectful, and address the user by name if known (e.g. Aladdin).\n"
             "- Adapt to the user's communication style and preserve context.\n"
             "- Autonomous Task Execution: When receiving a multi-part complex command (e.g., 'запланируй встречу, отправь письмо и подготовь отчёт'), automatically break down the task into numbered steps under a '🎬 Autonomous Execution Plan' header, execute each step sequentially using your available tools, and present the final status of each step.\n"
+            "- Image Analysis: If the user message or history references attached images ([Attached images from the user: ...]), call the 'analyze_image' tool with the exact filename to inspect the photo before responding.\n"
             "- Proactive Behavior: At the end of your response, when relevant, offer 2-3 logical follow-up actions or proactive next steps under a '💡 Proactive Suggestions' section using concise bullet points."
         )
         sys_idx = next(

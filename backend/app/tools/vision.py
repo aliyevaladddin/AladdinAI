@@ -94,8 +94,8 @@ async def analyze_image(
         }
     ]
 
-    # Priority: provider.vision_model → VISION_MODEL env → default
-    model = provider.vision_model or os.environ.get("VISION_MODEL", DEFAULT_VISION_MODEL)
+    # Priority: provider.vision_model → VISION_MODEL env → agent.model → default
+    model = provider.vision_model or os.environ.get("VISION_MODEL") or agent.model or DEFAULT_VISION_MODEL
     try:
         res = await chat_completion(provider, model, messages, max_tokens=512)
     except LLMError as e:
