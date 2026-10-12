@@ -385,6 +385,10 @@ int main(int argc, char *argv[]) {
         printf("Characters: %d\n", rep.char_count);
         printf("Tags:       %d\n", rep.tag_count);
         printf("Status:     %s (%d issues)\n", rep.valid ? "VALID" : "INVALID", rep.issue_count);
+    } else if (strcmp(cmd, "spellcheck") == 0) {
+        char *json = wrt_spellcheck_json(text);
+        fputs(json, stdout);
+        free(json);
         free(text);
         return 0;
     } else {

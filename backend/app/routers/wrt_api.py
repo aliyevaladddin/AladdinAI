@@ -48,6 +48,13 @@ async def validate_document(req: WrtContentRequest, user: User = Depends(get_cur
     return report
 
 
+@router.post("/spellcheck")
+async def spellcheck_document(req: WrtContentRequest, user: User = Depends(get_current_user)):
+    """Check spelling in WRT document using native C SymSpell engine."""
+    result = await wrt_engine_service.wrt_spellcheck(req.content)
+    return result
+
+
 @router.post("/fix")
 async def fix_document(req: WrtContentRequest, user: User = Depends(get_current_user)):
     """Auto-repair and close unclosed tags using native C engine."""

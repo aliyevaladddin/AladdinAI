@@ -206,7 +206,10 @@ export default function WrtEditorPage() {
 
     // Save current visual content before switching away
     if (editorMode === "visual") {
-      await updateVisualDocument();
+      const freshWrt = await updateVisualDocument();
+      if (freshWrt !== null) {
+        setContent(freshWrt);
+      }
     }
 
     setEditorMode(mode);
@@ -1546,7 +1549,7 @@ export default function WrtEditorPage() {
 
           {/* Editor surface — centered with max-width for readability */}
           <div
-            className="relative flex-1 overflow-y-auto min-h-0"
+            className="relative flex-1 overflow-y-auto min-h-0 bg-slate-100/80 dark:bg-slate-900/50"
             onDragOver={(e) => {
               // Without preventDefault the browser navigates to the dropped
               // file and the whole SPA is lost — the classic data-loss bug.
@@ -1590,6 +1593,7 @@ export default function WrtEditorPage() {
                   key="visual"
                   ref={visualEditorRef}
                   contentEditable
+                  spellCheck={true}
                   suppressContentEditableWarning
                   role="textbox"
                   aria-multiline="true"
@@ -1597,14 +1601,14 @@ export default function WrtEditorPage() {
                   onInput={updateVisualDocument}
                   onPaste={handleVisualPaste}
                   onKeyDown={handleVisualKeyDown}
-                  className="wrt-visual-editor min-h-full p-4 text-sm leading-relaxed bg-background text-foreground focus:outline-none"
+                  className="wrt-visual-editor min-h-[75vh] p-8 md:p-12 text-sm md:text-base leading-relaxed bg-white text-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700/60 focus:outline-none"
                 />
               ) : (
-                // Monaco sizes itself from its container, so this box needs a
-                // real height. Without one `h-full` on the editor resolves to
-                // zero and the pane collapses — the same shape used on the
-                // files page, where WrtEditor already renders correctly.
-                <div key="code" className="h-[60vh] overflow-hidden rounded-xl border border-border/60">
+                // Rendered as an elegant pure white document sheet (Word / A4 paper style)
+                <div
+                  key="code"
+                  className="min-h-[75vh] h-[80vh] overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700/60 bg-white shadow-xl"
+                >
                   <WrtEditor
                     content={content}
                     onChange={(value) => {
@@ -1616,7 +1620,8 @@ export default function WrtEditorPage() {
                     onFormat={(tag) => formatInCodeMode(tag)}
                     onCursorChange={setCursorPos}
                     issues={validationIssues}
-                    className="h-full"
+                    paperMode={true}
+                    className="h-full bg-white"
                   />
                 </div>
               )}

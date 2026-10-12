@@ -65,12 +65,11 @@ void test_validate_empty_tag() {
 
 void test_validate_unknown_tag() {
     printf("\n=== test_validate_unknown_tag ===\n");
-    const char *content = "[unknown]text[/unknown]";
+    const char *content = "Reference [https://a.com] and footnote [1] are valid prose";
     wrt_report_t rep;
     wrt_validate(content, &rep);
-    TEST_ASSERT(rep.valid == 0, "Unknown tag should fail validation");
-    TEST_ASSERT(rep.issue_count > 0, "Should have issue for unknown tag");
-    TEST_ASSERT_STR_EQ(rep.issues[0].tag, "unknown", "Issue should mention unknown tag");
+    TEST_ASSERT(rep.valid == 1, "Bracketed prose should not fail validation");
+    TEST_ASSERT(rep.issue_count == 0, "Bracketed prose should have no issues");
 }
 
 void test_validate_mismatched_tags() {

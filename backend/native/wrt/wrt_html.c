@@ -784,6 +784,9 @@ char *wrt_from_editable_html(const char *html) {
             } else if (strncmp(p, "&#39;", 5) == 0) {
                 buf_append_c(&b, '\'');
                 p += 5;
+            } else if (strncmp(p, "&nbsp;", 6) == 0) {
+                buf_append_c(&b, ' ');
+                p += 6;
             } else {
                 /* Unknown entity — emit literally, bounded scan */
                 const char *semi = p;
@@ -800,9 +803,15 @@ char *wrt_from_editable_html(const char *html) {
             continue;
         }
 
-        /* Regular text — extract until next '<' or '&' */
+        /* Regular text — extract until next '<', '&', or non-breaking space */
         const char *text_start = p;
-        while (*p && *p != '<' && *p != '&') p++;
+        while (*p && *p != '<' && *p != '&') {
+            /* Handle UTF-8 non-breaking space \xc2\xa0 */
+            if ((unsigned char)p[0] == 0xC2 && (unsigned char)p[1] == 0xA0) {
+                break;
+            }
+            p++;
+        }
         if (p > text_start) {
             /* Trim leading whitespace from list items */
             if (in_list && first_text == 0) {
@@ -812,7 +821,12 @@ char *wrt_from_editable_html(const char *html) {
                 buf_append_len(&b, text_start, p - text_start);
             }
         }
+        if ((unsigned char)p[0] == 0xC2 && (unsigned char)p[1] == 0xA0) {
+            buf_append_c(&b, ' ');
+            p += 2;
+        }
         first_text = 0;
+        continue;
     }
 
     /* Ensure ends with newline */

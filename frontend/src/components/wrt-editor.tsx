@@ -11,7 +11,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
-import type { editor } from "monaco-editor";
+import type { editor, IDisposable } from "monaco-editor";
+import { checkDocumentSpelling, type SpellCheckIssue } from "@/lib/wrt-spellcheck";
 
 /** One validation problem, shaped like the native engine's issue objects. */
 export interface WrtIssue {
@@ -219,45 +220,150 @@ function registerWrtLanguage(monaco: Monaco) {
     },
   });
 
-  // Define theme colors for .wrt tags
+  // Spell check Quick Fix provider for document prose
+  monaco.languages.registerCodeActionProvider("wrt", {
+    provideCodeActions(
+      model: editor.ITextModel,
+      _range: unknown,
+      context: { markers: editor.IMarkerData[] }
+    ) {
+      const actions: Array<{
+        title: string;
+        kind: string;
+        isPreferred: boolean;
+        edit: {
+          edits: Array<{
+            resource: unknown;
+            textEdit: {
+              range: {
+                startLineNumber: number;
+                startColumn: number;
+                endLineNumber: number;
+                endColumn: number;
+              };
+              text: string;
+            };
+          }>;
+        };
+      }> = [];
+
+      for (const marker of context.markers) {
+        if (marker.source === "spellcheck") {
+          // Parse suggestions from marker or common typos
+          const match = marker.message.match(/Возможно:\s*([^\n]+)/);
+          const suggestions: string[] = match
+            ? match[1].split(",").map((s: string) => s.trim())
+            : [];
+
+          suggestions.forEach((cand: string, idx: number) => {
+            actions.push({
+              title: `✨ Заменить на «${cand}»`,
+              kind: "quickfix",
+              isPreferred: idx === 0,
+              edit: {
+                edits: [
+                  {
+                    resource: model.uri,
+                    textEdit: {
+                      range: {
+                        startLineNumber: marker.startLineNumber,
+                        startColumn: marker.startColumn,
+                        endLineNumber: marker.endLineNumber,
+                        endColumn: marker.endColumn,
+                      },
+                      text: cand,
+                    },
+                  },
+                ],
+              },
+            });
+          });
+
+          // Handle duplicate words: "Повтор слова: «слово»"
+          const dupMatch = marker.message.match(/Повтор слова:\s*«([^»]+)»/);
+          if (dupMatch) {
+            const singleWord = dupMatch[1];
+            actions.push({
+              title: `✨ Оставить одно слово «${singleWord}»`,
+              kind: "quickfix",
+              isPreferred: true,
+              edit: {
+                edits: [
+                  {
+                    resource: model.uri,
+                    textEdit: {
+                      range: {
+                        startLineNumber: marker.startLineNumber,
+                        startColumn: marker.startColumn,
+                        endLineNumber: marker.endLineNumber,
+                        endColumn: marker.endColumn,
+                      },
+                      text: singleWord,
+                    },
+                  },
+                ],
+              },
+            });
+          }
+        }
+      }
+
+      return {
+        actions,
+        dispose() {},
+      };
+    },
+  });
+
+  // Define theme colors for .wrt tags: subtle, elegant document-oriented styling
   monaco.editor.defineTheme("wrt-light", {
     base: "vs",
     inherit: true,
     rules: [
-      { token: "tag.heading.open", foreground: "0000FF", fontStyle: "bold" },
-      { token: "tag.heading.close", foreground: "0000FF", fontStyle: "bold" },
-      { token: "tag.inline.open", foreground: "008800" },
-      { token: "tag.inline.close", foreground: "008800" },
-      { token: "tag.block.open", foreground: "880088", fontStyle: "bold" },
-      { token: "tag.block.close", foreground: "880088", fontStyle: "bold" },
-      { token: "tag.image", foreground: "FF8800" },
-      { token: "tag.link", foreground: "0000CC" },
-      { token: "tag.attribute.name", foreground: "A31515" },
-      { token: "tag.attribute", foreground: "A31515" },
-      { token: "list.item", foreground: "666666", fontStyle: "bold" },
-      { token: "table.row", foreground: "666666" },
+      { token: "tag.heading.open", foreground: "6366F1", fontStyle: "bold" },
+      { token: "tag.heading.close", foreground: "6366F1", fontStyle: "bold" },
+      { token: "tag.inline.open", foreground: "94A3B8" },
+      { token: "tag.inline.close", foreground: "94A3B8" },
+      { token: "tag.block.open", foreground: "8B5CF6", fontStyle: "bold" },
+      { token: "tag.block.close", foreground: "8B5CF6", fontStyle: "bold" },
+      { token: "tag.image", foreground: "0EA5E9" },
+      { token: "tag.link", foreground: "2563EB" },
+      { token: "tag.attribute.name", foreground: "64748B" },
+      { token: "tag.attribute", foreground: "0284C7" },
+      { token: "list.item", foreground: "64748B", fontStyle: "bold" },
+      { token: "table.row", foreground: "94A3B8" },
     ],
-    colors: {},
+    colors: {
+      "editor.background": "#FFFFFF",
+      "editor.foreground": "#1E293B",
+      "editorLineNumber.foreground": "#CBD5E1",
+      "editorCursor.foreground": "#0F172A",
+    },
   });
 
   monaco.editor.defineTheme("wrt-dark", {
     base: "vs-dark",
     inherit: true,
     rules: [
-      { token: "tag.heading.open", foreground: "569CD6", fontStyle: "bold" },
-      { token: "tag.heading.close", foreground: "569CD6", fontStyle: "bold" },
-      { token: "tag.inline.open", foreground: "4EC9B0" },
-      { token: "tag.inline.close", foreground: "4EC9B0" },
-      { token: "tag.block.open", foreground: "C586C0", fontStyle: "bold" },
-      { token: "tag.block.close", foreground: "C586C0", fontStyle: "bold" },
-      { token: "tag.image", foreground: "CE9178" },
-      { token: "tag.link", foreground: "9CDCFE" },
-      { token: "tag.attribute.name", foreground: "9CDCFE" },
-      { token: "tag.attribute", foreground: "CE9178" },
-      { token: "list.item", foreground: "9CDCFE", fontStyle: "bold" },
-      { token: "table.row", foreground: "9CDCFE" },
+      { token: "tag.heading.open", foreground: "818CF8", fontStyle: "bold" },
+      { token: "tag.heading.close", foreground: "818CF8", fontStyle: "bold" },
+      { token: "tag.inline.open", foreground: "64748B" },
+      { token: "tag.inline.close", foreground: "64748B" },
+      { token: "tag.block.open", foreground: "A78BFA", fontStyle: "bold" },
+      { token: "tag.block.close", foreground: "A78BFA", fontStyle: "bold" },
+      { token: "tag.image", foreground: "38BDF8" },
+      { token: "tag.link", foreground: "60A5FA" },
+      { token: "tag.attribute.name", foreground: "64748B" },
+      { token: "tag.attribute", foreground: "38BDF8" },
+      { token: "list.item", foreground: "94A3B8", fontStyle: "bold" },
+      { token: "table.row", foreground: "64748B" },
     ],
-    colors: {},
+    colors: {
+      "editor.background": "#0F172A",
+      "editor.foreground": "#F1F5F9",
+      "editorLineNumber.foreground": "#334155",
+      "editorCursor.foreground": "#F8FAFC",
+    },
   });
 }
 
@@ -271,12 +377,14 @@ export function WrtEditor({
   editorRef: externalEditorRef,
   readOnly = false,
   className = "",
-}: WrtEditorProps) {
+  paperMode = true,
+}: WrtEditorProps & { paperMode?: boolean }) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState(isAppDarkTheme);
 
-  const theme = isDark ? "wrt-dark" : "wrt-light";
+  // If paperMode is enabled, document renders on a crisp white A4 sheet with dark ink
+  const theme = paperMode ? "wrt-light" : (isDark ? "wrt-dark" : "wrt-light");
 
   useEffect(() => {
     setMounted(true);
@@ -305,30 +413,38 @@ export function WrtEditor({
     const model = ed.getModel();
     if (!monaco || !model || !issues) return;
 
-    monaco.editor.setModelMarkers(
-      model,
-      "wrt",
-      issues.map((issue) => {
-        const line = Math.min(Math.max(issue.line, 1), model.getLineCount());
-        const lineLength = model.getLineMaxColumn(line);
-        const col = Math.min(Math.max(issue.col ?? 1, 1), lineLength);
-        return {
-          startLineNumber: line,
-          endLineNumber: line,
-          startColumn: col,
-          // A zero-width marker is invisible in the gutter; run it to the end
-          // of the line so the offending tag is actually underlined.
-          endColumn: Math.min(col + Math.max(issue.tag.length + 2, 1), lineLength),
-          message: issue.message,
-          severity:
-            issue.severity === 0
-              ? monaco.MarkerSeverity.Error
-              : monaco.MarkerSeverity.Warning,
-          source: "wrt",
-        };
-      })
-    );
-  }, [issues, mounted]);
+    const tagMarkers: editor.IMarkerData[] = (issues || []).map((issue) => {
+      const line = Math.min(Math.max(issue.line, 1), model.getLineCount());
+      const lineLength = model.getLineMaxColumn(line);
+      const col = Math.min(Math.max(issue.col ?? 1, 1), lineLength);
+      return {
+        startLineNumber: line,
+        endLineNumber: line,
+        startColumn: col,
+        endColumn: Math.min(col + Math.max(issue.tag.length + 2, 1), lineLength),
+        message: issue.message,
+        severity:
+          issue.severity === 0
+            ? monaco.MarkerSeverity.Error
+            : monaco.MarkerSeverity.Warning,
+        source: "wrt",
+      };
+    });
+
+    // Check spelling across document content
+    const spellIssues = checkDocumentSpelling(model.getValue());
+    const spellMarkers: editor.IMarkerData[] = spellIssues.map((si) => ({
+      startLineNumber: si.startLineNumber,
+      startColumn: si.startColumn,
+      endLineNumber: si.endLineNumber,
+      endColumn: si.endColumn,
+      message: si.message,
+      severity: monaco.MarkerSeverity.Warning,
+      source: "spellcheck",
+    }));
+
+    monaco.editor.setModelMarkers(model, "wrt", [...tagMarkers, ...spellMarkers]);
+  }, [issues, content, mounted]);
 
   function handleEditorDidMount(
     editor: editor.IStandaloneCodeEditor,
@@ -412,29 +528,36 @@ export function WrtEditor({
         options={{
           readOnly,
           minimap: { enabled: false },
-          fontSize: 14,
-          lineNumbers: "on",
+          fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+          fontSize: 15,
+          lineHeight: 26,
+          lineNumbers: "off",
+          glyphMargin: false,
+          folding: false,
+          lineDecorationsWidth: 20,
+          lineNumbersMinChars: 0,
           wordWrap: "on",
-          wrappingIndent: "indent",
+          wrappingIndent: "same",
           scrollBeyondLastLine: false,
           automaticLayout: true,
           tabSize: 2,
           insertSpaces: true,
-          renderLineHighlight: "all",
-          // Typo tolerance and a find widget: the two things a bare textarea
-          // could never offer, and the reason this mode is worth having.
+          renderLineHighlight: "none",
+          padding: { top: 24, bottom: 32 },
           quickSuggestions: { other: true, comments: false, strings: false },
           suggestOnTriggerCharacters: true,
           acceptSuggestionOnEnter: "on",
           tabCompletion: "on",
           wordBasedSuggestions: "off",
-          bracketPairColorization: { enabled: true },
-          guides: { bracketPairs: false, indentation: true },
+          bracketPairColorization: { enabled: false },
+          guides: { bracketPairs: false, indentation: false },
           scrollbar: {
-            verticalScrollbarSize: 10,
-            horizontalScrollbarSize: 10,
+            verticalScrollbarSize: 8,
+            horizontalScrollbarSize: 8,
+            alwaysConsumeMouseWheel: false,
           },
-          renderWhitespace: "boundary",
+          renderWhitespace: "none",
+          contextmenu: false,
         }}
       />
       {onSave && !readOnly && (

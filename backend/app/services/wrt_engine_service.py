@@ -247,6 +247,14 @@ async def wrt_from_editable_html(content: str) -> str:
         return ""
 
 
+async def wrt_spellcheck(content: str) -> Dict[str, Any]:
+    """Check document spelling using native C SymSpell engine."""
+    res = await _send_socket_request("spellcheck", content)
+    if res and res.get("type") == "spellcheck_result":
+        return res
+    return {"type": "spellcheck_result", "issues": []}
+
+
 async def wrt_stats(content: str) -> Dict[str, Any]:
     """Calculate WRT document statistics using native C engine.
 
