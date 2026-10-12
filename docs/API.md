@@ -5470,6 +5470,30 @@ Validate WRT markup using native C engine.
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/wrt/spellcheck
+
+#### POST
+##### Summary:
+
+Spellcheck Document
+
+##### Description:
+
+Check spelling in WRT document using native C SymSpell engine.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+| 422 | Validation Error |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /api/wrt/fix
 
 #### POST
