@@ -57,17 +57,20 @@ def compile_test_wrt():
         str(WRT_DIR / "wrt_json.c"),
         str(WRT_DIR / "wrt_tags.c"),
         str(WRT_DIR / "wrt_util.c"),
+        str(WRT_DIR / "wrt_spell.c"),
+        str(WRT_DIR / "symspell.c"),
     ]
 
     # Compile with all the engine source files
     result = subprocess.run(
         [
             "gcc", "-O2", "-Wall", "-Wextra", "-std=c11",
-            "-D_POSIX_C_SOURCE=200809L", "-D_DEFAULT_SOURCE", "-D_GNU_SOURCE",
+            "-D_POSIX_C_SOURCE=200809L", "-D_DEFAULT_SOURCE", "-D_GNU_SOURCE", "-DDO_SORT",
+            f"-I{WRT_DIR}",
             str(TEST_WRT_C),
             *engine_sources,
             "-o", str(TEST_WRT_BINARY),
-            "-lzip", "-lz"
+            "-lzip", "-lz", "-lm", "-lpthread"
         ],
         capture_output=True,
         text=True,
@@ -154,11 +157,11 @@ class TestWRTEngineC:
         assert "PASS: Empty tag should fail validation" in result.stdout
 
     def test_c_validation_unknown_tag(self):
-        """Test C validation rejects unknown tags."""
+        """Test C validation allows bracketed prose (URLs, footnotes) without errors."""
         result = run_c_test(TEST_WRT_BINARY, "test_wrt validation unknown tag")
         assert result.returncode == 0
-        assert "PASS: Unknown tag should fail validation" in result.stdout
-        assert "PASS: Issue should mention unknown tag" in result.stdout
+        assert "PASS: Bracketed prose should not fail validation" in result.stdout
+        assert "PASS: Bracketed prose should have no issues" in result.stdout
 
     def test_c_validation_mismatched_tags(self):
         """Test C validation catches mismatched tags."""
