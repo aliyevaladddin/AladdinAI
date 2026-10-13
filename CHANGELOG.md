@@ -12,6 +12,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Fix CORS preflight OPTIONS headers for dev and prod environments (#1013) ([47d7a5e](https://github.com/aliyevaladddin/AladdinAI/commit/47d7a5e8ba2d1182c9c2255e4e1992e28f012c7a))
 
+- Add braces override to minimatch in package.json dependencies ([7dd77da](https://github.com/aliyevaladddin/AladdinAI/commit/7dd77da65f2331d8ae883057012fff52b5cf0a56))
+
 
 ### Dependencies
 
@@ -49,10 +51,21 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump react-syntax-highlighter (#1040) ([4d8b209](https://github.com/aliyevaladddin/AladdinAI/commit/4d8b20998428a9ddc028bd5e6e332ad9afc49c66))
 
+- Bump sharp in /backend/whatsapp_bridge (#1046) ([23d55f2](https://github.com/aliyevaladddin/AladdinAI/commit/23d55f24f067c11f3e1e262812d13867290bd06a))
+
+- Bump music-metadata in /backend/whatsapp_bridge (#1048) ([b680c1c](https://github.com/aliyevaladddin/AladdinAI/commit/b680c1cd4b1f80089607b0613c4b4c613334d91c))
+
 
 ### Documentation
 
 - Update API documentation [skip ci] (#998) ([a306f75](https://github.com/aliyevaladddin/AladdinAI/commit/a306f75a7372903bc0318cddca0e1ab426c10da1))
+
+
+### Features
+
+- Add support for image attachments, clipboard pasting, and vision model fallback in chat ([fdc7909](https://github.com/aliyevaladddin/AladdinAI/commit/fdc7909a7c39517d4e4e32724d32ee3474fe4a9f))
+
+- Integrate native C SymSpell spellchecker and Monaco Quick Fix action (#1051) ([169cbee](https://github.com/aliyevaladddin/AladdinAI/commit/169cbee68779b1ee9f615447e2ede0bf0d1aec80))
 
 
 ### Maintenance
@@ -91,12 +104,18 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update frontend dependencies in package-lock.json ([6108f4e](https://github.com/aliyevaladddin/AladdinAI/commit/6108f4e05182b9e1c691271aca31863bc653aedf))
 
+- Update changelog [skip ci] (#1042) ([14fa4bb](https://github.com/aliyevaladddin/AladdinAI/commit/14fa4bb992184db3325ec77fab97632c0ca34f7d))
+
+- Remove unused braces override from minimatch resolution in package.json ([3b4ff4d](https://github.com/aliyevaladddin/AladdinAI/commit/3b4ff4deb5e9338307f76ee84647fc0248826b7f))
+
 
 ### Refactor
 
 - Consolidate page error boundaries (#1011) ([348212c](https://github.com/aliyevaladddin/AladdinAI/commit/348212c874fa7eae65589c77138b5762f3f537b8))
 
 - Modularize wrt-engine into dedicated C subsystem files (#1019) ([337848b](https://github.com/aliyevaladddin/AladdinAI/commit/337848b9c0fa4409ff378bbf4549850e3027c28b))
+
+- Migrate JWT handling from python-jose to PyJWT across backend modules and dependencies ([1ca8de5](https://github.com/aliyevaladddin/AladdinAI/commit/1ca8de5d903162b69b747680eb92bf7ee0ebc65e))
 
 
 ### Testing
