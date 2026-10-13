@@ -23,11 +23,15 @@ test_wrt: test_wrt.c $(LIB_SRCS) $(HDRS)
 test_standalone: test_standalone.c
 	$(CC) $(CFLAGS) test_standalone.c -o test_standalone
 
-test: test_wrt test_standalone
+test_security: test_security.c $(LIB_SRCS) $(HDRS)
+	$(CC) $(CFLAGS) -fsanitize=address,undefined test_security.c $(LIB_SRCS) -o test_security -lzip -lz -lm -lpthread
+
+test: test_wrt test_standalone test_security
 	./test_wrt
 	./test_standalone
+	./test_security
 
 clean:
-	rm -f $(TARGETS) test_wrt test_standalone *.o
+	rm -f $(TARGETS) test_wrt test_standalone test_security *.o
 
 .PHONY: all clean test

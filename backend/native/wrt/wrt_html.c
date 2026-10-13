@@ -806,8 +806,8 @@ char *wrt_from_editable_html(const char *html) {
         /* Regular text — extract until next '<', '&', or non-breaking space */
         const char *text_start = p;
         while (*p && *p != '<' && *p != '&') {
-            /* Handle UTF-8 non-breaking space \xc2\xa0 */
-            if ((unsigned char)p[0] == 0xC2 && (unsigned char)p[1] == 0xA0) {
+            /* Safely check UTF-8 non-breaking space \xc2\xa0 without reading past end */
+            if ((unsigned char)p[0] == 0xC2 && p[1] != '\0' && (unsigned char)p[1] == 0xA0) {
                 break;
             }
             p++;
@@ -821,7 +821,7 @@ char *wrt_from_editable_html(const char *html) {
                 buf_append_len(&b, text_start, p - text_start);
             }
         }
-        if ((unsigned char)p[0] == 0xC2 && (unsigned char)p[1] == 0xA0) {
+        if ((unsigned char)p[0] == 0xC2 && p[1] != '\0' && (unsigned char)p[1] == 0xA0) {
             buf_append_c(&b, ' ');
             p += 2;
         }

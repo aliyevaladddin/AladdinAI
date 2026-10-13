@@ -368,13 +368,18 @@ int wrt_engine_daemon(const char *socket_path) {
         buf_init(&in);
         char chunk[4096];
         ssize_t n;
+        const size_t MAX_REQUEST_SIZE = 16 * 1024 * 1024; // 16 MB max
         while ((n = read(client_fd, chunk, sizeof(chunk))) > 0) {
             buf_append_len(&in, chunk, (size_t)n);
+            if (in.len > MAX_REQUEST_SIZE) break;
             if (strchr(chunk, '\n')) break;
         }
 
-        if (in.len > 0) {
+        if (in.len > 0 && in.len <= MAX_REQUEST_SIZE) {
             handle_daemon_request(client_fd, in.data);
+        } else if (in.len > MAX_REQUEST_SIZE) {
+            const char *err = "{\"type\":\"error\",\"message\":\"Payload exceeds 16MB limit\"}\n";
+            write(client_fd, err, strlen(err));
         }
 
         free(in.data);

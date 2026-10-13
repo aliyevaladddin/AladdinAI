@@ -169,6 +169,13 @@ char *wrt_spellcheck_json(const char *text) {
             continue;
         }
 
+        // Skip continuation bytes of UTF-8 multibyte characters (0x80..0xBF)
+        // so that multi-byte characters (Cyrillic, Azerbaijani, Emoji) count as single column
+        if ((unsigned char)c >= 0x80 && (unsigned char)c <= 0xBF) {
+            i++;
+            continue;
+        }
+
         i++;
         col++;
     }
