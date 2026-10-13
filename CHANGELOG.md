@@ -60,6 +60,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update API documentation [skip ci] (#998) ([a306f75](https://github.com/aliyevaladddin/AladdinAI/commit/a306f75a7372903bc0318cddca0e1ab426c10da1))
 
+- Update API documentation [skip ci] (#1053) ([fbbb75a](https://github.com/aliyevaladddin/AladdinAI/commit/fbbb75a0899edbeb31619aa6084b5534c680ba65))
+
 
 ### Features
 
@@ -107,6 +109,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#1042) ([14fa4bb](https://github.com/aliyevaladddin/AladdinAI/commit/14fa4bb992184db3325ec77fab97632c0ca34f7d))
 
 - Remove unused braces override from minimatch resolution in package.json ([3b4ff4d](https://github.com/aliyevaladddin/AladdinAI/commit/3b4ff4deb5e9338307f76ee84647fc0248826b7f))
+
+- Update changelog [skip ci] (#1052) ([fb96f64](https://github.com/aliyevaladddin/AladdinAI/commit/fb96f64570271dc1253b44ccec4720a4260a59f2))
 
 
 ### Refactor
