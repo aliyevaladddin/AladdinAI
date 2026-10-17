@@ -12,6 +12,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Switch frontend prod image from alpine to slim for qemu arm64 stability ([ea38e6c](https://github.com/aliyevaladddin/AladdinAI/commit/ea38e6c24a2a00176cebb2e8f9d68247435d2853))
 
+
+### Maintenance
+
+- Update changelog [skip ci] (#1061) ([d103423](https://github.com/aliyevaladddin/AladdinAI/commit/d10342381b0787316b5d5d676c37f26654117726))
+
+
+### Refactor
+
+- Update documentation profiles and replace favicon asset ([ba353ff](https://github.com/aliyevaladddin/AladdinAI/commit/ba353ffc14d083e28183de95eaaf1ff91ff75cc9))
+
 ## [v2.2.9] - 2026-10-17
 
 ### Bug Fixes
