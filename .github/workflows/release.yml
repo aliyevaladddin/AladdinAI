@@ -51,7 +51,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add frontend/package.json frontend/package-lock.json cli/package.json
-          git diff --staged --quiet || (git commit -m "chore: bump version to ${{ steps.version.outputs.VERSION }} and update deps [skip ci]" && git push origin HEAD:main)
+          git diff --staged --quiet || (git commit -m "chore: bump version to ${{ steps.version.outputs.VERSION }} and update deps [skip ci]" && (git push origin HEAD:main || echo "Push to main prevented by branch protection; skipped"))
 
       # CLI is published by cli-publish.yml on the same v* tag — this workflow
       # only keeps main's package.json versions in sync. Do not add an npm
