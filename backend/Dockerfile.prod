@@ -36,6 +36,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
       curl \
       ffmpeg \
+      libzip4 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -44,11 +45,15 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Overlay prebuilt native binaries over the sources copied above, so
-# native_terminal_daemon finds them and skips its (doomed) make attempt.
-COPY --from=native-builder /native/aladdin-term         backend/native/aladdin-term
-COPY --from=native-builder /native/aladdin-grep         backend/native/aladdin-grep
-COPY --from=native-builder /native/aladdin-log-stream   backend/native/aladdin-log-stream
-RUN chmod +x backend/native/aladdin-term backend/native/aladdin-grep backend/native/aladdin-log-stream
+# native_terminal_daemon and wrt_engine_service find them and skip make.
+COPY --from=native-builder /native/aladdin-term         native/aladdin-term
+COPY --from=native-builder /native/aladdin-grep         native/aladdin-grep
+COPY --from=native-builder /native/aladdin-log-stream   native/aladdin-log-stream
+COPY --from=native-builder /native/wrt-engine          native/wrt-engine
+COPY --from=native-builder /native/wrt-validate        native/wrt-validate
+COPY --from=native-builder /native/wrt-engine          native/wrt/wrt-engine
+COPY --from=native-builder /native/wrt-validate        native/wrt/wrt-validate
+RUN chmod +x native/aladdin-term native/aladdin-grep native/aladdin-log-stream native/wrt-engine native/wrt-validate native/wrt/wrt-engine native/wrt/wrt-validate
 
 # Migrations + launch
 RUN printf '#!/bin/sh\nset -e\necho "Running database migrations..."\nalembic upgrade head\nexec uvicorn app.main:app --host 0.0.0.0 --port 8000 "$@"\n' \

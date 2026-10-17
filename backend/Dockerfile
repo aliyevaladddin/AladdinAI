@@ -3,7 +3,13 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # ffmpeg: transcode browser webm/opus audio to PCM for Riva ASR (speech.py).
+# Native build tools and libzip for WRT engine and terminal daemon.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+      gcc \
+      make \
+      libc6-dev \
+      libzip-dev \
+      libzip4 \
       ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
@@ -18,6 +24,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 RUN playwright install --with-deps chromium
 
 COPY . .
+
+RUN make -C /app/native all || true
 
 RUN chmod +x /app/scripts/render_init.sh
 

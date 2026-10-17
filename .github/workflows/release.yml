@@ -42,9 +42,9 @@ jobs:
         working-directory: ./frontend
         run: |
           # Run audit fix to update resolvable vulnerabilities in overrides / lock file
-          npm audit fix --force || true
+          npm audit fix --legacy-peer-deps || true
           # Ensure package-lock.json reflects overrides
-          npm install --no-fund
+          npm install --no-fund --legacy-peer-deps
 
       - name: Commit version and security changes
         run: |
