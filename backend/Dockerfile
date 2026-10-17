@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       make \
       libc6-dev \
       libzip-dev \
-      libzip4 \
       ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
