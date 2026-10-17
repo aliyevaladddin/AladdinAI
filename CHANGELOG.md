@@ -6,6 +6,27 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ### Bug Fixes
 
+- Handle branch protection on release version commit ([9a72eba](https://github.com/aliyevaladddin/AladdinAI/commit/9a72ebab991738c06e2d181048cda70eeb6224e8))
+
+- Use libzip-dev instead of libzip4 for Debian compatibility ([8c73bb8](https://github.com/aliyevaladddin/AladdinAI/commit/8c73bb8a77af693241dc396f5157696fb34ebc56))
+
+- Switch frontend prod image from alpine to slim for qemu arm64 stability ([ea38e6c](https://github.com/aliyevaladddin/AladdinAI/commit/ea38e6c24a2a00176cebb2e8f9d68247435d2853))
+
+## [v2.2.9] - 2026-10-17
+
+### Bug Fixes
+
+- Resolve release audit peer conflict, downgrade execa/ink in cli, and add native build to Dockerfile ([943e859](https://github.com/aliyevaladddin/AladdinAI/commit/943e859a6640f86a6bc096d286205cec58f9927e))
+
+
+### Maintenance
+
+- Bump version to 2.2.9 ([c3ee10e](https://github.com/aliyevaladddin/AladdinAI/commit/c3ee10e8d655c0730af8ce29b1f4f906a46a0552))
+
+## [v2.2.8] - 2026-10-15
+
+### Bug Fixes
+
 - Prevent OOXML tag-prefix matches in DOCX table parsing (#972) ([bf6acdc](https://github.com/aliyevaladddin/AladdinAI/commit/bf6acdcba582d0cb295759205b17b093cacbe172))
 
 - Preserve inline image run order in DOCX parsing (#974) ([c839ca7](https://github.com/aliyevaladddin/AladdinAI/commit/c839ca7e2b8b9f7c502b9e9c42f89056b2191a00))
@@ -111,6 +132,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Remove unused braces override from minimatch resolution in package.json ([3b4ff4d](https://github.com/aliyevaladddin/AladdinAI/commit/3b4ff4deb5e9338307f76ee84647fc0248826b7f))
 
 - Update changelog [skip ci] (#1052) ([fb96f64](https://github.com/aliyevaladddin/AladdinAI/commit/fb96f64570271dc1253b44ccec4720a4260a59f2))
+
+- Update changelog [skip ci] (#1055) ([4b73e8c](https://github.com/aliyevaladddin/AladdinAI/commit/4b73e8c46a9b427b1f99e5c1b1a1782161687f1a))
 
 
 ### Refactor
