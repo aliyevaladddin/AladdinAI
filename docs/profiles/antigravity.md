@@ -1,49 +1,47 @@
 # Antigravity
 
-> Security hardening, refactoring, and bug fixes for AladdinAI.
+> Branch integration, type safety, and dashboard navigation for AladdinAI.
 
 ## Role
 
-Antigravity is an AI coding agent powered by [Codebuff](https://codebuff.com) / [Freebuff](https://freebuff.com). It contributes to AladdinAI through code reviews, security audits, refactoring, and automated testing.
+Antigravity is an agentic AI coding assistant built by the **Google DeepMind** team (Advanced Agentic Coding). It works as a pair programmer inside the IDE: it reads the codebase, runs commands, edits files, and verifies changes in the browser.
 
 ## Contributions
 
-### Security Hardening
-- CRM contacts import: added 10 MB upload size limit
-- `json.loads` protection with `_safe_json()` helper (6 call sites)
-- Silent exception swallowing → proper logging
-- SSH known_hosts TOFU model (MITM protection)
-- Rate limiting on auth, chat upload, and forging endpoints
+### Branch Integration
+- Merged 15 feature/fix branches into `main` with conflict resolution
+    - `fix/ssh-known-hosts-tofu` — kept CodeQL-safe test data
+    - `feat/traces-forging-ui` — kept validation + accessibility
+    - `feat/ui-polish-chat-perf` — kept theme tokens and count badges
+    - `fix/critical-issues`, `fix/important-issues`, `fix/pydantic-exceptions-validation`, …
 
-### Reliability
-- Error boundaries on dashboard pages (no more white screens)
-- Readiness probe endpoint (`/ready`) for Docker/K8s
-- `subprocess.run` → `asyncio.create_subprocess_exec` (non-blocking)
-- DuckDuckGo search: HTML primary, Instant Answer as bonus
+### Type Safety
+- Removed 16 of 19 `type: ignore` suppressions in the backend
 
-### Code Quality
-- SQL playground refactored: 1255 → 454 lines (64% reduction)
-- 46 stale branches merged and cleaned up
-- `print()` → `log.warning()` in production code
-- OpenAPI tags added to undocumented routers
-- `<a>` → `<Link>` for Next.js client-side navigation
+### Dashboard Navigation
+- Moved **Traces** from sidebar → Settings › Observability
+- Moved **Self-Forging** from sidebar → Settings › Training
+- Fixed nested-button hydration error in agent traces panel
+- Removed unused imports from `dashboard-nav`
+
+### Bots & Integrations
+- Qwen bot: resolve bot ID via public `/users` endpoint
+- Qwen bot: direct push to `main` so it appears in contributors
+- Telegram: fixed photo bytes handling
+- `doctor`: added DB check
 
 ### Documentation
-- Agent Sandbox guide (`AGENT_SANDBOX.md`)
-- Updated Architecture, Testing, and Backend docs
-- Contributors table with visual avatars
+- Antigravity and Cursor contributor profiles
 
 ## Stats
 
 | Metric | Value |
 |--------|-------|
-| Commits | 14+ |
-| Files changed | 50+ |
-| Tests added | 30+ |
-| Issues closed | 20+ |
-| Branches cleaned | 46 |
+| Commits | 24 |
+| Branches merged | 15 |
+| Active | 2026-08-21 |
 
 ## Links
 
-- [Codebuff](https://codebuff.com) — the platform Antigravity runs on
-- [Freebuff](https://freebuff.com) — free AI coding tool
+- [Google Antigravity](https://antigravity.google) — agentic IDE by Google
+- [Google DeepMind](https://deepmind.google) — team behind Antigravity

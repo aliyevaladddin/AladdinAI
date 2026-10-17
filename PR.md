@@ -1,28 +1,70 @@
-# PR: WRT Editor Visual Mode
+## 📝 Summary
 
-## Description
-This Pull Request introduces a **Visual editing mode** for WRT (Word Rich Text) documents in the AladdinAI Dashboard. Previously, users had to manage raw WRT markup (`[b]`, `[i]`, etc.) directly. This change provides a familiar, word-processor-like experience while maintaining the canonical WRT format for agents and backend storage.
+Introduces a **Visual editing mode** for WRT (Word Rich Text) documents in the AladdinAI Dashboard. Users no longer need to edit raw WRT markup (`[b]`, `[i]`, …) — they get a word-processor-like experience, while WRT remains the canonical format for agents and backend storage.
 
-## Key Changes
-- **Visual Editor:** Added a `contentEditable` surface that renders WRT as formatted HTML.
-- **Bi-directional Sync:** Implemented `wrtToEditableHtml` and `editableElementToWrt` to synchronize the visual DOM with the canonical WRT source.
-- **UI Redesign:**
-    - Centered the document canvas (`max-w-3xl`) for better readability.
-    - Moved Version History and Audit Timeline into a collapsible right-hand drawer.
-    - Added a mode toggle (Visual / Code) to keep advanced WRT control accessible.
-- **Infrastructure:**
-    - Added comprehensive unit tests in `frontend/src/__tests__/wrt.test.ts`.
-    - Added ADR 0014 to document the architectural decision.
+## 🏷️ Type of Change
 
-## Verification
-- Run `npm test` in the `frontend` directory to ensure all 59 tests pass.
-- Run `pytest backend/tests/test_files_workspace.py` to confirm workspace integrity.
-- Verified manual document editing, saving, and version history in the browser.
+- [ ] 🐛 Bug fix
+- [x] ✨ New feature
+- [ ] 💥 Breaking change
+- [x] 🎨 UI / UX
+- [ ] ♻️ Refactor
+- [x] 📚 Documentation
+- [x] ✅ Tests
 
-## Checklist
-- [x] Visual mode implemented
-- [x] Bi-directional WRT ↔ HTML parser working
-- [x] Centered UI/UX design implemented
-- [x] Side drawer for versions/timeline
-- [x] Unit tests passing
-- [x] Documentation updated (including ADR 0014)
+## 🔗 Related
+
+- ADR: `docs/adr/0014-*.md`
+- Issue: closes #___
+
+## 🔧 Changes
+
+### Frontend
+- **Visual Editor** — `contentEditable` surface rendering WRT as formatted HTML.
+- **Bi-directional sync** — `wrtToEditableHtml` / `editableElementToWrt` keep the visual DOM and WRT source in sync.
+- **Mode toggle** — Visual / Code switch keeps advanced WRT control accessible.
+
+### UI / UX
+- Centered document canvas (`max-w-3xl`) for readability.
+- Version History and Audit Timeline moved into a collapsible right-hand drawer.
+
+### Tests & Docs
+- Unit tests: `frontend/src/__tests__/wrt.test.ts`.
+- ADR 0014 documents the architectural decision.
+
+## 📸 Screenshots
+
+| Before | After |
+|--------|-------|
+| _screenshot_ | _screenshot_ |
+
+## 🧪 How to Test
+
+```bash
+# Frontend unit tests (59 tests)
+cd frontend && npm test
+
+# Backend workspace integrity
+pytest backend/tests/test_files_workspace.py
+```
+
+**Manual:**
+1. Open a document in the Dashboard.
+2. Edit in **Visual** mode (bold, italic, lists) → save.
+3. Switch to **Code** mode → verify WRT markup is correct.
+4. Open the drawer → verify Version History and Audit Timeline.
+
+## ✅ Checklist
+
+- [x] Code follows project style guidelines
+- [x] Self-review completed
+- [x] Tests added / updated and passing
+- [x] Documentation updated (ADR 0014)
+- [x] No new warnings or console errors
+- [ ] Screenshots attached
+- [ ] Linked issue
+
+## ⚠️ Notes for Reviewers
+
+- WRT stays the single source of truth — HTML is only a view layer.
+- Pay attention to edge cases in `editableElementToWrt` (nested formatting, paste from external sources).
