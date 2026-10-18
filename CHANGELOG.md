@@ -26,6 +26,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update frontend dependencies including React, Electron, and testing libraries ([34f4351](https://github.com/aliyevaladddin/AladdinAI/commit/34f4351013d2eca7b7a29fd7a0175f5e513e4944))
 
+- Update changelog [skip ci] (#1086) ([3c59374](https://github.com/aliyevaladddin/AladdinAI/commit/3c59374ef8da9096b8d30f0c8f057e8939855854))
+
+- Upgrade next to version 16.4.1 ([05fe688](https://github.com/aliyevaladddin/AladdinAI/commit/05fe68869e02fd16c37d23043c902e42caed7abe))
+
 
 ### Refactor
 
