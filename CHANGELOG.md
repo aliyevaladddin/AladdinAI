@@ -30,6 +30,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Upgrade next to version 16.4.1 ([05fe688](https://github.com/aliyevaladddin/AladdinAI/commit/05fe68869e02fd16c37d23043c902e42caed7abe))
 
+- Update changelog [skip ci] (#1088) ([4ded673](https://github.com/aliyevaladddin/AladdinAI/commit/4ded6738cb2d1857aa5360239bccc88657e9bf5b))
+
 
 ### Refactor
 
