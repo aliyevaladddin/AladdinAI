@@ -17,6 +17,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump dotenv from 18.0.6 to 18.0.8 in /cli (#1070) ([92b6fcf](https://github.com/aliyevaladddin/AladdinAI/commit/92b6fcfb37160d2c3bcf8083d40a8a894c789040))
 
+- Bump react from 19.3.0 to 19.3.1 in /cli (#1099) ([689c736](https://github.com/aliyevaladddin/AladdinAI/commit/689c736d364ba571326ea7bb85535dcef04a92a7))
+
 
 ### Maintenance
 
@@ -29,6 +31,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#1086) ([3c59374](https://github.com/aliyevaladddin/AladdinAI/commit/3c59374ef8da9096b8d30f0c8f057e8939855854))
 
 - Upgrade next to version 16.4.1 ([05fe688](https://github.com/aliyevaladddin/AladdinAI/commit/05fe68869e02fd16c37d23043c902e42caed7abe))
+
+- Update changelog [skip ci] (#1088) ([4ded673](https://github.com/aliyevaladddin/AladdinAI/commit/4ded6738cb2d1857aa5360239bccc88657e9bf5b))
 
 
 ### Refactor
