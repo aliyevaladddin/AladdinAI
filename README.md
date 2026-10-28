@@ -1,75 +1,27 @@
 
-[![Site status](https://img.shields.io/website?url=https%3A%2F%2Faliyev.site%2FAladdinAI&style=flat-square&color=4ecdc4&logo=vercel&logoColor=white&label=live+demo)](https://aliyev.site/AladdinAI/)
-![Repo size](https://img.shields.io/github/repo-size/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4&logo=proton%20drive&logoColor=white)
-[![CI](https://img.shields.io/github/actions/workflow/status/aliyevaladddin/AladdinAI/ci.yml?style=flat-square&color=4ecdc4&label=CI&logo=githubactions&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI/actions/workflows/ci.yml)
-[![Deploy to Render](https://img.shields.io/badge/deploy%20to-render-4ecdc4?style=flat-square&logo=render&logoColor=white)](https://render.com/deploy?repo=https://github.com/aliyevaladddin/AladdinAI)
-![Last commit](https://img.shields.io/github/last-commit/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4&logo=githubcopilot&logoColor=white)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4&logo=dependabot&logoColor=white)
-
----
-## ◈ GitHub Integration
-
-[![Install Bot](https://img.shields.io/badge/GitHub-Install%20Bot-black?style=flat-square&color=4ecdc4&logo=GitHub&logoColor=white)](https://github.com/apps/aladdinai-bot)
-[![OpenCollective](https://img.shields.io/opencollective/all/aladdinai?style=flat-square&color=4ecdc4&logo=opencollective&logoColor=white)](https://opencollective.com/aladdinai)
-[![GitHub stars](https://img.shields.io/github/stars/aliyevaladddin/AladdinAI?style=square&color=4ecdc4&logo=git&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI)
-
-
 <div align="middle">
-
 <br/>
-
-<div align="center">
-  <img src="docs/aladdin-flow.svg" alt="AladdinAI terminal demo" width="800"/>
-</div>
-
-
-### *My AI agents.* *My infrastructure.* *My rules.*
-
-AladdinAI — open-source BYOI (Bring Your Own Infrastructure) AI Agent Platform.
-
-<br/>
-
-[![License](https://img.shields.io/badge/license-Apache%202.0-4ecdc4?style=flat-square&logo=Apache&logoColor=white)](LICENSE)
-[![Docker](https://img.shields.io/badge/docker-ready-4ecdc4?style=flat-square&logo=docker&logoColor=white)](https://ghcr.io/aliyevaladddin/aladdinai)
-[![Node](https://img.shields.io/badge/node-18%2B-4ecdc4?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
-[![MongoDB for Startups](https://img.shields.io/badge/MongoDB-for%20Startups-4ecdc4?style=flat-square&logo=mongodb&logoColor=white)](https://www.mongodb.com/startups)
-[![Issues](https://img.shields.io/github/issues/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4&logo=socket&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI/issues)
+  
+[![Deploy to Render](https://img.shields.io/badge/deploy%20to-render-4ecdc4?style=flat-square&logo=render&logoColor=white)](https://render.com/deploy?repo=https://github.com/aliyevaladddin/AladdinAI)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/aliyevaladddin/AladdinAI?style=flat-square&color=4ecdc4&logo=dependabot&logoColor=white)
+[![GitHub stars](https://img.shields.io/github/stars/aliyevaladddin/AladdinAI?style=square&color=4ecdc4&logo=git&logoColor=white)](https://github.com/aliyevaladddin/AladdinAI)
+[![Site status](https://img.shields.io/website?url=https%3A%2F%2Faladdinai.cc&style=flat-square&color=4ecdc4&logo=vercel&logoColor=white&label=live+demo)](https://aladdinai.cc)
 [![NPM Version](https://img.shields.io/npm/v/aladdin-ai?style=flat-square&color=4ecdc4&logo=npm&logoColor=white)](https://www.npmjs.com/package/aladdin-ai)
+[![Docker](https://img.shields.io/badge/docker-ready-4ecdc4?style=flat-square&logo=docker&logoColor=white)](https://ghcr.io/aliyevaladddin/aladdinai)
 
-
-
-
-Connect your own servers, NVIDIA NIM, OpenAI, Anthropic, or Ollama — build and manage AI agents visually with complete control over your data and infrastructure.
-
-
-
-
-<p align="center">
-  <img src="docs/login-preview.png" width="22%" />
-  <img src="docs/agent-overview.png" width="22%" />
-  <img src="docs/gates.png" width="22%" />
-  <img src="docs/search.png" width="22%" />
-</p>
-
-<!-- 4 скриншота -->
-
-<br/>
-
-## ***One command. No git clone. No Python. No Node toolchain. Just Docker.***
-
-```bash
-npx aladdin-ai
-```
-
+  <br/>
 <div align="center">
   <img src="docs/demo.svg" alt="AladdinAI terminal demo" width="700"/>
 </div>
 
-<br/>
-
 </div>
 
----
+<br>
+
+<details>
+  
+<summary><b>What is AladdinAI?</b> &nbsp;·&nbsp; open-source BYOI (Bring Your Own Infrastructure) AI Agent Platform.</summary>
+
 
 ## ◈ What is AladdinAI?
 
@@ -330,8 +282,8 @@ Install through the UI under *Settings → Terminal Providers*. No additional se
 
 I'm building AladdinAI in public and I read every message personally. Even one sentence helps — especially the negative ones.
 
-- **Quick form:** https://aliyev.site/AladdinAI/feedback
-- **Email:** aladdin@aliyev.site
+- **Quick form:** https://aladdinai.cc
+- **Email:** info@aladdinai.cc
 - **GitHub:** [open an issue](https://github.com/aliyevaladddin/AladdinAI/issues/new) · [start a discussion](https://github.com/aliyevaladddin/AladdinAI/discussions)
 
 *"This is broken." "Didn't get past step 2." "Cool but not for me." All of it useful.*
@@ -347,7 +299,15 @@ Apache 2.0 — see [LICENSE](LICENSE).
 <div align="center">
 <br/>
 
-*Your data. Your models. Your rules.*
+*My data. My models. My rules.*
 
 <br/>
+</div>
+
+</details>
+
+<br>
+
+<div align="center">
+<sub>Build and manage AI agents visually with complete control over your data and infrastructure.</sub>
 </div>
