@@ -12,6 +12,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Switch frontend prod image from alpine to slim for qemu arm64 stability ([ea38e6c](https://github.com/aliyevaladddin/AladdinAI/commit/ea38e6c24a2a00176cebb2e8f9d68247435d2853))
 
+- Route API via same-origin proxy and harden terminal ws host detection (#1117) ([5ffd7d2](https://github.com/aliyevaladddin/AladdinAI/commit/5ffd7d2deee4f1c50f5b9b03f6396977b781572e))
+
+- Add @testing-library/dom and monaco-editor to devDeps, update lockfile ([6e568e5](https://github.com/aliyevaladddin/AladdinAI/commit/6e568e50b3d98b2c3542a75498eda1e6c75871f3))
+
 
 ### Dependencies
 
@@ -33,6 +37,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update certifi requirement in /backend (#1093) ([0cbd802](https://github.com/aliyevaladddin/AladdinAI/commit/0cbd8021012a82ef512418dfb67bd2b0dab6f828))
 
+- Bump hono from 4.13.7 to 4.13.13 in /frontend (#1089) ([46881e1](https://github.com/aliyevaladddin/AladdinAI/commit/46881e17c348c6ae973b75f5eb67947567df4e15))
+
 
 ### Maintenance
 
@@ -47,6 +53,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Upgrade next to version 16.4.1 ([05fe688](https://github.com/aliyevaladddin/AladdinAI/commit/05fe68869e02fd16c37d23043c902e42caed7abe))
 
 - Update changelog [skip ci] (#1088) ([4ded673](https://github.com/aliyevaladddin/AladdinAI/commit/4ded6738cb2d1857aa5360239bccc88657e9bf5b))
+
+- Update changelog [skip ci] (#1114) ([98af46e](https://github.com/aliyevaladddin/AladdinAI/commit/98af46e6f4279a1e013cbe3a4c5ba0c1a82a1de3))
+
+- Update dompurify in frontend dependencies ([3cb4d37](https://github.com/aliyevaladddin/AladdinAI/commit/3cb4d379db7ec61dcaeddad91550e568be13a8d2))
+
+- Bump frontend version and update dependencies ([be2cc47](https://github.com/aliyevaladddin/AladdinAI/commit/be2cc477d8d8854971d5403e34439946d266255b))
 
 
 ### Refactor
