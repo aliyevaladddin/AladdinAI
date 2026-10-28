@@ -360,13 +360,37 @@ export const NativeTerminal = forwardRef<NativeTerminalRef, NativeTerminalProps>
       fitAddonRef.current = fitAddon;
 
       const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : "";
-      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-
+      let wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       let wsHost = window.location.host;
+
+      const rawApiUrl = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_API_URL || API_URL;
       try {
-        const url = new URL(API_URL);
-        wsHost = url.host;
-      } catch { /* use location host */ }
+        const url = new URL(rawApiUrl);
+        wsProtocol = url.protocol === "https:" || url.protocol === "wss:" ? "wss:" : "ws:";
+        if (
+          (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+          window.location.hostname !== "localhost" &&
+          window.location.hostname !== "127.0.0.1"
+        ) {
+          if (window.location.hostname.endsWith("-3000.app.github.dev")) {
+            wsHost = window.location.host.replace("-3000.app.github.dev", `-${url.port || "8000"}.app.github.dev`);
+            wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+          } else {
+            wsHost = url.port ? `${window.location.hostname}:${url.port}` : window.location.host;
+          }
+        } else {
+          wsHost = url.host;
+        }
+      } catch {
+        // Relative API_URL ("/api") — infer backend host from current browser location
+        if (window.location.hostname.endsWith("-3000.app.github.dev")) {
+          wsHost = window.location.host.replace("-3000.app.github.dev", "-8000.app.github.dev");
+        } else if (window.location.port === "3000") {
+          wsHost = `${window.location.hostname}:8000`;
+        } else {
+          wsHost = window.location.host;
+        }
+      }
 
         const endpoint = vmId
         ? `/api/ws/terminal/${vmId}`

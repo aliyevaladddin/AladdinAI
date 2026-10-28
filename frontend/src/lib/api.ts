@@ -1,5 +1,18 @@
 // NOTICE: This file is protected under RCF-PL
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+function resolveApiUrl(raw?: string): string {
+  const trimmed = (raw || "").trim().replace(/\/+$/, "");
+  if (
+    !trimmed ||
+    trimmed === "/api" ||
+    trimmed === "http://localhost:8000/api" ||
+    trimmed === "http://127.0.0.1:8000/api"
+  ) {
+    return "/api";
+  }
+  return trimmed;
+}
+
+export const API_URL = resolveApiUrl(process.env.NEXT_PUBLIC_API_URL);
 
 /* ── Token helpers ───────────────────────────────────────────────── */
 

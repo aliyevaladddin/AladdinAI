@@ -10,10 +10,22 @@ import { NextRequest, NextResponse } from "next/server";
 
 
 function getBackendUrl(): string {
-  let url = process.env.BACKEND_INTERNAL_URL || "http://localhost:8000";
+  const explicitInternal = process.env.BACKEND_INTERNAL_URL || process.env.BACKEND_URL;
+  let url = explicitInternal || "";
+  if (!url) {
+    const publicApi = (process.env.NEXT_PUBLIC_API_URL || "").trim();
+    if (publicApi.startsWith("http://") || publicApi.startsWith("https://")) {
+      url = publicApi.replace(/\/api\/?$/, "");
+    } else {
+      url = "http://127.0.0.1:8000";
+    }
+  }
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
     url = `https://${url}`;
   }
+  // Prefer IPv4 loopback over "localhost" in Node fetch to avoid ::1 ECONNREFUSED
+  // when uvicorn binds 0.0.0.0 (IPv4) only.
+  url = url.replace(/^http:\/\/localhost(?=[:/]|$)/i, "http://127.0.0.1");
   // Remove trailing slash
   return url.replace(/\/$/, "");
 }
@@ -59,6 +71,17 @@ async function proxy(
     resHeaders.delete("content-encoding");
     resHeaders.delete("transfer-encoding");
     resHeaders.delete("content-length");
+
+    const contentType = upstream.headers.get("content-type") || "";
+    if (contentType.includes("text/event-stream") && upstream.body) {
+      resHeaders.set("Cache-Control", "no-cache, no-transform");
+      resHeaders.set("X-Accel-Buffering", "no");
+      return new NextResponse(upstream.body, {
+        status: upstream.status,
+        statusText: upstream.statusText,
+        headers: resHeaders,
+      });
+    }
 
     // Read body fully in-memory to prevent stream truncation issues
     const resBody = await upstream.arrayBuffer();

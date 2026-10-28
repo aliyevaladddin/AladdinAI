@@ -90,3 +90,19 @@ def test_strong_secrets_boot_in_prod(monkeypatch):
         terminal_token_secret="b" * 32,
     )
     assert s.terminal_token_secret == "b" * 32
+
+
+# [RCF:PROTECTED]
+def test_cors_origins_list_retains_localhost_defaults():
+    s = Settings(
+        jwt_secret="a" * 32,
+        terminal_token_secret="b" * 32,
+        cors_origins="https://app.example.com, https://admin.example.com",
+    )
+    expected = [
+        "https://app.example.com",
+        "https://admin.example.com",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    assert s.cors_origins_list == expected
