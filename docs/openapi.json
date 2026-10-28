@@ -13,7 +13,7 @@
       "name": "Apache 2.0",
       "url": "https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE"
     },
-    "version": "2.2.5"
+    "version": "2.2.9"
   },
   "paths": {
     "/api/native/search": {
