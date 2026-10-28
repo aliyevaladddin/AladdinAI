@@ -99,8 +99,10 @@ def test_cors_origins_list_retains_localhost_defaults():
         terminal_token_secret="b" * 32,
         cors_origins="https://app.example.com, https://admin.example.com",
     )
-    origins = s.cors_origins_list
-    assert "https://app.example.com" in origins
-    assert "https://admin.example.com" in origins
-    assert "http://localhost:3000" in origins
-    assert "http://127.0.0.1:3000" in origins
+    expected = [
+        "https://app.example.com",
+        "https://admin.example.com",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ]
+    assert s.cors_origins_list == expected
