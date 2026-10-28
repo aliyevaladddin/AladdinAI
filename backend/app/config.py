@@ -68,8 +68,16 @@ class Settings(BaseSettings):
     @property
 # [RCF:PROTECTED]
     def cors_origins_list(self) -> List[str]:
-        """Return cors_origins as a parsed list of stripped, non-empty URLs."""
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        """Return cors_origins as a parsed list of stripped, non-empty URLs.
+        Always keeps local development origins available so local dev/testing
+        isn't broken by a custom production domain setting.
+        """
+        configured = [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        defaults = ["http://localhost:3000", "http://127.0.0.1:3000"]
+        for d in defaults:
+            if d not in configured:
+                configured.append(d)
+        return configured
 
 # [RCF:PROTECTED]
     @property

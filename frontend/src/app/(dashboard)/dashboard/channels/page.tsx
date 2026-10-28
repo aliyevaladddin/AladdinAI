@@ -260,8 +260,9 @@ export default function ChannelsPage() {
     setWebhookModal({ open: true, loading: true, channel: c, data: null, error: null });
     try {
       const res = await api.get<{ webhook_url: string; webhook_secret: string | null; instructions: Record<string, string> }>(`/channels/messaging/${c.id}/webhook-config`);
-      // Resolve relative webhook_url to absolute using API_URL
-      const base = API_URL.replace(/\/api$/, "");
+      // Resolve relative webhook_url to absolute using API_URL or window.location.origin
+      const apiBase = API_URL.replace(/\/api$/, "");
+      const base = apiBase || (typeof window !== "undefined" ? window.location.origin : "");
       const absoluteUrl = res.webhook_url.startsWith("http") ? res.webhook_url : `${base}${res.webhook_url}`;
       setWebhookModal({
         open: true,
@@ -292,7 +293,8 @@ export default function ChannelsPage() {
 
 
   const copyWebhookUrl = (c: MessagingChannel) => {
-    const base = API_URL.replace(/\/api$/, "");
+    const apiBase = API_URL.replace(/\/api$/, "");
+    const base = apiBase || (typeof window !== "undefined" ? window.location.origin : "");
     const url = `${base}/api/webhooks/${c.type}/${c.id}`;
     navigator.clipboard?.writeText(url).catch(() => { });
     toast.success("Webhook URL copied", { description: url });
