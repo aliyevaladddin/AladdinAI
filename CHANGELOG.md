@@ -62,6 +62,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Update frontend dependencies including next, sanity, and swc core ([e3a16ca](https://github.com/aliyevaladddin/AladdinAI/commit/e3a16cadace47ec21b6e31db4a604d72248cff87))
 
+- Update changelog [skip ci] (#1126) ([dee3b31](https://github.com/aliyevaladddin/AladdinAI/commit/dee3b315b019fdaf6a054c4c61364d1d2ef2bb15))
+
 
 ### Refactor
 
