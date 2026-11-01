@@ -39,6 +39,22 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump hono from 4.13.7 to 4.13.13 in /frontend (#1089) ([46881e1](https://github.com/aliyevaladddin/AladdinAI/commit/46881e17c348c6ae973b75f5eb67947567df4e15))
 
+- Bump inquirer from 14.2.4 to 14.2.5 in /cli (#1134) ([0da3dfa](https://github.com/aliyevaladddin/AladdinAI/commit/0da3dfa1c81f696df8bab4d02b3c670fc7bfc4b5))
+
+- Bump pypdf from 6.21.1 to 6.21.3 in /backend (#1136) ([11dcf7c](https://github.com/aliyevaladddin/AladdinAI/commit/11dcf7c8fc01106f4d9ae23e73cf7c66463d57ca))
+
+- Bump axios from 1.20.0 to 1.21.0 in /cli (#1128) ([56b9cdb](https://github.com/aliyevaladddin/AladdinAI/commit/56b9cdbfe9cc62e5455f5e4472074b8e812d99a8))
+
+- Bump execa from 10.2.0 to 10.2.1 in /cli (#1130) ([4550c77](https://github.com/aliyevaladddin/AladdinAI/commit/4550c77426cdfc65733435381bd86599425e96f1))
+
+- Bump alembic from 1.20.0 to 1.20.1 in /backend (#1129) ([569c636](https://github.com/aliyevaladddin/AladdinAI/commit/569c63667c02dfe0fa75f1c3e8bbc5c3049e036e))
+
+- Update certifi requirement in /backend (#1131) ([474600a](https://github.com/aliyevaladddin/AladdinAI/commit/474600af8bfc095b3430feac72033cb551f905ca))
+
+- Bump dotenv from 18.0.8 to 18.0.9 in /cli (#1132) ([3b8c153](https://github.com/aliyevaladddin/AladdinAI/commit/3b8c153c06ae52cc0825cb4d494e8959157b3ece))
+
+- Bump sqlalchemy from 2.1.5 to 2.1.6 in /backend (#1133) ([bcc5e54](https://github.com/aliyevaladddin/AladdinAI/commit/bcc5e54659ef834b81dd9ebff08e70204d57a289))
+
 
 ### Maintenance
 
@@ -61,6 +77,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump frontend version and update dependencies ([be2cc47](https://github.com/aliyevaladddin/AladdinAI/commit/be2cc477d8d8854971d5403e34439946d266255b))
 
 - Update frontend dependencies including next, sanity, and swc core ([e3a16ca](https://github.com/aliyevaladddin/AladdinAI/commit/e3a16cadace47ec21b6e31db4a604d72248cff87))
+
+- Update changelog [skip ci] (#1126) ([dee3b31](https://github.com/aliyevaladddin/AladdinAI/commit/dee3b315b019fdaf6a054c4c61364d1d2ef2bb15))
 
 
 ### Refactor
