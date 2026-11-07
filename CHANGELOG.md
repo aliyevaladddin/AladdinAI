@@ -55,6 +55,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump sqlalchemy from 2.1.5 to 2.1.6 in /backend (#1133) ([bcc5e54](https://github.com/aliyevaladddin/AladdinAI/commit/bcc5e54659ef834b81dd9ebff08e70204d57a289))
 
+- Bump @sanity/vision from 6.20.0 to 6.22.0 in /frontend (#1156) ([3dd378e](https://github.com/aliyevaladddin/AladdinAI/commit/3dd378e1dc94e2d131ec5aaa74940aef09aa95dd))
+
 
 ### Maintenance
 
@@ -79,6 +81,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update frontend dependencies including next, sanity, and swc core ([e3a16ca](https://github.com/aliyevaladddin/AladdinAI/commit/e3a16cadace47ec21b6e31db4a604d72248cff87))
 
 - Update changelog [skip ci] (#1126) ([dee3b31](https://github.com/aliyevaladddin/AladdinAI/commit/dee3b315b019fdaf6a054c4c61364d1d2ef2bb15))
+
+- Update changelog [skip ci] (#1144) ([8c45ea2](https://github.com/aliyevaladddin/AladdinAI/commit/8c45ea2516390549e6588e5a6a033eec003b1775))
 
 
 ### Refactor
