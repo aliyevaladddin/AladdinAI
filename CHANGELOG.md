@@ -55,6 +55,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump sqlalchemy from 2.1.5 to 2.1.6 in /backend (#1133) ([bcc5e54](https://github.com/aliyevaladddin/AladdinAI/commit/bcc5e54659ef834b81dd9ebff08e70204d57a289))
 
+- Bump @sanity/vision from 6.20.0 to 6.22.0 in /frontend (#1156) ([3dd378e](https://github.com/aliyevaladddin/AladdinAI/commit/3dd378e1dc94e2d131ec5aaa74940aef09aa95dd))
+
+- Bump the security-patches group across 1 directory with 10 updates (#1159) ([d05b65d](https://github.com/aliyevaladddin/AladdinAI/commit/d05b65d3d00fcc9c888fd6f773e0756245e16e6b))
+
+- Bump ora from 9.4.1 to 10.0.0 in /cli (#1146) ([ab3b1cf](https://github.com/aliyevaladddin/AladdinAI/commit/ab3b1cf924fd05ce3e58080db602d904b1dc5458))
+
 
 ### Maintenance
 
@@ -79,6 +85,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update frontend dependencies including next, sanity, and swc core ([e3a16ca](https://github.com/aliyevaladddin/AladdinAI/commit/e3a16cadace47ec21b6e31db4a604d72248cff87))
 
 - Update changelog [skip ci] (#1126) ([dee3b31](https://github.com/aliyevaladddin/AladdinAI/commit/dee3b315b019fdaf6a054c4c61364d1d2ef2bb15))
+
+- Update changelog [skip ci] (#1144) ([8c45ea2](https://github.com/aliyevaladddin/AladdinAI/commit/8c45ea2516390549e6588e5a6a033eec003b1775))
+
+- Bump electron from 45.1.0 to 45.2.2 in /frontend (#1155) ([95af5f6](https://github.com/aliyevaladddin/AladdinAI/commit/95af5f62b4ad9d69928ac72f4866bc1f1dfb7471))
 
 
 ### Refactor
