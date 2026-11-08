@@ -55,6 +55,18 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump sqlalchemy from 2.1.5 to 2.1.6 in /backend (#1133) ([bcc5e54](https://github.com/aliyevaladddin/AladdinAI/commit/bcc5e54659ef834b81dd9ebff08e70204d57a289))
 
+- Bump @sanity/vision from 6.20.0 to 6.22.0 in /frontend (#1156) ([3dd378e](https://github.com/aliyevaladddin/AladdinAI/commit/3dd378e1dc94e2d131ec5aaa74940aef09aa95dd))
+
+- Bump the security-patches group across 1 directory with 10 updates (#1159) ([d05b65d](https://github.com/aliyevaladddin/AladdinAI/commit/d05b65d3d00fcc9c888fd6f773e0756245e16e6b))
+
+- Bump ora from 9.4.1 to 10.0.0 in /cli (#1146) ([ab3b1cf](https://github.com/aliyevaladddin/AladdinAI/commit/ab3b1cf924fd05ce3e58080db602d904b1dc5458))
+
+- Bump pydantic-settings from 2.16.1 to 2.16.2 in /backend (#1145) ([1818c58](https://github.com/aliyevaladddin/AladdinAI/commit/1818c58373d473c30380311e28087a5580a4af76))
+
+- Bump pydantic from 2.14.1 to 2.14.2 in /backend (#1147) ([d0bd6b4](https://github.com/aliyevaladddin/AladdinAI/commit/d0bd6b4c043d51efe39db635fe6302054df0c317))
+
+- Bump lucide-react from 1.63.0 to 1.68.0 in /frontend (#1153) ([6f6ea11](https://github.com/aliyevaladddin/AladdinAI/commit/6f6ea1127a6c5850ae61f715da71adf4f125d381))
+
 
 ### Maintenance
 
@@ -79,6 +91,12 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update frontend dependencies including next, sanity, and swc core ([e3a16ca](https://github.com/aliyevaladddin/AladdinAI/commit/e3a16cadace47ec21b6e31db4a604d72248cff87))
 
 - Update changelog [skip ci] (#1126) ([dee3b31](https://github.com/aliyevaladddin/AladdinAI/commit/dee3b315b019fdaf6a054c4c61364d1d2ef2bb15))
+
+- Update changelog [skip ci] (#1144) ([8c45ea2](https://github.com/aliyevaladddin/AladdinAI/commit/8c45ea2516390549e6588e5a6a033eec003b1775))
+
+- Bump electron from 45.1.0 to 45.2.2 in /frontend (#1155) ([95af5f6](https://github.com/aliyevaladddin/AladdinAI/commit/95af5f62b4ad9d69928ac72f4866bc1f1dfb7471))
+
+- Bump eslint from 10.13.0 to 10.14.0 in /frontend (#1154) ([7537233](https://github.com/aliyevaladddin/AladdinAI/commit/75372338078c02137efa0a42a574de7b69d12596))
 
 
 ### Refactor
