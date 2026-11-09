@@ -128,7 +128,7 @@ async def _search_duckduckgo(
 
     # 2. Bonus: Instant Answer API — definitions, abstracts, related topics
     #    Add only if they aren't duplicates of what HTML search already found.
-    existing_links = {r.link for r in results}
+    existing_links = {r["link"] for r in results}
     try:
         resp = await client.get(
             "https://api.duckduckgo.com/",
