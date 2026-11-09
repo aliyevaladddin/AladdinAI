@@ -49,6 +49,7 @@ from app.crypto import decrypt
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.llm_provider import LLMProvider
 from app.models.mongo_connection import MongoConnection
+from app.models.system_settings import SystemSettings
 
 log = logging.getLogger(__name__)
 
@@ -220,7 +221,7 @@ async def ensure_vector_indexes(
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Provider priority for embeddings fallback
-EMBEDDING_PROVIDER_PRIORITY = ["nvidia_nim", "openai", "custom", "huggingface"]
+EMBEDDING_PROVIDER_PRIORITY = ["openai", "custom", "huggingface"]  # NIM is opt-in only
 
 # Model mapping per provider type with fallback chains
 # Each provider can have multiple models listed in priority order (first available wins)
@@ -245,7 +246,25 @@ EMBEDDING_MODELS = {
 
 # [RCF:PROTECTED]
 async def _resolve_embedding_provider(db: AsyncSession, user_id: int) -> LLMProvider:
-    """Select first available embedding provider by priority."""
+    """Select embedding provider.
+
+    An explicit user choice (system_settings.embedding_provider_id) wins; otherwise
+    fall back to the (NIM-last) priority list.
+    """
+    settings = (await db.execute(
+        select(SystemSettings).where(SystemSettings.user_id == user_id)
+    )).scalar_one_or_none()
+    if settings and settings.embedding_provider_id:
+        explicit = (await db.execute(
+            select(LLMProvider).where(
+                LLMProvider.id == settings.embedding_provider_id,
+                LLMProvider.user_id == user_id,
+                LLMProvider.status == "connected",
+            )
+        )).scalar_one_or_none()
+        if explicit:
+            return explicit
+
     for provider_type in EMBEDDING_PROVIDER_PRIORITY:
         result = await db.execute(
             select(LLMProvider).where(

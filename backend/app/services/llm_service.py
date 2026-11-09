@@ -152,7 +152,7 @@ TOOL_CALLING_SUPPORTED = OPENAI_COMPATIBLE
 
 # Provider priority for auto-selection
 # Tool-calling providers first, then fallbacks
-LLM_PROVIDER_PRIORITY = ["nvidia_nim", "openai", "ollama", "custom", "anthropic", "huggingface"]
+LLM_PROVIDER_PRIORITY = ["openai", "ollama", "custom", "anthropic", "huggingface"]  # NIM is opt-in only
 
 
 # [RCF:PROTECTED]

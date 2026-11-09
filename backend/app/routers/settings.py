@@ -21,6 +21,7 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 # [RCF:PROTECTED]
 class SystemSettingsSchema(BaseModel):
     media_storage_backend: str  # "local" or "mongodb"
+    embedding_provider_id: int | None = None
 
 
 # [RCF:PROTECTED]
@@ -28,6 +29,7 @@ class SystemSettingsResponse(BaseModel):
     id: int | None  # None when settings have not been persisted yet (defaults)
     user_id: int
     media_storage_backend: str
+    embedding_provider_id: int | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -59,6 +61,7 @@ async def get_settings(
             id=None,
             user_id=user.id,
             media_storage_backend=DEFAULT_BACKEND,
+            embedding_provider_id=None,
             created_at=now,
             updated_at=now,
         )
@@ -67,6 +70,7 @@ async def get_settings(
         id=settings.id,
         user_id=settings.user_id,
         media_storage_backend=settings.media_storage_backend,
+        embedding_provider_id=settings.embedding_provider_id,
         created_at=settings.created_at,
         updated_at=settings.updated_at,
     )
@@ -88,6 +92,19 @@ async def update_settings(
             detail=f"media_storage_backend must be one of {ALLOWED_BACKENDS}",
         )
 
+    # Validate explicit embedding provider (if set)
+    if data.embedding_provider_id is not None:
+        from app.models.llm_provider import LLMProvider
+        prov = (await db.execute(
+            select(LLMProvider).where(
+                LLMProvider.id == data.embedding_provider_id,
+                LLMProvider.user_id == user.id,
+                LLMProvider.status == "connected",
+            )
+        )).scalar_one_or_none()
+        if not prov:
+            raise HTTPException(status_code=400, detail="embedding_provider_id must be a connected provider owned by the user")
+
     result = await db.execute(
         select(SystemSettings).where(SystemSettings.user_id == user.id)
     )
@@ -95,6 +112,7 @@ async def update_settings(
 
     if settings:
         settings.media_storage_backend = data.media_storage_backend
+        settings.embedding_provider_id = data.embedding_provider_id
         settings.updated_at = datetime.now(timezone.utc)
         await db.commit()
         await db.refresh(settings)
@@ -105,6 +123,7 @@ async def update_settings(
         settings = SystemSettings(
             user_id=user.id,
             media_storage_backend=data.media_storage_backend,
+            embedding_provider_id=data.embedding_provider_id,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -119,6 +138,7 @@ async def update_settings(
             )
             settings = result.scalars().one()
             settings.media_storage_backend = data.media_storage_backend
+            settings.embedding_provider_id = data.embedding_provider_id
             settings.updated_at = datetime.now(timezone.utc)
             await db.commit()
             await db.refresh(settings)
@@ -127,6 +147,7 @@ async def update_settings(
         id=settings.id,
         user_id=settings.user_id,
         media_storage_backend=settings.media_storage_backend,
+        embedding_provider_id=settings.embedding_provider_id,
         created_at=settings.created_at,
         updated_at=settings.updated_at,
     )

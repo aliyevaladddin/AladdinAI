@@ -60,8 +60,8 @@ async def list_agents(ctx: ToolContext) -> dict:
     name="create_agent",
     description=(
         "Create a new AI Agent in AladdinAI. By default, it will be started immediately. "
-        "If llm_provider_id is omitted, the tool will automatically attempt to find a connected "
-        "Nvidia NIM provider (type='nvidia_nim') or fallback to any connected provider."
+        "If llm_provider_id is omitted, the tool will use the first connected provider "
+        "(NVIDIA NIM is optional and never preferred automatically)."
     ),
     parameters={
         "type": "object",
@@ -92,22 +92,16 @@ async def create_agent(
         if existing.scalar_one_or_none():
             return {"status": "error", "message": f"Agent with name '{name}' already exists."}
 
-        # If llm_provider_id is not provided, try to find a suitable provider
+        # If llm_provider_id is not provided, use the first connected provider.
+        # NVIDIA NIM is intentionally not preferred over other providers — it is
+        # an opt-in backend that the user connects in Providers settings.
         if not llm_provider_id:
-            # Look for nvidia_nim first
             provider_q = select(LLMProvider).where(
                 LLMProvider.user_id == ctx.user_id,
                 LLMProvider.status == "connected",
-                LLMProvider.type == "nvidia_nim"
+                LLMProvider.type != "nvidia_nim",
             )
             provider = (await ctx.db.execute(provider_q)).scalar_one_or_none()
-            if not provider:
-                # Fallback to any connected provider
-                provider_q = select(LLMProvider).where(
-                    LLMProvider.user_id == ctx.user_id,
-                    LLMProvider.status == "connected"
-                )
-                provider = (await ctx.db.execute(provider_q)).scalar_one_or_none()
 
             if not provider:
                 return {
