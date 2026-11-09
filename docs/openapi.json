@@ -13,7 +13,7 @@
       "name": "Apache 2.0",
       "url": "https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE"
     },
-    "version": "2.2.5"
+    "version": "2.2.9"
   },
   "paths": {
     "/api/native/search": {
@@ -15762,6 +15762,17 @@
             "type": "string",
             "title": "Media Storage Backend"
           },
+          "embedding_provider_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Provider Id"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -15788,6 +15799,17 @@
           "media_storage_backend": {
             "type": "string",
             "title": "Media Storage Backend"
+          },
+          "embedding_provider_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Provider Id"
           }
         },
         "type": "object",
