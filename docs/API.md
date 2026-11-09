@@ -24,7 +24,7 @@
     Exceeding a limit returns HTTP 429 with a `Retry-After` header.
     
 
-## Version: 2.2.5
+## Version: 2.2.9
 
 ### Terms of service
 https://github.com/aliyevaladddin/AladdinAI/blob/main/LICENSE
@@ -6873,6 +6873,7 @@ ttyd adapter ignores it.
 | id |  |  | Yes |
 | user_id | integer |  | Yes |
 | media_storage_backend | string |  | Yes |
+| embedding_provider_id |  |  | No |
 | created_at | dateTime |  | Yes |
 | updated_at | dateTime |  | Yes |
 
@@ -6881,6 +6882,7 @@ ttyd adapter ignores it.
 | Name | Type | Description | Required |
 | ---- | ---- | ----------- | -------- |
 | media_storage_backend | string |  | Yes |
+| embedding_provider_id |  |  | No |
 
 #### TableSchema
 
