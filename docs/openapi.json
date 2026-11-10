@@ -9999,13 +9999,13 @@
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string",
               "enum": [
                 "all",
                 "deals",
                 "contacts",
                 "activities"
               ],
+              "type": "string",
               "default": "all",
               "title": "Type"
             }
