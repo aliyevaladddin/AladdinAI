@@ -26,6 +26,10 @@ Comprehensive documentation for the AladdinAI multi-agent AI system.
 - **[Web Search](./guides/WEB_SEARCH.md)** - Native zero-key meta-search service
 - **[SQL Playground](./guides/SQL_PLAYGROUND.md)** - Read-only SQL exploration & security model
 - **[Terminal System](./guides/TERMINAL_SYSTEM.md)** - Pluggable terminal providers & sessions
+- **[WRT Editor](./guides/WRT_EDITOR.md)** - In-browser editing of `.wrt` files (visual + Monaco modes)
+- **[Outgoing Webhooks](./guides/WEBHOOKS.md)** - Push events to Zapier or any HTTP endpoint
+- **[Agent Sandbox](./guides/AGENT_SANDBOX.md)** - Docker isolation for agent code execution
+- **[UI Polish & Observability](./guides/UI_POLISH_AND_OBSERVABILITY.md)** - Chat performance, traces and forging UI
 - **[Memory System](./ARCHITECTURE.md#memory)** - Understanding the memory architecture
 - **[WRT Editor](./WRT_EDITOR.md)** - Native C-based terminal editor for `.wrt` document files
 

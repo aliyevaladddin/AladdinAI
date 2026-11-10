@@ -25,7 +25,7 @@ In this post, I'll walk through the architectural decisions I made — what work
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Frontend (Next.js 15 + React 19)               │
+│  Frontend (Next.js 16 + React 19)               │
 │  - Agent UI, CRM, settings                      │
 │  - SSE for streaming responses                  │
 └──────────────┬──────────────────────────────────┘
