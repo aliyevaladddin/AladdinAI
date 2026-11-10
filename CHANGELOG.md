@@ -6,6 +6,17 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ### Bug Fixes
 
+- Accept any Postgres connection string in the Render entrypoint (#1175) ([d6a5d76](https://github.com/aliyevaladddin/AladdinAI/commit/d6a5d7692b984c26785f6d6f596c8bc28a967d7b))
+
+
+### CI
+
+- Publish CLI on Node 22 (#1171) ([c9dbfd8](https://github.com/aliyevaladddin/AladdinAI/commit/c9dbfd82f68c45a3ebf1e3b27ddfacb59174aeb8))
+
+## [v2.3.0] - 2026-11-09
+
+### Bug Fixes
+
 - Handle branch protection on release version commit ([9a72eba](https://github.com/aliyevaladddin/AladdinAI/commit/9a72ebab991738c06e2d181048cda70eeb6224e8))
 
 - Use libzip-dev instead of libzip4 for Debian compatibility ([8c73bb8](https://github.com/aliyevaladddin/AladdinAI/commit/8c73bb8a77af693241dc396f5157696fb34ebc56))
@@ -72,6 +83,11 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump python-multipart from 0.0.32 to 0.0.33 in /backend (#1148) ([6e1c2cb](https://github.com/aliyevaladddin/AladdinAI/commit/6e1c2cb245ceee226b396effa052f7321aba9eb1))
 
 
+### Documentation
+
+- Update API documentation [skip ci] (#1170) ([5ea33da](https://github.com/aliyevaladddin/AladdinAI/commit/5ea33da27ef5e7a61be4977aaec83166e844cd7f))
+
+
 ### Maintenance
 
 - Update changelog [skip ci] (#1061) ([d103423](https://github.com/aliyevaladddin/AladdinAI/commit/d10342381b0787316b5d5d676c37f26654117726))
@@ -101,6 +117,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump electron from 45.1.0 to 45.2.2 in /frontend (#1155) ([95af5f6](https://github.com/aliyevaladddin/AladdinAI/commit/95af5f62b4ad9d69928ac72f4866bc1f1dfb7471))
 
 - Bump eslint from 10.13.0 to 10.14.0 in /frontend (#1154) ([7537233](https://github.com/aliyevaladddin/AladdinAI/commit/75372338078c02137efa0a42a574de7b69d12596))
+
+- Update changelog [skip ci] (#1169) ([0a96f56](https://github.com/aliyevaladddin/AladdinAI/commit/0a96f56bc2ceb9467ebef5e130dba1225e0c250e))
 
 
 ### Refactor
