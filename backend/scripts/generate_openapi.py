@@ -2,10 +2,18 @@
 # NOTICE: This file is protected under RCF-PL
 """Generate OpenAPI schema from FastAPI app."""
 import json
+import sys
 from pathlib import Path
 
-# Import app directly without sys.path manipulation
-from app.main import app
+# `python scripts/generate_openapi.py` puts scripts/ on sys.path, not the
+# backend root, so `import app...` raised ModuleNotFoundError unless the caller
+# remembered PYTHONPATH=. Adding the package root here keeps the plain command
+# working on its own.
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
+
+from app.main import app  # noqa: E402 — must run after sys.path setup
 
 
 # [RCF:PROTECTED]
