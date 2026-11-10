@@ -574,10 +574,8 @@ async def get_file_content(
             content = data.decode("utf-8", errors="replace")
     elif ext == ".pdf":
         try:
-            from pypdf import PdfReader
-            import io as _io
-            reader = PdfReader(_io.BytesIO(data))
-            content = "\n\n".join(page.extract_text() or "" for page in reader.pages)
+            from app.services.pdf_text import extract_pdf_pages
+            content = "\n\n".join(await extract_pdf_pages(data))
         except Exception:
             content = data.decode("utf-8", errors="replace")
     elif ext in (".xlsx", ".xls"):
