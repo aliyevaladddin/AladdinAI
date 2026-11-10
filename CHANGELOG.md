@@ -35,12 +35,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Align README, guides and env template with what actually ships (#1196) ([79037f7](https://github.com/aliyevaladddin/AladdinAI/commit/79037f7aae73acc97838edca4409deb3bb3b4379))
 
+- Point guides at code that still exists (#1199) ([080edd5](https://github.com/aliyevaladddin/AladdinAI/commit/080edd59dddf49ee8a2afedfd2c431bd244df105))
+
 
 ### Features
 
 - Check native engine binaries in `doctor` (#1186) ([bbe8d75](https://github.com/aliyevaladddin/AladdinAI/commit/bbe8d7517c35c130d5edbc6afea3a190c4620748))
 
 - Keep image size and caption across docx round trips (#1187) ([ddc1cc7](https://github.com/aliyevaladddin/AladdinAI/commit/ddc1cc7bb17f95dd1a425ad624938d0432a49f6f))
+
+- Mount the user router and serve GET /api/profile (#1198) ([771840c](https://github.com/aliyevaladddin/AladdinAI/commit/771840c37439df2f8b984ae175aac26d6547f02a))
 
 
 ### Maintenance
@@ -50,6 +54,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#1184) ([24a3c7f](https://github.com/aliyevaladddin/AladdinAI/commit/24a3c7fd441020b93a948af8779a9825d9039e42))
 
 - Update changelog [skip ci] (#1192) ([ca0125c](https://github.com/aliyevaladddin/AladdinAI/commit/ca0125c27cf0cee443c7941273c39bc883429135))
+
+- Update changelog [skip ci] (#1197) ([3a370db](https://github.com/aliyevaladddin/AladdinAI/commit/3a370dbb3bb3d8c86a4929fef4c77eb21b66a0eb))
 
 ## [v2.3.0] - 2026-11-09
 
