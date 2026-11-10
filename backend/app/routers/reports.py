@@ -6,8 +6,9 @@ Returns a styled multi-sheet .xlsx report for the authenticated user.
 """
 import io
 from datetime import datetime, timezone
+from typing import Literal
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
@@ -207,7 +208,7 @@ async def _build_activities_sheet(ws, user_id: int, db: AsyncSession) -> int:
 @router.get("/excel")
 # [RCF:PROTECTED]
 async def download_excel_report(
-    type: str = Query("all", enum=["all", "deals", "contacts", "activities"]),
+    type: Literal["all", "deals", "contacts", "activities"] = "all",
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
