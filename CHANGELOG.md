@@ -8,10 +8,29 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Accept any Postgres connection string in the Render entrypoint (#1175) ([d6a5d76](https://github.com/aliyevaladddin/AladdinAI/commit/d6a5d7692b984c26785f6d6f596c8bc28a967d7b))
 
+- Drop removed Query(enum=...) argument in the Excel report endpoint (#1178) ([1101b60](https://github.com/aliyevaladddin/AladdinAI/commit/1101b60138b3b49905ddc5ab7f5f865142b577be))
+
 
 ### CI
 
 - Publish CLI on Node 22 (#1171) ([c9dbfd8](https://github.com/aliyevaladddin/AladdinAI/commit/c9dbfd82f68c45a3ebf1e3b27ddfacb59174aeb8))
+
+
+### Dependencies
+
+- Bump follow-redirects from 1.16.0 to 1.16.3 in /frontend (#1181) ([fd6a2dc](https://github.com/aliyevaladddin/AladdinAI/commit/fd6a2dc9890f1709de07a7493b10930bf5fa2ea0))
+
+- Bump follow-redirects from 1.16.0 to 1.16.3 in /cli (#1183) ([035d9f8](https://github.com/aliyevaladddin/AladdinAI/commit/035d9f8692f10b6ebc1506716249ff8a32562f07))
+
+
+### Documentation
+
+- Update API documentation [skip ci] (#1180) ([2d2c6a2](https://github.com/aliyevaladddin/AladdinAI/commit/2d2c6a226817602407bf7b98888f5b698a2fbe6f))
+
+
+### Maintenance
+
+- Update changelog [skip ci] (#1176) ([bbe0254](https://github.com/aliyevaladddin/AladdinAI/commit/bbe0254d284c1118c368db4ba91ad4c72e4ac3c5))
 
 ## [v2.3.0] - 2026-11-09
 
