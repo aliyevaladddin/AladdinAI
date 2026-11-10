@@ -11066,6 +11066,33 @@
         }
       }
     },
+    "/api/profile": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Get Profile",
+        "description": "Compact identity of the caller: id, email and display name.\n\nThe User model has no `username` column, so this returns the same\nUserResponse that /api/auth/me serves instead of inventing a field.",
+        "operationId": "get_profile_api_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
