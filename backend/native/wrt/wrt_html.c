@@ -41,6 +41,12 @@ static void append_wrt_attrs_as_html(str_buf_t *b, const char *p, const char *li
         size_t nlen = (size_t)(p - name);
         if (nlen == 0) { p++; continue; }
 
+        /* [img] keeps the display size in w/h (px); HTML spells those
+         * width/height. Passing them through verbatim would emit attributes
+         * browsers ignore, so the size would be lost on the way to the editor. */
+        if (nlen == 1 && name[0] == 'w') { name = "width"; nlen = 5; }
+        else if (nlen == 1 && name[0] == 'h') { name = "height"; nlen = 6; }
+
         while (p < limit && isspace((unsigned char)*p)) p++;
         if (p >= limit || *p != '=') {
             buf_append_c(b, ' ');
@@ -110,6 +116,16 @@ static int append_html_attr_value(str_buf_t *b, const char *p, const char *limit
     return 0;
 }
 
+/* HTML width/height may also carry a unit ("120px"); only bare pixel numbers
+ * are copied into the tag, anything else is dropped rather than guessed at. */
+static int is_pixel_value(const char *s) {
+    if (!s || !*s) return 0;
+    for (const char *p = s; *p; p++) {
+        if (!isdigit((unsigned char)*p)) return 0;
+    }
+    return 1;
+}
+
 /* If `*p` points at an <img> element, append the equivalent WRT [img] tag to
  * `b` and advance `*p` past the element, returning 1. Returns 0 when `*p` is
  * some other tag and 1 is not the right handler. Shared by the main parse loop
@@ -123,25 +139,45 @@ static int consume_img_element(str_buf_t *b, const char **p) {
     const char *tag_end = strchr(cur, '>');
     if (!tag_end) return 0; /* unterminated: leave it to the caller's skip logic */
 
-    str_buf_t src, alt;
+    str_buf_t src, alt, width, height;
     buf_init(&src);
     buf_init(&alt);
+    buf_init(&width);
+    buf_init(&height);
     int has_src = append_html_attr_value(&src, cur + 4, tag_end, "src");
     int has_alt = append_html_attr_value(&alt, cur + 4, tag_end, "alt");
+    /* The editor renders [img w h] as <img width height>; reading them back
+     * keeps the size from being dropped every time a document is saved. */
+    int has_width = append_html_attr_value(&width, cur + 4, tag_end, "width");
+    int has_height = append_html_attr_value(&height, cur + 4, tag_end, "height");
 
     /* Without a src there is no image data to preserve, so emitting a bare
      * [img] would only add a tag the validator flags as malformed. */
     if (has_src && src.len > 0) {
         buf_append(b, "[img src=\"");
         buf_append(b, src.data);
+        buf_append_c(b, '"');
         if (has_alt && alt.len > 0) {
-            buf_append(b, "\" alt=\"");
+            buf_append(b, " alt=\"");
             buf_append(b, alt.data);
+            buf_append_c(b, '"');
         }
-        buf_append(b, "\"]");
+        if (has_width && is_pixel_value(width.data)) {
+            buf_append(b, " w=\"");
+            buf_append(b, width.data);
+            buf_append_c(b, '"');
+        }
+        if (has_height && is_pixel_value(height.data)) {
+            buf_append(b, " h=\"");
+            buf_append(b, height.data);
+            buf_append_c(b, '"');
+        }
+        buf_append(b, "]");
     }
     free(src.data);
     free(alt.data);
+    free(width.data);
+    free(height.data);
     *p = tag_end + 1;
     return 1;
 }

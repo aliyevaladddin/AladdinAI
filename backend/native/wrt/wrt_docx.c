@@ -254,6 +254,72 @@ typedef struct {
 
 #define MAX_DOCX_IMAGES 128
 
+/* Word measures drawings in EMU; 914400 EMU = 1 inch = 96 CSS px. Images in the
+ * `.wrt` tag are stored in px so the editor and HTML use the same number. */
+#define EMU_PER_PX 9525
+#define DEFAULT_IMG_CX 5486400 /* 15.2 cm, used when a tag carries no size */
+#define DEFAULT_IMG_CY 3657600 /* 10.2 cm */
+
+static const char *bstrnstr(const char *hay, size_t hay_len, const char *needle);
+
+/* Read a non-negative decimal attribute value (`name` includes the `="` part).
+ * Returns 0 when absent, so callers can tell "not specified" from a real 0. */
+static long parse_numeric_attr(const char *text, size_t limit, const char *name) {
+    const char *p = bstrnstr(text, limit, name);
+    if (!p) return 0;
+    p += strlen(name);
+    long value = 0;
+    int digits = 0;
+    while (*p >= '0' && *p <= '9') {
+        value = value * 10 + (*p - '0');
+        p++;
+        digits++;
+    }
+    return digits ? value : 0;
+}
+
+/* Escape a value for an XML attribute in a plain buffer (descr="..."), so a
+ * caption containing a bare `&` or a quote cannot break word/document.xml. */
+static void escape_xml_attr(const char *src, char *dst, size_t dst_size) {
+    size_t j = 0;
+    if (dst_size == 0) return;
+    for (const char *s = src ? src : ""; *s; s++) {
+        const char *repl = NULL;
+        switch (*s) {
+            case '&':  repl = "&amp;"; break;
+            case '<':  repl = "&lt;"; break;
+            case '>':  repl = "&gt;"; break;
+            case '"': repl = "&quot;"; break;
+            case '\'': repl = "&apos;"; break;
+            default: break;
+        }
+        if (!repl) {
+            if (j + 1 >= dst_size) break;
+            dst[j++] = *s;
+            continue;
+        }
+        size_t rlen = strlen(repl);
+        if (j + rlen >= dst_size) break;
+        memcpy(dst + j, repl, rlen);
+        j += rlen;
+    }
+    dst[j] = '\0';
+}
+
+/* Copy text into a `[img]` attribute value: the tag is single-line and
+ * quote-delimited, so quotes and control characters would corrupt it. */
+static void sanitize_attr_value(char *dst, size_t dst_size, const char *src) {
+    size_t j = 0;
+    if (dst_size == 0) return;
+    for (const char *s = src; *s && j + 1 < dst_size; s++) {
+        unsigned char c = (unsigned char)*s;
+        if (c == '"') c = '\'';
+        else if (c < 0x20) c = ' ';
+        dst[j++] = (char)c;
+    }
+    dst[j] = '\0';
+}
+
 static void append_run_with_formatting(d_buf_t *out, const char *text, size_t len,
                                       int bold, int italic, int underline, int strike, int code) {
     if (len == 0) return;
@@ -348,12 +414,15 @@ static void parse_and_emit_inline_runs(d_buf_t *out, char *text,
     }
 }
 
-static void emit_drawing_xml(d_buf_t *out, const char *rel_id, int doc_pr_id, const char *alt) {
-    char buf[1024];
+static void emit_drawing_xml(d_buf_t *out, const char *rel_id, int doc_pr_id,
+                             const char *alt, long cx, long cy) {
+    char buf[4096];
+    char alt_escaped[1024];
+    escape_xml_attr(alt, alt_escaped, sizeof(alt_escaped));
     snprintf(buf, sizeof(buf),
         "<w:r><w:drawing><wp:inline distT=\"0\" distB=\"0\" distL=\"0\" distR=\"0\" "
         "xmlns:wp=\"http://schemas.openxmlformats.org/wordprocessingDrawing\">\n"
-        "  <wp:extent cx=\"5486400\" cy=\"3657600\"/>\n"
+        "  <wp:extent cx=\"%ld\" cy=\"%ld\"/>\n"
         "  <wp:docPr id=\"%d\" name=\"Picture %d\" descr=\"%s\"/>\n"
         "  <a:graphic xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\">\n"
         "    <a:graphicData uri=\"http://schemas.openxmlformats.org/drawingml/2006/picture\">\n"
@@ -363,13 +432,13 @@ static void emit_drawing_xml(d_buf_t *out, const char *rel_id, int doc_pr_id, co
         "          <a:blip r:embed=\"%s\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"/>\n"
         "          <a:stretch><a:fillRect/></a:stretch>\n"
         "        </pic:blipFill>\n"
-        "        <pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"5486400\" cy=\"3657600\"/></a:xfrm>\n"
+        "        <pic:spPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"%ld\" cy=\"%ld\"/></a:xfrm>\n"
         "        <a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom></pic:spPr>\n"
         "      </pic:pic>\n"
         "    </a:graphicData>\n"
         "  </a:graphic>\n"
         "</wp:inline></w:drawing></w:r>",
-        doc_pr_id, doc_pr_id, alt ? alt : "image", doc_pr_id, doc_pr_id, rel_id);
+        cx, cy, doc_pr_id, doc_pr_id, alt_escaped, doc_pr_id, doc_pr_id, rel_id, cx, cy);
     dbuf_append(out, buf);
 }
 
@@ -381,6 +450,28 @@ static const char *bstrnstr(const char *hay, size_t hay_len, const char *needle)
         if (memcmp(hay + i, needle, n) == 0) return hay + i;
     }
     return NULL;
+}
+
+/* Map the MIME type of a `data:` URI to the file extension Word expects in
+ * word/media/. Everything else falls back to png, matching the content-types
+ * table emitted in [Content_Types].xml. */
+static const char *data_uri_image_ext(const char *tag, size_t tag_len) {
+    const char *data_ptr = bstrnstr(tag, tag_len, "data:");
+    if (!data_ptr) return "png";
+    data_ptr += 5;
+    const char *semi = memchr(data_ptr, ';', tag_len - (size_t)(data_ptr - tag));
+    if (!semi) return "png";
+    size_t mlen = (size_t)(semi - data_ptr);
+    if (mlen == 0 || mlen >= 32) return "png";
+
+    char mime[32];
+    for (size_t k = 0; k < mlen; k++) mime[k] = (char)tolower((unsigned char)data_ptr[k]);
+    mime[mlen] = '\0';
+
+    if (strstr(mime, "jpeg") || strstr(mime, "jpg")) return "jpg";
+    if (strstr(mime, "gif")) return "gif";
+    if (strstr(mime, "bmp")) return "bmp";
+    return "png";
 }
 
 /* Emit one <w:r> for an "[img ...]" tag (tag points at '[', tag_len ends at ']',
@@ -402,6 +493,13 @@ static void emit_img_run(d_buf_t *out, const char *tag, size_t tag_len,
         }
     }
 
+    /* Size comes back from the tag (px -> EMU). Word needs a concrete extent,
+     * so absent sizes keep the historical default instead of 0. */
+    long w_px = parse_numeric_attr(tag, tag_len, "w=\"");
+    long h_px = parse_numeric_attr(tag, tag_len, "h=\"");
+    long cx = w_px > 0 ? w_px * EMU_PER_PX : DEFAULT_IMG_CX;
+    long cy = h_px > 0 ? h_px * EMU_PER_PX : DEFAULT_IMG_CY;
+
     const char *b64_start = bstrnstr(tag, tag_len, ";base64,");
     if (b64_start && *image_count < MAX_DOCX_IMAGES) {
         b64_start += 8;
@@ -418,11 +516,12 @@ static void emit_img_run(d_buf_t *out, const char *tag, size_t tag_len,
                 if (img_data) {
                     int idx = (*image_count)++;
                     snprintf(images[idx].r_id, sizeof(images[idx].r_id), "rIdImg%d", idx + 1);
-                    snprintf(images[idx].filename, sizeof(images[idx].filename), "image%d.png", idx + 1);
+                    snprintf(images[idx].filename, sizeof(images[idx].filename), "image%d.%s",
+                             idx + 1, data_uri_image_ext(tag, tag_len));
                     images[idx].bytes = img_data;
                     images[idx].size = raw_len;
                     snprintf(images[idx].alt, sizeof(images[idx].alt), "%s", alt_val);
-                    emit_drawing_xml(out, images[idx].r_id, idx + 10, images[idx].alt);
+                    emit_drawing_xml(out, images[idx].r_id, idx + 10, images[idx].alt, cx, cy);
                     return;
                 }
             }
@@ -896,11 +995,49 @@ char *docx_to_wrt(const unsigned char *docx_data, size_t docx_len) {
                                     else if (strstr(zip_entry, ".gif")) mime = "image/gif";
                                     else if (strstr(zip_entry, ".bmp")) mime = "image/bmp";
 
+                                    /* wp:extent (EMU) and docPr/@descr are the only
+                                     * places a drawing's size and caption live. Dropping
+                                     * them here makes the round-trip back to .docx resize
+                                     * every picture to the default extent and lose its
+                                     * caption, so both travel inside the tag. */
+                                    char alt_val[256] = "image";
+                                    size_t drawing_len = (size_t)(r_end - drawing_ptr);
+                                    const char *descr = bstrnstr(drawing_ptr, drawing_len, "descr=\"");
+                                    if (descr) {
+                                        descr += 7;
+                                        const char *descr_end = memchr(descr, '"', (size_t)(r_end - descr));
+                                        if (descr_end && descr_end > descr) {
+                                            d_buf_t raw_alt;
+                                            dbuf_init(&raw_alt);
+                                            unescape_xml_into(&raw_alt, descr, (size_t)(descr_end - descr));
+                                            sanitize_attr_value(alt_val, sizeof(alt_val),
+                                                                raw_alt.data ? raw_alt.data : "");
+                                            free(raw_alt.data);
+                                        }
+                                    }
+
+                                    long emu_cx = 0, emu_cy = 0;
+                                    const char *extent = bstrnstr(drawing_ptr, drawing_len, "<wp:extent");
+                                    if (extent) {
+                                        emu_cx = parse_numeric_attr(extent, (size_t)(r_end - extent), "cx=\"");
+                                        emu_cy = parse_numeric_attr(extent, (size_t)(r_end - extent), "cy=\"");
+                                    }
+
                                     dbuf_append(&para_buf, "[img src=\"data:");
                                     dbuf_append(&para_buf, mime);
                                     dbuf_append(&para_buf, ";base64,");
                                     dbuf_append(&para_buf, b64);
-                                    dbuf_append(&para_buf, "\" alt=\"image\"]");
+                                    dbuf_append(&para_buf, "\" alt=\"");
+                                    dbuf_append(&para_buf, alt_val);
+                                    dbuf_append(&para_buf, "\"");
+                                    if (emu_cx > 0 && emu_cy > 0) {
+                                        char size_attr[64];
+                                        snprintf(size_attr, sizeof(size_attr), " w=\"%ld\" h=\"%ld\"",
+                                                 (emu_cx + EMU_PER_PX / 2) / EMU_PER_PX,
+                                                 (emu_cy + EMU_PER_PX / 2) / EMU_PER_PX);
+                                        dbuf_append(&para_buf, size_attr);
+                                    }
+                                    dbuf_append(&para_buf, "]");
                                     free(b64);
                                 }
                             }
