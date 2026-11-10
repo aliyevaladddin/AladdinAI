@@ -8,10 +8,17 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Accept any Postgres connection string in the Render entrypoint (#1175) ([d6a5d76](https://github.com/aliyevaladddin/AladdinAI/commit/d6a5d7692b984c26785f6d6f596c8bc28a967d7b))
 
+- Drop removed Query(enum=...) argument in the Excel report endpoint (#1178) ([1101b60](https://github.com/aliyevaladddin/AladdinAI/commit/1101b60138b3b49905ddc5ab7f5f865142b577be))
+
 
 ### CI
 
 - Publish CLI on Node 22 (#1171) ([c9dbfd8](https://github.com/aliyevaladddin/AladdinAI/commit/c9dbfd82f68c45a3ebf1e3b27ddfacb59174aeb8))
+
+
+### Maintenance
+
+- Update changelog [skip ci] (#1176) ([bbe0254](https://github.com/aliyevaladddin/AladdinAI/commit/bbe0254d284c1118c368db4ba91ad4c72e4ac3c5))
 
 ## [v2.3.0] - 2026-11-09
 
