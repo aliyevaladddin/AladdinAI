@@ -44,7 +44,7 @@ More content with [u]underlined[/u] and [code]monospace[/code] text.
 - `[quote]...[/quote]` — block quote
 - `[list]...[/list]` — unordered list (items start with `*`)
 - `[table]...[/table]` — table (pipe-delimited)
-- `[img src="..." alt="..."]` — embedded image (base64)
+- `[img src="..." alt="..." w="120" h="60"]` — embedded image (base64); `w`/`h` are the display size in CSS px and are optional
 
 ---
 

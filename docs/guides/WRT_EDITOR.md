@@ -38,7 +38,7 @@ See [`PULL_REQUEST_DOCX_WRT.md`](../PULL_REQUEST_DOCX_WRT.md) for the full forma
 | `[quote]...[/quote]` | `<blockquote class="wrt-quote">` | Block Quote |
 | `[list]...[/list]` | `<ul class="wrt-list">` | Unordered List (`* Item`) |
 | `[table]...[/table]` | `<table class="wrt-table">` | Table (Pipe-delimited) |
-| `[img src="..." alt="..."]` | `<img class="wrt-image">` | Base64 Embedded Image |
+| `[img src="..." alt="..." w="120" h="60"]` | `<img class="wrt-image">` | Base64 Embedded Image (optional `w`/`h` in CSS px) |
 
 ---
 
