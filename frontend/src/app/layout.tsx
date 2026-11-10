@@ -1,49 +1,58 @@
 // NOTICE: This file is protected under RCF-PL
 import type { Metadata } from "next";
-import {
-  Inter,
-  JetBrains_Mono,
-  Cormorant_Garamond,
-  Spectral,
-  Fraunces,
-} from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/components/shell/ThemeProvider";
 
+/* Fonts are vendored from @fontsource rather than fetched from Google at build
+ * time. `next/font/google` downloads from fonts.gstatic.com while compiling, so
+ * an offline host — or one bad request, which Turbopack then caches — fails the
+ * build with "Can't resolve .../internal/font/google/font". Self-hosted files
+ * keep the build reproducible and make no external requests at runtime. */
 /* UI workhorse */
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: "../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
+  weight: "100 900",
   variable: "--font-inter",
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
+const jetbrainsMono = localFont({
+  src: "../../node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2",
+  weight: "100 800",
   variable: "--font-jetbrains",
   display: "swap",
 });
 
 /* Display faces — one per theme family */
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["500", "600"],
-  style: ["normal", "italic"],
+const cormorant = localFont({
+  src: [
+    { path: "../../node_modules/@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../../node_modules/@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-italic.woff2", weight: "500", style: "italic" },
+    { path: "../../node_modules/@fontsource/cormorant-garamond/files/cormorant-garamond-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "../../node_modules/@fontsource/cormorant-garamond/files/cormorant-garamond-latin-600-italic.woff2", weight: "600", style: "italic" },
+  ],
   variable: "--font-cormorant",
   display: "swap",
 });
 
-const spectral = Spectral({
-  subsets: ["latin"],
-  weight: ["500", "600"],
-  style: ["normal", "italic"],
+const spectral = localFont({
+  src: [
+    { path: "../../node_modules/@fontsource/spectral/files/spectral-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../../node_modules/@fontsource/spectral/files/spectral-latin-500-italic.woff2", weight: "500", style: "italic" },
+    { path: "../../node_modules/@fontsource/spectral/files/spectral-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "../../node_modules/@fontsource/spectral/files/spectral-latin-600-italic.woff2", weight: "600", style: "italic" },
+  ],
   variable: "--font-spectral",
   display: "swap",
 });
 
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["500", "600"],
+const fraunces = localFont({
+  src: [
+    { path: "../../node_modules/@fontsource/fraunces/files/fraunces-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../../node_modules/@fontsource/fraunces/files/fraunces-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-fraunces",
   display: "swap",
 });
