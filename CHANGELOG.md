@@ -10,6 +10,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Drop removed Query(enum=...) argument in the Excel report endpoint (#1178) ([1101b60](https://github.com/aliyevaladddin/AladdinAI/commit/1101b60138b3b49905ddc5ab7f5f865142b577be))
 
+- Bump pypdf to 6.21.4 and parse PDFs off the event loop (#1185) ([4290f03](https://github.com/aliyevaladddin/AladdinAI/commit/4290f03c8304fe5d255cdf4b8078d1e7122f5b51))
+
 
 ### CI
 
@@ -28,9 +30,16 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update API documentation [skip ci] (#1180) ([2d2c6a2](https://github.com/aliyevaladddin/AladdinAI/commit/2d2c6a226817602407bf7b98888f5b698a2fbe6f))
 
 
+### Features
+
+- Check native engine binaries in `doctor` (#1186) ([bbe8d75](https://github.com/aliyevaladddin/AladdinAI/commit/bbe8d7517c35c130d5edbc6afea3a190c4620748))
+
+
 ### Maintenance
 
 - Update changelog [skip ci] (#1176) ([bbe0254](https://github.com/aliyevaladddin/AladdinAI/commit/bbe0254d284c1118c368db4ba91ad4c72e4ac3c5))
+
+- Update changelog [skip ci] (#1184) ([24a3c7f](https://github.com/aliyevaladddin/AladdinAI/commit/24a3c7fd441020b93a948af8779a9825d9039e42))
 
 ## [v2.3.0] - 2026-11-09
 
