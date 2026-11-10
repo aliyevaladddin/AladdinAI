@@ -169,7 +169,8 @@ Supported tags: `[h1]`–`[h3]`, `[b]`, `[i]`, `[u]`, `[s]`, `[code]`,
 The agent never needs to know about binary formats — it works entirely with
 `.wrt` tagged text. The conversion is transparent.
 
-Converter: `backend/app/services/docx_converter.py`
+Converter: `backend/native/wrt/wrt_docx.c` (C engine), called through
+`backend/app/services/wrt_engine_service.py`
 Frontend viewer: `frontend/src/components/wrt-viewer.tsx`
 
 ### The assistant panel
@@ -219,7 +220,8 @@ reference):
 | `backend/app/routers/workspace.py` | REST endpoints, thin over the service |
 | `backend/app/tools/files_ws.py` | the five agent tools |
 | `backend/app/models/*.py` | `WorkspaceSpace`, `SpaceMember`, `Folder`, `WorkspaceFile`, `FileVersion`, `FileEvent` |
-| `backend/app/services/docx_converter.py` | `.docx` ↔ `.wrt` bidirectional converter |
+| `backend/native/wrt/wrt_docx.c` | `.docx` ↔ `.wrt` bidirectional converter (C engine) |
+| `backend/app/services/wrt_engine_service.py` | Python wrapper that drives the C engine |
 | `frontend/src/components/wrt-viewer.tsx` | `.wrt` format renderer |
 | `frontend/src/app/(dashboard)/dashboard/files/` | page, assistant panel, type icons |
 | `backend/tests/test_files_workspace.py`, `test_files_tools.py` | isolation/roles/history tests + agent-tool tests |
