@@ -14,6 +14,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Self-host fonts instead of fetching Google at build time (#1188) ([f056010](https://github.com/aliyevaladddin/AladdinAI/commit/f05601065a1aecad5429680ec0eaaa203297bbbf))
 
+- Bundle Monaco instead of loading it from the jsdelivr CDN (#1194) ([f59bc68](https://github.com/aliyevaladddin/AladdinAI/commit/f59bc6829088276681b89e1f2ae4118d5d151266))
+
 
 ### CI
 
@@ -44,6 +46,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#1176) ([bbe0254](https://github.com/aliyevaladddin/AladdinAI/commit/bbe0254d284c1118c368db4ba91ad4c72e4ac3c5))
 
 - Update changelog [skip ci] (#1184) ([24a3c7f](https://github.com/aliyevaladddin/AladdinAI/commit/24a3c7fd441020b93a948af8779a9825d9039e42))
+
+- Update changelog [skip ci] (#1192) ([ca0125c](https://github.com/aliyevaladddin/AladdinAI/commit/ca0125c27cf0cee443c7941273c39bc883429135))
 
 ## [v2.3.0] - 2026-11-09
 
