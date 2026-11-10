@@ -1076,13 +1076,8 @@ async def index_file_in_vector_search(
         # 3. PDF documents (if pypdf is installed/importable)
         elif mime_lower == "application/pdf":
             try:
-                import pypdf
-                reader = pypdf.PdfReader(io.BytesIO(data))
-                pages_text = []
-                for page in reader.pages:
-                    t = page.extract_text()
-                    if t:
-                        pages_text.append(t)
+                from app.services.pdf_text import extract_pdf_pages
+                pages_text = [t for t in await extract_pdf_pages(data) if t]
                 text_content = "\n".join(pages_text)
             except Exception:
                 log.warning("Failed to extract PDF %s (pypdf not installed/working)", filename)
