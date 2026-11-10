@@ -30,6 +30,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump follow-redirects from 1.16.0 to 1.16.3 in /cli (#1183) ([035d9f8](https://github.com/aliyevaladddin/AladdinAI/commit/035d9f8692f10b6ebc1506716249ff8a32562f07))
 
+- Bump fastapi from 0.162.0 to 0.162.1 in /backend (#1135) ([a065ca3](https://github.com/aliyevaladddin/AladdinAI/commit/a065ca3545d0886fea2a151ad319bd32cbde21b4))
+
 
 ### Documentation
 
