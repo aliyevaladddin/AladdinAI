@@ -41,7 +41,7 @@ Two kinds:
 | `POST` | `/api/triggers` | Create (201) |
 | `PATCH` | `/api/triggers/{id}` | Update / enable / disable |
 | `DELETE` | `/api/triggers/{id}` | Delete |
-| `GET` | `/api/triggers/{id}/preview` | Preview next runs & resolved payload |
+| `GET` | `/api/triggers/preview?cron=…` | Validate a cron expression and return its next fire time |
 | `POST` | `/api/triggers/{id}/run` | Fire immediately (202 Accepted) |
 
 ### Create example

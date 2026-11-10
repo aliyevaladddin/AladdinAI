@@ -54,6 +54,38 @@ async function fetchWithTimeout(url, ms = 3000) {
   }
 }
 
+// Binaries built into the backend image by `make -C /app/native all`.
+// `wrt-engine` has no Python fallback (docx/odt/pptx/markdown conversion and the
+// WRT editor go through it), the rest degrade gracefully, so they rank differently.
+const NATIVE_BINARIES = ['wrt-engine', 'aladdin-term', 'aladdin-grep', 'aladdin-log-stream', 'wrt-validate'];
+// [RCF:PROTECTED]
+const CRITICAL_BINARIES = new Set(['wrt-engine']);
+
+// Probe inside the running backend container: the binaries live in the image, not
+// on the host, and the image build swallows `make` failures (`|| true`), so a
+// broken build shows up here as a missing or non-ELF file.
+// [RCF:PROTECTED]
+async function checkNativeBinaries(docker, root) {
+  const [bin, prefix] = docker.composeCmd;
+  const probe = `
+import os, sys
+for name in sys.argv[1:]:
+    p = os.path.join('native', name)
+    if not os.path.isfile(p):
+        print(name, 'missing'); continue
+    if not os.access(p, os.X_OK):
+        print(name, 'not-executable'); continue
+    with open(p, 'rb') as f:
+        print(name, 'ok' if f.read(4) == b'\\x7fELF' else 'not-elf')
+`;
+  const res = await execa(
+    bin,
+    [...prefix, 'exec', '-T', 'backend', 'python3', '-c', probe, ...NATIVE_BINARIES],
+    { cwd: root, reject: false, timeout: 20000 },
+  );
+  return res;
+}
+
 // [RCF:PROTECTED]
 export async function doctorCommand() {
   let failures = 0;
@@ -152,6 +184,41 @@ export async function doctorCommand() {
         } catch {
           // ignore malformed line
         }
+      }
+    }
+  }
+
+  // ── Native engine ────────────────────────────────────────────────
+  console.log(chalk.bold('\nNative engine'));
+  const nativeRes = await checkNativeBinaries(docker, root);
+  if (nativeRes.exitCode !== 0 && !nativeRes.stdout.trim()) {
+    warn('native binaries not checked',
+      nativeRes.stderr?.includes('not running')
+        ? 'backend container is not running — try `npx aladdin-ai up`'
+        : (nativeRes.stderr?.trim().slice(0, 200) || 'docker compose exec failed'));
+  } else {
+    const statuses = nativeRes.stdout
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => line.trim().split(/\s+/));
+    const healthy = statuses.filter(([, state]) => state === 'ok').map(([name]) => name);
+    if (statuses.length === 0) {
+      warn('native binaries not checked', 'no output from the backend container');
+    } else if (healthy.length === statuses.length) {
+      ok(`${healthy.length} binaries built (${healthy.join(', ')})`);
+    }
+    for (const [name, state] of statuses) {
+      if (state === 'ok') continue;
+      const reason = state === 'missing' ? 'not built into the image'
+        : state === 'not-executable' ? 'present but not executable'
+          : 'not a valid binary for this platform';
+      if (CRITICAL_BINARIES.has(name)) {
+        bad(`${name}: ${reason}`,
+          'docx/odt/pptx/markdown conversion and the WRT editor depend on it: ' +
+          'run `docker compose pull` (or `docker compose build` in a git checkout)');
+        failures++;
+      } else {
+        warn(`${name}: ${reason}`, 'optional — the backend falls back to its Python path');
       }
     }
   }

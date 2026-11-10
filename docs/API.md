@@ -5775,6 +5775,32 @@ several of them send application/octet-stream.
 | --- | --- |
 | OAuth2PasswordBearer | |
 
+### /api/profile
+
+#### GET
+##### Summary:
+
+Get Profile
+
+##### Description:
+
+Compact identity of the caller: id, email and display name.
+
+The User model has no `username` column, so this returns the same
+UserResponse that /api/auth/me serves instead of inventing a field.
+
+##### Responses
+
+| Code | Description |
+| ---- | ----------- |
+| 200 | Successful Response |
+
+##### Security
+
+| Security Schema | Scopes |
+| --- | --- |
+| OAuth2PasswordBearer | |
+
 ### /
 
 #### GET

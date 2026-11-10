@@ -27,9 +27,19 @@ class TestSearch:
 
 
 # ── user ─────────────────────────────────────────────────────────────────────
-# NOTE: user router is not included in main.py — profile is via /api/auth/me
+# user.py is mounted at /api: GET /api/profile returns the caller's identity
+# as UserResponse (id, email, name), the same shape as /api/auth/me.
 
 class TestUser:
+    def test_get_profile(self, client, auth_headers):
+        r = client.get("/api/profile", headers=auth_headers)
+        assert r.status_code == 200
+        assert set(r.json()) == {"id", "email", "name"}
+
+    def test_get_profile_unauthenticated(self, client):
+        r = client.get("/api/profile")
+        assert r.status_code == 401
+
     def test_get_profile_via_auth(self, client, auth_headers):
         r = client.get("/api/auth/me", headers=auth_headers)
         assert r.status_code == 200

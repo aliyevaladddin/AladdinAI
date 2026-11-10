@@ -181,11 +181,8 @@ async def files_read(ctx: ToolContext, file_id: int, version_no: int | None = No
                         "message": f"Cannot convert .pptx to .wrt: {e}"}
         elif ext == ".pdf":
             try:
-                from pypdf import PdfReader
-                reader = PdfReader(io.BytesIO(data))
-                content = "\n\n".join(
-                    page.extract_text() or "" for page in reader.pages
-                )
+                from app.services.pdf_text import extract_pdf_pages
+                content = "\n\n".join(await extract_pdf_pages(data))
             except Exception as e:
                 log.warning("pdf extract failed for file %s: %s", ws_file.name, e)
                 return {"status": "error",

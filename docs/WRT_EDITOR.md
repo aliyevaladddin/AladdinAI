@@ -44,7 +44,7 @@ More content with [u]underlined[/u] and [code]monospace[/code] text.
 - `[quote]...[/quote]` — block quote
 - `[list]...[/list]` — unordered list (items start with `*`)
 - `[table]...[/table]` — table (pipe-delimited)
-- `[img src="..." alt="..."]` — embedded image (base64)
+- `[img src="..." alt="..." w="120" h="60"]` — embedded image (base64); `w`/`h` are the display size in CSS px and are optional
 
 ---
 
@@ -201,7 +201,7 @@ python -m pytest tests/test_native_wrt.py -v
 - GCC (C11)
 - Linux/Unix system
 - Make
-- Python 3.11+ (for pytest integration)
+- Python 3.12+ (for pytest integration)
 - libzip, zlib (for C engine)
 
 ### Compilation
@@ -326,9 +326,9 @@ Creates `wrt-engine` binary in `backend/native/wrt/`.
 No. Convert `.docx` → `.wrt` first via Python:
 ```bash
 python -c "
-from app.services.docx_converter import docx_to_wrt
+from app.services.wrt_engine_service import docx_to_wrt_sync
 with open('document.docx', 'rb') as f:
-    wrt = docx_to_wrt(f.read())
+    wrt = docx_to_wrt_sync(f.read())
 with open('document.wrt', 'w') as f:
     f.write(wrt)
 "

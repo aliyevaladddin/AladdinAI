@@ -19,7 +19,7 @@ from app.routers import (
     chat, crm_activities, crm_contacts, crm_deals, crm_orders, crm_products, dashboard, digest, forging, mcp as mcp_router, mongodb,
     notifications, native_tools, providers, reports as reports_router, router_config, search,
     settings, sql, ssh_exec,
-    terminal_approval, terminal_providers, terminal_ws, traces, triggers as triggers_router, vms, webhooks,
+    terminal_approval, terminal_providers, terminal_ws, traces, triggers as triggers_router, user, vms, webhooks,
     websearch, workspace, wrt_api,
 )
 from app.services import triggers as triggers_service
@@ -169,6 +169,7 @@ app.include_router(digest.router, prefix="/api")
 app.include_router(forging.router, prefix="/api")
 app.include_router(websearch.router, prefix="/api")
 app.include_router(wrt_api.router, prefix="/api")
+app.include_router(user.router, prefix="/api")
 
 # [RCF:PROTECTED]
 @app.get("/")

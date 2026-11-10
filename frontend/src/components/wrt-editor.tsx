@@ -387,7 +387,20 @@ export function WrtEditor({
   const theme = paperMode ? "wrt-light" : (isDark ? "wrt-dark" : "wrt-light");
 
   useEffect(() => {
-    setMounted(true);
+    // Monaco has to be pointed at the bundled copy before <Editor> renders,
+    // otherwise the wrapper starts downloading it from the jsdelivr CDN. The
+    // import is dynamic so the package never reaches the server bundle.
+    let cancelled = false;
+    import("@/lib/monaco-local")
+      .catch((err) => {
+        console.error("[wrt-editor] failed to load the local Monaco build:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setMounted(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Follow live theme switches: ThemeProvider writes data-theme on <html>,

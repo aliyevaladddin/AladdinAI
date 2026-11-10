@@ -8,10 +8,48 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Accept any Postgres connection string in the Render entrypoint (#1175) ([d6a5d76](https://github.com/aliyevaladddin/AladdinAI/commit/d6a5d7692b984c26785f6d6f596c8bc28a967d7b))
 
+- Drop removed Query(enum=...) argument in the Excel report endpoint (#1178) ([1101b60](https://github.com/aliyevaladddin/AladdinAI/commit/1101b60138b3b49905ddc5ab7f5f865142b577be))
+
+- Bump pypdf to 6.21.4 and parse PDFs off the event loop (#1185) ([4290f03](https://github.com/aliyevaladddin/AladdinAI/commit/4290f03c8304fe5d255cdf4b8078d1e7122f5b51))
+
+- Self-host fonts instead of fetching Google at build time (#1188) ([f056010](https://github.com/aliyevaladddin/AladdinAI/commit/f05601065a1aecad5429680ec0eaaa203297bbbf))
+
+- Bundle Monaco instead of loading it from the jsdelivr CDN (#1194) ([f59bc68](https://github.com/aliyevaladddin/AladdinAI/commit/f59bc6829088276681b89e1f2ae4118d5d151266))
+
 
 ### CI
 
 - Publish CLI on Node 22 (#1171) ([c9dbfd8](https://github.com/aliyevaladddin/AladdinAI/commit/c9dbfd82f68c45a3ebf1e3b27ddfacb59174aeb8))
+
+
+### Dependencies
+
+- Bump follow-redirects from 1.16.0 to 1.16.3 in /frontend (#1181) ([fd6a2dc](https://github.com/aliyevaladddin/AladdinAI/commit/fd6a2dc9890f1709de07a7493b10930bf5fa2ea0))
+
+- Bump follow-redirects from 1.16.0 to 1.16.3 in /cli (#1183) ([035d9f8](https://github.com/aliyevaladddin/AladdinAI/commit/035d9f8692f10b6ebc1506716249ff8a32562f07))
+
+
+### Documentation
+
+- Update API documentation [skip ci] (#1180) ([2d2c6a2](https://github.com/aliyevaladddin/AladdinAI/commit/2d2c6a226817602407bf7b98888f5b698a2fbe6f))
+
+- Align README, guides and env template with what actually ships (#1196) ([79037f7](https://github.com/aliyevaladddin/AladdinAI/commit/79037f7aae73acc97838edca4409deb3bb3b4379))
+
+
+### Features
+
+- Check native engine binaries in `doctor` (#1186) ([bbe8d75](https://github.com/aliyevaladddin/AladdinAI/commit/bbe8d7517c35c130d5edbc6afea3a190c4620748))
+
+- Keep image size and caption across docx round trips (#1187) ([ddc1cc7](https://github.com/aliyevaladddin/AladdinAI/commit/ddc1cc7bb17f95dd1a425ad624938d0432a49f6f))
+
+
+### Maintenance
+
+- Update changelog [skip ci] (#1176) ([bbe0254](https://github.com/aliyevaladddin/AladdinAI/commit/bbe0254d284c1118c368db4ba91ad4c72e4ac3c5))
+
+- Update changelog [skip ci] (#1184) ([24a3c7f](https://github.com/aliyevaladddin/AladdinAI/commit/24a3c7fd441020b93a948af8779a9825d9039e42))
+
+- Update changelog [skip ci] (#1192) ([ca0125c](https://github.com/aliyevaladddin/AladdinAI/commit/ca0125c27cf0cee443c7941273c39bc883429135))
 
 ## [v2.3.0] - 2026-11-09
 

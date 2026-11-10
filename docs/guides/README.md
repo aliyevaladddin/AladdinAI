@@ -24,6 +24,8 @@ Each guide is self-contained and assumes a working local dev setup
 | [SQL Playground](SQL_PLAYGROUND.md) | Read-only SQL exploration for users — schema introspection and the layered security model |
 | [Modular Terminal System](TERMINAL_SYSTEM.md) | Pluggable terminal providers — manifests, marketplace, sessions, token broker, SSH proxy |
 | [MCP Servers](MCP_SERVERS.md) | Native MCP client — server catalog, per-agent selection, tool schemas, settings UI |
+| [WRT Editor](WRT_EDITOR.md) | In-browser editing of `.wrt` files — visual mode, Monaco code mode, docx/odt/pptx round-trips |
+| [UI Polish & Observability](UI_POLISH_AND_OBSERVABILITY.md) | Chat performance work, traces and forging UI across three feature branches |
 
 ---
 

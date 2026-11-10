@@ -73,6 +73,7 @@ An Architecture Decision Record (ADR) captures an important architectural decisi
 - [ADR-0010](0010-native-agent-meta-search.md) - Native Agent Meta-Search & Universal Tool Discovery
 - [ADR-0012](0012-pluggable-image-gen-backends.md) - Pluggable Image Generation Backends
 - [ADR-0013](0013-file-workspace-append-only-agent-safety.md) - File Workspace: Append-Only Versions & Agent Safety
+- [ADR-0014](0014-wrt-visual-editor.md) - WRT Editor Visual Mode
 
 ### Safety & Voice
 - [ADR-0004](0004-nemo-guardrails-deferred.md) - NeMo Guardrails Deferred
