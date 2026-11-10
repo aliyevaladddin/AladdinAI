@@ -42,5 +42,5 @@ The original ADR described a TypeScript bi-directional serializer in `frontend/s
 ## Related Documentation
 - [WRT Editor Architecture & CLI Guide](../WRT_EDITOR.md)
 - [WRT Editor Guide (Guides)](../guides/WRT_EDITOR.md)
-- [C Engine Source](../backend/native/wrt/wrt_engine.c)
-- [Test Suite](../backend/tests/test_native_wrt.py)
+- [C Engine Source](../../backend/native/wrt/wrt_engine.c)
+- [Test Suite](../../backend/tests/test_native_wrt.py)

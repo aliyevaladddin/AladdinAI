@@ -95,7 +95,7 @@ Add at least one **LLM Provider** under *Settings → LLM Providers* before crea
 ### Requirements
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (macOS / Windows) or `docker` + `docker compose` (Linux)
-- Node.js 18+ (just to run `npx`)
+- Node.js 22.12+ (just to run `npx`)
 
 ### Day-to-day commands
 
@@ -141,7 +141,7 @@ make dev-frontend      # Next.js on :3000 with --reload
 
 | Layer | Tools |
 |---|---|
-| **Frontend** | Next.js 15, React 19, TailwindCSS, shadcn/ui, sonner |
+| **Frontend** | Next.js 16, React 19, TailwindCSS, shadcn/ui, sonner |
 | **Backend** | FastAPI, SQLAlchemy 2 (async), Alembic, APScheduler |
 | **Storage** | SQLite or Postgres (relational), MongoDB Atlas (vectors) |
 | **LLM access** | Provider-agnostic — NIM, OpenAI, Anthropic, local via BentoML |
@@ -165,7 +165,7 @@ make dev-frontend      # Next.js on :3000 with --reload
 ```
 AladdinAI/
 ├── backend/          FastAPI service, models, services, tools, migrations
-├── frontend/         Next.js 15 dashboard
+├── frontend/         Next.js 16 dashboard
 ├── scripts/          dev / install / migration helpers
 ├── docs/             Architecture & design notes
 ├── cli/              npx aladdin-ai CLI

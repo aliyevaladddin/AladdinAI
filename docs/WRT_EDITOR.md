@@ -201,7 +201,7 @@ python -m pytest tests/test_native_wrt.py -v
 - GCC (C11)
 - Linux/Unix system
 - Make
-- Python 3.11+ (for pytest integration)
+- Python 3.12+ (for pytest integration)
 - libzip, zlib (for C engine)
 
 ### Compilation

@@ -35,6 +35,10 @@ Welcome to the complete documentation for AladdinAI - a self-hosted multi-agent 
 - **[Orders & Sales](./guides/ORDERS.md)** - Product catalog, orders, sales/marketing metrics, and `sales`-role tools
 - **[File Workspace](./guides/FILE_WORKSPACE.md)** - Spaces & roles, append-only versions, audit timeline, safe agent file-tools
 - **[MCP Servers](./guides/MCP_SERVERS.md)** - Native MCP client — server catalog, per-agent tool selection, settings UI
+- **[WRT Editor](./guides/WRT_EDITOR.md)** - In-browser editing of `.wrt` files: visual mode, Monaco code mode, docx/odt/pptx round-trips
+- **[Outgoing Webhooks](./guides/WEBHOOKS.md)** - Push events to Zapier or any HTTP endpoint, with RCF signing
+- **[Agent Sandbox](./guides/AGENT_SANDBOX.md)** - How agent code execution is isolated in Docker containers
+- **[UI Polish & Observability](./guides/UI_POLISH_AND_OBSERVABILITY.md)** - Chat performance work, traces and forging UI
 - **[Memory System](./ARCHITECTURE.md#memory)** - Understanding memory architecture
 - **[Self-Forging](./guides/SELF_FORGING.md)** - Golden set + base-vs-forged harness (guide); design in ADR-0001 / ADR-0009
 

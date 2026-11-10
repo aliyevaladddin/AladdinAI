@@ -1071,7 +1071,7 @@ The three-layer architecture (core library + TUI + GUI) ensures the project can 
 
 ## Appendix A: WRT Format Specification v2
 
-See [`FORMAT.md`](FORMAT.md) for complete specification.
+See [`WRT_EDITOR.md`](WRT_EDITOR.md) for the complete tag specification.
 
 Quick reference:
 
