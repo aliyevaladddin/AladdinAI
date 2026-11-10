@@ -326,9 +326,9 @@ Creates `wrt-engine` binary in `backend/native/wrt/`.
 No. Convert `.docx` → `.wrt` first via Python:
 ```bash
 python -c "
-from app.services.docx_converter import docx_to_wrt
+from app.services.wrt_engine_service import docx_to_wrt_sync
 with open('document.docx', 'rb') as f:
-    wrt = docx_to_wrt(f.read())
+    wrt = docx_to_wrt_sync(f.read())
 with open('document.wrt', 'w') as f:
     f.write(wrt)
 "
