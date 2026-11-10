@@ -73,6 +73,7 @@ debug_ide*.py
 test_api_doc.wrt
 # .claude/ is local-only — fully ignored at any depth.
 quickstart.py
+my_agent.py
 **/.claude/
 claude-proxy-config.yaml
 session-ses_1ada.md
