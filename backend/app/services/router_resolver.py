@@ -63,7 +63,7 @@ async def resolve_agent_id(
         return None
 
     for cfg in configs:
-        picked = await _resolve_one(db, user_id, cfg, text)
+        picked = await _resolve_one(db, user_id, cfg, text, channel_agent_id=channel_agent_id)
         if picked is not None:
             if channel_agent_id is not None and picked != channel_agent_id:
                 log.info(
@@ -79,26 +79,37 @@ async def resolve_agent_id(
 
 # [RCF:PROTECTED]
 async def _resolve_one(
-    db: AsyncSession, user_id: int, cfg: RouterConfig, text: str
+    db: AsyncSession,
+    user_id: int,
+    cfg: RouterConfig,
+    text: str,
+    *,
+    channel_agent_id: int | None = None,
 ) -> int | None:
     """Apply a single router config to the text. Returns agent id or None."""
     config: dict[str, Any] = cfg.config or {}
-    fallback = config.get("fallback_agent_id")
+    config_fallback = config.get("fallback_agent_id")
+    # For LLM classifier we can borrow a provider from channel_agent_id or config_fallback.
+    provider_borrow_id = channel_agent_id if channel_agent_id is not None else config_fallback
+    # If the channel already has an assigned agent in UI, the router's fallback
+    # must NOT hijack channel messages when rules don't match.
+    # Fallback applies only if no channel agent exists.
+    effective_fallback = None if channel_agent_id is not None else config_fallback
 
     if cfg.type == "keyword":
         picked = _match_keywords(config.get("rules") or [], text)
-        return picked if picked is not None else fallback
+        return picked if picked is not None else effective_fallback
 
     if cfg.type == "llm_classifier":
-        picked = await _classify_with_llm(db, user_id, config, text, fallback_agent_id=fallback)
-        return picked if picked is not None else fallback
+        picked = await _classify_with_llm(db, user_id, config, text, fallback_agent_id=provider_borrow_id)
+        return picked if picked is not None else effective_fallback
 
     if cfg.type == "hybrid":
         picked = _match_keywords(config.get("rules") or [], text)
         if picked is not None:
             return picked
-        picked = await _classify_with_llm(db, user_id, config, text, fallback_agent_id=fallback)
-        return picked if picked is not None else fallback
+        picked = await _classify_with_llm(db, user_id, config, text, fallback_agent_id=provider_borrow_id)
+        return picked if picked is not None else effective_fallback
 
     log.warning("router: unknown config type %r in config %s — skipping", cfg.type, cfg.id)
     return None
