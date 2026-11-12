@@ -20,6 +20,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Correct brace-expansion override and sync package-lock ([9446e4b](https://github.com/aliyevaladddin/AladdinAI/commit/9446e4bdb9f094a036a803f852c61843d42cddd3))
 
+- Bump zod to ^4.6.7 in overrides to resolve Dependabot #277 (GHSA-mrhx-c7xc-m3w5) ([eaeb91c](https://github.com/aliyevaladddin/AladdinAI/commit/eaeb91c551d6ba3647e569dd97f381a450ae543e))
+
 
 ### CI
 
@@ -68,6 +70,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#1203) ([0e4a412](https://github.com/aliyevaladddin/AladdinAI/commit/0e4a41259ba0205946e0192b9d5bef8d644564f3))
 
 - Update changelog [skip ci] (#1204) ([8236a1c](https://github.com/aliyevaladddin/AladdinAI/commit/8236a1c77e1572e3c1a447de8d2860d3cd8f4bd7))
+
+- Update changelog [skip ci] (#1207) ([b8fe755](https://github.com/aliyevaladddin/AladdinAI/commit/b8fe755f7f0955beaa87d8576c87d8926ddd8653))
 
 ## [v2.3.0] - 2026-11-09
 
