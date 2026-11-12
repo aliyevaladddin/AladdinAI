@@ -18,6 +18,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Let generate_openapi.py run without PYTHONPATH (#1201) ([80f5035](https://github.com/aliyevaladddin/AladdinAI/commit/80f5035904a434e9fe0c438cb4bce13e1697b643))
 
+- Correct brace-expansion override and sync package-lock ([9446e4b](https://github.com/aliyevaladddin/AladdinAI/commit/9446e4bdb9f094a036a803f852c61843d42cddd3))
+
 
 ### CI
 
@@ -50,6 +52,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Mount the user router and serve GET /api/profile (#1198) ([771840c](https://github.com/aliyevaladddin/AladdinAI/commit/771840c37439df2f8b984ae175aac26d6547f02a))
 
+- Agent tools for contacts, deals, batch operations and pipeline automation (#1205) ([49dbf74](https://github.com/aliyevaladddin/AladdinAI/commit/49dbf7428d5fb7d668f9d6af4d1bd28ab5bf890d))
+
 
 ### Maintenance
 
@@ -60,6 +64,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#1192) ([ca0125c](https://github.com/aliyevaladddin/AladdinAI/commit/ca0125c27cf0cee443c7941273c39bc883429135))
 
 - Update changelog [skip ci] (#1197) ([3a370db](https://github.com/aliyevaladddin/AladdinAI/commit/3a370dbb3bb3d8c86a4929fef4c77eb21b66a0eb))
+
+- Update changelog [skip ci] (#1203) ([0e4a412](https://github.com/aliyevaladddin/AladdinAI/commit/0e4a41259ba0205946e0192b9d5bef8d644564f3))
+
+- Update changelog [skip ci] (#1204) ([8236a1c](https://github.com/aliyevaladddin/AladdinAI/commit/8236a1c77e1572e3c1a447de8d2860d3cd8f4bd7))
 
 ## [v2.3.0] - 2026-11-09
 
