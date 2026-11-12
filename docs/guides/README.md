@@ -14,6 +14,7 @@ Each guide is self-contained and assumes a working local dev setup
 | [Agent Development](AGENT_DEVELOPMENT.md) | Create a custom AI agent — system prompt, model config, tool assignment, safety gates |
 | [Tool Development](TOOL_DEVELOPMENT.md) | Build and register a new tool that agents can call — function schema, execution, error handling |
 | [Agent Delegation](AGENT_DELEGATION.md) | Set up multi-agent coordination — delegate tasks from a root agent to specialised sub-agents |
+| [CRM Tools](CRM_TOOLS.md) | Customer and pipeline tools: contacts, deals, batch importing, and sales funnel automation |
 | [Orders & Sales](ORDERS.md) | Product catalog, orders with a delivery lifecycle, sales/marketing metrics, and the `sales`-role agent tools |
 | [File Workspace](FILE_WORKSPACE.md) | Spaces & roles, append-only versions, audit timeline, the safe agent file-tools, and the `/dashboard/files` page |
 | [Outgoing Webhooks](WEBHOOKS.md) | Push events to Zapier or any HTTP endpoint — event list, RCF signing, agent tools, edit/test from the UI |

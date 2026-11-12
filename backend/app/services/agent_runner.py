@@ -43,21 +43,26 @@ DEFAULT_TOOLS_BY_ROLE: dict[str, list[str]] = {
         "send_email", "read_emails", "send_telegram_message", "send_slack_message",
         "web_search", "fetch_url", "http_get", "http_post",
         "run_python_code", "execute_terminal_command", "read_excel", "write_excel", "create_reminder",
-        # Read-only order visibility for every agent.
-        "list_orders", "get_order_summary", "get_sales_metrics",
+        # CRM: contacts, deals, and orders
+        "list_contacts", "get_contact", "create_contact", "create_contacts_batch",
+        "list_deals", "create_deal", "create_deals_batch", "update_deal_stage",
+        "list_orders", "get_order_summary", "get_sales_metrics", "create_order", "update_order_status",
         # File workspace (safe set): acts under the chatting user's membership,
         # no delete tool — see app/tools/files_ws.py.
         "files_list", "files_read", "files_upload_version", "files_move", "files_rename",
         # Outgoing webhooks (e.g. Zapier): agents can see and fire them.
         "list_webhooks", "send_webhook",
     ],
-    # A sales agent can also mutate the order book and catalog.
+    # A sales agent can also mutate the catalog and order book.
     "sales": [
         "recall", "remember",
         "analyze_image", "send_image", "generate_image",
         "send_email", "read_emails", "send_telegram_message", "send_slack_message",
         "web_search", "fetch_url", "http_get", "http_post",
         "run_python_code", "execute_terminal_command", "read_excel", "write_excel", "create_reminder",
+        # CRM: contacts, deals, and orders
+        "list_contacts", "get_contact", "create_contact", "create_contacts_batch",
+        "list_deals", "create_deal", "create_deals_batch", "update_deal_stage",
         "list_orders", "get_order_summary", "get_sales_metrics",
         "create_order", "update_order_status", "create_product",
         "files_list", "files_read", "files_upload_version", "files_move", "files_rename",
