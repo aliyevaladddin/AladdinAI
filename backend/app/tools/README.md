@@ -35,3 +35,8 @@ These tools utilize LLM function calling to allow agents to interact with databa
 * **`vision.py`**: Tools for processing media files, scanning documents, and analyzing uploaded images using multimodal LLMs.
 * **`excel.py`**: Excel reading and writing (`read_excel`, `write_excel`).
 
+### 💼 CRM, Pipeline & Sales
+* **`crm.py`**: Customer contact and deal pipeline management (`create_contact`, `create_contacts_batch`, `list_contacts`, `get_contact`, `create_deal`, `create_deals_batch`, `list_deals`, `update_deal_stage`).
+* **`orders.py`**: Order fulfillment and sales KPI tracking (`list_orders`, `get_order_summary`, `get_sales_metrics`, `create_order`, `update_order_status`, `create_product`).
+
+
