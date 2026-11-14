@@ -15,7 +15,7 @@ asyncssh==2.24.1
 motor==3.7.1
 certifi>=2026.10.23
 apscheduler==3.11.3
-croniter==6.2.4
+croniter==7.0.0
 docker==7.2.0
 PyYAML==6.0.3
 sqlparse==0.6.0
