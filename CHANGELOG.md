@@ -4,6 +4,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Dependencies
+
+- Bump lucide-react from 1.68.0 to 1.72.0 in /frontend (#1224) ([e1b7b59](https://github.com/aliyevaladddin/AladdinAI/commit/e1b7b5967b59eb93955b9f60d29b163df9655cac))
+
+- Bump playwright from 1.64.1 to 1.65.0 in /backend (#1210) ([def9ff9](https://github.com/aliyevaladddin/AladdinAI/commit/def9ff9cde5b378f57bce556daafcc4c435f2307))
+
+## [v2.3.1] - 2026-11-12
+
 ### Bug Fixes
 
 - Accept any Postgres connection string in the Render entrypoint (#1175) ([d6a5d76](https://github.com/aliyevaladddin/AladdinAI/commit/d6a5d7692b984c26785f6d6f596c8bc28a967d7b))
@@ -76,6 +84,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#1207) ([b8fe755](https://github.com/aliyevaladddin/AladdinAI/commit/b8fe755f7f0955beaa87d8576c87d8926ddd8653))
 
 - Update changelog [skip ci] (#1208) ([121a475](https://github.com/aliyevaladddin/AladdinAI/commit/121a475ce21687059588f4a5c13e1391afb52af8))
+
+- Update changelog [skip ci] (#1209) ([f9e8a0b](https://github.com/aliyevaladddin/AladdinAI/commit/f9e8a0bcc04ac3dab8018b06501a8dcd45e6e1f8))
 
 ## [v2.3.0] - 2026-11-09
 
