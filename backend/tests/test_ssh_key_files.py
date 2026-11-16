@@ -9,11 +9,13 @@ from __future__ import annotations
 
 import atexit
 import os
+import stat
 import tempfile
 from types import SimpleNamespace
 
 import pytest
 
+from app.services.terminal_transport import key_files
 from app.services.terminal_transport.base import TransportContext
 from app.services.terminal_transport.ssh_proxy import SshProxyTransport
 
@@ -71,3 +73,67 @@ async def test_enrich_creates_no_files_and_returns_no_key_path(monkeypatch, tmp_
     assert enrichment.config["ssh_host"] == "192.0.2.10"
     assert enrichment.config["ssh_port"] == 2222
     assert enrichment.config["ssh_user"] == "deploy"
+
+
+def _patch_key_dir(monkeypatch, tmp_path):
+    """Point key_files.settings at tmp_path via monkeypatch (no lazy-write)."""
+    monkeypatch.setattr(
+        key_files, "settings", SimpleNamespace(terminal_ssh_key_dir=str(tmp_path))
+    )
+
+
+def test_get_key_dir_default_and_override(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        key_files, "settings", SimpleNamespace(terminal_ssh_key_dir="")
+    )
+    assert key_files.get_key_dir() == key_files.DEFAULT_KEY_DIR
+    _patch_key_dir(monkeypatch, tmp_path)
+    assert key_files.get_key_dir() == str(tmp_path)
+
+
+def test_write_key_file_creates_0600_in_0700_dir(monkeypatch, tmp_path):
+    _patch_key_dir(monkeypatch, tmp_path)
+    path = key_files.write_key_file("fake-pem-body")
+    assert os.path.dirname(path) == str(tmp_path)
+    with open(path, encoding="utf-8") as fh:
+        assert fh.read() == "fake-pem-body"
+    assert stat.S_IMODE(os.lstat(path).st_mode) == 0o600
+    assert stat.S_IMODE(os.lstat(str(tmp_path)).st_mode) == 0o700
+
+
+def test_write_key_file_refuses_symlinked_dir(monkeypatch, tmp_path):
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "link"
+    os.symlink(str(real), str(link))
+    monkeypatch.setattr(
+        key_files, "settings", SimpleNamespace(terminal_ssh_key_dir=str(link))
+    )
+    with pytest.raises(ValueError):
+        key_files.write_key_file("fake-pem-body")
+
+
+def test_remove_key_file_idempotent(monkeypatch, tmp_path):
+    _patch_key_dir(monkeypatch, tmp_path)
+    path = key_files.write_key_file("fake-pem-body")
+    key_files.remove_key_file(path)
+    assert not os.path.exists(path)
+    # Second removal must not raise.
+    key_files.remove_key_file(path)
+
+
+def test_sweep_removes_leftovers_and_noop_when_missing(monkeypatch, tmp_path):
+    _patch_key_dir(monkeypatch, tmp_path)
+    stale = tmp_path / "ssh_key_stale.pem"
+    stale.write_text("stale", encoding="utf-8")
+    other = tmp_path / "keep.txt"
+    other.write_text("keep", encoding="utf-8")
+    assert key_files.sweep_stale_keys() == 1
+    assert not stale.exists()
+    assert other.exists()
+
+    missing = tmp_path / "does-not-exist"
+    monkeypatch.setattr(
+        key_files, "settings", SimpleNamespace(terminal_ssh_key_dir=str(missing))
+    )
+    assert key_files.sweep_stale_keys() == 0

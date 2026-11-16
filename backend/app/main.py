@@ -51,6 +51,12 @@ except Exception:
 async def lifespan(app: FastAPI):
     """Manages startup and shutdown of background services."""
     log.info("AladdinAI starting up (v%s)", VERSION)
+    try:
+        from app.services.terminal_transport.key_files import sweep_stale_keys
+
+        sweep_stale_keys()
+    except Exception:
+        log.warning("SSH key sweep failed", exc_info=True)
     await triggers_service.hydrate_from_db()
     await telegram_poller.start()
     terminal_health.start()

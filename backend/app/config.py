@@ -203,6 +203,11 @@ class Settings(BaseSettings):
     # In docker-compose this is the shared ./traefik-dynamic volume.
     traefik_dynamic_config_dir: str = "/traefik-dynamic"
 
+    # Directory for SSH private-key files (wetty key support, future wiring).
+    # Empty means use the helper default (/dev/shm/aladdin-ssh-keys).
+    # Env var: TERMINAL_SSH_KEY_DIR.
+    terminal_ssh_key_dir: str = ""
+
     # ── GitHub App Bots ──────────────────────────────────────────────
     github_webhook_secret: str = ""
 
