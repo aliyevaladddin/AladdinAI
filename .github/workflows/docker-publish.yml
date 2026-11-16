@@ -13,15 +13,17 @@
 name: docker-publish
 
 on:
+  release:
+    types: [published]
   push:
     tags:
       - "v*"
   workflow_dispatch:
     inputs:
       tag:
-        description: "Image tag (default: 'manual')"
+        description: "Image tag (e.g. '2.3.1' or 'latest')"
         required: false
-        default: "manual"
+        default: ""
 
 permissions:
   contents: read
@@ -62,13 +64,25 @@ jobs:
         run: |
           OWNER_LC=$(echo "${IMAGE_OWNER}" | tr '[:upper:]' '[:lower:]')
           IMAGE="${REGISTRY}/${OWNER_LC}/aladdinai-${{ matrix.name }}"
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-            echo "tags=${IMAGE}:${VERSION},${IMAGE}:latest" >> "$GITHUB_OUTPUT"
-          else
-            VERSION="${{ inputs.tag }}"
-            echo "tags=${IMAGE}:${VERSION}" >> "$GITHUB_OUTPUT"
+          VERSION="${{ inputs.tag }}"
+          if [[ -z "${VERSION}" ]]; then
+            if [[ "${{ github.event_name }}" == "release" ]]; then
+              RAW_TAG="${{ github.event.release.tag_name }}"
+              VERSION="${RAW_TAG#v}"
+            elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+              VERSION="${GITHUB_REF#refs/tags/v}"
+            else
+              VERSION="latest"
+            fi
           fi
+          # Strip leading v if passed via manual input (e.g. v2.3.1 -> 2.3.1)
+          VERSION="${VERSION#v}"
+          if [[ "${VERSION}" == "latest" ]]; then
+            TAGS="${IMAGE}:latest"
+          else
+            TAGS="${IMAGE}:${VERSION},${IMAGE}:latest"
+          fi
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
           echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
