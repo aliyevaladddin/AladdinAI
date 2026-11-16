@@ -6,6 +6,28 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ### Bug Fixes
 
+- Stop writing SSH private keys to disk (#1230) ([31781d1](https://github.com/aliyevaladddin/AladdinAI/commit/31781d12e15f3b9cb2ee739a084a47a52cfd5b9f))
+
+
+### Dependencies
+
+- Bump lucide-react from 1.68.0 to 1.72.0 in /frontend (#1224) ([e1b7b59](https://github.com/aliyevaladddin/AladdinAI/commit/e1b7b5967b59eb93955b9f60d29b163df9655cac))
+
+- Bump playwright from 1.64.1 to 1.65.0 in /backend (#1210) ([def9ff9](https://github.com/aliyevaladddin/AladdinAI/commit/def9ff9cde5b378f57bce556daafcc4c435f2307))
+
+- Bump @sanity/vision from 6.22.0 to 6.23.0 in /frontend (#1223) ([f805f95](https://github.com/aliyevaladddin/AladdinAI/commit/f805f95d8d5970b8a84c2c6b69f457681c6460ec))
+
+- Bump hono from 4.13.13 to 4.13.18 in /frontend (#1228) ([1e2cc24](https://github.com/aliyevaladddin/AladdinAI/commit/1e2cc247076f01ca8096da3853d5d70e75dad0b6))
+
+
+### Maintenance
+
+- Bump version to 2.3.1 across cli, frontend, and docs (#1236) ([23ba449](https://github.com/aliyevaladddin/AladdinAI/commit/23ba449cbef72bd9168f2d0fc27ab3be15ac9480))
+
+## [v2.3.1] - 2026-11-12
+
+### Bug Fixes
+
 - Accept any Postgres connection string in the Render entrypoint (#1175) ([d6a5d76](https://github.com/aliyevaladddin/AladdinAI/commit/d6a5d7692b984c26785f6d6f596c8bc28a967d7b))
 
 - Drop removed Query(enum=...) argument in the Excel report endpoint (#1178) ([1101b60](https://github.com/aliyevaladddin/AladdinAI/commit/1101b60138b3b49905ddc5ab7f5f865142b577be))
@@ -76,6 +98,8 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Update changelog [skip ci] (#1207) ([b8fe755](https://github.com/aliyevaladddin/AladdinAI/commit/b8fe755f7f0955beaa87d8576c87d8926ddd8653))
 
 - Update changelog [skip ci] (#1208) ([121a475](https://github.com/aliyevaladddin/AladdinAI/commit/121a475ce21687059588f4a5c13e1391afb52af8))
+
+- Update changelog [skip ci] (#1209) ([f9e8a0b](https://github.com/aliyevaladddin/AladdinAI/commit/f9e8a0bcc04ac3dab8018b06501a8dcd45e6e1f8))
 
 ## [v2.3.0] - 2026-11-09
 
