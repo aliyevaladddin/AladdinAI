@@ -13,25 +13,38 @@ Security properties:
 """
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
 import stat
 import tempfile
+from typing import Iterator
 
 from app.config import settings
 
 log = logging.getLogger(__name__)
 
+__all__ = [
+    "DEFAULT_KEY_DIR",
+    "get_key_dir",
+    "write_key_file",
+    "remove_key_file",
+    "temporary_key_file",
+    "sweep_stale_keys",
+]
+
 DEFAULT_KEY_DIR = "/dev/shm/aladdin-ssh-keys"
 
 
 def get_key_dir() -> str:
-    """Return the configured key directory, or the tmpfs default."""
+    """Return the configured key directory, tmpfs default, or secure temp fallback."""
     configured = getattr(settings, "terminal_ssh_key_dir", "") or ""
     configured = configured.strip()
     if configured:
         return configured
-    return DEFAULT_KEY_DIR
+    if os.path.isdir("/dev/shm") and os.access("/dev/shm", os.W_OK):
+        return DEFAULT_KEY_DIR
+    return os.path.join(tempfile.gettempdir(), "aladdin-ssh-keys")
 
 
 def _ensure_key_dir(path: str) -> str:
@@ -82,6 +95,16 @@ def remove_key_file(path: str) -> None:
     except FileNotFoundError:
         return
     log.info("Removed SSH key file: %s", path)
+
+
+@contextlib.contextmanager
+def temporary_key_file(pem: str) -> Iterator[str]:
+    """Context manager to safely create a temporary key file and guarantee its removal."""
+    path = write_key_file(pem)
+    try:
+        yield path
+    finally:
+        remove_key_file(path)
 
 
 def sweep_stale_keys() -> int:

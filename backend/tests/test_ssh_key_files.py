@@ -137,3 +137,36 @@ def test_sweep_removes_leftovers_and_noop_when_missing(monkeypatch, tmp_path):
         key_files, "settings", SimpleNamespace(terminal_ssh_key_dir=str(missing))
     )
     assert key_files.sweep_stale_keys() == 0
+
+
+def test_temporary_key_file_lifecycle(monkeypatch, tmp_path):
+    _patch_key_dir(monkeypatch, tmp_path)
+    captured_path = None
+    with key_files.temporary_key_file("context-manager-pem") as path:
+        captured_path = path
+        assert os.path.exists(path)
+        with open(path, encoding="utf-8") as fh:
+            assert fh.read() == "context-manager-pem"
+        assert stat.S_IMODE(os.lstat(path).st_mode) == 0o600
+    assert not os.path.exists(captured_path)
+
+
+def test_temporary_key_file_cleans_up_on_exception(monkeypatch, tmp_path):
+    _patch_key_dir(monkeypatch, tmp_path)
+    captured_path = None
+    with pytest.raises(RuntimeError, match="simulated failure"):
+        with key_files.temporary_key_file("fail-pem") as path:
+            captured_path = path
+            assert os.path.exists(path)
+            raise RuntimeError("simulated failure")
+    assert captured_path is not None
+    assert not os.path.exists(captured_path)
+
+
+def test_get_key_dir_fallback_when_shm_unavailable(monkeypatch):
+    monkeypatch.setattr(
+        key_files, "settings", SimpleNamespace(terminal_ssh_key_dir="")
+    )
+    monkeypatch.setattr(os.path, "isdir", lambda path: False if path == "/dev/shm" else True)
+    expected = os.path.join(tempfile.gettempdir(), "aladdin-ssh-keys")
+    assert key_files.get_key_dir() == expected
