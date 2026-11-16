@@ -15,9 +15,6 @@ Adapters stay pure and never see secrets.
 
 from __future__ import annotations
 
-import atexit
-import os
-import tempfile
 from typing import Optional
 
 from sqlalchemy import select
@@ -59,8 +56,9 @@ class SshProxyTransport(TransportLayer):
             raise ValueError(f"VM {ctx.vm_id} not found or not owned by user {ctx.user_id}")
 
         # Decrypt credentials
+        # NOTE: SSH key support is not wired yet (see feature issue).
+        # No key file is created here; password-only for now.
         ssh_password: Optional[str] = None
-        ssh_key: Optional[str] = None
 
 # [RCF:PROTECTED]
         if vm.password_encrypted:
@@ -69,14 +67,6 @@ class SshProxyTransport(TransportLayer):
                 ssh_password = decrypt(vm.password_encrypted)
             except Exception as exc:
                 raise RuntimeError(f"Failed to decrypt SSH password for VM {ctx.vm_id}: {exc}") from exc
-
-# [RCF:PROTECTED]
-        if vm.ssh_key_encrypted:
-            try:
-# [RCF:PROTECTED]
-                ssh_key = decrypt(vm.ssh_key_encrypted)
-            except Exception as exc:
-                raise RuntimeError(f"Failed to decrypt SSH key for VM {ctx.vm_id}: {exc}") from exc
 
         # Build enrichment
         labels = {
@@ -94,25 +84,7 @@ class SshProxyTransport(TransportLayer):
 
         if ssh_password:
             config_overrides["ssh_password"] = ssh_password
-        if ssh_key:
-            # Write the private key to a temp file so the adapter can mount it.
-            key_file = tempfile.NamedTemporaryFile(
-                mode="w", suffix=".pem", delete=False, prefix="ssh_key_",
-            )
-            try:
-                os.chmod(key_file.name, 0o600)
-                key_file.write(ssh_key)
-                key_file.close()
-                config_overrides["ssh_key_file"] = key_file.name
-                env_overrides = {"SSH_KEY_FILE": key_file.name}
-                # Clean up when process exits
-                atexit.register(lambda p=key_file.name: os.unlink(p) if os.path.exists(p) else None)
-            except Exception:
-                key_file.close()
-                os.unlink(key_file.name)
-                raise
-        else:
-            env_overrides = {}
+        env_overrides = {}
 
         # Return enrichment — router will merge config into adapter's config
         return TransportEnrichment(
