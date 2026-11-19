@@ -2,7 +2,7 @@
 
 All notable changes to AladdinAI will be documented in this file. This changelog follows the conventional commits specification.
 
-## [Unreleased]
+## [v2.3.2] - 2026-11-19
 
 ### Bug Fixes
 
@@ -36,6 +36,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump version to 2.3.1 across cli, frontend, and docs (#1236) ([23ba449](https://github.com/aliyevaladddin/AladdinAI/commit/23ba449cbef72bd9168f2d0fc27ab3be15ac9480))
 
 - Update changelog [skip ci] (#1243) ([b64c11f](https://github.com/aliyevaladddin/AladdinAI/commit/b64c11fda3129b4362b55d28e288ef1559ee71cd))
+
+- Update changelog [skip ci] (#1245) ([40a60d7](https://github.com/aliyevaladddin/AladdinAI/commit/40a60d73f8e586ef471028a688b52fa267cb1512))
+
+- Bump version to 2.3.2 across cli, frontend, and docs (#1246) ([8882959](https://github.com/aliyevaladddin/AladdinAI/commit/8882959fb17af1ea3981f0827d59a6df07a61003))
 
 ## [v2.3.1] - 2026-11-12
 
