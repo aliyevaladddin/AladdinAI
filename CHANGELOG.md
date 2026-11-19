@@ -28,10 +28,14 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 - Bump hono from 4.13.13 to 4.13.18 in /frontend (#1228) ([1e2cc24](https://github.com/aliyevaladddin/AladdinAI/commit/1e2cc247076f01ca8096da3853d5d70e75dad0b6))
 
+- Bump dependencies across backend, cli, and frontend (#1211-#1221) (#1244) ([cb96f54](https://github.com/aliyevaladddin/AladdinAI/commit/cb96f5413566fbc50e53707ea414885ac6bd5011))
+
 
 ### Maintenance
 
 - Bump version to 2.3.1 across cli, frontend, and docs (#1236) ([23ba449](https://github.com/aliyevaladddin/AladdinAI/commit/23ba449cbef72bd9168f2d0fc27ab3be15ac9480))
+
+- Update changelog [skip ci] (#1243) ([b64c11f](https://github.com/aliyevaladddin/AladdinAI/commit/b64c11fda3129b4362b55d28e288ef1559ee71cd))
 
 ## [v2.3.1] - 2026-11-12
 
