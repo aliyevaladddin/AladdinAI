@@ -126,7 +126,8 @@
     "zod": "^4.6.7",
     "undici": "^7.30.1",
     "brace-expansion": "^2.1.2",
-    "minimatch": {
+    "minimatch@>=7.0.0": {
+      ".": "^11.0.1",
       "brace-expansion": "^5.0.8"
     },
     "js-yaml": "^4.2.1",
