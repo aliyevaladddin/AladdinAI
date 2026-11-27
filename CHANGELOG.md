@@ -4,6 +4,18 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 
 ## [Unreleased]
 
+### Dependencies
+
+- Bump sqlalchemy from 2.1.8 to 2.1.9 in /backend (#1249) ([023475a](https://github.com/aliyevaladddin/AladdinAI/commit/023475aafaa355d30d2700c1d44372ce31999d25))
+
+- Bump nvidia-riva-client from 2.27.0 to 2.28.0 in /backend (#1250) ([0f9a92b](https://github.com/aliyevaladddin/AladdinAI/commit/0f9a92b7ee9faef27fcaadf564b353063c342669))
+
+- Bump fastapi from 0.162.1 to 0.165.0 in /backend (#1251) ([5c8026a](https://github.com/aliyevaladddin/AladdinAI/commit/5c8026aa415e2e7b75a2119cfc1954f7588958b2))
+
+- Bump lucide-react from 1.72.0 to 1.75.0 in /frontend (#1259) ([df08ae6](https://github.com/aliyevaladddin/AladdinAI/commit/df08ae67bf51ac6f0ccd5756150d7409c3fc6ea9))
+
+## [v2.3.2] - 2026-11-19
+
 ### Bug Fixes
 
 - Stop writing SSH private keys to disk (#1230) ([31781d1](https://github.com/aliyevaladddin/AladdinAI/commit/31781d12e15f3b9cb2ee739a084a47a52cfd5b9f))
@@ -36,6 +48,10 @@ All notable changes to AladdinAI will be documented in this file. This changelog
 - Bump version to 2.3.1 across cli, frontend, and docs (#1236) ([23ba449](https://github.com/aliyevaladddin/AladdinAI/commit/23ba449cbef72bd9168f2d0fc27ab3be15ac9480))
 
 - Update changelog [skip ci] (#1243) ([b64c11f](https://github.com/aliyevaladddin/AladdinAI/commit/b64c11fda3129b4362b55d28e288ef1559ee71cd))
+
+- Update changelog [skip ci] (#1245) ([40a60d7](https://github.com/aliyevaladddin/AladdinAI/commit/40a60d73f8e586ef471028a688b52fa267cb1512))
+
+- Bump version to 2.3.2 across cli, frontend, and docs (#1246) ([8882959](https://github.com/aliyevaladddin/AladdinAI/commit/8882959fb17af1ea3981f0827d59a6df07a61003))
 
 ## [v2.3.1] - 2026-11-12
 
